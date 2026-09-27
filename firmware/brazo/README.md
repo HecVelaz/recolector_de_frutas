@@ -60,6 +60,36 @@ Secuencia de primera prueba (una articulación a la vez, con la fuente limitada 
 
 `?` muestra todos los comandos.
 
+## micro-ROS (entorno `ros`)
+
+El mismo firmware, con los comandos por tópicos en vez del monitor serial (el USB lo usa el agente). Todo pasa
+por los mismos comandos de texto, con las mismas validaciones y protecciones.
+
+| Tópico | Tipo | Sentido | Detalle |
+|---|---|---|---|
+| `/brazo/joint_states` | `sensor_msgs/JointState` | sale, 20 Hz | `j1..j3`: posición [rad], velocidad [rad/s], effort = duty [%] |
+| `/brazo/estado` | `std_msgs/String` | sale, 2 Hz | modo, cero, falla y "llego" de cada articulación |
+| `/brazo/respuesta` | `std_msgs/String` | sale | lo que mostraría el monitor serial |
+| `/brazo/joint_cmd` | `sensor_msgs/JointState` | entra | posiciones [rad] con nombres `j1..j3`, o las 3 en orden sin nombres |
+| `/pinza/cierre` | `std_msgs/Float32` | entra | 0 = abierta, 100 = cerrada |
+| `/pinza/giro` | `std_msgs/Float32` | entra | grados, −90..90 |
+| `/brazo/comando` | `std_msgs/String` | entra | cualquier comando del monitor: `z`, `home 2`, `s`, `r`, `wd 300`… |
+
+Si se pierde el agente (3 pings sin respuesta, ~1,5 s), el brazo se detiene. Se puede reiniciar el agente sin
+resetear la placa. Sin la hora del agente no se publica nada.
+
+```bash
+$PIO run -e ros -t upload            # detener antes el agente (usa /dev/ttyUSB0)
+source ~/microros_ws/install/local_setup.bash
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0
+# en otra terminal
+ros2 topic echo /brazo/respuesta --field data
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'z'}"
+ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], position: [0.79]}"
+```
+
+`brazo_ik` publica en `/brazo/joint_cmd`: con los dos corriendo, un punto en `/brazo/objetivo` mueve el brazo.
+
 ## Protecciones
 
 - Sin cero, las articulaciones no aceptan movimientos en posición.
@@ -88,13 +118,14 @@ Secuencia de primera prueba (una articulación a la vez, con la fuente limitada 
 - [ ] Pose de referencia (`POSE_CERO`) y ángulos de los finales de carrera (`HOME_Q`).
 - [ ] Pulsos de los servos (`PINZA_US_*`, `GIRO_US_*`).
 - [ ] Ajustar `kpPos`, `velMax`, `accMax` con el brazo armado y con carga.
-- [ ] Capa de comandos por micro-ROS.
+- [ ] Probar la capa micro-ROS en placa (compila; ver la tabla de Resultados).
 
 ## Resultados
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
 | 2026-09-27 | `pio test -e native` (14 pruebas, motor simulado con el modelo de la E5) | OK |
+| 2026-09-27 | `pio run -e ros` (micro-ROS Jazzy): RAM 15,3 %, flash 29,6 %, 0 warnings. Sin probar con el agente | OK |
 | | Signo de encoders J1/J3 | — |
 | | Lazo de velocidad J1/J2 en placa | — |
 | | Movimiento en posición con carga | — |

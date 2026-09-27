@@ -57,6 +57,14 @@ documentación. Responder en castellano.
   recorte, watchdog vencido anula el comando, `cal` solo detenido, `v`/`w` hasta 3 s. **No probado en placa.** Pendiente: `MEDIR` en
   `include/base_config.h` (sobre todo **qué motor de tracción es**: notas = 36GP-555 53 rpm, inventario = DC 895
   planetario 53 rpm), capa micro-ROS.
+- **Capa micro-ROS** (2026-09-27): entorno `ros` en los dos firmwares (`-DUSAR_MICROROS`, transporte serial, Jazzy,
+  `microros.meta` con 12 publishers / 6 subs). Conexión en `firmware/lib/EnlaceMicroRos` (patrón de
+  pruebas-esp32/02: ping 500 ms, 3 perdidos = corte, hora del agente, reconexión). Toda la salida de texto va por
+  `Print *out` (Serial en modo serial, búfer publicado en `/<parte>/respuesta` con micro-ROS) y los comandos de texto
+  llegan por `/<parte>/comando`, así que ROS usa el mismo `ejecutar()` con sus protecciones. Base: `/cmd_vel` -> `/odom`,
+  `/imu/data_raw`, `/range/*`, `/bumpers`, `/gps/fix`, `/battery`, `/base/estado`; watchdog 300 ms con ROS. Brazo:
+  `/brazo/joint_cmd` (rad), `/pinza/cierre`, `/pinza/giro` -> `/brazo/joint_states`, `/brazo/estado`. Sin agente, las
+  dos partes se detienen. Compilan sin warnings (primera compilación ~8 min cada una). **Sin probar con el agente.**
 - **Pendiente general:** resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
   (riesgo de color, ver `docs/ARQUITECTURA.md` §6), preguntas a la cátedra (§11).
 - **Pendiente en `firmware/lib/EncoderPCNT`:** salto falso de 32 000 cuentas (el control del brazo lo filtra).

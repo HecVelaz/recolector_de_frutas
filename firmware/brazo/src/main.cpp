@@ -19,6 +19,10 @@
 #include "esp_task_wdt.h"
 #include "pins.h"
 
+#ifdef USAR_MICROROS
+#include "capa_ros.h"
+#endif
+
 // Canales LEDC: de a pares comparten timer (misma frecuencia)
 constexpr uint8_t CH_J1_R = 0, CH_J1_L = 1;    // 20 kHz
 constexpr uint8_t CH_J2_A = 2, CH_J2_B = 3;    // 1 kHz
@@ -31,6 +35,9 @@ EncoderPCNT enc[N_ART];
 ControlArticulacion ctl[N_ART];
 const int PIN_FC[N_ART] = {PIN_FC_J1, PIN_FC_J2, PIN_FC_J3};
 bool hwOk = false;
+// Toda la salida de texto pasa por acá: en modo serial es el monitor; con micro-ROS, un búfer que se publica
+// en /brazo/respuesta (el USB lo usa el agente)
+Print *out = &Serial;
 bool servosOk = false;
 bool servosArmados = false;  // los servos no reciben pulsos hasta el primer comando pinza/giro
 
@@ -218,28 +225,28 @@ const char *textoModo(ControlArticulacion::Modo m) {
 }
 
 void ayuda() {
-  Serial.println();
-  Serial.println("Comandos (articulaciones 1..3 = J1 base, J2 hombro, J3 codo; ángulos en grados):");
-  Serial.println("  e               estado de las articulaciones");
-  Serial.println("  z [n]           cero manual: el brazo ESTÁ en la pose de referencia (todas o la n)");
-  Serial.println("  home <n>        homing con final de carrera, de a una articulación");
-  Serial.println("  m <q1> <q2> <q3> mover las tres (posición). Ej: m 0 90 0");
-  Serial.println("  j <n> <q>       mover una articulación. Ej: j 2 45");
-  Serial.printf("  v <n> <rpm> [s] lazo de velocidad solo, rpm del motor (máx %.0f), por s segundos (def %.0f, máx %.0f)\n",
+  out->println();
+  out->println("Comandos (articulaciones 1..3 = J1 base, J2 hombro, J3 codo; ángulos en grados):");
+  out->println("  e               estado de las articulaciones");
+  out->println("  z [n]           cero manual: el brazo ESTÁ en la pose de referencia (todas o la n)");
+  out->println("  home <n>        homing con final de carrera, de a una articulación");
+  out->println("  m <q1> <q2> <q3> mover las tres (posición). Ej: m 0 90 0");
+  out->println("  j <n> <q>       mover una articulación. Ej: j 2 45");
+  out->printf("  v <n> <rpm> [s] lazo de velocidad solo, rpm del motor (máx %.0f), por s segundos (def %.0f, máx %.0f)\n",
                 VEL_CMD_MAX_RPM, VEL_CMD_S_DEF, VEL_CMD_S_MAX);
-  Serial.printf("  d <n> <pct>     lazo abierto; se corta a los %lu ms si no se repite (J1 máx %.0f %%, J2/J3 %.0f %%)\n",
+  out->printf("  d <n> <pct>     lazo abierto; se corta a los %lu ms si no se repite (J1 máx %.0f %%, J2/J3 %.0f %%)\n",
                 (unsigned long)JOG_MS, JOG_DUTY_MAX[0], JOG_DUTY_MAX[1]);
-  Serial.println("  s               detener: frena y, ya quieto, sostiene la posición");
-  Serial.println("  l               liberar: puentes deshabilitados (rueda libre)");
-  Serial.println("  r               borrar fallas (queda detenido)");
-  Serial.println("  pinza <0-100>   0 = abierta, 100 = cerrada (el primer comando conecta los servos)");
-  Serial.println("  giro <grados>   giro de la pinza (J4), -90..90");
-  Serial.println("  log <n> [hz]    CSV de la articulación n (t_ms,q_obj,q,wref_rpm,w_rpm,u_pct); log 0 apaga");
-  Serial.println("  wd <ms>         watchdog de comandos (0 = apagado; usarlo cuando mande la Pi)");
-  Serial.println("  ?               esta ayuda");
-  Serial.println("Mover (m, j) exige cero. Con falla la articulación queda frenada hasta r. Un comando nuevo");
-  Serial.println("cancela lo pendiente de esa articulación (homing, d, v).");
-  Serial.println();
+  out->println("  s               detener: frena y, ya quieto, sostiene la posición");
+  out->println("  l               liberar: puentes deshabilitados (rueda libre)");
+  out->println("  r               borrar fallas (queda detenido)");
+  out->println("  pinza <0-100>   0 = abierta, 100 = cerrada (el primer comando conecta los servos)");
+  out->println("  giro <grados>   giro de la pinza (J4), -90..90");
+  out->println("  log <n> [hz]    CSV de la articulación n (t_ms,q_obj,q,wref_rpm,w_rpm,u_pct); log 0 apaga");
+  out->println("  wd <ms>         watchdog de comandos (0 = apagado; usarlo cuando mande la Pi)");
+  out->println("  ?               esta ayuda");
+  out->println("Mover (m, j) exige cero. Con falla la articulación queda frenada hasta r. Un comando nuevo");
+  out->println("cancela lo pendiente de esa articulación (homing, d, v).");
+  out->println();
 }
 
 void estado() {
@@ -252,12 +259,12 @@ void estado() {
   for (int i = 0; i < N_ART; i++) {
     const ControlArticulacion &k = copia[i];
     const bool enPos = k.modo() == ControlArticulacion::Modo::Posicion;
-    Serial.printf("J%d %-9s %s q=%7.2f obj=%7.2f w=%7.1f rpm wref=%7.1f u=%6.1f %% | falla: %s | saltos enc: %lu%s\n",
+    out->printf("J%d %-9s %s q=%7.2f obj=%7.2f w=%7.1f rpm wref=%7.1f u=%6.1f %% | falla: %s | saltos enc: %lu%s\n",
                   i + 1, textoModo(k.modo()), k.conCero() ? "cero" : "SIN CERO", k.q(), k.qObjetivo(), k.w(),
                   k.wRef(), k.u(), k.textoFalla(), (unsigned long)k.saltosEncoder(),
                   enPos && k.frenando() ? " | frenando" : (enPos && k.llego() ? " | llegó" : ""));
   }
-  Serial.printf("Ticks atrasados: %lu | watchdog: %lu ms | servos: %s\n", (unsigned long)atrasados,
+  out->printf("Ticks atrasados: %lu | watchdog: %lu ms | servos: %s\n", (unsigned long)atrasados,
                 (unsigned long)watchdogMs, servosArmados ? "conectados" : "sin conectar");
 }
 
@@ -272,7 +279,7 @@ bool leerNum(const char *s, float &v) {
 bool leerArt(const char *s, int &i) {
   float v;
   if (!leerNum(s, v) || v < 1 || v > N_ART || v != (int)v) {
-    Serial.printf(">> Articulación inválida (1..%d).\n", N_ART);
+    out->printf(">> Articulación inválida (1..%d).\n", N_ART);
     return false;
   }
   i = (int)v - 1;
@@ -285,9 +292,9 @@ void rechazo(int i, const char *cmd) {
   const ControlArticulacion::Falla f = ctl[i].falla();
   portEXIT_CRITICAL(&mux);
   if (f != ControlArticulacion::Falla::Ninguna)
-    Serial.printf(">> J%d no acepta '%s': falla '%s' (r para borrarla).\n", i + 1, cmd, ControlArticulacion::texto(f));
+    out->printf(">> J%d no acepta '%s': falla '%s' (r para borrarla).\n", i + 1, cmd, ControlArticulacion::texto(f));
   else
-    Serial.printf(">> J%d no acepta '%s': falta el cero (z o home).\n", i + 1, cmd);
+    out->printf(">> J%d no acepta '%s': falta el cero (z o home).\n", i + 1, cmd);
 }
 
 // Registra un comando aceptado para el watchdog. Llamar dentro de la sección crítica.
@@ -322,7 +329,7 @@ void ejecutar(char *linea) {
     }
     alimentarWatchdog();
     portEXIT_CRITICAL(&mux);
-    Serial.println(cmd[0] == 'l' ? ">> Liberado (rueda libre)." : cmd[0] == 'r' ? ">> Fallas borradas." : ">> Detenido.");
+    out->println(cmd[0] == 'l' ? ">> Liberado (rueda libre)." : cmd[0] == 'r' ? ">> Fallas borradas." : ">> Detenido.");
   } else if (!strcmp(cmd, "z")) {
     int desde = 0, hasta = N_ART;
     if (a1) {
@@ -337,17 +344,17 @@ void ejecutar(char *linea) {
       ruedaLibre[k] = false;
       alimentarWatchdog();
       portEXIT_CRITICAL(&mux);
-      Serial.printf(">> J%d: cero fijado, q = %.1f°.\n", k + 1, POSE_CERO[k]);
+      out->printf(">> J%d: cero fijado, q = %.1f°.\n", k + 1, POSE_CERO[k]);
     }
   } else if (!strcmp(cmd, "home")) {
     // De a una: si un final de carrera falla, solo se mueve esa articulación
     if (!leerArt(a1, i)) return;
     if (PIN_FC[i] < 0) {
-      Serial.printf(">> J%d no tiene final de carrera: usar z en la pose de referencia.\n", i + 1);
+      out->printf(">> J%d no tiene final de carrera: usar z en la pose de referencia.\n", i + 1);
       return;
     }
     if (finalDeCarrera(i)) {
-      Serial.printf(">> J%d: el final de carrera ya está apretado (o en corto). Alejarlo con d y repetir.\n", i + 1);
+      out->printf(">> J%d: el final de carrera ya está apretado (o en corto). Alejarlo con d y repetir.\n", i + 1);
       return;
     }
     const int64_t c0 = cuentas(i);
@@ -364,11 +371,11 @@ void ejecutar(char *linea) {
       alimentarWatchdog();
     }
     portEXIT_CRITICAL(&mux);
-    if (ok) Serial.printf(">> J%d: homing a %.0f rpm...\n", i + 1, HOME_RPM[i]);
+    if (ok) out->printf(">> J%d: homing a %.0f rpm...\n", i + 1, HOME_RPM[i]);
     else rechazo(i, "home");
   } else if (!strcmp(cmd, "m")) {
     if (!leerNum(a1, v1) || !leerNum(a2, v2) || !leerNum(a3, v3)) {
-      Serial.println(">> Uso: m <q1> <q2> <q3>");
+      out->println(">> Uso: m <q1> <q2> <q3>");
       return;
     }
     const float q[N_ART] = {v1, v2, v3};
@@ -386,7 +393,7 @@ void ejecutar(char *linea) {
   } else if (!strcmp(cmd, "j")) {
     if (!leerArt(a1, i)) return;
     if (!leerNum(a2, v2)) {
-      Serial.println(">> Uso: j <n> <grados>");
+      out->println(">> Uso: j <n> <grados>");
       return;
     }
     portENTER_CRITICAL(&mux);
@@ -402,7 +409,7 @@ void ejecutar(char *linea) {
     if (!leerArt(a1, i)) return;
     v3 = VEL_CMD_S_DEF;
     if (!leerNum(a2, v2) || fabsf(v2) > VEL_CMD_MAX_RPM || (a3 && (!leerNum(a3, v3) || v3 <= 0 || v3 > VEL_CMD_S_MAX))) {
-      Serial.printf(">> Uso: v <n> <rpm, hasta %.0f> [segundos, hasta %.0f]\n", VEL_CMD_MAX_RPM, VEL_CMD_S_MAX);
+      out->printf(">> Uso: v <n> <rpm, hasta %.0f> [segundos, hasta %.0f]\n", VEL_CMD_MAX_RPM, VEL_CMD_S_MAX);
       return;
     }
     portENTER_CRITICAL(&mux);
@@ -418,7 +425,7 @@ void ejecutar(char *linea) {
   } else if (!strcmp(cmd, "d")) {
     if (!leerArt(a1, i)) return;
     if (!leerNum(a2, v2)) {
-      Serial.println(">> Uso: d <n> <pct>");
+      out->println(">> Uso: d <n> <pct>");
       return;
     }
     if (fabsf(v2) > JOG_DUTY_MAX[i]) v2 = v2 > 0 ? JOG_DUTY_MAX[i] : -JOG_DUTY_MAX[i];
@@ -434,15 +441,15 @@ void ejecutar(char *linea) {
     if (!ok) rechazo(i, "d");
   } else if (!strcmp(cmd, "pinza")) {
     if (!servosOk || !leerNum(a1, v1) || v1 < 0 || v1 > 100) {
-      Serial.println(servosOk ? ">> Uso: pinza <0-100>" : ">> Servos sin configurar.");
+      out->println(servosOk ? ">> Uso: pinza <0-100>" : ">> Servos sin configurar.");
       return;
     }
     armarServos();
     servoUs(CH_PINZA, PINZA_US_ABIERTA + (PINZA_US_CERRADA - PINZA_US_ABIERTA) * v1 / 100.0f);
   } else if (!strcmp(cmd, "giro")) {
     if (!servosOk || !leerNum(a1, v1) || fabsf(v1) > GIRO_MAX_DEG) {
-      if (servosOk) Serial.printf(">> Uso: giro <grados> (-%.0f..%.0f)\n", GIRO_MAX_DEG, GIRO_MAX_DEG);
-      else Serial.println(">> Servos sin configurar.");
+      if (servosOk) out->printf(">> Uso: giro <grados> (-%.0f..%.0f)\n", GIRO_MAX_DEG, GIRO_MAX_DEG);
+      else out->println(">> Servos sin configurar.");
       return;
     }
     armarServos();
@@ -457,26 +464,26 @@ void ejecutar(char *linea) {
     if (!leerArt(a1, i)) return;
     v2 = 100;
     if (a2 && (!leerNum(a2, v2) || v2 < 1 || v2 > 100)) {
-      Serial.println(">> Uso: log <n> [hz 1..100]");
+      out->println(">> Uso: log <n> [hz 1..100]");
       return;
     }
     portENTER_CRITICAL(&mux);
     logArt = i;
     logCadaTicks = (uint32_t)(100.0f / v2 + 0.5f);
     portEXIT_CRITICAL(&mux);
-    Serial.println("t_ms,q_obj,q,wref_rpm,w_rpm,u_pct");
+    out->println("t_ms,q_obj,q,wref_rpm,w_rpm,u_pct");
   } else if (!strcmp(cmd, "wd")) {
     if (!leerNum(a1, v1) || v1 < 0 || v1 > 10000) {
-      Serial.println(">> Uso: wd <ms> (0 = apagado, hasta 10000)");
+      out->println(">> Uso: wd <ms> (0 = apagado, hasta 10000)");
       return;
     }
     portENTER_CRITICAL(&mux);
     watchdogMs = (uint32_t)v1;
     alimentarWatchdog();
     portEXIT_CRITICAL(&mux);
-    Serial.printf(">> Watchdog: %lu ms.\n", (unsigned long)watchdogMs);
+    out->printf(">> Watchdog: %lu ms.\n", (unsigned long)watchdogMs);
   } else {
-    Serial.printf(">> Comando desconocido: %s (? para ayuda)\n", cmd);
+    out->printf(">> Comando desconocido: %s (? para ayuda)\n", cmd);
   }
 }
 
@@ -489,7 +496,7 @@ void leerSerial() {
     const char ch = (char)Serial.read();
     if (ch == '\n' || ch == '\r') {
       if (descartando) {
-        Serial.println(">> Línea demasiado larga: descartada.");
+        out->println(">> Línea demasiado larga: descartada.");
       } else if (lineaLen > 0 && hwOk) {
         linea[lineaLen] = '\0';
         ejecutar(linea);
@@ -533,18 +540,22 @@ void setup() {
   hwOk = okPwm && okEnc && colaLog && colaMsg;
 
   Serial.begin(115200);
-  delay(1500);
-  Serial.println();
-  Serial.println("== firmware/brazo: J1 (36GP-555 + IBT-2), J2/J3 (5840-31ZY + L298N), pinza (2 servos) ==");
-  Serial.printf("Control en cascada a %.0f Hz en el núcleo 0. Brazo en rueda libre y SIN CERO.\n", 1.0f / TS);
-  if (!okPwm) Serial.println("ERROR: no se pudo configurar el PWM de algún driver.");
-  if (!okEnc) Serial.println("ERROR: no se pudo configurar el PCNT de algún encoder.");
-  if (!servosOk) Serial.println("AVISO: no se pudo configurar el PWM de los servos (pinza y giro deshabilitados).");
+#ifdef USAR_MICROROS
+  rosBegin();  // desde acá, out es el búfer que se publica en /brazo/respuesta
+#else
+  delay(1500);  // dar tiempo a que abra el monitor
+#endif
+  out->println();
+  out->println("== firmware/brazo: J1 (36GP-555 + IBT-2), J2/J3 (5840-31ZY + L298N), pinza (2 servos) ==");
+  out->printf("Control en cascada a %.0f Hz en el núcleo 0. Brazo en rueda libre y SIN CERO.\n", 1.0f / TS);
+  if (!okPwm) out->println("ERROR: no se pudo configurar el PWM de algún driver.");
+  if (!okEnc) out->println("ERROR: no se pudo configurar el PCNT de algún encoder.");
+  if (!servosOk) out->println("AVISO: no se pudo configurar el PWM de los servos (pinza y giro deshabilitados).");
   if (!hwOk) {
-    Serial.println("Comandos DESHABILITADOS hasta corregir el error y reiniciar.");
+    out->println("Comandos DESHABILITADOS hasta corregir el error y reiniciar.");
     return;
   }
-  Serial.println("Para empezar: llevar el brazo a la pose de referencia (d) y fijar el cero (z), o usar home.");
+  out->println("Para empezar: llevar el brazo a la pose de referencia (d) y fijar el cero (z), o usar home.");
   ayuda();
 
   ultimoCmdMs = millis();
@@ -554,17 +565,21 @@ void setup() {
 }
 
 void loop() {
+#ifdef USAR_MICROROS
+  rosLoop();
+#else
   leerSerial();
+#endif
 
   Msg msg;
   while (colaMsg && xQueueReceive(colaMsg, &msg, 0) == pdTRUE) {
     const int n = msg.art + 1;
     switch (msg.ev) {
-      case Evento::HomingOk: Serial.printf(">> J%d: homing OK, q = %.1f°.\n", n, HOME_Q[msg.art]); break;
-      case Evento::HomingTimeout: Serial.printf(">> J%d: homing sin tocar el final de carrera a tiempo: detenido.\n", n); break;
-      case Evento::HomingRecorrido: Serial.printf(">> J%d: homing superó el recorrido máximo sin tocar el final de carrera: detenido.\n", n); break;
-      case Evento::HomingFalla: Serial.printf(">> J%d: homing cancelado por una falla.\n", n); break;
-      case Evento::Watchdog: Serial.println(">> Watchdog: sin comandos, brazo detenido."); break;
+      case Evento::HomingOk: out->printf(">> J%d: homing OK, q = %.1f°.\n", n, HOME_Q[msg.art]); break;
+      case Evento::HomingTimeout: out->printf(">> J%d: homing sin tocar el final de carrera a tiempo: detenido.\n", n); break;
+      case Evento::HomingRecorrido: out->printf(">> J%d: homing superó el recorrido máximo sin tocar el final de carrera: detenido.\n", n); break;
+      case Evento::HomingFalla: out->printf(">> J%d: homing cancelado por una falla.\n", n); break;
+      case Evento::Watchdog: out->println(">> Watchdog: sin comandos, brazo detenido."); break;
     }
   }
 
@@ -575,13 +590,13 @@ void loop() {
     const ControlArticulacion::Falla f = ctl[i].falla();
     portEXIT_CRITICAL(&mux);
     if (f != previa[i] && f != ControlArticulacion::Falla::Ninguna)
-      Serial.printf(">> J%d: FALLA %s. Frenada; r para borrar.\n", i + 1, ControlArticulacion::texto(f));
+      out->printf(">> J%d: FALLA %s. Frenada; r para borrar.\n", i + 1, ControlArticulacion::texto(f));
     previa[i] = f;
   }
 
   Muestra m;
   while (colaLog && xQueueReceive(colaLog, &m, 0) == pdTRUE)
-    Serial.printf("%lu,%.2f,%.2f,%.1f,%.1f,%.1f\n", (unsigned long)m.tMs, m.qObj, m.q, m.wRef, m.w, m.u);
+    out->printf("%lu,%.2f,%.2f,%.1f,%.1f,%.1f\n", (unsigned long)m.tMs, m.qObj, m.q, m.wRef, m.w, m.u);
 
   delay(1);
 }

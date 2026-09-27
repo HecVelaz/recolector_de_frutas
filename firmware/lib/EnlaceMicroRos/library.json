@@ -1,0 +1,7 @@
+{
+  "name": "EnlaceMicroRos",
+  "version": "0.1.0",
+  "description": "Conexión con el micro-ROS Agent por serial (espera, ping, hora, reconexión) y un Print a memoria para mandar texto por un tópico",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}

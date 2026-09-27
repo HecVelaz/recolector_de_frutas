@@ -12,18 +12,19 @@ recolector_de_frutas/
 │   ├── INDICE.md         qué hay en cada documento (empezar por acá)
 │   └── ARQUITECTURA.md   arquitectura del objetivo mínimo, plan y decisiones abiertas
 ├── firmware/
-│   ├── lib/              compartido: BTS7960, L298N, EncoderPCNT, HCSR04, MPU9250, UP501, ControlArticulacion
+│   ├── lib/              compartido: BTS7960, L298N, EncoderPCNT, HCSR04, MPU9250, UP501, ControlArticulacion,
+│   │                     EnlaceMicroRos (conexión con el agente)
 │   ├── brazo/            ESP32-WROOM-32D: J1-J3 en lazo cerrado + pinza (PlatformIO)
 │   └── base/             ESP32-S3: tracción diferencial, odometría, sensores y seguridad (PlatformIO)
 ├── ros2_ws/src/
 │   └── brazo_ik/         nodo ROS 2: cinemática inversa de la E4 (/brazo/objetivo -> /brazo/joint_cmd)
-└── (próximamente) más paquetes ROS 2 y la capa micro-ROS de los dos firmwares
+└── (próximamente) más paquetes ROS 2 (cámaras, YOLO, estéreo, misión)
 ```
 
 | Parte | Placa | Estado |
 |---|---|---|
-| `firmware/brazo` | ESP32-WROOM-32D | Compila; 14 pruebas del control OK en la PC. **Sin probar en placa** |
-| `firmware/base` | ESP32-S3 | Compila sin warnings; 16 pruebas de la lógica OK en la PC. **Sin probar en placa** |
+| `firmware/brazo` | ESP32-WROOM-32D | Compila (serial y micro-ROS); 14 pruebas del control OK en la PC. **Sin probar en placa** |
+| `firmware/base` | ESP32-S3 | Compila (serial y micro-ROS); 19 pruebas de la lógica OK en la PC. **Sin probar en placa** |
 | `ros2_ws/src/brazo_ik` | Pi 5 / notebook (Ubuntu 24.04, ROS 2 Jazzy) | 5 pruebas OK; nodo probado en la notebook |
 | resto de `ros2_ws` | Raspberry Pi 5 | Pendiente (cámaras, YOLO, estéreo, misión, seguridad) |
 
@@ -34,6 +35,7 @@ PIO=~/.platformio/penv/bin/pio
 cd firmware/brazo
 $PIO test -e native              # pruebas del control en la PC, sin placa (igual en firmware/base)
 $PIO run -t upload -t monitor    # flashear (12 V de los motores APAGADOS) y abrir el monitor
+$PIO run -e ros -t upload        # la versión micro-ROS (ver el README de cada firmware)
 
 cd ../../ros2_ws && source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install && colcon test && colcon test-result --verbose

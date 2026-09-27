@@ -42,6 +42,36 @@ liberada hasta el primer comando; al detenerse, la rampa vuelve a cero (el próx
 si una rueda falla, las dos se frenan en el mismo paso; `cal` solo con la base detenida. Un ECHO que responde pero
 sin obstáculo al alcance cuenta como libre; ningún pulso de ECHO cuenta como sensor sin dato.
 
+## micro-ROS (entorno `ros`)
+
+El mismo firmware, con `/cmd_vel` y los comandos por tópicos en vez del monitor serial (el USB lo usa el agente).
+Con micro-ROS el **watchdog de comandos arranca en 300 ms**: si `/cmd_vel` deja de llegar, la base frena. Si se
+pierde el agente (~1,5 s), la base se detiene. Sin la hora del agente no se publica nada.
+
+| Tópico | Tipo | Sentido | Detalle |
+|---|---|---|---|
+| `/odom` | `nav_msgs/Odometry` | sale, 25 Hz | `odom` → `base_link` |
+| `/imu/data_raw` | `sensor_msgs/Imu` | sale, 50 Hz | m/s² y rad/s, sin orientación (para `imu_filter_madgwick`) |
+| `/range/frente`, `/range/izq`, `/range/der` | `sensor_msgs/Range` | sale, 10 Hz | +Inf = nada al alcance; NaN = sin eco (REP-117) |
+| `/bumpers` | `std_msgs/UInt8` | sale, 10 Hz | bits 0..3: frente-izq, frente-der, atrás-izq, atrás-der |
+| `/gps/fix` | `sensor_msgs/NavSatFix` | sale, ~1 Hz | un mensaje por epoch; covarianza aproximada por HDOP |
+| `/battery` | `sensor_msgs/BatteryState` | sale, 1 Hz | tensión |
+| `/base/estado` | `std_msgs/String` | sale, 2 Hz | modo, seguridad, bloqueos, IMU y fallas |
+| `/base/respuesta` | `std_msgs/String` | sale | lo que mostraría el monitor serial |
+| `/cmd_vel` | `geometry_msgs/Twist` | entra | `linear.x` [m/s], `angular.z` [rad/s] |
+| `/base/comando` | `std_msgs/String` | entra | cualquier comando del monitor: `r`, `s`, `l`, `cal`, `odo0`, `wd`… |
+
+```bash
+$PIO run -e ros -t upload            # detener antes el agente (usa /dev/ttyACM0)
+source ~/microros_ws/install/local_setup.bash
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
+# en otra terminal
+ros2 topic echo /base/estado --field data
+ros2 run teleop_twist_keyboard teleop_twist_keyboard   # manejar con el teclado
+```
+
+Los dos ESP32 usan un agente cada uno (uno por puerto): `/dev/ttyACM0` (base) y `/dev/ttyUSB0` (brazo).
+
 ## Uso
 
 ```bash
@@ -69,7 +99,7 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 - [ ] Radio de rueda y trocha (`CFG_DIF`).
 - [ ] Umbral de batería según la química.
 - [ ] Detección de "plataforma levantada" (H9): la IMU sola no la distingue bien.
-- [ ] Capa de comandos por micro-ROS.
+- [ ] Probar la capa micro-ROS en placa (compila; ver la tabla de Resultados).
 
 ## Resultados
 
@@ -77,6 +107,7 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 |---|---|---|
 | 2026-09-27 | `pio test -e native` (19 pruebas, después de la revisión de Codex) | OK |
 | 2026-09-27 | `pio run -e esp32s3`: RAM 7,0 %, flash 5,5 %, 0 warnings | OK |
+| 2026-09-27 | `pio run -e ros` (micro-ROS Jazzy): RAM 22,7 %, flash 7,3 %, 0 warnings. Sin probar con el agente | OK |
 | | Sentido de ruedas y encoders | — |
 | | Lazo de velocidad de las ruedas en placa | — |
 | | Odometría contra cinta métrica | — |

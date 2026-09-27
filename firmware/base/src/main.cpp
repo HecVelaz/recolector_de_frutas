@@ -25,6 +25,10 @@
 #include "esp_task_wdt.h"
 #include "pins.h"
 
+#ifdef USAR_MICROROS
+#include "capa_ros.h"
+#endif
+
 // Canales LEDC: de a pares comparten timer (misma frecuencia)
 constexpr uint8_t CH_IZQ_R = 0, CH_IZQ_L = 1;
 constexpr uint8_t CH_DER_R = 2, CH_DER_L = 3;
@@ -40,6 +44,9 @@ MPU9250 imu(Wire);
 UP501 gps(Serial1);
 SemaphoreHandle_t i2c;  // la tarea lee la IMU y el loop la calibra: no a la vez
 bool hwOk = false, imuOk = false;
+// Toda la salida de texto pasa por acá: en modo serial es el monitor; con micro-ROS, un búfer que se publica
+// en /base/respuesta (el USB lo usa el agente)
+Print *out = &Serial;
 
 // ---- Estado compartido (sección crítica) ----
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
@@ -241,24 +248,24 @@ void tareaControl(void *) {
 // ---------------------------------------------------------------- comandos
 
 void ayuda() {
-  Serial.println();
-  Serial.println("Comandos (v en m/s, w en rad/s; + = adelante / giro a la izquierda):");
-  Serial.println("  e                estado: modo, seguridad, odometría y ruedas");
-  Serial.println("  sens             sensores: IMU, GPS, distancias, bumpers, seta, batería");
-  Serial.printf("  v <v> <w> [s]    mover con rampa por s segundos (def %.0f, máx %.0f). Ej: v 0.1 0\n", CMD_S_DEF, CMD_S_MAX);
-  Serial.println("  w <izq> <der> [s] rpm de cada rueda (lazo de velocidad solo). Ej: w 20 20");
-  Serial.printf("  d <izq> <der>    lazo abierto en %% (máx %.0f); se corta a los %lu ms si no se repite\n", JOG_DUTY_MAX,
+  out->println();
+  out->println("Comandos (v en m/s, w en rad/s; + = adelante / giro a la izquierda):");
+  out->println("  e                estado: modo, seguridad, odometría y ruedas");
+  out->println("  sens             sensores: IMU, GPS, distancias, bumpers, seta, batería");
+  out->printf("  v <v> <w> [s]    mover con rampa por s segundos (def %.0f, máx %.0f). Ej: v 0.1 0\n", CMD_S_DEF, CMD_S_MAX);
+  out->println("  w <izq> <der> [s] rpm de cada rueda (lazo de velocidad solo). Ej: w 20 20");
+  out->printf("  d <izq> <der>    lazo abierto en %% (máx %.0f); se corta a los %lu ms si no se repite\n", JOG_DUTY_MAX,
                 (unsigned long)JOG_MS);
-  Serial.println("  s                detener (freno)");
-  Serial.println("  l                liberar: puentes deshabilitados (rueda libre)");
-  Serial.println("  r                rearmar tras seta o vuelco (con la causa despejada) y borrar fallas");
-  Serial.println("  cal              calibrar el giroscopio (robot quieto, 2 s)");
-  Serial.println("  odo0             odometría a cero");
-  Serial.println("  log [hz]         CSV (t_ms,v,w,rpm_ref_izq,rpm_izq,rpm_ref_der,rpm_der,u_izq,u_der,x,y,th); log 0 apaga");
-  Serial.println("  wd <ms>          watchdog de comandos (0 = apagado; con la Pi, 300)");
-  Serial.println("  ?                esta ayuda");
-  Serial.println("Un comando nuevo reemplaza al anterior. La seguridad recorta cualquier comando.");
-  Serial.println();
+  out->println("  s                detener (freno)");
+  out->println("  l                liberar: puentes deshabilitados (rueda libre)");
+  out->println("  r                rearmar tras seta o vuelco (con la causa despejada) y borrar fallas");
+  out->println("  cal              calibrar el giroscopio (robot quieto, 2 s)");
+  out->println("  odo0             odometría a cero");
+  out->println("  log [hz]         CSV (t_ms,v,w,rpm_ref_izq,rpm_izq,rpm_ref_der,rpm_der,u_izq,u_der,x,y,th); log 0 apaga");
+  out->println("  wd <ms>          watchdog de comandos (0 = apagado; con la Pi, 300)");
+  out->println("  ?                esta ayuda");
+  out->println("Un comando nuevo reemplaza al anterior. La seguridad recorta cualquier comando.");
+  out->println();
 }
 
 const char *textoModo(Modo m) {
@@ -292,15 +299,15 @@ void estado() {
   atr = ticksAtrasados;
   wd = seg.watchdog();
   portEXIT_CRITICAL(&mux);
-  Serial.printf("Modo: %s | seguridad: %s%s%s%s%s\n", textoModo(mo), SeguridadBase::texto(es), bAd ? " | no avanza" : "",
+  out->printf("Modo: %s | seguridad: %s%s%s%s%s\n", textoModo(mo), SeguridadBase::texto(es), bAd ? " | no avanza" : "",
                 sinFrente ? " (ultrasonido del frente sin eco)" : "", bAt ? " | no retrocede" : "",
                 batBaja ? " | BATERÍA BAJA" : "");
-  Serial.printf("Comando: v=%.3f m/s w=%.3f rad/s | odometría: x=%.3f y=%.3f th=%.1f° v=%.3f w=%.3f\n", va, wa, x, y,
+  out->printf("Comando: v=%.3f m/s w=%.3f rad/s | odometría: x=%.3f y=%.3f th=%.1f° v=%.3f w=%.3f\n", va, wa, x, y,
                 th * 57.2958f, vo, wo);
   for (int i = 0; i < 2; i++)
-    Serial.printf("Rueda %s: ref=%6.1f rpm w=%6.1f rpm u=%6.1f %% | falla: %s | saltos enc: %lu\n", LADO[i], r[i].wRef(),
+    out->printf("Rueda %s: ref=%6.1f rpm w=%6.1f rpm u=%6.1f %% | falla: %s | saltos enc: %lu\n", LADO[i], r[i].wRef(),
                   r[i].w(), r[i].u(), r[i].textoFalla(), (unsigned long)r[i].saltosEncoder());
-  Serial.printf("Ticks atrasados: %lu | watchdog: %lu ms\n", (unsigned long)atr, (unsigned long)wd);
+  out->printf("Ticks atrasados: %lu | watchdog: %lu ms\n", (unsigned long)atr, (unsigned long)wd);
 }
 
 void sensores() {
@@ -308,28 +315,28 @@ void sensores() {
   portENTER_CRITICAL(&mux);
   s = sens;
   portEXIT_CRITICAL(&mux);
-  if (imuOk && !s.imuValida) Serial.println("IMU: sin muestras recientes (la base no se mueve)");
+  if (imuOk && !s.imuValida) out->println("IMU: sin muestras recientes (la base no se mueve)");
   if (imuOk)
-    Serial.printf("IMU: acc=(%.2f, %.2f, %.2f) g gyro=(%.1f, %.1f, %.1f) °/s | roll=%.1f° pitch=%.1f°\n", s.acc.x, s.acc.y,
+    out->printf("IMU: acc=(%.2f, %.2f, %.2f) g gyro=(%.1f, %.1f, %.1f) °/s | roll=%.1f° pitch=%.1f°\n", s.acc.x, s.acc.y,
                   s.acc.z, s.gyro.x, s.gyro.y, s.gyro.z, s.roll, s.pitch);
   else
-    Serial.println("IMU: sin responder (revisar SDA 8 / SCL 9)");
+    out->println("IMU: sin responder (revisar SDA 8 / SCL 9)");
   UP501::Fix f;
   if (gps.readFix(f))
-    Serial.printf("GPS: fix lat=%.6f lon=%.6f sats=%u hdop=%.1f\n", f.latDeg, f.lonDeg, f.satsUsed, f.hdop);
+    out->printf("GPS: fix lat=%.6f lon=%.6f sats=%u hdop=%.1f\n", f.latDeg, f.lonDeg, f.satsUsed, f.hdop);
   else
-    Serial.printf("GPS: %s | sats en vista: %d\n", UP501::stateName(gps.state()), gps.satellitesInView());
-  Serial.print("Distancias [m]:");
+    out->printf("GPS: %s | sats en vista: %d\n", UP501::stateName(gps.state()), gps.satellitesInView());
+  out->print("Distancias [m]:");
   const char *nom[3] = {"frente", "izq", "der"};
   for (int k = 0; k < 3; k++) {
-    if (isfinite(s.dist[k])) Serial.printf(" %s=%.2f", nom[k], s.dist[k]);
-    else if (isinf(s.dist[k])) Serial.printf(" %s=libre", nom[k]);
-    else Serial.printf(" %s=SIN ECO", nom[k]);
+    if (isfinite(s.dist[k])) out->printf(" %s=%.2f", nom[k], s.dist[k]);
+    else if (isinf(s.dist[k])) out->printf(" %s=libre", nom[k]);
+    else out->printf(" %s=SIN ECO", nom[k]);
   }
-  Serial.printf("\nBumpers: FI=%d FD=%d AI=%d AD=%d | seta: %s | batería: ", s.bumper[0], s.bumper[1], s.bumper[2],
+  out->printf("\nBumpers: FI=%d FD=%d AI=%d AD=%d | seta: %s | batería: ", s.bumper[0], s.bumper[1], s.bumper[2],
                 s.bumper[3], s.seta ? "APRETADA" : "suelta");
-  if (isfinite(s.bateria)) Serial.printf("%.2f V\n", s.bateria);
-  else Serial.println("--");
+  if (isfinite(s.bateria)) out->printf("%.2f V\n", s.bateria);
+  else out->println("--");
 }
 
 bool leerNum(const char *s, float &v) {
@@ -363,7 +370,7 @@ void ejecutar(char *linea) {
     sensores();
   } else if (!strcmp(cmd, "v") || !strcmp(cmd, "w")) {
     if (!leerNum(a1, v1) || !leerNum(a2, v2) || !leerDuracion(a3, s)) {
-      Serial.printf(">> Uso: %s <%s> <%s> [segundos, hasta %.0f]\n", cmd, cmd[0] == 'v' ? "v m/s" : "rpm izq",
+      out->printf(">> Uso: %s <%s> <%s> [segundos, hasta %.0f]\n", cmd, cmd[0] == 'v' ? "v m/s" : "rpm izq",
                     cmd[0] == 'v' ? "w rad/s" : "rpm der", CMD_S_MAX);
       return;
     }
@@ -382,7 +389,7 @@ void ejecutar(char *linea) {
     portEXIT_CRITICAL(&mux);
   } else if (!strcmp(cmd, "d")) {
     if (!leerNum(a1, v1) || !leerNum(a2, v2)) {
-      Serial.println(">> Uso: d <pct izq> <pct der>");
+      out->println(">> Uso: d <pct izq> <pct der>");
       return;
     }
     v1 = constrain(v1, -JOG_DUTY_MAX, JOG_DUTY_MAX);
@@ -400,7 +407,7 @@ void ejecutar(char *linea) {
     cortarEnMs = 0;
     aceptado();
     portEXIT_CRITICAL(&mux);
-    Serial.println(cmd[0] == 'l' ? ">> Liberado (rueda libre)." : ">> Detenido.");
+    out->println(cmd[0] == 'l' ? ">> Liberado (rueda libre)." : ">> Detenido.");
   } else if (!strcmp(cmd, "r")) {
     bool ok;
     portENTER_CRITICAL(&mux);
@@ -415,10 +422,10 @@ void ejecutar(char *linea) {
       aceptado();
     }
     portEXIT_CRITICAL(&mux);
-    Serial.println(ok ? ">> Rearmado." : ">> No se puede rearmar: seta apretada, base no nivelada o IMU sin datos.");
+    out->println(ok ? ">> Rearmado." : ">> No se puede rearmar: seta apretada, base no nivelada o IMU sin datos.");
   } else if (!strcmp(cmd, "cal")) {
     if (!imuOk) {
-      Serial.println(">> IMU sin responder.");
+      out->println(">> IMU sin responder.");
       return;
     }
     portENTER_CRITICAL(&mux);
@@ -426,42 +433,42 @@ void ejecutar(char *linea) {
     portEXIT_CRITICAL(&mux);
     // Durante los 2 s no se lee la IMU (y la seguridad frena por "IMU sin datos") ni se atienden comandos
     if (!quieta) {
-      Serial.println(">> Detener la base (s) antes de calibrar.");
+      out->println(">> Detener la base (s) antes de calibrar.");
       return;
     }
-    Serial.println(">> Calibrando el giroscopio: no mover el robot 2 s...");
+    out->println(">> Calibrando el giroscopio: no mover el robot 2 s...");
     xSemaphoreTake(i2c, portMAX_DELAY);
     const MPU9250::CalStatus st = imu.calibrateGyro();
     xSemaphoreGive(i2c);
     const MPU9250::Vec3 b = imu.gyroBias();
-    Serial.printf(">> Calibración: %s | bias = (%.2f, %.2f, %.2f) °/s\n", MPU9250::calStatusName(st), b.x, b.y, b.z);
+    out->printf(">> Calibración: %s | bias = (%.2f, %.2f, %.2f) °/s\n", MPU9250::calStatusName(st), b.x, b.y, b.z);
   } else if (!strcmp(cmd, "odo0")) {
     portENTER_CRITICAL(&mux);
     odo.reiniciar();
     portEXIT_CRITICAL(&mux);
-    Serial.println(">> Odometría en cero.");
+    out->println(">> Odometría en cero.");
   } else if (!strcmp(cmd, "log")) {
     v1 = 20;
     if (a1 && (!leerNum(a1, v1) || v1 < 0 || v1 > 100)) {
-      Serial.println(">> Uso: log [hz 1..100] (log 0 apaga)");
+      out->println(">> Uso: log [hz 1..100] (log 0 apaga)");
       return;
     }
     portENTER_CRITICAL(&mux);
     logOn = v1 > 0;
     if (logOn) logCadaTicks = (uint32_t)(100.0f / v1 + 0.5f);
     portEXIT_CRITICAL(&mux);
-    if (v1 > 0) Serial.println("t_ms,v,w,rpm_ref_izq,rpm_izq,rpm_ref_der,rpm_der,u_izq,u_der,x,y,th");
+    if (v1 > 0) out->println("t_ms,v,w,rpm_ref_izq,rpm_izq,rpm_ref_der,rpm_der,u_izq,u_der,x,y,th");
   } else if (!strcmp(cmd, "wd")) {
     if (!leerNum(a1, v1) || v1 < 0 || v1 > 10000) {
-      Serial.println(">> Uso: wd <ms> (0 = apagado, hasta 10000)");
+      out->println(">> Uso: wd <ms> (0 = apagado, hasta 10000)");
       return;
     }
     portENTER_CRITICAL(&mux);
     seg.fijarWatchdog((uint32_t)v1);  // no cuenta como comando de movimiento: no renueva uno vencido
     portEXIT_CRITICAL(&mux);
-    Serial.printf(">> Watchdog: %.0f ms.\n", v1);
+    out->printf(">> Watchdog: %.0f ms.\n", v1);
   } else {
-    Serial.printf(">> Comando desconocido: %s (? para ayuda)\n", cmd);
+    out->printf(">> Comando desconocido: %s (? para ayuda)\n", cmd);
   }
 }
 
@@ -473,7 +480,7 @@ void leerSerial() {
   while (Serial.available()) {
     const char ch = (char)Serial.read();
     if (ch == '\n' || ch == '\r') {
-      if (descartando) Serial.println(">> Línea demasiado larga: descartada.");
+      if (descartando) out->println(">> Línea demasiado larga: descartada.");
       else if (lineaLen > 0 && hwOk) {
         linea[lineaLen] = '\0';
         ejecutar(linea);
@@ -487,6 +494,55 @@ void leerSerial() {
     }
   }
 }
+
+// ---------------------------------------------------------------- funciones para la capa micro-ROS
+
+#ifdef USAR_MICROROS
+// /cmd_vel: como `v`, sin duración propia (lo corta el watchdog de comandos si deja de llegar)
+void baseCmdVel(float v, float w) {
+  if (!hwOk || !isfinite(v) || !isfinite(w)) return;
+  portENTER_CRITICAL(&mux);
+  if (modo != Modo::Cmd) dif.fijarRampa(vAct, wAct);
+  vObj = v;
+  wObj = w;
+  modo = Modo::Cmd;
+  cortarEnMs = (millis() + (uint32_t)(CMD_S_MAX * 1000)) | 1;
+  aceptado();
+  portEXIT_CRITICAL(&mux);
+}
+
+void baseLeer(EstadoBase &e) {
+  portENTER_CRITICAL(&mux);
+  e.x = odo.x();
+  e.y = odo.y();
+  e.th = odo.theta();
+  e.v = odo.v();
+  e.w = odo.w();
+  e.acc[0] = sens.acc.x;
+  e.acc[1] = sens.acc.y;
+  e.acc[2] = sens.acc.z;
+  e.gyro[0] = sens.gyro.x;
+  e.gyro[1] = sens.gyro.y;
+  e.gyro[2] = sens.gyro.z;
+  e.imuValida = sens.imuValida;
+  for (int k = 0; k < 3; k++) e.dist[k] = sens.dist[k];
+  for (int k = 0; k < 4; k++) e.bumper[k] = sens.bumper[k];
+  e.seta = sens.seta;
+  e.bateria = sens.bateria;
+  e.seg = seg.estado();
+  e.bloqAdelante = seg.bloqueaAdelante();
+  e.bloqAtras = seg.bloqueaAtras();
+  e.frenteSinDato = seg.frenteSinDato();
+  e.bateriaBaja = seg.bateriaBaja();
+  for (int i = 0; i < 2; i++) {
+    e.rpm[i] = rueda[i].w();
+    e.u[i] = rueda[i].u();
+    e.falla[i] = rueda[i].falla();
+  }
+  e.modo = textoModo(modo);
+  portEXIT_CRITICAL(&mux);
+}
+#endif
 
 // ---------------------------------------------------------------- setup / loop
 
@@ -508,7 +564,11 @@ void setup() {
   for (int i = 0; i < 2; i++) rueda[i].configurar(CFG_RUEDA);
 
   Serial.begin(115200);
-  delay(1500);
+#ifdef USAR_MICROROS
+  rosBegin();  // desde acá, out es el búfer que se publica en /base/respuesta
+#else
+  delay(1500);  // dar tiempo a que abra el monitor
+#endif
 
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);
   const MPU9250::Status stImu = imu.begin(MPU9250::Dlpf::Hz20);
@@ -520,15 +580,15 @@ void setup() {
   colaLog = xQueueCreate(32, sizeof(Muestra));
   hwOk = okPwm && okEnc && okUs && i2c && colaLog;
 
-  Serial.println();
-  Serial.println("== firmware/base: tracción diferencial (2 × IBT-2 + 36GP-555), IMU, GPS, HC-SR04, bumpers, seta ==");
-  Serial.printf("Control a %.0f Hz en el núcleo 0. Base LIBERADA (puentes deshabilitados).\n", 1.0f / TS);
-  if (!okPwm) Serial.println("ERROR: no se pudo configurar el PWM de los IBT-2.");
-  if (!okEnc) Serial.println("ERROR: no se pudo configurar el PCNT de los encoders.");
-  if (!okUs) Serial.println("ERROR: no se pudieron configurar los HC-SR04.");
-  Serial.printf("IMU: %s (%s)\n", MPU9250::statusName(stImu), imu.modelName());
+  out->println();
+  out->println("== firmware/base: tracción diferencial (2 × IBT-2 + 36GP-555), IMU, GPS, HC-SR04, bumpers, seta ==");
+  out->printf("Control a %.0f Hz en el núcleo 0. Base LIBERADA (puentes deshabilitados).\n", 1.0f / TS);
+  if (!okPwm) out->println("ERROR: no se pudo configurar el PWM de los IBT-2.");
+  if (!okEnc) out->println("ERROR: no se pudo configurar el PCNT de los encoders.");
+  if (!okUs) out->println("ERROR: no se pudieron configurar los HC-SR04.");
+  out->printf("IMU: %s (%s)\n", MPU9250::statusName(stImu), imu.modelName());
   if (!hwOk) {
-    Serial.println("Comandos DESHABILITADOS hasta corregir el error y reiniciar.");
+    out->println("Comandos DESHABILITADOS hasta corregir el error y reiniciar.");
     return;
   }
   ayuda();
@@ -539,7 +599,11 @@ void setup() {
 }
 
 void loop() {
+#ifdef USAR_MICROROS
+  rosLoop();
+#else
   leerSerial();
+#endif
   gps.update();
 
   static uint32_t batMs = 0;
@@ -559,19 +623,19 @@ void loop() {
   const ControlArticulacion::Falla f[2] = {rueda[0].falla(), rueda[1].falla()};
   portEXIT_CRITICAL(&mux);
   if (es != previo) {
-    Serial.printf(">> Seguridad: %s%s\n", SeguridadBase::texto(es),
+    out->printf(">> Seguridad: %s%s\n", SeguridadBase::texto(es),
                   (es == SeguridadBase::Estado::Emergencia || es == SeguridadBase::Estado::Vuelco) ? " (r para rearmar)" : "");
     previo = es;
   }
   for (int i = 0; i < 2; i++) {
     if (f[i] != fPrev[i] && f[i] != ControlArticulacion::Falla::Ninguna)
-      Serial.printf(">> Rueda %s: FALLA %s. Base detenida; r para borrar.\n", LADO[i], ControlArticulacion::texto(f[i]));
+      out->printf(">> Rueda %s: FALLA %s. Base detenida; r para borrar.\n", LADO[i], ControlArticulacion::texto(f[i]));
     fPrev[i] = f[i];
   }
 
   Muestra m;
   while (colaLog && xQueueReceive(colaLog, &m, 0) == pdTRUE)
-    Serial.printf("%lu,%.3f,%.3f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.3f,%.3f,%.3f\n", (unsigned long)m.tMs, m.vRef, m.wRef,
+    out->printf("%lu,%.3f,%.3f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.3f,%.3f,%.3f\n", (unsigned long)m.tMs, m.vRef, m.wRef,
                   m.rpmRef[0], m.rpm[0], m.rpmRef[1], m.rpm[1], m.u[0], m.u[1], m.x, m.y, m.th);
 
   delay(1);
