@@ -47,6 +47,13 @@ documentación. Responder en castellano.
 - **`docs/CONEXIONES.md` + `docs/conexiones.html`** (2026-09-27): diagrama de conexiones completo. Pines de la base
   (S3) propuestos: tracción PWM 4/5 y 6/7, EN común 38, encoders 15/16 y 17/18, IMU 8/9, GPS 41/42, TRIG común 10,
   ECHO 11/12/13, bumpers 14/21/39/40, seta 47, batería ADC 1 (19/19 GPIO). Luz y buzzer en la Pi (GPIO 17/27).
-- **Pendiente general:** `firmware/base` (ESP32-S3), resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
+- **`firmware/base`** (2026-09-27): ESP32-S3 con tracción diferencial (PI de velocidad por rueda reutilizando
+  `ControlArticulacion`, movido a `firmware/lib`), rampa, odometría, IMU/GPS (drivers copiados de
+  `~/pruebas-esp32`), 3 HC-SR04 (`firmware/lib/HCSR04`, TRIG común, ECHO por interrupción) y seguridad local
+  (`lib/BaseLogica/SeguridadBase`: seta NC enclavada, vuelco, bumpers, distancia al frente, watchdog). Comandos por
+  serial. 16 pruebas OK en la PC, compila sin warnings. **No probado en placa.** Pendiente: `MEDIR` en
+  `include/base_config.h` (sobre todo **qué motor de tracción es**: notas = 36GP-555 53 rpm, inventario = DC 895
+  planetario 53 rpm), capa micro-ROS.
+- **Pendiente general:** resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
   (riesgo de color, ver `docs/ARQUITECTURA.md` §6), preguntas a la cátedra (§11).
 - **Pendiente en `firmware/lib/EncoderPCNT`:** salto falso de 32 000 cuentas (el control del brazo lo filtra).

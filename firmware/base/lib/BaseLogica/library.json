@@ -1,0 +1,6 @@
+{
+  "name": "BaseLogica",
+  "version": "0.1.0",
+  "description": "Base diferencial sin Arduino: cinemática, rampa, odometría y reglas de seguridad (seta, vuelco, bumpers, distancia, watchdog)",
+  "platforms": ["espressif32", "native"]
+}

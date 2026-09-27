@@ -128,7 +128,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Robot recolector de limones · 2026S2</div>
     <h1>Cableado de Arturito R2D2</h1>
-    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. El brazo sale de <code>firmware/brazo/include/pins.h</code>; la base es la propuesta de este documento.</p>
+    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Los pines salen de <code>firmware/brazo/include/pins.h</code> y <code>firmware/base/include/pins.h</code>; la conexión de la Pi es una propuesta.</p>
   </header>
 
   <section aria-labelledby="h-general">
@@ -239,7 +239,7 @@
           <g>
             <rect class="box safety" x="16" y="604" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="625">Seta de emergencia</text>
-            <text class="t-sub" x="28" y="644">contacto auxiliar a GND</text>
+            <text class="t-sub" x="28" y="644">contacto auxiliar NC a GND</text>
             <path class="w safety" d="M226 630 H380"></path>
             <g class="lbl safety"><text class="t-pin" x="303" y="623" text-anchor="middle">47</text></g>
           </g>
@@ -398,7 +398,7 @@
     <div class="boards">
       <article class="boardcard">
         <h3>ESP32-S3 · base</h3>
-        <div class="meta">Freenove N16R8 · USB nativo <span class="mono">/dev/ttyACM0</span> · propuesta</div>
+        <div class="meta">Freenove N16R8 · USB nativo <span class="mono">/dev/ttyACM0</span> · de <span class="mono">firmware/base/include/pins.h</span></div>
         <div class="tablewrap"><table>
           <thead><tr><th>GPIO</th><th>Conecta a</th><th>Nota</th></tr></thead>
           <tbody>
@@ -412,7 +412,7 @@
             <tr><td class="gpio"><span class="tag gpio"></span>10</td><td>TRIG de los 3 HC-SR04</td><td>disparo común</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO frente · izq. · der.</td><td>divisor 1 k / 2 k</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39 · 40</td><td>Bumpers</td><td>NA a GND</td></tr>
-            <tr><td class="gpio"><span class="tag safety"></span>47</td><td>Contacto auxiliar de la seta</td><td>a GND, pull-up</td></tr>
+            <tr><td class="gpio"><span class="tag safety"></span>47</td><td>Contacto auxiliar NC de la seta</td><td>HIGH = apretada</td></tr>
             <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería</td><td>ADC1 canal 0</td></tr>
           </tbody>
         </table></div>
@@ -471,7 +471,7 @@
     </ul>
   </section>
 
-  <footer>Fuente de verdad del brazo: <span class="mono">firmware/brazo/include/pins.h</span>. Los pines de la base y la Pi son una propuesta del 27/09/2026 y pasan a <span class="mono">firmware/base/include/pins.h</span> cuando se escriba ese firmware. Tablas en <span class="mono">docs/CONEXIONES.md</span>.</footer>
+  <footer>Fuente de verdad: <span class="mono">firmware/brazo/include/pins.h</span> y <span class="mono">firmware/base/include/pins.h</span>. La conexión de la Pi es una propuesta. Nada está probado en placa todavía. Tablas en <span class="mono">docs/CONEXIONES.md</span>.</footer>
 </div>
 
 <script>

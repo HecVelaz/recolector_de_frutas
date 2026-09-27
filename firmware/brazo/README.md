@@ -13,7 +13,7 @@ Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valor
 
 | Archivo | Qué tiene |
 |---|---|
-| `lib/ControlArticulacion/` | Control de una articulación, **sin Arduino**: cascada, anti-windup, zona muerta, límites, atasco, descarte de saltos del encoder |
+| `../lib/ControlArticulacion/` | Control de una articulación (compartido con la base), **sin Arduino**: cascada, anti-windup, zona muerta, límites, atasco, descarte de saltos del encoder |
 | `include/brazo_config.h` | Parámetros por articulación (encoder, transmisión, límites de la E4, modelo y PI de la E5), pose de cero, servos |
 | `include/pins.h` | Pines (usa los 15 GPIO de uso general de la placa) |
 | `src/main.cpp` | Drivers, tarea de control, comandos serie, homing, watchdog, CSV |

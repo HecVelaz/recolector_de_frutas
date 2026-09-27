@@ -1,8 +1,8 @@
 # Conexiones del robot
 
 Versión 0.1 — 27/09/2026. Diagrama interactivo: `docs/conexiones.html` (abrir en el navegador).
-El brazo sale de `firmware/brazo/include/pins.h`. La base y la Pi son una **propuesta**: pasan a
-`firmware/base/include/pins.h` cuando se escriba ese firmware.
+Los pines salen de `firmware/brazo/include/pins.h` y `firmware/base/include/pins.h` (fuente de verdad). La
+conexión de la Pi es una propuesta. Nada de esto está probado en placa todavía.
 
 ```mermaid
 flowchart LR
@@ -19,7 +19,7 @@ flowchart LR
   WR --> PZ[Pinza: 2 servos]
 ```
 
-## ESP32-S3 · base (propuesta)
+## ESP32-S3 · base
 
 Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa los 19 GPIO de uso general: no queda reserva.
 
@@ -35,7 +35,7 @@ Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa los 19 GPIO de uso general: no qu
 | 10 | TRIG de los 3 HC-SR04 | disparo común |
 | 11 · 12 · 13 | ECHO frente · izquierda · derecha | divisor 1 k / 2 k |
 | 14 · 21 · 39 · 40 | Bumpers | NA a GND, pull-up interno |
-| 47 | Contacto auxiliar de la seta | a GND, pull-up |
+| 47 | Contacto auxiliar **NC** de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
 | 1 | Divisor de batería 100 k / 27 k | ADC1 canal 0 |
 
 ## ESP32-WROOM-32D · brazo
