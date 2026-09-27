@@ -5,6 +5,8 @@ documentación. Responder en castellano.
 
 ## Convenciones
 
+- **ROS 2:** Jazzy, workspace en `ros2_ws/` (paquetes `ament_python`), lógica sin ROS en módulos aparte con
+  pruebas `pytest` (`colcon test`). Unidades SI en los tópicos (m, rad), marcos explícitos en `frame_id`.
 - **Firmware:** PlatformIO + Arduino (core 2.0.17) en `~/.platformio/penv/bin/pio`. Un proyecto por placa en
   `firmware/<parte>/`, con `include/pins.h` (único lugar de los GPIO), `include/<parte>_config.h`, `src/main.cpp`,
   `README.md` (conexiones, uso, pendientes, tabla de resultados) y pruebas en la PC (`test/`, `pio test -e native`).
@@ -37,6 +39,11 @@ documentación. Responder en castellano.
   por Codex (10 hallazgos aplicados). **No probado en placa.** Pendiente: todo lo marcado `MEDIR` en
   `include/brazo_config.h`, pull-down de 10 kΩ en los EN, primera prueba en placa (secuencia en su README) y capa
   micro-ROS.
-- **Pendiente general:** `firmware/base` (ESP32-S3), `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
+- **`ros2_ws/src/brazo_ik`** (2026-09-27): cinemática inversa de la E4 portada a Python puro (`cinematica.py`, sin
+  ROS ni numpy) + nodo `brazo_ik` (`/brazo/objetivo` PointStamped [m, marco brazo_base] -> `/brazo/joint_cmd`
+  JointState [rad] y `/brazo/ik_estado`). 5 pruebas OK (ejemplo numérico de la E4 exacto, 2000 idas y vueltas).
+  Probado en la notebook. Ojo al probar: `kill` del `ros2 run` deja vivo el proceso Python del nodo
+  (`pkill -f lib/brazo_ik/nodo_ik`). La geometría y los límites deben coincidir con `firmware/brazo`.
+- **Pendiente general:** `firmware/base` (ESP32-S3), resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
   (riesgo de color, ver `docs/ARQUITECTURA.md` §6), preguntas a la cátedra (§11).
 - **Pendiente en `firmware/lib/EncoderPCNT`:** salto falso de 32 000 cuentas (el control del brazo lo filtra).
