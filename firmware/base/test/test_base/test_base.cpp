@@ -82,7 +82,8 @@ void test_odometria_circulo_completo_vuelve() {
 
 // ---------------------------------------------------------------- seguridad
 
-static EntradasSeguridad tranquilo() { return {{false, false, false, false}, NAN, false, 0, 0, 0, 12.5f}; }
+// Todo en orden: nada al frente (INFINITY = eco largo), IMU con datos, batería cargada
+static EntradasSeguridad tranquilo() { return {{false, false, false, false}, INFINITY, false, 0, 0, 0, 12.5f, true}; }
 
 void test_seta_enclava_hasta_rearmar() {
   SeguridadBase s(CFG_SEG);
@@ -118,17 +119,19 @@ void test_vuelco_enclava() {
   TEST_ASSERT_TRUE(s.rearmar(in));
 }
 
-void test_bumper_delantero_deja_retroceder_y_girar() {
+void test_bumper_delantero_solo_deja_retroceder_recto() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
   in.bumper[1] = true;
-  float v = 0.1f, w = 0.5f;
+  float v = 0.1f, w = 0.5f;  // avanzar girando: una rueda seguiría empujando contra el objeto
   TEST_ASSERT_TRUE(s.filtrar(in, v, w));
   TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
-  TEST_ASSERT_EQUAL_FLOAT(0.5f, w);
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, w);
   v = -0.1f;
+  w = 0.5f;
   s.filtrar(in, v, w);
   TEST_ASSERT_EQUAL_FLOAT(-0.1f, v);
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, w);
 }
 
 void test_bumper_trasero_no_deja_retroceder() {
@@ -148,14 +151,62 @@ void test_obstaculo_al_frente() {
   v = 0.2f;
   s.filtrar(in, v, w);
   TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
-  in.distFrente = 0.35f;  // a mitad de camino entre 0,20 y 0,50: la mitad de la velocidad
+  in.distFrente = 0.35f;  // a mitad de camino entre 0,20 y 0,50: tope = la mitad de vMax
   v = 0.2f;
   s.filtrar(in, v, w);
-  TEST_ASSERT_FLOAT_WITHIN(1e-4f, 0.1f, v);
+  TEST_ASSERT_FLOAT_WITHIN(1e-4f, CFG_SEG.vMax / 2, v);
+  v = 0.05f;  // por debajo del tope: no se toca
+  s.filtrar(in, v, w);
+  TEST_ASSERT_FLOAT_WITHIN(1e-6f, 0.05f, v);
   v = -0.2f;  // retroceder con un obstáculo adelante: libre
   in.distFrente = 0.10f;
   s.filtrar(in, v, w);
   TEST_ASSERT_EQUAL_FLOAT(-0.2f, v);
+}
+
+void test_tope_por_cercania_no_se_acumula_con_la_rampa() {
+  // Como en la tarea: rampa -> seguridad -> fijarRampa, muchos pasos a 0,35 m del obstáculo
+  SeguridadBase s(CFG_SEG);
+  Diferencial d(CFG_DIF);
+  EntradasSeguridad in = tranquilo();
+  in.distFrente = 0.35f;
+  float v = 0, w = 0;
+  for (int n = 0; n < 300; n++) {
+    d.rampa(0.2f, 0.0f, TS, v, w);
+    s.filtrar(in, v, w);
+    d.fijarRampa(v, w);
+  }
+  TEST_ASSERT_FLOAT_WITHIN(1e-4f, CFG_SEG.vMax / 2, v);  // llega al tope, no a ~0
+}
+
+void test_frente_sin_eco_no_deja_avanzar() {
+  SeguridadBase s(CFG_SEG);
+  EntradasSeguridad in = tranquilo();
+  in.distFrente = NAN;  // sensor desconectado o todavía sin medir
+  float v = 0.1f, w = 0.3f;
+  TEST_ASSERT_TRUE(s.filtrar(in, v, w));
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
+  TEST_ASSERT_TRUE(s.frenteSinDato());
+  TEST_ASSERT_EQUAL_FLOAT(0.3f, w);  // girar en el lugar sí
+  v = -0.1f;
+  s.filtrar(in, v, w);
+  TEST_ASSERT_EQUAL_FLOAT(-0.1f, v);
+}
+
+void test_sin_imu_no_se_mueve() {
+  SeguridadBase s(CFG_SEG);
+  EntradasSeguridad in = tranquilo();
+  in.imuValida = false;
+  float v = 0.1f, w = 0.3f;
+  TEST_ASSERT_FALSE(s.filtrar(in, v, w));
+  TEST_ASSERT_EQUAL(SeguridadBase::Estado::SinImu, s.estado());
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, w);
+  TEST_ASSERT_FALSE(s.rearmar(in));
+  in.imuValida = true;  // vuelven los datos: sigue sola
+  v = 0.1f;
+  TEST_ASSERT_TRUE(s.filtrar(in, v, w));
+  TEST_ASSERT_EQUAL(SeguridadBase::Estado::Ok, s.estado());
 }
 
 void test_watchdog_de_comandos() {
@@ -221,9 +272,12 @@ int main() {
   RUN_TEST(test_odometria_circulo_completo_vuelve);
   RUN_TEST(test_seta_enclava_hasta_rearmar);
   RUN_TEST(test_vuelco_enclava);
-  RUN_TEST(test_bumper_delantero_deja_retroceder_y_girar);
+  RUN_TEST(test_bumper_delantero_solo_deja_retroceder_recto);
   RUN_TEST(test_bumper_trasero_no_deja_retroceder);
   RUN_TEST(test_obstaculo_al_frente);
+  RUN_TEST(test_tope_por_cercania_no_se_acumula_con_la_rampa);
+  RUN_TEST(test_frente_sin_eco_no_deja_avanzar);
+  RUN_TEST(test_sin_imu_no_se_mueve);
   RUN_TEST(test_watchdog_de_comandos);
   RUN_TEST(test_bateria_baja_avisa_sin_frenar);
   RUN_TEST(test_rueda_sigue_la_consigna);

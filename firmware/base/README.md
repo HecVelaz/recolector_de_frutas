@@ -5,8 +5,8 @@ El control corre a 100 Hz en una tarea del núcleo 0; los comandos llegan por el
 capa de comandos se cambia por micro-ROS (`/cmd_vel` → `/odom`, `/imu/data_raw`, `/range/*`, `/bumpers`,
 `/battery`, ver `docs/ARQUITECTURA.md`), sin tocar la lógica.
 
-**Estado:** compila sin warnings y las 16 pruebas de la lógica pasan en la PC (`pio test -e native`). **No
-probado en placa.** Los valores marcados `MEDIR` en `include/base_config.h` son estimaciones.
+**Estado:** compila sin warnings y las 19 pruebas de la lógica pasan en la PC (`pio test -e native`). Revisado
+por Codex (9 hallazgos, aplicados). **No probado en placa.** Los valores marcados `MEDIR` en `include/base_config.h` son estimaciones.
 
 ## Estructura
 
@@ -19,7 +19,7 @@ probado en placa.** Los valores marcados `MEDIR` en `include/base_config.h` son 
 | `../lib/MPU9250`, `../lib/UP501` | IMU y GPS (copiados de `~/pruebas-esp32`, probados en placa) |
 | `include/pins.h` | Pines, según `docs/CONEXIONES.md` |
 | `include/base_config.h` | Motor, geometría, seguridad y límites de puesta en marcha |
-| `test/test_base/` | 16 pruebas: cinemática, odometría (recta, giro, círculo), cada regla de seguridad, lazo de una rueda |
+| `test/test_base/` | 19 pruebas: cinemática, odometría (recta, giro, círculo), cada regla de seguridad, tope por cercanía con la rampa, lazo de una rueda |
 
 ## Seguridad (se decide en la S3, sin esperar a la Pi)
 
@@ -27,15 +27,20 @@ probado en placa.** Los valores marcados `MEDIR` en `include/base_config.h` son 
 |---|---|---|
 | Seta apretada (o cable cortado: contacto NC) | EMERGENCIA: puentes deshabilitados (EN = 0) | Soltar la seta y `r` |
 | Roll o pitch > 25° | VUELCO: frena | Nivelar la base y `r` |
-| Bumper delantero / trasero | No avanza / no retrocede; girar en el lugar sí | Solo, al soltarse |
+| IMU sin muestras por más de 200 ms (o sin responder al arrancar) | No se mueve: sin IMU no se puede vigilar el vuelco | Solo, al volver los datos |
+| Bumper delantero / trasero | Solo se permite alejarse **en línea recta** (sin giro) | Solo, al soltarse |
+| Ultrasonido del frente sin eco (desconectado o sin medir) | No avanza; retroceder y girar sí | Solo, al volver el eco |
 | Obstáculo al frente < 0,20 m | No avanza | Solo |
-| Obstáculo al frente entre 0,20 y 0,50 m | Avance escalado linealmente | Solo |
-| Sin comandos por más de `wd` ms | Frena | Solo, con el próximo comando |
+| Obstáculo al frente entre 0,20 y 0,50 m | Tope de velocidad que baja linealmente hasta 0 | Solo |
+| Sin comandos por más de `wd` ms | Frena y **anula** el comando vigente | Con un comando nuevo |
+| Cualquier recorte en lazo abierto (`d`) | Corta el lazo abierto | Con un comando nuevo |
 | Batería < 11 V | Aviso (no frena) | — |
 | Rueda con atasco o saltos del encoder | Base detenida | `r` |
 
-Además: watchdog de tareas del ESP32 (si el control se cuelga, la placa se reinicia) y, al arrancar, la base
-queda liberada hasta el primer comando.
+Además: watchdog de tareas del ESP32 (si el control se cuelga, la placa se reinicia); al arrancar, la base queda
+liberada hasta el primer comando; al detenerse, la rampa vuelve a cero (el próximo comando no hereda el anterior);
+si una rueda falla, las dos se frenan en el mismo paso; `cal` solo con la base detenida. Un ECHO que responde pero
+sin obstáculo al alcance cuenta como libre; ningún pulso de ECHO cuenta como sensor sin dato.
 
 ## Uso
 
@@ -70,7 +75,7 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
-| 2026-09-27 | `pio test -e native` (16 pruebas) | OK |
+| 2026-09-27 | `pio test -e native` (19 pruebas, después de la revisión de Codex) | OK |
 | 2026-09-27 | `pio run -e esp32s3`: RAM 7,0 %, flash 5,5 %, 0 warnings | OK |
 | | Sentido de ruedas y encoders | — |
 | | Lazo de velocidad de las ruedas en placa | — |

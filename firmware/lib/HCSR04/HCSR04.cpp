@@ -47,10 +47,13 @@ void HCSR04::disparar() {
     Canal &c = canal_[i];
     portENTER_CRITICAL(&mux_);
     const uint32_t ancho = c.anchoUs;
+    const bool sigueAlto = c.subidaUs != 0;  // el eco todavía no bajó: pulso larguísimo
     c.anchoUs = 0;
     c.subidaUs = 0;
     portEXIT_CRITICAL(&mux_);
-    c.metros = (ancho > 0 && ancho < ECO_MAX_US) ? ancho * 1e-6f * VEL_SONIDO / 2.0f : NAN;
+    if (ancho > 0 && ancho < ECO_MAX_US) c.metros = ancho * 1e-6f * VEL_SONIDO / 2.0f;
+    else if (ancho >= ECO_MAX_US || sigueAlto) c.metros = INFINITY;  // hubo eco, pero sin obstáculo al alcance
+    else c.metros = NAN;  // ningún pulso: el sensor no respondió
   }
   digitalWrite(pinTrig_, HIGH);
   delayMicroseconds(10);

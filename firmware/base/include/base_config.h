@@ -47,16 +47,18 @@ constexpr ConfigDiferencial CFG_DIF = {
 // Seguridad (H5, H8, H9, N3)
 constexpr ConfigSeguridad CFG_SEG = {
     0.20f,  // distancia de parada al frente [m]
-    0.50f,  // desde acá se reduce la velocidad [m]
+    0.50f,  // desde acá el avance tiene un tope que baja linealmente hasta 0 [m]
     25.0f,  // roll o pitch de vuelco [°]
     0,      // watchdog de comandos [ms]: 0 al arrancar (comandos a mano); con la Pi, wd 300
     11.0f,  // batería baja [V] (MEDIR según la química de la batería)
+    0.25f,  // tope de avance lejos de obstáculos [m/s] (= vMax de CFG_DIF)
 };
 
 // Periodos (en pasos de 10 ms)
 constexpr int IMU_CADA = 2;  // 50 Hz
 constexpr int US_CADA = 7;   // 70 ms entre disparos de los HC-SR04
 constexpr float IMU_FILTRO = 0.1f;  // pasa bajos de roll y pitch (a 50 Hz: ~0,2 s)
+constexpr uint32_t IMU_VALIDA_MS = 200;  // sin muestras de la IMU por más de esto, la base no se mueve
 
 // Batería: divisor 100 k / 27 k
 constexpr float BATERIA_DIVISOR = (100.0f + 27.0f) / 27.0f;
@@ -68,7 +70,7 @@ constexpr uint8_t PWM_BITS = 10;
 
 // Comandos manuales. Valores de PUESTA EN MARCHA.
 constexpr float CMD_S_DEF = 1.0f;     // duración por defecto de v y w [s]
-constexpr float CMD_S_MAX = 5.0f;
+constexpr float CMD_S_MAX = 3.0f;  // también acota cuánto sigue andando si se corta el USB sin watchdog
 constexpr uint32_t JOG_MS = 300;      // d se corta solo si no se repite
 constexpr float JOG_DUTY_MAX = 40.0f;
 

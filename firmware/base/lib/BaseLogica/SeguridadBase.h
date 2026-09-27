@@ -8,25 +8,27 @@
 
 struct ConfigSeguridad {
   float distParada;    // m: obstáculo al frente más cerca que esto -> no avanza
-  float distLenta;     // m: entre distParada y esto, el avance se escala linealmente
+  float distLenta;     // m: entre distParada y esto, la velocidad de avance tiene un tope que baja linealmente
   float inclMax;       // grados de roll o pitch que se consideran vuelco
   uint32_t sinCmdMs;   // watchdog de comandos: sin comandos por más de esto -> parada (0 = apagado)
   float bateriaMin;    // V: por debajo, aviso de batería baja (no detiene)
+  float vMax;          // m/s: tope de avance lejos de obstáculos (base del tope por cercanía)
 };
 
 struct EntradasSeguridad {
   bool bumper[4];      // frente-izq, frente-der, atrás-izq, atrás-der (true = apretado)
-  float distFrente;    // m; NAN = sin eco (nada a la vista o sensor sin respuesta)
+  float distFrente;    // m; INFINITY = nada a la vista; NAN = sensor sin eco (desconectado o sin medir)
   bool seta;           // true = seta apretada (o cable cortado)
   float roll, pitch;   // grados
   uint32_t msSinCmd;   // tiempo desde el último comando aceptado
   float bateria;       // V; NAN = sin medir
+  bool imuValida;      // hay una muestra de la IMU reciente (sin ella no se puede vigilar el vuelco)
 };
 
 class SeguridadBase {
  public:
   // EMERGENCIA (seta) y VUELCO quedan enclavados: se salen solo con rearmar() y la causa ya despejada.
-  enum class Estado : uint8_t { Ok, Emergencia, Vuelco, SinComandos };
+  enum class Estado : uint8_t { Ok, Emergencia, Vuelco, SinComandos, SinImu };
 
   explicit SeguridadBase(const ConfigSeguridad &cfg) : cfg_(cfg) {}
 
@@ -43,6 +45,7 @@ class SeguridadBase {
   Estado estado() const { return estado_; }
   bool bloqueaAdelante() const { return bloqAdelante_; }
   bool bloqueaAtras() const { return bloqAtras_; }
+  bool frenteSinDato() const { return frenteSinDato_; }
   bool bateriaBaja() const { return bateriaBaja_; }
   bool deshabilitar() const { return estado_ == Estado::Emergencia; }  // puentes en bajo (EN = 0)
   static const char *texto(Estado e);
@@ -50,5 +53,5 @@ class SeguridadBase {
  private:
   ConfigSeguridad cfg_;
   Estado estado_ = Estado::Ok;
-  bool bloqAdelante_ = false, bloqAtras_ = false, bateriaBaja_ = false;
+  bool bloqAdelante_ = false, bloqAtras_ = false, bateriaBaja_ = false, frenteSinDato_ = false;
 };

@@ -51,7 +51,10 @@ documentación. Responder en castellano.
   `ControlArticulacion`, movido a `firmware/lib`), rampa, odometría, IMU/GPS (drivers copiados de
   `~/pruebas-esp32`), 3 HC-SR04 (`firmware/lib/HCSR04`, TRIG común, ECHO por interrupción) y seguridad local
   (`lib/BaseLogica/SeguridadBase`: seta NC enclavada, vuelco, bumpers, distancia al frente, watchdog). Comandos por
-  serial. 16 pruebas OK en la PC, compila sin warnings. **No probado en placa.** Pendiente: `MEDIR` en
+  serial. 19 pruebas OK en la PC, compila sin warnings. Revisión de Codex (9 hallazgos, aplicados): sin IMU
+  reciente no se mueve, bumper solo deja alejarse recto, ultrasonido del frente sin eco = no avanza (INFINITY = libre),
+  cercanía como tope de velocidad (no se acumula con la rampa), rampa a cero al parar, `d` cortado ante cualquier
+  recorte, watchdog vencido anula el comando, `cal` solo detenido, `v`/`w` hasta 3 s. **No probado en placa.** Pendiente: `MEDIR` en
   `include/base_config.h` (sobre todo **qué motor de tracción es**: notas = 36GP-555 53 rpm, inventario = DC 895
   planetario 53 rpm), capa micro-ROS.
 - **Pendiente general:** resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO

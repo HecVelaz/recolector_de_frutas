@@ -63,8 +63,9 @@ struct Sensores {
   float roll, pitch; // grados
   MPU9250::Vec3 acc, gyro;
   float bateria;     // V
+  bool imuValida;    // muestra de la IMU de hace menos de IMU_VALIDA_MS
 };
-Sensores sens = {{false, false, false, false}, false, {NAN, NAN, NAN}, 0, 0, {0, 0, 0}, {0, 0, 0}, NAN};
+Sensores sens = {{false, false, false, false}, false, {NAN, NAN, NAN}, 0, 0, {0, 0, 0}, {0, 0, 0}, NAN, false};
 float vAct = 0, wAct = 0;  // comando después de rampa y seguridad
 
 // CSV del comando log
@@ -104,6 +105,8 @@ void tareaControl(void *) {
   int64_t tPrevUs = esp_timer_get_time();
   int64_t cPrev[2] = {cuentas(0), cuentas(1)};
   float roll = 0, pitch = 0;
+  bool hayImu = false;       // ya hubo al menos una muestra válida
+  uint32_t imuUltimaMs = 0;  // millis() de la última muestra válida
   uint32_t tick = 0;
   for (;;) {
     const bool atrasado = xTaskGetTickCount() - ultimo >= periodo;
@@ -131,8 +134,11 @@ void tareaControl(void *) {
       if (imuNueva) {
         const float r = atan2f(acc.y, acc.z) * 57.2958f;
         const float p = atan2f(-acc.x, sqrtf(acc.y * acc.y + acc.z * acc.z)) * 57.2958f;
-        roll += IMU_FILTRO * (r - roll);
-        pitch += IMU_FILTRO * (p - pitch);
+        // La primera muestra fija el filtro (si no, arrancaría desde 0° y tardaría en ver una base ya inclinada)
+        roll = hayImu ? roll + IMU_FILTRO * (r - roll) : r;
+        pitch = hayImu ? pitch + IMU_FILTRO * (p - pitch) : p;
+        hayImu = true;
+        imuUltimaMs = millis();
       }
     }
     if (tick % US_CADA == 0) ultrasonido.disparar();
@@ -150,6 +156,7 @@ void tareaControl(void *) {
     for (int k = 0; k < 3; k++) sens.dist[k] = ultrasonido.distancia(k);
     sens.roll = roll;
     sens.pitch = pitch;
+    sens.imuValida = hayImu && ahora - imuUltimaMs < IMU_VALIDA_MS;
     if (imuNueva) {
       sens.acc = acc;
       sens.gyro = gyro;
@@ -161,19 +168,25 @@ void tareaControl(void *) {
       if (modo != Modo::Libre) modo = Modo::Parado;
     }
 
-    // Comando pedido -> (v, w) con rampa (en Ruedas y Duty se estima para que la seguridad lo pueda recortar)
+    // Comando pedido -> (v, w) con rampa (en Ruedas y Duty se estima para que la seguridad lo pueda recortar).
+    // Parado o libre: la rampa vuelve a cero en el acto, para que el próximo comando no herede el anterior.
     float v = 0, w = 0;
     switch (modo) {
       case Modo::Cmd: dif.rampa(vObj, wObj, dt, v, w); break;
       case Modo::Ruedas: dif.cmdDesde(rpmObj, v, w); break;
       case Modo::Duty: dif.cmdDesde({dutyObj[0] * CFG_RUEDA.K, dutyObj[1] * CFG_RUEDA.K}, v, w); break;
-      default: dif.rampa(0, 0, dt, v, w); break;
+      default: dif.reiniciarRampa(); break;
     }
-    const float vPedida = v;
+    const float vPedida = v, wPedida = w;
     const EntradasSeguridad in = {{bump[0], bump[1], bump[2], bump[3]}, sens.dist[0], seta, roll, pitch,
-                                  ahora - ultimoCmdMs, sens.bateria};
+                                  ahora - ultimoCmdMs, sens.bateria, sens.imuValida};
     const bool puede = seg.filtrar(in, v, w);
     if (modo == Modo::Cmd) dif.fijarRampa(v, w);
+    // Vencido el watchdog, el comando viejo se anula: no vuelve solo cuando llega otro mensaje
+    if (seg.estado() == SeguridadBase::Estado::SinComandos && modo != Modo::Libre) {
+      modo = Modo::Parado;
+      cortarEnMs = 0;
+    }
 
     // Una rueda con falla (atasco, encoder) detiene la base entera
     const bool falla = rueda[0].falla() != ControlArticulacion::Falla::Ninguna ||
@@ -183,10 +196,11 @@ void tareaControl(void *) {
     if (!puede || falla || modo == Modo::Parado || modo == Modo::Libre) {
       rueda[0].liberar();
       rueda[1].liberar();
+      v = w = 0.0f;
     } else if (modo == Modo::Duty) {
-      // Lazo abierto: si la seguridad anuló el avance en ese sentido, se corta
-      const bool anulado = (vPedida != 0.0f && v == 0.0f);
-      for (int i = 0; i < 2; i++) rueda[i].duty(anulado ? 0.0f : dutyObj[i]);
+      // Lazo abierto: con cualquier recorte de la seguridad (contacto, obstáculo, tope por cercanía) se corta
+      const bool recortado = v != vPedida || w != wPedida;
+      for (int i = 0; i < 2; i++) rueda[i].duty(recortado ? 0.0f : dutyObj[i]);
     } else {
       const Ruedas r = dif.ruedasDesde(v, w);
       rueda[0].velocidad(r.izq);
@@ -196,6 +210,9 @@ void tareaControl(void *) {
     wAct = w;
 
     for (int i = 0; i < 2; i++) u[i] = rueda[i].paso(c[i], dt);
+    // Si una rueda entró en falla en este mismo paso, la otra también se frena ya (no un ciclo después)
+    if (rueda[0].falla() != ControlArticulacion::Falla::Ninguna || rueda[1].falla() != ControlArticulacion::Falla::Ninguna)
+      u[0] = u[1] = 0.0f;
     libre = seg.deshabilitar() || modo == Modo::Libre;
 
     // Odometría con las cuentas aceptadas por el control (descarta los saltos del encoder)
@@ -258,7 +275,7 @@ void estado() {
   ControlArticulacion r[2];
   Modo mo;
   SeguridadBase::Estado es;
-  bool bAd, bAt, batBaja;
+  bool bAd, bAt, batBaja, sinFrente;
   float x, y, th, vo, wo, va, wa;
   uint32_t atr, wd;
   portENTER_CRITICAL(&mux);
@@ -269,13 +286,15 @@ void estado() {
   bAd = seg.bloqueaAdelante();
   bAt = seg.bloqueaAtras();
   batBaja = seg.bateriaBaja();
+  sinFrente = seg.frenteSinDato();
   x = odo.x(); y = odo.y(); th = odo.theta(); vo = odo.v(); wo = odo.w();
   va = vAct; wa = wAct;
   atr = ticksAtrasados;
   wd = seg.watchdog();
   portEXIT_CRITICAL(&mux);
-  Serial.printf("Modo: %s | seguridad: %s%s%s%s\n", textoModo(mo), SeguridadBase::texto(es), bAd ? " | no avanza" : "",
-                bAt ? " | no retrocede" : "", batBaja ? " | BATERÍA BAJA" : "");
+  Serial.printf("Modo: %s | seguridad: %s%s%s%s%s\n", textoModo(mo), SeguridadBase::texto(es), bAd ? " | no avanza" : "",
+                sinFrente ? " (ultrasonido del frente sin eco)" : "", bAt ? " | no retrocede" : "",
+                batBaja ? " | BATERÍA BAJA" : "");
   Serial.printf("Comando: v=%.3f m/s w=%.3f rad/s | odometría: x=%.3f y=%.3f th=%.1f° v=%.3f w=%.3f\n", va, wa, x, y,
                 th * 57.2958f, vo, wo);
   for (int i = 0; i < 2; i++)
@@ -289,6 +308,7 @@ void sensores() {
   portENTER_CRITICAL(&mux);
   s = sens;
   portEXIT_CRITICAL(&mux);
+  if (imuOk && !s.imuValida) Serial.println("IMU: sin muestras recientes (la base no se mueve)");
   if (imuOk)
     Serial.printf("IMU: acc=(%.2f, %.2f, %.2f) g gyro=(%.1f, %.1f, %.1f) °/s | roll=%.1f° pitch=%.1f°\n", s.acc.x, s.acc.y,
                   s.acc.z, s.gyro.x, s.gyro.y, s.gyro.z, s.roll, s.pitch);
@@ -303,7 +323,8 @@ void sensores() {
   const char *nom[3] = {"frente", "izq", "der"};
   for (int k = 0; k < 3; k++) {
     if (isfinite(s.dist[k])) Serial.printf(" %s=%.2f", nom[k], s.dist[k]);
-    else Serial.printf(" %s=--", nom[k]);
+    else if (isinf(s.dist[k])) Serial.printf(" %s=libre", nom[k]);
+    else Serial.printf(" %s=SIN ECO", nom[k]);
   }
   Serial.printf("\nBumpers: FI=%d FD=%d AI=%d AD=%d | seta: %s | batería: ", s.bumper[0], s.bumper[1], s.bumper[2],
                 s.bumper[3], s.seta ? "APRETADA" : "suelta");
@@ -384,7 +405,7 @@ void ejecutar(char *linea) {
     bool ok;
     portENTER_CRITICAL(&mux);
     const EntradasSeguridad in = {{sens.bumper[0], sens.bumper[1], sens.bumper[2], sens.bumper[3]}, sens.dist[0],
-                                  sens.seta, sens.roll, sens.pitch, 0, sens.bateria};
+                                  sens.seta, sens.roll, sens.pitch, 0, sens.bateria, sens.imuValida};
     ok = seg.rearmar(in);
     if (ok) {
       rueda[0].borrarFalla();
@@ -394,10 +415,18 @@ void ejecutar(char *linea) {
       aceptado();
     }
     portEXIT_CRITICAL(&mux);
-    Serial.println(ok ? ">> Rearmado." : ">> No se puede rearmar: la seta sigue apretada o la base no está nivelada.");
+    Serial.println(ok ? ">> Rearmado." : ">> No se puede rearmar: seta apretada, base no nivelada o IMU sin datos.");
   } else if (!strcmp(cmd, "cal")) {
     if (!imuOk) {
       Serial.println(">> IMU sin responder.");
+      return;
+    }
+    portENTER_CRITICAL(&mux);
+    const bool quieta = modo == Modo::Parado || modo == Modo::Libre;
+    portEXIT_CRITICAL(&mux);
+    // Durante los 2 s no se lee la IMU (y la seguridad frena por "IMU sin datos") ni se atienden comandos
+    if (!quieta) {
+      Serial.println(">> Detener la base (s) antes de calibrar.");
       return;
     }
     Serial.println(">> Calibrando el giroscopio: no mover el robot 2 s...");
@@ -428,8 +457,7 @@ void ejecutar(char *linea) {
       return;
     }
     portENTER_CRITICAL(&mux);
-    seg.fijarWatchdog((uint32_t)v1);
-    aceptado();
+    seg.fijarWatchdog((uint32_t)v1);  // no cuenta como comando de movimiento: no renueva uno vencido
     portEXIT_CRITICAL(&mux);
     Serial.printf(">> Watchdog: %.0f ms.\n", v1);
   } else {

@@ -10,12 +10,13 @@
 class HCSR04 {
  public:
   static constexpr int MAX_SENSORES = 4;
-  static constexpr uint32_t ECO_MAX_US = 25000;  // ~4,3 m; más largo = sin obstáculo (algunos dan 38 ms)
+  static constexpr uint32_t ECO_MAX_US = 25000;  // ~4,3 m; más largo = nada al alcance (algunos dan 38 ms)
 
   bool begin(int pinTrig, const int *pinesEcho, int n);
   // Pulso de 10 µs en TRIG. Cierra el ciclo anterior: lo que no respondió queda sin medición (NAN).
   void disparar();
-  // Metros del último ciclo completo; NAN si no hubo eco válido.
+  // Metros del último ciclo completo. INFINITY = eco largo (nada al alcance);
+  // NAN = no hubo ningún pulso de eco (sensor desconectado, sin alimentación o todavía sin medir).
   float distancia(int i) const;
 
  private:
