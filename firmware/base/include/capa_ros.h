@@ -13,8 +13,9 @@
 // Suscribe  /cmd_vel             geometry_msgs/Twist      linear.x [m/s], angular.z [rad/s]
 //           /base/comando        std_msgs/String          los mismos comandos del monitor serial (r, s, l, cal, odo0, wd...)
 //
-// Con micro-ROS el watchdog de comandos arranca en 300 ms: si /cmd_vel deja de llegar, la base frena. Si se pierde
-// el agente, la base se detiene.
+// Cada sesión con el agente empieza DESARMADA: /cmd_vel y los comandos que mueven se rechazan hasta recibir "armar"
+// por /base/comando ("desarmar" vuelve atrás). Con micro-ROS el watchdog de comandos arranca en 300 ms y no se
+// puede apagar (50..1000 ms): si /cmd_vel deja de llegar, la base frena. Si se pierde el agente, se detiene.
 
 #include <stdint.h>
 

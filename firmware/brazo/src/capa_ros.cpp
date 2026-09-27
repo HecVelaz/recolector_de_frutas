@@ -50,8 +50,31 @@ rosidl_runtime_c__String nombresIn[N_ART];
 double posIn[N_ART], velIn[N_ART], effIn[N_ART];
 char marcoIn[32];
 char comandoBuf[80];
-char estadoBuf[320];
+char estadoBuf[384];
 int tick = 0;
+
+// Armado por sesión: después de cada conexión con el agente los movimientos quedan bloqueados hasta recibir
+// "armar" por /brazo/comando (un publicador que siguiera mandando no retoma solo el movimiento al reconectar).
+// Detener, liberar, diagnóstico y cero se aceptan siempre.
+bool armado = false;
+uint32_t ultimoAvisoMs = 0;
+const char *const MUEVEN[] = {"m", "j", "v", "d", "home", "pinza", "giro"};
+
+bool mueve(const char *cmd) {
+  for (const char *c : MUEVEN)
+    if (!strcmp(cmd, c)) return true;
+  return false;
+}
+
+// Aviso de "desarmado" como mucho una vez por segundo (un publicador a 20 Hz no debe inundar la respuesta)
+bool armadoOAvisar() {
+  if (armado) return true;
+  if (millis() - ultimoAvisoMs > 1000) {
+    ultimoAvisoMs = millis();
+    out->println(">> Brazo DESARMADO: enviar 'armar' por /brazo/comando para habilitar movimientos.");
+  }
+  return false;
+}
 
 void fijarTexto(rosidl_runtime_c__String &s, char *buf, size_t cap) {
   s.data = buf;
@@ -66,7 +89,7 @@ void prepararMensajes() {
   joints.name = {nombresOut, N_ART, N_ART};
   joints.position = {posOut, N_ART, N_ART};
   joints.velocity = {velOut, N_ART, N_ART};
-  joints.effort = {effOut, N_ART, N_ART};
+  joints.effort = {effOut, 0, N_ART};  // sin torque medido (el duty va en /brazo/estado)
 
   cmdIn = {};
   fijarTexto(cmdIn.header.frame_id, marcoIn, sizeof(marcoIn));
@@ -92,32 +115,66 @@ void comando(const char *fmt, ...) {
   ejecutar(linea);
 }
 
+// Valida el mensaje completo antes de mover nada y lo aplica como un solo `m` (todo o nada). Las articulaciones
+// que no vienen en el mensaje conservan su objetivo actual.
 void alRecibirCmd(const void *m) {
+  if (!armadoOAvisar()) return;
   const auto *js = static_cast<const sensor_msgs__msg__JointState *>(m);
+  float q[N_ART];
+  bool dado[N_ART] = {false, false, false};
+  portENTER_CRITICAL(&mux);
+  for (int i = 0; i < N_ART; i++) q[i] = ctl[i].qObjetivo();
+  portEXIT_CRITICAL(&mux);
+
   if (js->name.size == 0) {  // sin nombres: las tres en orden
     if (js->position.size != N_ART) {
       out->println(">> /brazo/joint_cmd sin nombres necesita 3 posiciones.");
       return;
     }
-    comando("m %.3f %.3f %.3f", js->position.data[0] * RAD_TO_DEG, js->position.data[1] * RAD_TO_DEG,
-            js->position.data[2] * RAD_TO_DEG);
-    return;
+    for (int i = 0; i < N_ART; i++) {
+      q[i] = js->position.data[i] * RAD_TO_DEG;
+      dado[i] = true;
+    }
+  } else {
+    if (js->position.size != js->name.size) {
+      out->println(">> /brazo/joint_cmd: la cantidad de nombres y de posiciones no coincide.");
+      return;
+    }
+    for (size_t k = 0; k < js->name.size; k++) {
+      const rosidl_runtime_c__String &n = js->name.data[k];
+      const int i = (n.size == 2 && n.data[0] == 'j') ? n.data[1] - '1' : -1;
+      if (i < 0 || i >= N_ART || dado[i]) {
+        out->printf(">> /brazo/joint_cmd: nombre '%.*s' desconocido o repetido (usar j1, j2, j3). No se movió nada.\n",
+                    (int)n.size, n.data);
+        return;
+      }
+      q[i] = js->position.data[k] * RAD_TO_DEG;
+      dado[i] = true;
+    }
   }
-  if (js->position.size != js->name.size) {
-    out->println(">> /brazo/joint_cmd: la cantidad de nombres y de posiciones no coincide.");
-    return;
+  for (int i = 0; i < N_ART; i++) {
+    // Un número no finito o enorme se rechaza antes de formatearlo (si no, el texto se cortaría)
+    if (!isfinite(q[i]) || fabsf(q[i]) > 720.0f) {
+      out->printf(">> /brazo/joint_cmd: j%d fuera de rango. No se movió nada.\n", i + 1);
+      return;
+    }
   }
-  for (size_t k = 0; k < js->name.size; k++) {
-    const rosidl_runtime_c__String &n = js->name.data[k];
-    if (n.size == 2 && n.data[0] == 'j' && n.data[1] >= '1' && n.data[1] < '1' + N_ART)
-      comando("j %c %.3f", n.data[1], js->position.data[k] * RAD_TO_DEG);
-    else
-      out->printf(">> /brazo/joint_cmd: articulación desconocida '%.*s' (usar j1, j2, j3).\n", (int)n.size, n.data);
-  }
+  comando("m %.3f %.3f %.3f", q[0], q[1], q[2]);
 }
 
-void alRecibirCierre(const void *m) { comando("pinza %.1f", static_cast<const std_msgs__msg__Float32 *>(m)->data); }
-void alRecibirGiro(const void *m) { comando("giro %.1f", static_cast<const std_msgs__msg__Float32 *>(m)->data); }
+void alRecibirCierre(const void *m) {
+  const float v = static_cast<const std_msgs__msg__Float32 *>(m)->data;
+  if (!armadoOAvisar()) return;
+  if (!isfinite(v) || fabsf(v) > 1000.0f) return;  // ejecutar() valida el rango real
+  comando("pinza %.1f", v);
+}
+
+void alRecibirGiro(const void *m) {
+  const float v = static_cast<const std_msgs__msg__Float32 *>(m)->data;
+  if (!armadoOAvisar()) return;
+  if (!isfinite(v) || fabsf(v) > 1000.0f) return;
+  comando("giro %.1f", v);
+}
 
 void alRecibirComando(const void *m) {
   const auto *s = static_cast<const std_msgs__msg__String *>(m);
@@ -125,6 +182,22 @@ void alRecibirComando(const void *m) {
   const size_t n = s->data.size < sizeof(linea) - 1 ? s->data.size : sizeof(linea) - 1;
   memcpy(linea, s->data.data, n);
   linea[n] = '\0';
+  // Primera palabra: armar / desarmar, o un comando de movimiento con el brazo desarmado
+  char primera[8] = {0};
+  sscanf(linea, "%7s", primera);
+  if (!strcmp(primera, "armar")) {
+    armado = true;
+    out->println(">> Brazo ARMADO: se aceptan movimientos.");
+    return;
+  }
+  if (!strcmp(primera, "desarmar")) {
+    armado = false;
+    char st[] = "s";
+    ejecutar(st);
+    out->println(">> Brazo DESARMADO.");
+    return;
+  }
+  if (mueve(primera) && !armadoOAvisar()) return;
   ejecutar(linea);
 }
 
@@ -147,15 +220,15 @@ void alTimer(rcl_timer_t *t, int64_t) {
   for (int i = 0; i < N_ART; i++) {
     posOut[i] = c[i].q() * DEG_TO_RAD;
     velOut[i] = c[i].w() * TWO_PI / 60.0 / CFG_ART[i].relacion;  // rpm del motor -> rad/s de la articulación
-    effOut[i] = c[i].u();
   }
   ignorar(rcl_publish(&pubJoints, &joints, nullptr));
 
   if (++tick % ESTADO_CADA == 0) {
     size_t n = 0;
+    n += snprintf(estadoBuf, sizeof(estadoBuf), "%s; ", armado ? "ARMADO" : "DESARMADO");
     for (int i = 0; i < N_ART && n < sizeof(estadoBuf); i++)
-      n += snprintf(estadoBuf + n, sizeof(estadoBuf) - n, "J%d %s %s falla=%s%s; ", i + 1, textoModo(c[i].modo()),
-                    c[i].conCero() ? "cero" : "SIN_CERO", c[i].textoFalla(),
+      n += snprintf(estadoBuf + n, sizeof(estadoBuf) - n, "J%d %s %s u=%.0f%% falla=%s%s; ", i + 1,
+                    textoModo(c[i].modo()), c[i].conCero() ? "cero" : "SIN_CERO", c[i].u(), c[i].textoFalla(),
                     c[i].modo() == ControlArticulacion::Modo::Posicion && c[i].llego() ? " llego" : "");
     estadoMsg.data.size = n < sizeof(estadoBuf) ? n : sizeof(estadoBuf) - 1;
     ignorar(rcl_publish(&pubEstado, &estadoMsg, nullptr));
@@ -211,18 +284,26 @@ void rosBegin() {
 }
 
 void rosLoop() {
+  static bool estabaConectado = false;
   enlace.loop();
   if (enlace.seCorto()) {
     char s[] = "s";
-    ejecutar(s);  // sin agente, el brazo se detiene y sostiene
-    out->println(">> Se perdió el micro-ROS Agent: brazo detenido.");
+    ejecutar(s);  // sin agente, J1-J3 se detienen y sostienen. Los servos quedan donde están: soltarlos
+                  // (sin pulso) podría abrir la pinza y dejar caer el limón.
+    armado = false;
+    out->println(">> Se perdió el micro-ROS Agent: brazo detenido y desarmado.");
   }
+  if (enlace.conectado() && !estabaConectado) {
+    armado = false;  // cada sesión empieza desarmada
+    out->println(">> Conectado al agente. Brazo DESARMADO: enviar 'armar' por /brazo/comando.");
+  }
+  estabaConectado = enlace.conectado();
   if (enlace.conectado() && !salida.vacio()) {
     respMsg.data.data = const_cast<char *>(salida.texto());
     respMsg.data.size = salida.largo();
     respMsg.data.capacity = salida.largo() + 1;
-    ignorar(rcl_publish(&pubResp, &respMsg, nullptr));
-    salida.limpiar();
+    // Si no se pudo publicar, el texto queda para el próximo intento (el búfer corta lo que no entre)
+    if (rcl_publish(&pubResp, &respMsg, nullptr) == RCL_RET_OK) salida.limpiar();
   }
 }
 

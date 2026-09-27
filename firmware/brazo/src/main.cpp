@@ -314,6 +314,9 @@ void ejecutar(char *linea) {
     ayuda();
   } else if (!strcmp(cmd, "e")) {
     estado();
+  } else if (!hwOk) {
+    // Con un error de hardware al arrancar no hay tarea de control: solo diagnóstico (también por micro-ROS)
+    out->println(">> Hardware con error al arrancar: comandos deshabilitados (ver el mensaje de inicio y reiniciar).");
   } else if (!strcmp(cmd, "s") || !strcmp(cmd, "l") || !strcmp(cmd, "r")) {
     portENTER_CRITICAL(&mux);
     for (int k = 0; k < N_ART; k++) {
@@ -378,18 +381,22 @@ void ejecutar(char *linea) {
       out->println(">> Uso: m <q1> <q2> <q3>");
       return;
     }
+    // Todo o nada: si una articulación no puede moverse (sin cero o con falla), no se mueve ninguna
     const float q[N_ART] = {v1, v2, v3};
-    for (int k = 0; k < N_ART; k++) {
-      portENTER_CRITICAL(&mux);
-      ok = ctl[k].irA(q[k]);
-      if (ok) {
+    int noPuede = -1;
+    portENTER_CRITICAL(&mux);
+    for (int k = 0; k < N_ART && noPuede < 0; k++)
+      if (!ctl[k].conCero() || ctl[k].falla() != ControlArticulacion::Falla::Ninguna) noPuede = k;
+    if (noPuede < 0) {
+      for (int k = 0; k < N_ART; k++) {
+        ctl[k].irA(q[k]);
         cancelarPendientes(k);
         ruedaLibre[k] = false;
-        alimentarWatchdog();
       }
-      portEXIT_CRITICAL(&mux);
-      if (!ok) rechazo(k, "m");
+      alimentarWatchdog();
     }
+    portEXIT_CRITICAL(&mux);
+    if (noPuede >= 0) rechazo(noPuede, "m");
   } else if (!strcmp(cmd, "j")) {
     if (!leerArt(a1, i)) return;
     if (!leerNum(a2, v2)) {
@@ -455,6 +462,11 @@ void ejecutar(char *linea) {
     armarServos();
     servoUs(CH_GIRO, GIRO_US_CENTRO + GIRO_US_POR_GRADO * v1);
   } else if (!strcmp(cmd, "log")) {
+#ifdef USAR_MICROROS
+    // A 115200 el CSV a 100 Hz saturaría el enlace con el agente: los datos van por /brazo/joint_states
+    out->println(">> Con micro-ROS no hay log: usar /brazo/joint_states (ros2 bag record).");
+    return;
+#endif
     if (a1 && !strcmp(a1, "0")) {
       portENTER_CRITICAL(&mux);
       logArt = -1;

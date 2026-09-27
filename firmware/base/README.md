@@ -45,8 +45,11 @@ sin obstáculo al alcance cuenta como libre; ningún pulso de ECHO cuenta como s
 ## micro-ROS (entorno `ros`)
 
 El mismo firmware, con `/cmd_vel` y los comandos por tópicos en vez del monitor serial (el USB lo usa el agente).
-Con micro-ROS el **watchdog de comandos arranca en 300 ms**: si `/cmd_vel` deja de llegar, la base frena. Si se
-pierde el agente (~1,5 s), la base se detiene. Sin la hora del agente no se publica nada.
+**Cada sesión con el agente empieza DESARMADA**: `/cmd_vel` y los comandos que mueven se rechazan hasta mandar
+`armar` por `/base/comando`. Con micro-ROS el **watchdog de comandos arranca en 300 ms y no se puede apagar**
+(50..1000 ms): si `/cmd_vel` deja de llegar, la base frena. Si se pierde el agente (~1,5 s), la base se detiene
+apenas se detecta y queda desarmada. Sin la hora del agente no se publica nada. `log` no está disponible con
+micro-ROS (usar `ros2 bag record`).
 
 | Tópico | Tipo | Sentido | Detalle |
 |---|---|---|---|
@@ -54,12 +57,12 @@ pierde el agente (~1,5 s), la base se detiene. Sin la hora del agente no se publ
 | `/imu/data_raw` | `sensor_msgs/Imu` | sale, 50 Hz | m/s² y rad/s, sin orientación (para `imu_filter_madgwick`) |
 | `/range/frente`, `/range/izq`, `/range/der` | `sensor_msgs/Range` | sale, 10 Hz | +Inf = nada al alcance; NaN = sin eco (REP-117) |
 | `/bumpers` | `std_msgs/UInt8` | sale, 10 Hz | bits 0..3: frente-izq, frente-der, atrás-izq, atrás-der |
-| `/gps/fix` | `sensor_msgs/NavSatFix` | sale, ~1 Hz | un mensaje por epoch; covarianza aproximada por HDOP |
+| `/gps/fix` | `sensor_msgs/NavSatFix` | sale, ~1 Hz | un mensaje por epoch; covarianza aproximada por HDOP; altitud elipsoidal o NaN |
 | `/battery` | `sensor_msgs/BatteryState` | sale, 1 Hz | tensión |
 | `/base/estado` | `std_msgs/String` | sale, 2 Hz | modo, seguridad, bloqueos, IMU y fallas |
 | `/base/respuesta` | `std_msgs/String` | sale | lo que mostraría el monitor serial |
 | `/cmd_vel` | `geometry_msgs/Twist` | entra | `linear.x` [m/s], `angular.z` [rad/s] |
-| `/base/comando` | `std_msgs/String` | entra | cualquier comando del monitor: `r`, `s`, `l`, `cal`, `odo0`, `wd`… |
+| `/base/comando` | `std_msgs/String` | entra | cualquier comando del monitor (`r`, `s`, `l`, `cal`, `odo0`, `wd`…), más `armar` / `desarmar` |
 
 ```bash
 $PIO run -e ros -t upload            # detener antes el agente (usa /dev/ttyACM0)
@@ -67,6 +70,7 @@ source ~/microros_ws/install/local_setup.bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 # en otra terminal
 ros2 topic echo /base/estado --field data
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 'armar'}"
 ros2 run teleop_twist_keyboard teleop_twist_keyboard   # manejar con el teclado
 ```
 

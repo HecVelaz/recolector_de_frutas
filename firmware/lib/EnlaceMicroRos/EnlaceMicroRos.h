@@ -22,11 +22,13 @@ class EnlaceMicroRos {
   // puerto: Serial ya abierto (Serial.begin) antes de llamar.
   void begin(Stream &puerto, const char *nodo, size_t nHandles, Crear crear, Destruir destruir);
 
-  // Llamar seguido desde loop(). Cada espera está acotada (ping 20 ms, hora 50 ms, executor 5 ms).
+  // Llamar seguido desde loop(). Las esperas propias están acotadas (ping 20 ms, hora 50 ms, executor 5 ms), pero
+  // al conectar (sincronización inicial hasta 1 s, creación de entidades) y dentro de los callbacks puede tardar
+  // más: la seguridad del robot no debe depender de loop() (vive en la tarea de control).
   void loop();
 
   bool conectado() const { return estado_ == Estado::Conectado; }
-  // true una sola vez cada vez que se pierde la conexión (para detener el robot)
+  // true una sola vez cada vez que se pierde la conexión, apenas se detecta (para detener el robot)
   bool seCorto();
   // Hora del agente. false si todavía no hay sincronización: no publicar mensajes con stamp sin hora.
   bool hora(builtin_interfaces__msg__Time &t) const;

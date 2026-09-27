@@ -67,16 +67,20 @@ por los mismos comandos de texto, con las mismas validaciones y protecciones.
 
 | Tópico | Tipo | Sentido | Detalle |
 |---|---|---|---|
-| `/brazo/joint_states` | `sensor_msgs/JointState` | sale, 20 Hz | `j1..j3`: posición [rad], velocidad [rad/s], effort = duty [%] |
-| `/brazo/estado` | `std_msgs/String` | sale, 2 Hz | modo, cero, falla y "llego" de cada articulación |
+| `/brazo/joint_states` | `sensor_msgs/JointState` | sale, 20 Hz | `j1..j3`: posición [rad], velocidad [rad/s] (sin effort) |
+| `/brazo/estado` | `std_msgs/String` | sale, 2 Hz | armado, y modo, cero, duty, falla y "llego" de cada articulación |
 | `/brazo/respuesta` | `std_msgs/String` | sale | lo que mostraría el monitor serial |
-| `/brazo/joint_cmd` | `sensor_msgs/JointState` | entra | posiciones [rad] con nombres `j1..j3`, o las 3 en orden sin nombres |
+| `/brazo/joint_cmd` | `sensor_msgs/JointState` | entra | posiciones [rad] con nombres `j1..j3`, o las 3 en orden sin nombres. Se valida entero y se aplica todo o nada |
 | `/pinza/cierre` | `std_msgs/Float32` | entra | 0 = abierta, 100 = cerrada |
 | `/pinza/giro` | `std_msgs/Float32` | entra | grados, −90..90 |
-| `/brazo/comando` | `std_msgs/String` | entra | cualquier comando del monitor: `z`, `home 2`, `s`, `r`, `wd 300`… |
+| `/brazo/comando` | `std_msgs/String` | entra | cualquier comando del monitor (`z`, `home 2`, `s`, `r`…), más `armar` / `desarmar` |
 
-Si se pierde el agente (3 pings sin respuesta, ~1,5 s), el brazo se detiene. Se puede reiniciar el agente sin
-resetear la placa. Sin la hora del agente no se publica nada.
+**Cada sesión con el agente empieza DESARMADA**: los movimientos se rechazan hasta mandar `armar` por
+`/brazo/comando` (así, un nodo que siguiera publicando no mueve el brazo solo al reconectar). Detener, liberar,
+cero y diagnóstico se aceptan siempre. Si se pierde el agente (3 pings sin respuesta, ~1,5 s), J1-J3 se detienen
+apenas se detecta y el brazo queda desarmado; los servos quedan donde están, para no soltar el limón. Se puede
+reiniciar el agente sin resetear la placa. Sin la hora del agente no se publica nada. `log` no está disponible
+con micro-ROS (usar `ros2 bag record`).
 
 ```bash
 $PIO run -e ros -t upload            # detener antes el agente (usa /dev/ttyUSB0)
@@ -85,6 +89,7 @@ ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0
 # en otra terminal
 ros2 topic echo /brazo/respuesta --field data
 ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'z'}"
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'armar'}"
 ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], position: [0.79]}"
 ```
 

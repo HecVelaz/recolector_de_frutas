@@ -64,7 +64,12 @@ documentación. Responder en castellano.
   llegan por `/<parte>/comando`, así que ROS usa el mismo `ejecutar()` con sus protecciones. Base: `/cmd_vel` -> `/odom`,
   `/imu/data_raw`, `/range/*`, `/bumpers`, `/gps/fix`, `/battery`, `/base/estado`; watchdog 300 ms con ROS. Brazo:
   `/brazo/joint_cmd` (rad), `/pinza/cierre`, `/pinza/giro` -> `/brazo/joint_states`, `/brazo/estado`. Sin agente, las
-  dos partes se detienen. Compilan sin warnings (primera compilación ~8 min cada una). **Sin probar con el agente.**
+  dos partes se detienen. Compilan sin warnings (primera compilación ~8 min cada una). Revisión de Codex (11
+  hallazgos, 10 aplicados; el de MTU se verificó: 512 B × historial 4 = 2048 B por mensaje reliable): **armado por
+  sesión** (`armar` por `/<parte>/comando` después de cada conexión), parada apenas se detecta el corte, `ejecutar()`
+  bloquea todo con `hwOk` falso, `/brazo/joint_cmd` y `m` todo o nada, watchdog de la base 50..1000 ms con ROS, sin
+  `effort`, altitud NaN sin separación del geoide, respuesta que se reintenta, `log` rechazado con ROS. **Sin probar
+  con el agente.**
 - **Pendiente general:** resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
   (riesgo de color, ver `docs/ARQUITECTURA.md` §6), preguntas a la cátedra (§11).
 - **Pendiente en `firmware/lib/EncoderPCNT`:** salto falso de 32 000 cuentas (el control del brazo lo filtra).

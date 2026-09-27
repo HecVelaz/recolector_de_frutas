@@ -59,6 +59,24 @@ char comandoBuf[80];
 char estadoBuf[320];
 int tick = 0;
 
+// Armado por sesión: después de cada conexión con el agente, /cmd_vel y los comandos que mueven quedan
+// bloqueados hasta recibir "armar" por /base/comando (un publicador que siguiera mandando no retoma solo el
+// movimiento al reconectar). Detener, liberar, rearmar la seguridad y diagnóstico se aceptan siempre.
+bool armado = false;
+uint32_t ultimoAvisoMs = 0;
+
+bool mueve(const char *cmd) { return !strcmp(cmd, "v") || !strcmp(cmd, "w") || !strcmp(cmd, "d"); }
+
+// Aviso de "desarmada" como mucho una vez por segundo (/cmd_vel llega a 10-50 Hz)
+bool armadoOAvisar() {
+  if (armado) return true;
+  if (millis() - ultimoAvisoMs > 1000) {
+    ultimoAvisoMs = millis();
+    out->println(">> Base DESARMADA: enviar 'armar' por /base/comando para habilitar /cmd_vel.");
+  }
+  return false;
+}
+
 rosidl_runtime_c__String texto(char *s) { return {s, strlen(s), strlen(s) + 1}; }
 
 void prepararMensajes() {
@@ -107,6 +125,7 @@ void prepararMensajes() {
 }
 
 void alRecibirCmdVel(const void *m) {
+  if (!armadoOAvisar()) return;
   const auto *t = static_cast<const geometry_msgs__msg__Twist *>(m);
   baseCmdVel((float)t->linear.x, (float)t->angular.z);
 }
@@ -117,6 +136,21 @@ void alRecibirComando(const void *m) {
   const size_t n = s->data.size < sizeof(linea) - 1 ? s->data.size : sizeof(linea) - 1;
   memcpy(linea, s->data.data, n);
   linea[n] = '\0';
+  char primera[8] = {0};
+  sscanf(linea, "%7s", primera);
+  if (!strcmp(primera, "armar")) {
+    armado = true;
+    out->println(">> Base ARMADA: se acepta /cmd_vel.");
+    return;
+  }
+  if (!strcmp(primera, "desarmar")) {
+    armado = false;
+    char st[] = "s";
+    ejecutar(st);
+    out->println(">> Base DESARMADA.");
+    return;
+  }
+  if (mueve(primera) && !armadoOAvisar()) return;
   ejecutar(linea);
 }
 
@@ -128,8 +162,9 @@ void publicarGps() {
                                  : (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
     gpsMsg.latitude = f.fix ? f.latDeg : NAN;
     gpsMsg.longitude = f.fix ? f.lonDeg : NAN;
-    // NavSatFix pide altura sobre el elipsoide: MSL + separación del geoide si el receptor la manda
-    gpsMsg.altitude = f.fix && isfinite(f.altMslM) ? f.altMslM + (isfinite(f.geoidSepM) ? f.geoidSepM : 0.0) : NAN;
+    // NavSatFix pide altura sobre el elipsoide: MSL + separación del geoide. Sin la separación no se puede
+    // calcular (usar MSL como si fuera elipsoidal sería un error de decenas de metros): NaN
+    gpsMsg.altitude = f.fix && isfinite(f.altMslM) && isfinite(f.geoidSepM) ? f.altMslM + f.geoidSepM : NAN;
     // Covarianza aproximada a partir del HDOP (UERE ~5 m); vertical el doble
     const double h = isfinite(f.hdop) ? f.hdop * 5.0 : 50.0;
     gpsMsg.position_covariance[0] = gpsMsg.position_covariance[4] = h * h;
@@ -187,7 +222,8 @@ void alTimer(rcl_timer_t *t, int64_t) {
 
   if (tick % ESTADO_CADA == 0) {
     const int n = snprintf(estadoBuf, sizeof(estadoBuf),
-                           "modo=%s seguridad=%s%s%s%s%s%s imu=%s rueda_izq=%s rueda_der=%s", e.modo,
+                           "%s modo=%s seguridad=%s%s%s%s%s%s imu=%s rueda_izq=%s rueda_der=%s",
+                           armado ? "ARMADA" : "DESARMADA", e.modo,
                            SeguridadBase::texto(e.seg), e.seta ? " SETA" : "", e.bloqAdelante ? " no_avanza" : "",
                            e.frenteSinDato ? "(frente_sin_eco)" : "", e.bloqAtras ? " no_retrocede" : "",
                            e.bateriaBaja ? " BATERIA_BAJA" : "", e.imuValida ? "ok" : "SIN_DATOS",
@@ -257,18 +293,25 @@ void rosLoop() {
     ejecutar(wd);
     wdFijado = true;
   }
+  static bool estabaConectado = false;
   enlace.loop();
   if (enlace.seCorto()) {
     char s[] = "s";
-    ejecutar(s);  // sin agente, la base se detiene
-    out->println(">> Se perdió el micro-ROS Agent: base detenida.");
+    ejecutar(s);  // sin agente, la base se detiene (además, el watchdog de /cmd_vel ya la frena a los 300 ms)
+    armado = false;
+    out->println(">> Se perdió el micro-ROS Agent: base detenida y desarmada.");
   }
+  if (enlace.conectado() && !estabaConectado) {
+    armado = false;  // cada sesión empieza desarmada
+    out->println(">> Conectado al agente. Base DESARMADA: enviar 'armar' por /base/comando.");
+  }
+  estabaConectado = enlace.conectado();
   if (enlace.conectado() && !salida.vacio()) {
     respMsg.data.data = const_cast<char *>(salida.texto());
     respMsg.data.size = salida.largo();
     respMsg.data.capacity = salida.largo() + 1;
-    ignorar(rcl_publish(&pubResp, &respMsg, nullptr));
-    salida.limpiar();
+    // Si no se pudo publicar, el texto queda para el próximo intento (el búfer corta lo que no entre)
+    if (rcl_publish(&pubResp, &respMsg, nullptr) == RCL_RET_OK) salida.limpiar();
   }
 }
 

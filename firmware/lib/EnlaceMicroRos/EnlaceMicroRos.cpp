@@ -77,7 +77,9 @@ void EnlaceMicroRos::loop() {
         ultimoPingMs_ = ahora;
         pingsPerdidos_ = rmw_uros_ping_agent(PING_TIMEOUT_MS, 1) == RMW_RET_OK ? 0 : pingsPerdidos_ + 1;
         if (pingsPerdidos_ >= PINGS_PARA_CORTE) {
+          // Avisar el corte ya, antes de destruir las entidades (lo que puede tardar): el robot se detiene antes
           estado_ = Estado::Desconectado;
+          corte_ = true;
           break;
         }
       }
@@ -90,7 +92,6 @@ void EnlaceMicroRos::loop() {
 
     case Estado::Desconectado:
       destruirTodo();
-      corte_ = true;
       estado_ = Estado::Esperando;
       break;
   }

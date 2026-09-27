@@ -368,6 +368,9 @@ void ejecutar(char *linea) {
     estado();
   } else if (!strcmp(cmd, "sens")) {
     sensores();
+  } else if (!hwOk) {
+    // Con un error de hardware al arrancar no hay tarea de control: solo diagnóstico (también por micro-ROS)
+    out->println(">> Hardware con error al arrancar: comandos deshabilitados (ver el mensaje de inicio y reiniciar).");
   } else if (!strcmp(cmd, "v") || !strcmp(cmd, "w")) {
     if (!leerNum(a1, v1) || !leerNum(a2, v2) || !leerDuracion(a3, s)) {
       out->printf(">> Uso: %s <%s> <%s> [segundos, hasta %.0f]\n", cmd, cmd[0] == 'v' ? "v m/s" : "rpm izq",
@@ -448,6 +451,10 @@ void ejecutar(char *linea) {
     portEXIT_CRITICAL(&mux);
     out->println(">> Odometría en cero.");
   } else if (!strcmp(cmd, "log")) {
+#ifdef USAR_MICROROS
+    out->println(">> Con micro-ROS no hay log: usar los tópicos (ros2 bag record).");
+    return;
+#endif
     v1 = 20;
     if (a1 && (!leerNum(a1, v1) || v1 < 0 || v1 > 100)) {
       out->println(">> Uso: log [hz 1..100] (log 0 apaga)");
@@ -463,6 +470,13 @@ void ejecutar(char *linea) {
       out->println(">> Uso: wd <ms> (0 = apagado, hasta 10000)");
       return;
     }
+#ifdef USAR_MICROROS
+    // Con micro-ROS el watchdog protege contra un /cmd_vel que deja de llegar: no se puede apagar ni alargar mucho
+    if (v1 < 50 || v1 > 1000) {
+      out->println(">> Con micro-ROS el watchdog va de 50 a 1000 ms (no se puede apagar).");
+      return;
+    }
+#endif
     portENTER_CRITICAL(&mux);
     seg.fijarWatchdog((uint32_t)v1);  // no cuenta como comando de movimiento: no renueva uno vencido
     portEXIT_CRITICAL(&mux);
