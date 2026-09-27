@@ -11,6 +11,7 @@ Rutas desde `docs/`. `R1/` = `TPF R1 Grupo 2-…/TPF R1 Grupo 2/`, `R2/` = `TPF 
 
 **Diseño**
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
+- `CONEXIONES.md` / `conexiones.html` — Diagrama de conexiones: pines de la S3 (base, propuesta), la WROOM (brazo) y la Pi, árbol de alimentación con la seta, y lista de verificación antes de conectar.
 
 **R2 (robot móvil "Arturito R2D2")**
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.

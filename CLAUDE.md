@@ -44,6 +44,9 @@ documentación. Responder en castellano.
   JointState [rad] y `/brazo/ik_estado`). 5 pruebas OK (ejemplo numérico de la E4 exacto, 2000 idas y vueltas).
   Probado en la notebook. Ojo al probar: `kill` del `ros2 run` deja vivo el proceso Python del nodo
   (`pkill -f lib/brazo_ik/nodo_ik`). La geometría y los límites deben coincidir con `firmware/brazo`.
+- **`docs/CONEXIONES.md` + `docs/conexiones.html`** (2026-09-27): diagrama de conexiones completo. Pines de la base
+  (S3) propuestos: tracción PWM 4/5 y 6/7, EN común 38, encoders 15/16 y 17/18, IMU 8/9, GPS 41/42, TRIG común 10,
+  ECHO 11/12/13, bumpers 14/21/39/40, seta 47, batería ADC 1 (19/19 GPIO). Luz y buzzer en la Pi (GPIO 17/27).
 - **Pendiente general:** `firmware/base` (ESP32-S3), resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
   (riesgo de color, ver `docs/ARQUITECTURA.md` §6), preguntas a la cátedra (§11).
 - **Pendiente en `firmware/lib/EncoderPCNT`:** salto falso de 32 000 cuentas (el control del brazo lo filtra).
