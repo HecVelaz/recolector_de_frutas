@@ -4,7 +4,7 @@ Suscribe  /brazo/objetivo   geometry_msgs/PointStamped  [m], marco `marco` (por 
 Publica   /brazo/joint_cmd  sensor_msgs/JointState      j1, j2, j3 [rad] (solo si el punto es alcanzable)
           /brazo/ik_estado  std_msgs/String             "ok ..." o "inalcanzable: <motivos>"
 
-El firmware del brazo trabaja en grados: la capa micro-ROS del firmware convierte (REP-103: ROS usa rad).
+El firmware del brazo trabaja en grados: su capa micro-ROS convierte (REP-103: ROS usa rad).
 Si el objetivo viene en otro marco, se rechaza: la transformación cámara -> brazo la hace stereo_3d.
 """
 

@@ -21,7 +21,8 @@ ROS 2. Mismo algoritmo, convenciones y filtros que el notebook (límites articul
 - El punto es la **muñeca P3**, no la punta de la pinza (ver "Limitación" en la E4: con 3 GDL de posición la
   orientación de la herramienta no se elige).
 - Un objetivo en otro marco se rechaza: la transformación cámara → brazo la hace `stereo_3d`.
-- El firmware del brazo trabaja en grados: convierte su capa micro-ROS (pendiente).
+- El firmware del brazo trabaja en grados: su capa micro-ROS convierte los radianes de `/brazo/joint_cmd`. El brazo
+  tiene que estar **armado** (`armar` por `/brazo/comando`) para moverse.
 - La geometría y los límites están en `cinematica.py` y **deben coincidir** con
   `firmware/brazo/include/brazo_config.h`.
 

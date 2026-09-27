@@ -84,17 +84,17 @@ Notas:
 
 | Nodo | Dónde | Publica | Suscribe | Frec. |
 |---|---|---|---|---|
-| `base_fw` (micro-ROS) | ESP32-S3 | `/wheel_odom`, `/imu/data_raw`, `/bumpers`, `/range/{front,left,right}`, `/gps/fix`, `/base/estado` | `/cmd_vel` | 50 Hz (IMU, odom), 10 Hz (resto) |
-| `brazo_fw` (micro-ROS) | WROOM | `/brazo/joint_states`, `/brazo/estado` | `/brazo/joint_cmd`, `/pinza/cmd` | 50 Hz |
+| `base_fw` (micro-ROS) | ESP32-S3 | `/odom`, `/imu/data_raw`, `/bumpers`, `/range/{frente,izq,der}`, `/gps/fix`, `/battery`, `/base/estado`, `/base/respuesta` | `/cmd_vel`, `/base/comando` | 50 Hz (IMU), 25 Hz (odom), 10 Hz (rangos, bumpers) |
+| `brazo_fw` (micro-ROS) | WROOM | `/brazo/joint_states`, `/brazo/estado`, `/brazo/respuesta` | `/brazo/joint_cmd`, `/pinza/cierre`, `/pinza/giro`, `/brazo/comando` | 20 Hz |
 | `camaras_node` | Pi | `/stereo/left/image_raw`, `/stereo/right/image_raw` | — | 5–10 Hz |
 | `detector_yolo` | Pi | `/limones/detecciones_2d` | imágenes | 3–5 Hz |
 | `stereo_3d` | Pi | `/limones/posiciones` (marco `brazo_base`) | detecciones, `camera_info` | 3–5 Hz |
 | `brazo_ik` | Pi | `/brazo/joint_cmd` | `/brazo/objetivo` | a demanda |
-| `mision_fsm` | Pi | `/cmd_vel`, `/brazo/objetivo`, `/pinza/cmd` | posiciones, estados | 10 Hz |
+| `mision_fsm` | Pi | `/cmd_vel`, `/brazo/objetivo`, `/pinza/cierre`, `/pinza/giro`, `/base/comando`, `/brazo/comando` (`armar`) | posiciones, estados | 10 Hz |
 | `supervisor_seguridad` | Pi | `/seguridad/parar` | `/bumpers`, `/imu`, estados, heartbeats | 20 Hz |
 | `teleop` | Pi / notebook | `/cmd_vel` | joystick/teclado | — |
 
-La cinemática inversa ya existe (R1 E4): se porta el código Python del notebook a un nodo `brazo_ik`, con los mismos filtros (límites, rama física, ángulo de transmisión).
+Los tópicos de los dos firmwares están implementados tal cual (ver el README de `firmware/base` y `firmware/brazo`); cada sesión con el agente arranca desarmada y hay que mandar `armar`. La cinemática inversa ya existe (R1 E4): se porta el código Python del notebook a un nodo `brazo_ik`, con los mismos filtros (límites, rama física, ángulo de transmisión).
 
 ---
 

@@ -1,0 +1,10 @@
+# Generado o local: compilaciones, dependencias descargadas, grafo, configuración
+**/.pio/
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+graphify-out/
+.claude/
+.git/
+# La página del diagrama duplica docs/CONEXIONES.md
+docs/conexiones.html
