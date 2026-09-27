@@ -1,75 +1,64 @@
 # CLAUDE.md — recolector_de_frutas
 
-Repo del robot recolector de limones (Grupo 2). Ver `README.md` para la estructura y `docs/INDICE.md` para la
-documentación. Responder en castellano.
+Responder en castellano. Detalle histórico en `docs/BITACORA.md`.
 
-## Convenciones
+## 1. Proyecto
+Robot móvil autónomo recolector de limones "Arturito R2D2" (Grupo 2, FIUNA Mecatrónica, 2026S2). Cubre dos
+materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil con ROS 2. Objetivo mínimo para aprobar:
+**el robot se mueve, detecta el limón con YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`).
 
-- **ROS 2:** Jazzy, workspace en `ros2_ws/` (paquetes `ament_python`), lógica sin ROS en módulos aparte con
-  pruebas `pytest` (`colcon test`). Unidades SI en los tópicos (m, rad), marcos explícitos en `frame_id`.
-- **Firmware:** PlatformIO + Arduino (core 2.0.17) en `~/.platformio/penv/bin/pio`. Un proyecto por placa en
-  `firmware/<parte>/`, con `include/pins.h` (único lugar de los GPIO), `include/<parte>_config.h`, `src/main.cpp`,
-  `README.md` (conexiones, uso, pendientes, tabla de resultados) y pruebas en la PC (`test/`, `pio test -e native`).
-- **Drivers compartidos** en `firmware/lib/<Driver>/`, sin `Serial` ni pines fijos, con `library.json`. Se enlazan
-  con `lib_deps = symlink://../lib/<Driver>`; no se copian. Un cambio en un driver: recompilar todos los que lo usan.
-- La lógica de control va en bibliotecas **sin Arduino** para poder probarla en la PC con un modelo simulado.
-- **Motores:** apagar los 12 V antes de flashear o resetear (los EN flotan hasta que arranca el firmware; faltan
-  los pull-down de 10 kΩ).
-- **Commits:** en castellano, en `main`. Verificar antes: `pio test -e native` y `pio run` sin warnings.
-- **Fuera de git:** videos, material de terceros, `graphify-out/` (ver `.gitignore`).
+## 2. Hardware y arquitectura
+- Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
+- **ESP32-S3** (base): 2 motores de tracción + IBT-2, encoders, IMU MPU-6500, GPS UP501, 3 HC-SR04, 4 bumpers,
+  seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2, J2/J3 5840-31ZY (sin fin) + L298N, 2 servos.
+- Brazo RRR con cuatro barras (medidas de la E4) + giro de pinza J4. Pines y alimentación: `docs/CONEXIONES.md`.
 
-## Roles (como en `~/pruebas-esp32/AGENTS.md`)
+## 3. Estructura
+- `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
+- `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
+  EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
+- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa. `graphify-out/`: grafo del repo (local, fuera de git).
 
-- **Modo normal:** Claude Code escribe, compila, flashea y hace commits. Codex **solo revisa**
-  (`codex exec --sandbox read-only`), sin modificar archivos. En esta PC el sandbox de Codex no puede leer
-  archivos (`bwrap: Operation not permitted`): pasarle el código pegado en el prompt y con `< /dev/null`.
-- **Modo respaldo** (se agotó el límite de Claude Code y el usuario lo pide): Codex puede editar y hacer commits
-  con estas mismas convenciones. Al volver, Claude Code revisa `git log` antes de seguir.
-- **Continuidad:** el estado vive en git y en la sección de abajo. Al empezar: `git log --oneline -5` y
-  `git status`. Al terminar: commit y actualizar "Estado actual".
+## 4. Cómo trabajar acá
+- Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF ni `.ipynb`** (bloqueados en
+  `.claude/settings.json`): usar sus `.txt`/`.md`.
+- Firmware: `~/.platformio/penv/bin/pio`; pines solo en `include/pins.h`; drivers por `symlink://../lib/X`; lógica
+  sin Arduino con pruebas `pio test -e native`. Verificar `pio test` y `pio run` sin warnings antes de un commit.
+  **Apagar los 12 V antes de flashear o resetear.** ROS 2: unidades SI y `frame_id` explícito; `colcon test`.
+- Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
+- Plugins: **codex** (revisor en solo lectura; en esta PC su sandbox no lee archivos: pegar el código en el prompt,
+  lanzar con `< /dev/null` y esperar `tokens used` en la salida); **graphify** (grafo del repo); **ponytail**
+  (instalado, sin usar todavía). `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
+- Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
+  usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
 
-## Estado actual
+## 5. Estado actual (2026-09-27)
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 14 pruebas OK. **Sin placa.**
+- `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 19 pruebas OK.
+  **Sin placa.**
+- Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
+  **Sin probar con el agente.**
+- `brazo_ik`: 5 pruebas OK y probado en la notebook.
+- Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Visión, estéreo y misión: sin empezar.
 
-- **2026-09-27:** repo creado. Documentación ordenada (`docs/INDICE.md`, `docs/ARQUITECTURA.md`,
-  `docs/Componentes_inventario.md`). Decisiones: limón aprobado por el profesor; configuración RRR (opción 6 de
-  la tabla de R1); pinza con tracción + giro en vez de succión; medidas vigentes del brazo las de la R1 E4; motor
-  de la base del brazo = 36GP-555 160 rpm (el DC 895 de 2700 rpm fue una compra errónea).
-- **`firmware/brazo`** (movido de `~/pruebas-esp32/09-brazo-control`, commits `cd8b420` y `f408f4e` allá): control
-  en cascada de J1-J3 + pinza en la ESP32-WROOM-32D, comandos por serial. 14 pruebas OK en la PC, compila, revisado
-  por Codex (10 hallazgos aplicados). **No probado en placa.** Pendiente: todo lo marcado `MEDIR` en
-  `include/brazo_config.h`, pull-down de 10 kΩ en los EN, primera prueba en placa (secuencia en su README) y capa
-  micro-ROS.
-- **`ros2_ws/src/brazo_ik`** (2026-09-27): cinemática inversa de la E4 portada a Python puro (`cinematica.py`, sin
-  ROS ni numpy) + nodo `brazo_ik` (`/brazo/objetivo` PointStamped [m, marco brazo_base] -> `/brazo/joint_cmd`
-  JointState [rad] y `/brazo/ik_estado`). 5 pruebas OK (ejemplo numérico de la E4 exacto, 2000 idas y vueltas).
-  Probado en la notebook. Ojo al probar: `kill` del `ros2 run` deja vivo el proceso Python del nodo
-  (`pkill -f lib/brazo_ik/nodo_ik`). La geometría y los límites deben coincidir con `firmware/brazo`.
-- **`docs/CONEXIONES.md` + `docs/conexiones.html`** (2026-09-27): diagrama de conexiones completo. Pines de la base
-  (S3) propuestos: tracción PWM 4/5 y 6/7, EN común 38, encoders 15/16 y 17/18, IMU 8/9, GPS 41/42, TRIG común 10,
-  ECHO 11/12/13, bumpers 14/21/39/40, seta 47, batería ADC 1 (19/19 GPIO). Luz y buzzer en la Pi (GPIO 17/27).
-- **`firmware/base`** (2026-09-27): ESP32-S3 con tracción diferencial (PI de velocidad por rueda reutilizando
-  `ControlArticulacion`, movido a `firmware/lib`), rampa, odometría, IMU/GPS (drivers copiados de
-  `~/pruebas-esp32`), 3 HC-SR04 (`firmware/lib/HCSR04`, TRIG común, ECHO por interrupción) y seguridad local
-  (`lib/BaseLogica/SeguridadBase`: seta NC enclavada, vuelco, bumpers, distancia al frente, watchdog). Comandos por
-  serial. 19 pruebas OK en la PC, compila sin warnings. Revisión de Codex (9 hallazgos, aplicados): sin IMU
-  reciente no se mueve, bumper solo deja alejarse recto, ultrasonido del frente sin eco = no avanza (INFINITY = libre),
-  cercanía como tope de velocidad (no se acumula con la rampa), rampa a cero al parar, `d` cortado ante cualquier
-  recorte, watchdog vencido anula el comando, `cal` solo detenido, `v`/`w` hasta 3 s. **No probado en placa.** Pendiente: `MEDIR` en
-  `include/base_config.h` (sobre todo **qué motor de tracción es**: notas = 36GP-555 53 rpm, inventario = DC 895
-  planetario 53 rpm), capa micro-ROS.
-- **Capa micro-ROS** (2026-09-27): entorno `ros` en los dos firmwares (`-DUSAR_MICROROS`, transporte serial, Jazzy,
-  `microros.meta` con 12 publishers / 6 subs). Conexión en `firmware/lib/EnlaceMicroRos` (patrón de
-  pruebas-esp32/02: ping 500 ms, 3 perdidos = corte, hora del agente, reconexión). Toda la salida de texto va por
-  `Print *out` (Serial en modo serial, búfer publicado en `/<parte>/respuesta` con micro-ROS) y los comandos de texto
-  llegan por `/<parte>/comando`, así que ROS usa el mismo `ejecutar()` con sus protecciones. Base: `/cmd_vel` -> `/odom`,
-  `/imu/data_raw`, `/range/*`, `/bumpers`, `/gps/fix`, `/battery`, `/base/estado`; watchdog 300 ms con ROS. Brazo:
-  `/brazo/joint_cmd` (rad), `/pinza/cierre`, `/pinza/giro` -> `/brazo/joint_states`, `/brazo/estado`. Sin agente, las
-  dos partes se detienen. Compilan sin warnings (primera compilación ~8 min cada una). Revisión de Codex (11
-  hallazgos, 10 aplicados; el de MTU se verificó: 512 B × historial 4 = 2048 B por mensaje reliable): **armado por
-  sesión** (`armar` por `/<parte>/comando` después de cada conexión), parada apenas se detecta el corte, `ejecutar()`
-  bloquea todo con `hwOk` falso, `/brazo/joint_cmd` y `m` todo o nada, watchdog de la base 50..1000 ms con ROS, sin
-  `effort`, altitud NaN sin separación del geoide, respuesta que se reintenta, `log` rechazado con ROS. **Sin probar
-  con el agente.**
-- **Pendiente general:** resto de `ros2_ws` en la Pi, prueba de las cámaras NoIR con YOLO
-  (riesgo de color, ver `docs/ARQUITECTURA.md` §6), preguntas a la cátedra (§11).
-- **Pendiente en `firmware/lib/EncoderPCNT`:** salto falso de 32 000 cuentas (el control del brazo lo filtra).
+## 6. Decisiones
+- Limón aunque no figura en la guía R2: aprobado por el profesor.
+- Configuración RRR (opción 6 de la tabla R1); pinza con tracción + giro en vez de succión.
+- Medidas del brazo vigentes: las de la E4; motor de J1 = 36GP-555 160 rpm (el DC 895 de 2700 rpm fue un error de compra).
+- Un ESP32 por subsistema y lazos cerrados en los ESP32: la Pi solo manda consignas y cada placa se detiene sola.
+- Control en cascada posición → velocidad, porque la E5 identificó modelos de velocidad.
+- Seguridad de la base decidida en la S3 (seta NC, vuelco, bumpers, distancia, watchdog), sin depender de la Pi.
+- Armado por sesión en micro-ROS, para que un nodo que siga publicando no mueva el robot al reconectar.
+- TRIG común de HC-SR04, EN común de tracción y luz/buzzer en la Pi: la S3 no tiene más GPIO libres.
+- Videos (~500 MB) y artículos de terceros fuera de git.
+
+## 7. Próximos pasos
+1. Confirmar el motor de tracción: notas = 36GP-555 53 rpm, inventario = DC 895 planetario 53 rpm.
+2. Cablear según la lista "Antes de conectar" de `docs/CONEXIONES.md` (pull-down 10 kΩ en los EN, divisores de
+   ECHO, pull-ups externos).
+3. Primera prueba del brazo en placa (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
+4. Primera prueba de la base con ruedas en el aire (README) y medir sentidos, radio y trocha.
+5. Probar micro-ROS con los agentes (`/dev/ttyACM0` base, `/dev/ttyUSB0` brazo) y medir con `ros2 topic hz`.
+6. Probar las cámaras NoIR con YOLO y limones reales (riesgo de color); soporte rígido y calibración estéreo.
+7. Nodos de visión y `mision_fsm` mínima para la demo del objetivo mínimo.
+8. Preguntas a la cátedra (`docs/ARQUITECTURA.md` §11) y arreglar el salto de 32 000 cuentas de `EncoderPCNT`.
