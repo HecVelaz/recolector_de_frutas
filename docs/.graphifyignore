@@ -1,0 +1,13 @@
+# Material de referencia de terceros y libro (no es trabajo del grupo)
+**/Artículos como referencias/
+**/Artículos/
+**/artículos/
+**/Articulos de Referencia/
+# PDF duplicados de los .txt, imágenes, videos, notebooks y planillas (inventario ya convertido a .md)
+*.pdf
+*.png
+*.jpg
+*.mp4
+*.ipynb
+*.xlsx
+graphify-out/

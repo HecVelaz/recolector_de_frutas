@@ -1,0 +1,114 @@
+Robótica 1
+Trabajo Práctico 2026 S2
+
+
+
+
+1.​ Descripción General
+El trabajo práctico de la asignatura Robótica 1 consiste en el desarrollo de una herramienta
+para un robot móvil recolector de frutas. Las herramientas consistirán en un brazo robótico
+de al menos 4 grados de libertas dotado de Visión Artificial para identificar las frutas a
+cortar, utilizando criterios de calidad y brindando la ubicación al controlador, para lograr la
+recolección.
+
+Requisitos:
+   ●​ Cada grupo puede estar integrado por un máximo de 4 personas.
+   ●​ Cada robot deberá contar con un brazo robótico de al menos 4 grados de libertad +
+      herramienta (Plataforma móvil + 3 DoF brazo + herramienta final).
+   ●​ El brazo robótica debe estar montado sobre una plataforma móvil de desplazamiento
+      lineal continuo de longitud 1,20 m. Al costado de la plataforma móvil, se contratará
+      los arbolitos/plantas con los frutos para ser recogidos.
+   ●​ La configuración del robot podrá ser RRP o RRR.
+   ●​ Al menos los dos primeros grados de libertad deben estar implementados con
+      motores DC y controlados en posición en lazo cerrado.
+   ●​ El proceso de recolección de la fruta por parte del robot deberá hacerse con una
+      herramienta específica para el fin dependiendo de la fruta:
+          ○​ Naranja: Succión + torsión
+          ○​ Frutilla: Corte de tallo/captura
+          ○​ Tomate: Corte de tallo/captura
+          ○​ Uva: Corte de tallo/Captura
+          ○​ Limón: Succión + torsión
+   ●​ El Sistema deberá contar con al menos dos cámaras para que con visión
+      estereoscópica, logre localizar y elección las frutas a recolectar de manera
+      secuencial y planificadas.
+   ●​ El robot deberá recolectar las frutas y depositarlas en al menos dos cajones, según
+      su tamaño.
+
+
+
+2.​ Escenario de validación
+
+El escenario de validación es fundamental para el desarrollo, ya que será donde se apliquen
+los protocolos de pruebas y se podrá verificar el funcionamiento del robot y el cumplimiento
+de los requisitos.
+
+Características:
+   ●​ El recorrido de la plataforma móvil deberá ser de al menos 1,2 m
+   ●​ El espacio de trabajo del robot (recolección) estará definido por una esfera, de
+      diámetro igual a 30cm. Esta esfera está elevada del suelo, emulando el tipo de fruta
+      a recoger, por ejemplo para el limón podría su centro a unos 35 cm del suelo, o si es
+      frutillo, podría considerarse que el centro está en el mismo suelo (semiesfera).
+   ●​ Las frutas deben ser reales.
+   ●​ La visión debe resolver casos de oclusión (una fruta sobre otra o las frutas cubiertas
+      por follaje, dependiendo del ángulo de visión).
+   ●​ Las frutas no deben ser dañadas en el proceso de recolección.
+
+
+Observaciones finales:
+  ●​ La puesta a punto del escenario es responsabilidad del Grupo.
+  ●​ Se otorgarán 4 puntos extras al robot más rápido en la tarea.
+
+
+
+
+   Fig 1. Diagrama ilustrativo de sistema donde se pueden ver el robot con TRES cámaras. y las cajas de
+                                        recolección (verde y naranja).
+
+
+
+
+3.​ Entregas
+   ●​ Entrega 1: Definición de morfología y arquitectura del robot
+   ●​ Entrega 2: Diseño preliminar del robot. Definición de tarea. Secuencia de
+      funcionamiento (Diagrama de flujo). Definición de herramienta, y capacidad de
+      carga/volumen de trabajo.
+   ●​ Entrega 3: Modelo cinemático directo (Simulación). Definición del espacio de
+      trabajo.
+   ●​ Entrega 4: Modelo cinemático INVERSO (Simulación). Verificación del espacio de
+      trabajo.
+    ●​   Entrega 5: Selección de sensores y actuadores. Demo Control en lazo abierto.
+    ●​   Entrega 6: Demo control de motores en lazo cerrado.
+    ●​   Entrega 7: Diseño final del robot e implementación de estructura (Demo).
+    ●​   Entrega 8: Sistema de visión artificial (Demo).
+    ●​   Entrega 9: Integración y control (completamente funcional)
+
+Las fechas se definirán en el aula virtual.
+
+
+4.​ Asignaciones
+
+Complete la tabla enlazada y seleccione alguna de las opciones de setups.
+
+                        Trabajo Práctico Final Robótica 1 2026S2
+Configuración         Fruta      Herramienta          Grupo
+                                 Corte de tallo +
+         RRP          Frutilla   captura              Grupo X: Fulano, Mengano y Sultano.
+                                 Corte de tallo +
+         RRR          Frutilla   captura
+         RRP         Naranja     Succión + torsión
+         RRR         Naranja     Succión + torsión
+         RRP          Limón      Succión + torsión
+         RRR          Limón      Succión + torsión
+         RRP          Pomelo     Succión + torsión
+         RRR          Pomelo     Succión + torsión
+                                 Corte de tallo +
+         RRP           Uva       captura
+                                 Corte de tallo +
+         RRR           Uva       captura
+                                 Corte de tallo +
+         RRP          Tomate     captura
+                                 Corte de tallo +
+         RRR          Tomate     captura
+                                 Corte de tallo +
+         RRP          Locote     captura
+

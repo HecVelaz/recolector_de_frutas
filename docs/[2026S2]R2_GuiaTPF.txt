@@ -1,0 +1,394 @@
+                                   Universidad Nacional de Asunción
+                                        Facultad de Ingeniería
+                                        Ingeniería Mecatrónica
+                                            Robótica II
+
+
+
+
+                       TRABAJO PRÁCTICO FINAL
+                                         ROBÓTICA II
+                         Robots autónomos para labores en fruticultura
+
+ Periodo     2026S2                                  Versión     0.5
+ Fecha       27/07/2026                              Estado      Guía de desarrollo
+
+Elección del proyecto. Cada grupo desarrollará una de las dos opciones: A) robot móvil cortador
+de chupones en cítricos, o B) robot móvil recogedor de frutas. La opción y la especie objetivo
+deberán declararse al inicio y no podrán cambiarse sin aprobación docente.
+
+
+1. Descripción y alcance
+
+El TPF consiste en diseñar, construir, programar y validar un robot móvil autónomo basado en
+ROS 2 que opere en un escenario frutícola representativo. El sistema deberá integrar locomoción,
+percepción, localización, planificación, manipulación, seguridad, gestión de energía e interfaz de
+usuario.
+Se espera un prototipo funcional, trazable y seguro, con decisiones de ingeniería justificadas y
+resultados medidos. La demostración se realizará en un escenario controlado preparado por el grupo.
+
+
+2. Objetivos
+
+2.1. Objetivo general
+
+Desarrollar y validar un sistema robótico autónomo capaz de desplazarse en un entorno frutícola
+y ejecutar de forma selectiva una tarea física sobre una planta o un fruto, empleando percepción
+artificial (visión artificial) y ROS 2.
+
+
+2.2. Objetivos específicos
+
+  Explorar el estado del arte de los robots dedicados a la agricultura en general y, más específicamente,
+  a la fruticultura.
+  Proponer una arquitectura modular de hardware y software distribuido para un robot móvil
+  autónomo.
+  Desarrollar la estructura del robot móvil para cumplir con la tarea deseada.
+  Diseñar e implementar algoritmos de navegación basados en encoders, IMU, GPS u otros sensores
+  externos.
+  Detectar, clasificar y localizar objetivos mediante visión artificial.
+  Planificar y controlar el movimiento de la base y del mecanismo de trabajo mediante una aplicación
+  externa.
+  Implementar una máquina de estados de misión, recuperación ante fallas y registro de datos.
+  Cuantificar desempeño, repetibilidad, seguridad, consumo y calidad de la intervención.
+
+Guía TPF R2 – 2026S2                                                                            Página 1
+                                  Universidad Nacional de Asunción
+                                       Facultad de Ingeniería
+                                       Ingeniería Mecatrónica
+                                           Robótica II
+
+
+
+3. Requisitos comunes a ambas opciones
+
+3.1. Hardware mínimo
+
+H1. El prototipo será construido por el grupo y tendrá dimensiones mínimas de 40 cm × 35 cm
+    (largo × ancho), sin contar el manipulador extendido.
+H2. Tendrá una base terrestre con al menos dos ruedas motrices actuadas independientemente,
+    encoders en las ruedas actuadas, IMU y GPS. La masa total será de al menos 5 kg.
+H3. Incorporará una computadora a bordo capaz de ejecutar ROS 2 y el procesamiento de percepción
+    sin depender de un computador externo.
+H4. Dispondrá de dos cámaras RGB o una cámara RGB acompañada por un sensor de distancia
+    que permita estimar la posición tridimensional del objetivo.
+H5. Tendrá detección de obstáculos en el frente y los laterales mediante al menos tres sensores de
+    distancia; se incluirá además un elemento físico de contacto o bumper.
+H6. Dispondrá de una herramienta acorde con la opción elegida y con los GDL indicados a
+    continuación.
+     a) En el caso del robot recolector, se empleará un brazo robótico de 4 GDL más un mecanismo
+         de rotación de la fruta (por succión), o un brazo de 4 GDL con corte de tallo.
+     b) En el caso del robot cortador de chupones, se empleará un brazo de 2 GDL para el control
+         de la altura y la inclinación del corte.
+H7. La autonomía operativa mínima será de 45 minutos. Se deberá indicar nivel de batería y
+    disponer de puerto de carga.
+H8. Incluirá botón general ON/OFF, paro de emergencia tipo seta, señal luminosa y aviso acústico.
+    El actuador de trabajo tendrá habilitación física independiente y estado visible.
+H9. Detectará condición de vuelco o inclinación peligrosa. Si la plataforma es levantada, volcada o
+    pierde comunicación crítica, la locomoción y el actuador de trabajo deberán detenerse.
+
+
+3.2. Arquitectura de software
+
+S1. Todo el software de integración será implementado en ROS 2. Se entregará un diagrama de
+    nodos, tópicos, servicios/acciones y frecuencias.
+S2. Existirán, como mínimo, nodos separados para: base, sensores, estimación de estado, percepción,
+    navegación, seguridad, misión e interfaz.
+S3. La máquina de estados del firmware de control de alto nivel incluirá: INACTIVO, TELEOP,
+    NAVEGANDO, BUSCANDO, INTERVINIENDO, RECUPERACION, FINALIZADO y EMERGENCIA.
+S4. Se publicarán diagnósticos/estados de batería, comunicaciones, sensores y actuadores. La pérdida
+    de un dato crítico deberá llevar a un estado seguro.
+S5. Se registrarán rosbags y métricas por misión: trayectoria, detecciones, intervenciones, tiempos,
+    fallas y energía consumida.
+S6. Se proveerá una interfaz remota mediante una aplicación móvil para teleoperación, selección de
+    misión, visualización del mapa/recorrido, estado y alarmas.
+
+
+3.3. Navegación y autonomía de la tarea
+
+N1. El robot operará en modo manual y autónomo. En modo autónomo seguirá una hilera donde
+    en un lateral estarán las plantas objetivo, alcanzará las zonas de inspección y regresará a un
+
+Guía TPF R2 – 2026S2                                                                        Página 2
+                                  Universidad Nacional de Asunción
+                                       Facultad de Ingeniería
+                                       Ingeniería Mecatrónica
+                                           Robótica II
+
+
+
+    punto definido luego de recorrer toda la hilera. La hilera estará definida por GPS y deberá ser
+    verificada mediante visión artificial para asegurar la correcta navegación.
+N2. La estimación de pose apropiada para la recolección o el corte de chupones combinará encoders
+    e IMU con fuentes externas (LiDAR, cámara, etc.).
+N3. Implementará seguimiento de hilera o corredor, evitación reactiva de obstáculos y detención
+    segura ante personas u objetos imprevistos.
+N4. El actuador de trabajo sólo podrá activarse dentro de una zona permitida y con el robot
+    detenido o a velocidad segura definida por el grupo.
+
+
+
+3.4. Autonomía energética
+
+Si bien se calcularán y dimensionarán las características de la batería necesarias para mantener la
+movilidad, para la implementación del TP no será necesario que el robot funcione exclusivamente
+con baterías.
+
+
+
+4. Opción A: robot cortador de chupones en cítricos
+
+4.1. Tarea
+
+El robot recorrerá una hilera, detectará el tronco y los chupones basales de una planta cítrica,
+distinguirá el elemento (rama) objetivo de elementos que no deben cortarse, posicionará y orientará
+una herramienta y realizará un corte selectivo cerca de la inserción. La navegación y la intervención
+se evaluarán primero por separado y luego de manera integrada.
+
+
+
+4.2. Requisitos específicos
+
+A1. Se construirá un mecanismo de posicionamiento con al menos 2 GDL controlados (elevación
+    y orientación), además del actuador de corte. Deberá cubrir objetivos entre 0 y 50 cm sobre
+    el suelo y a ambos lados del eje de intervención.
+A2. La herramienta cortará tallos representativos de 3 a 12 mm de diámetro. El filo deberá quedar
+    en posición segura cuando no esté actuando.
+A3. El sistema identificará al menos tres clases: chupón, tronco/rama protegida y otro. Se empleará
+    un conjunto de prueba no utilizado para entrenamiento.
+A4. Para al menos 30 instancias de prueba, la detección de chupones alcanzará precisión ≥ 0,80 y
+    recobrado ≥ 0,80.
+A5. El error medio de localización 3D del punto de intervención será ≤ 50 mm (este error deberá
+    caracterizarse).
+A6. El tiempo promedio desde confirmación del objetivo hasta retiro seguro de la herramienta será
+    ≤ 25 s (este tiempo deberá caracterizarse).
+A7. Antes de cortar se verificará una zona de exclusión alrededor del tronco; es decir, se comprobará
+    que no haya otros elementos que puedan verse comprometidos por el corte del chupón. Una
+    pérdida de percepción, un movimiento inesperado o la apertura del resguardo abortarán la
+    acción.
+
+Guía TPF R2 – 2026S2                                                                         Página 3
+                                   Universidad Nacional de Asunción
+                                        Facultad de Ingeniería
+                                        Ingeniería Mecatrónica
+                                            Robótica II
+
+
+
+4.3. Escenario de validación
+
+La Figura 1 resume el escenario: (a) las cámaras observan con campos de visión superpuestos la
+zona baja del tronco para localizar los chupones; (b) el robot se desplaza en paralelo a la hilera
+manteniendo una distancia de trabajo; y (c) el sistema distingue los tallos objetivo de las estructuras
+protegidas y aproxima la herramienta al punto de inserción.
+Se preparará una hilera de al menos cuatro plantas o maquetas de escala real, separadas entre sí,
+con iluminación y fondos variables. Habrá al menos ocho tallos objetivo en total, cuatro distractores
+vegetales, dos troncos y tres obstáculos en la hilera. Los tallos de ensayo podrán ser de material
+vegetal no vivo y de diámetro verificado. No se realizarán cortes sobre árboles productivos durante
+la evaluación.
+
+
+
+
+                a)                                  b)                                 c)
+
+Figura 1: Escenario de referencia para la opción A: a) recorrido de hilera con plantas objetivo, b)
+percepción estereoscópica usando cámaras, y c) identificación y corte de chupones (marcados con
+cruz).
+
+
+
+
+Guía TPF R2 – 2026S2                                                                           Página 4
+                                   Universidad Nacional de Asunción
+                                         Facultad de Ingeniería
+                                         Ingeniería Mecatrónica
+                                             Robótica II
+
+
+
+5. Opción B: robot recogedor de frutas
+
+5.1. Tarea y especie objetivo
+
+El grupo seleccionará una especie: frutilla, manzana, naranja o mandarina. El robot recorrerá el
+cultivo, detectará frutos cosechables, estimará su posición, planificará una aproximación sin colisiones,
+desprenderá el fruto y lo depositará en un recipiente sin daño inaceptable. La geometría del cultivo
+y el efector final deberán adaptarse a la especie declarada.
+
+
+5.2. Requisitos específicos
+
+B1. El manipulador tendrá al menos 4 GDL controlados, sin contar la apertura/cierre o acciona-
+    miento del efector final, y alcanzará el volumen de trabajo definido.
+B2. El efector final deberá combinar sujeción y separación (corte, giro, tracción controlada u otro
+    método justificado) y limitar la fuerza sobre el fruto.
+B3. El sistema clasificará, como mínimo, cosechable, no cosechable y obstáculo/oclusión. El criterio
+    de madurez será explícito y adecuado a la especie.
+B4. Para al menos 30 frutos de prueba, la clase cosechable alcanzará precisión ≥ 0,80 y recobrado
+    ≥ 0,80.
+B5. El error medio de localización 3D del centro o punto de toma será ≤ 35 mm.
+B6. El tiempo medio desde confirmación del objetivo hasta depósito será ≤ 45 s.
+B7. El planificador evitará colisiones con tronco, ramas, soportes y otros frutos. El criterio de
+    selección de la orientación y/o el alcance se basará en la geometría detectada por las cámaras. Si
+    la confianza o la fuerza medida excede el límite definido, el robot abortará y liberará o retirará
+    el efector de forma segura.
+
+
+5.3. Escenario de validación
+
+La Figura 2 resume el escenario: (a) dos cámaras inclinadas observan una región común para estimar
+la posición tridimensional de los frutos; (b) el robot recorre la hilera y conserva una distancia de
+trabajo respecto de las plantas; y (c) los frutos maduros representados en rojo son los objetivos
+de cosecha, incluso ante oclusiones parciales, mientras que los frutos no maduros y las estructuras
+vegetales se consideran elementos no cosechables.
+La hilera tendrá al menos cuatro plantas, mesas o maquetas representativas. Se dispondrán frutos
+cosechables y no cosechables, oclusiones parciales, ramas o soportes y tres obstáculos en la hilera.
+Para frutas de árbol se evaluará al menos un volumen de trabajo de 0,4 m de ancho por 0,8 m de
+alto; para frutillas se empleará una mesa o un cantero de geometría declarada. El grupo proveerá
+frutos homogéneos suficientes para repetir los ensayos.
+
+
+6. Entregables
+
+E1. Diagrama de bloques del sistema (arquitectura). Selección de componentes. Lectura de sensores
+    con ROS: IMU, 3 sensores de ultrasonido, GPS y 4 bumpers.
+E2. Plataforma robótica diseñada y primeros montajes, incluyendo ruedas, sensores y controladores.
+E3. Plataforma robótica con baterías, sensores montados y motores controlados. Controlador a
+    bordo.
+
+Guía TPF R2 – 2026S2                                                                            Página 5
+                                  Universidad Nacional de Asunción
+                                        Facultad de Ingeniería
+                                       Ingeniería Mecatrónica
+                                            Robótica II
+
+
+
+
+                a)                                  b)                                c)
+
+Figura 2: Escenario de referencia para la opción B: a) recorrido de hilera con plantas objetivo, b)
+percepción estereoscópica usando cámaras, y c) selección de frutos maduros (rojos) bajo oclusión
+parcial utilizando información de cámaras.
+
+
+E4. Cálculo de autonomía del robot TPF y dimensionamiento de las baterías. Motores de los
+    actuadores montados y controlados.
+E5. Detección de árboles, troncos principales y chupones; detección de caminos y obstáculos.
+E6. Diseño e implementación de la herramienta.
+E7. Software de interfaz con el usuario (aplicación para celular).
+E8. Entrega final del robot TPF (segundo parcial).
+
+
+7. Resumen de hardware del robot
+
+La Tabla 1 sintetiza los sensores y actuadores mínimos del prototipo. El tipo concreto podrá ajustarse
+al diseño del grupo, siempre que cumpla la función indicada y los requisitos de la opción elegida.
+Para la percepción tridimensional se seleccionará una de las dos alternativas indicadas.
+
+
+
+
+Guía TPF R2 – 2026S2                                                                         Página 6
+                                  Universidad Nacional de Asunción
+                                        Facultad de Ingeniería
+                                        Ingeniería Mecatrónica
+                                            Robótica II
+
+
+
+                       Tabla 1: Resumen de sensores y actuadores del prototipo.
+
+  Sensor/actuador         Cantidad Tipo                              Función
+  Elementos comunes a ambas opciones
+  Motores de tracción      ≥2     CC o BLDC, con reducción Desplazar y orientar el robot móvil.
+                                  y control independiente
+  Encoders de rueda          2    Incrementales, preferente- Medir velocidad y desplazamiento
+                                  mente en cuadratura          para la odometría.
+  Unidad de medición         1    De 6 o 9 ejes                Estimar orientación y detectar incli-
+  inercial (IMU)                                               nación o vuelco.
+  Receptor GPS/GNSS          1    Receptor de posicionamien- Obtener la posición absoluta y refe-
+                                  to global                    renciar el recorrido de la hilera.
+  Cámaras o sensor de 2; o 1+1 Dos cámaras RGB; o una Detectar, clasificar y estimar la po-
+  profundidad                     cámara RGB y un sensor de sición tridimensional del objetivo.
+                                  distancia
+  Sensores de distancia    ≥3     Ultrasonido, ToF o LiDAR Detectar obstáculos en el frente y
+                                                               los laterales.
+  Bumpers                    4    Contacto mecánico            Detectar contacto físico y ordenar
+                                                               la detención segura.
+  Monitor de batería         1    Medición de tensión y, de Informar el estado de energía dispo-
+                                  ser posible, corriente       nible.
+  Paro de emergencia         1    Pulsador tipo seta con en- Interrumpir de forma segura la loco-
+                                  clavamiento                  moción y el actuador de trabajo.
+  Indicadores de estado 1 de cada Señal luminosa y aviso acús- Indicar estados de operación, adver-
+                           tipo   tico                         tencia y emergencia.
+  Elementos específicos de la opción A
+  Actuadores de posicio-    2      Servomotores, motorreduc- Controlar la altura y la orientación
+  namiento                         tores o actuadores lineales de la herramienta.
+  Actuador de corte         1      Tijera eléctrica o mecanis- Realizar el corte selectivo del chu-
+                                   mo de corte accionado       pón.
+  Elementos específicos de la opción B
+  Actuadores del manipu-    4      Servomotores o motorreduc- Posicionar y orientar el efector final.
+  lador                            tores con control de posición
+  Efector final             1      Pinza, ventosa o herramien- Sujetar, desprender y depositar el
+                                   ta de corte, según la especie fruto.
+
+
+
+8. Organización y condiciones
+
+  Cada grupo estará integrado por hasta cuatro estudiantes. Si son menos, se podrá considerar
+  alguna simplificación del TP, que deberá ser consultada a priori.
+  Cada grupo implementará su propio hardware (estructura, sensores y actuadores) y software. Se
+  permiten componentes comerciales, pero la integración, los mecanismos, el control y la validación
+  deberán ser trabajo del grupo.
+  Las funcionalidades deberán validarse siguiendo protocolos bien definidos y utilizando criterios
+  justificados y documentados.
+  Se deberá respetar la integridad de plantas, frutos, personas e instalaciones. La cátedra podrá
+  impedir una prueba que no cumpla las condiciones de seguridad.
+
+Guía TPF R2 – 2026S2                                                                            Página 7
+                                   Universidad Nacional de Asunción
+                                        Facultad de Ingeniería
+                                        Ingeniería Mecatrónica
+                                            Robótica II
+
+
+
+  El uso de datos o código de terceros deberá citarse. El grupo deberá poder explicar y modificar el
+  sistema presentado.
+
+
+9. Referencias técnicas y productos de referencia
+
+Las siguientes fuentes orientan la descomposición funcional y los indicadores. Los productos comer-
+ciales se citan como referencias de arquitectura; no implican que el prototipo estudiantil deba igualar
+su productividad.
+[1] M. Lippi et al., “An autonomous spraying robot architecture for sucker management in large-scale
+    hazelnut orchards”, Journal of Field Robotics, 41(7), 2114–2132, 2024. DOI: 10.1002/rob.22217.
+    Referencia para detección, reconstrucción 3D e intervención selectiva planta por planta.
+[2] SEPPI M., “XSP shoot remover”. Implemento comercial con cepillo para limpieza de troncos y
+    eliminación de brotes, con velocidad declarada de 1–5 km/h: https://www.seppi.com/en-us/
+    products/equipment-for-undercanopy-maintenance-3/xsp/.
+[3] J. Xiong et al., “An autonomous strawberry-harvesting robot: Design, development, integration,
+    and field evaluation”, Journal of Field Robotics, 37(2), 2020. DOI: 10.1002/rob.21889.
+[4] H. Zhou et al., “Robotic kiwifruit harvesting using machine vision, convolutional neural networks,
+    and robotic arms”, Biosystems Engineering, 181, 140–156, 2019. DOI: https://doi.org/10.
+    1016/j.biosystemseng.2019.03.007.
+[5] W. Hua et al., “Key technologies in apple harvesting robot for standardized orchards: A comprehen-
+    sive review”, Computers and Electronics in Agriculture, 2025. DOI: 10.1016/j.compag.2025.110343.
+[6] Dogtooth Technologies, “Strawberry Harvesting Robots”. Referencia comercial de navegación por
+    hileras, selección, cosecha, inspección y empaque: https://dogtooth.tech/robots/.
+[7] FFRobotics, “Robotic Fruit Harvester”. Referencia comercial de cosecha de fruta de árbol, visión
+    y múltiples efectores: https://www.ffrobotics.com/.
+[8] Tevel, “Flying Autonomous Robots – Technology”. Referencia comercial de percepción, manipu-
+    lación y trazabilidad de fruta: https://www.tevel-tech.com/technology/.
+[9] Organifarms, “Harvesting Robot BERRY”. Referencia comercial para cosecha selectiva de frutillas:
+    https://www.organifarms.de/product.
+
+
+
+
+Guía TPF R2 – 2026S2                                                                          Página 8
+
