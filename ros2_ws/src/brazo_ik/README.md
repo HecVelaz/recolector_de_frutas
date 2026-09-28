@@ -14,12 +14,14 @@ ROS 2. Mismo algoritmo, convenciones y filtros que el notebook (límites articul
 
 | Tópico | Tipo | Sentido | Unidades |
 |---|---|---|---|
-| `/brazo/objetivo` | `geometry_msgs/PointStamped` | entra | m, marco `brazo_base` (parámetro `marco`) |
+| `/brazo/objetivo` | `geometry_msgs/PointStamped` | entra | m, marco `brazo_base` (parámetro `marco`): el TCP |
 | `/brazo/joint_cmd` | `sensor_msgs/JointState` (`j1`, `j2`, `j3`) | sale, solo si es alcanzable | rad |
 | `/brazo/ik_estado` | `std_msgs/String` | sale siempre | `ok q=[…]°` o `inalcanzable: <motivos>` |
 
-- El punto es la **muñeca P3**, no la punta de la pinza (ver "Limitación" en la E4: con 3 GDL de posición la
-  orientación de la herramienta no se elige).
+- El brazo es **tipo uArm / Dobot Magician**: un paralelogramo mantiene la herramienta siempre **horizontal**,
+  apuntando hacia afuera en la dirección de q1 (E1). Por eso `/brazo/objetivo` es el **punto de agarre (TCP)** y el
+  nodo lo pasa a muñeca P3 restando `largo_herramienta` en horizontal (`muneca_desde_herramienta`). Con
+  `largo_herramienta = 0` (por defecto, **MEDIR** en el real) es la muñeca, como antes. En la simulación, 0,075 m.
 - Un objetivo en otro marco se rechaza: la transformación cámara → brazo la hace `stereo_3d`.
 - El firmware del brazo trabaja en grados: su capa micro-ROS convierte los radianes de `/brazo/joint_cmd`. El brazo
   tiene que estar **armado** (`armar` por `/brazo/comando`) para moverse.

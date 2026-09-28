@@ -14,8 +14,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
 - **ESP32-S3** (base): 2 motores de tracción + IBT-2, encoders, IMU MPU-6500, GPS UP501, 3 HC-SR04, 4 bumpers,
   seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2, J2/J3 5840-31ZY (sin fin) + L298N, 2 servos.
-- Brazo RRR con cuatro barras (medidas de la E4) + pinza con 2 servos DSSERVO RDS3218 20 kg·cm (apertura y giro J4;
-  foto en `imagen_pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
+- Brazo RRR **tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
+  herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
+  20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `imagen_pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
 
 ## 3. Estructura
 - `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
@@ -47,7 +48,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
   S3: flashear con reset por watchdog (ya en `platformio.ini`); abrir el puerto con DTR/RTS bajos la deja en
   modo descarga. Usar `/dev/serial/by-id/` porque el puerto pasa de ACM0 a ACM1.
-- `brazo_ik`: 5 pruebas OK, en la notebook y en la Pi.
+- `brazo_ik`: 6 pruebas OK. `/brazo/objetivo` es el punto de agarre (TCP); con la herramienta horizontal, la muñeca
+  está `largo_herramienta` más adentro en horizontal (parámetro; 0 por defecto, MEDIR en el real).
 - Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
   en `~/recolector_de_frutas` (por rsync, sin `.git`), esptool en `~/esptool_env`. Las dos placas conectadas a la
   Pi con sus agentes: todas las tasas nominales. Brazo a 115200 (a 921600 el CH340 pierde datos en la Pi).
@@ -84,12 +86,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   1. Hilera de 4+4 limoneros con las medidas de R1 (limones a 0,22-0,50 m, esfera de trabajo Ø 30 cm a 35 cm del
      suelo), 3 obstáculos, GPS de la FIUNA, base diferencial con IMU/GPS: hecha.
   2. Brazo en la esquina delantera izquierda (J1 = 0° al frente) como cadena serie equivalente al cuatro barras,
-     pinza: hecha; con `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo.
+     con la herramienta horizontal (`j_nivel`) y el TCP a 0,075 m de la muñeca: hecha; con `brazo_ik`, llega exacto.
   3. Cámaras de Gazebo + cadena real de `vision_estereo` (`vision:=yolo`; `~/vision_estereo`, `~/yolo_ws`, venv
      `~/yolo_env` con numpy < 2): parcial. El estéreo localiza bien (con texturas), pero YOLO no reconoce los limones
      sintéticos sobre la copa: sin `/limon/posicion`.
-  4. 12 limones cosechables (`limones_sim` hace de visión y los engancha a la pinza): hecha; con `mision:=true`
-     cosechó dos limones seguidos.
+  4. 12 limones cosechables (`limones_sim` hace de visión y lleva el limón en el TCP mientras está agarrado): hecha;
+     con `mision:=true` cosecha limón tras limón, con el limón entre los dedos (≤ 1,2 cm del TCP).
   5. Ultrasonidos, bumpers y `/base/estado` (que los obstáculos frenen la base): falta.
   Probado sin ventana y con ventana en la notebook (factor de tiempo real ~0,5-1). Al probar desde Bash, Gazebo y los
   nodos quedan vivos si se corta solo el launch: limpiar siempre (ver memoria). **Aislada de la red**
@@ -98,7 +100,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
-  brazo y limón simulados. Sin probar con el brazo real. Falta el desfase muñeca → pinza (medir la pinza).
+  brazo y limón simulados. Sin probar con el brazo real. Usa el mismo `largo_herramienta` que `brazo_ik` (MEDIR).
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
@@ -131,7 +133,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
 6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
 7. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
-   brazo real: `cierre`, `reposo` y el desfase muñeca → pinza (hoy el centro del limón va a la muñeca).
+   brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
+   vertical si lo hay, hoy no contemplado).
 8. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).
 9. Simulación: etapa 5 (sensores de la base) y pasarla a la PC de escritorio; cargar las medidas reales (chasis,
    posición del brazo y de las cámaras, pinza) cuando estén. Pendiente: cajón para el limón soltado.

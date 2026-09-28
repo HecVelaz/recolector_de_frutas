@@ -1,6 +1,8 @@
 """Nodo brazo_ik: objetivo 3D de la muñeca -> ángulos de las articulaciones (cinemática inversa de la E4).
 
-Suscribe  /brazo/objetivo   geometry_msgs/PointStamped  [m], marco `marco` (por defecto brazo_base)
+Suscribe  /brazo/objetivo   geometry_msgs/PointStamped  [m], marco `marco` (por defecto brazo_base): el punto de
+          agarre (TCP), a `largo_herramienta` m de la muñeca en horizontal (brazo tipo uArm: la herramienta queda
+          horizontal). Con largo_herramienta = 0 (por defecto, MEDIR en el real) es la muñeca P3.
 Publica   /brazo/joint_cmd  sensor_msgs/JointState      j1, j2, j3 [rad] (solo si el punto es alcanzable)
           /brazo/ik_estado  std_msgs/String             "ok ..." o "inalcanzable: <motivos>"
 
@@ -16,14 +18,17 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 
-from brazo_ik.cinematica import cinematica_inversa
+from brazo_ik.cinematica import cinematica_inversa, muneca_desde_herramienta
 
 NOMBRES = ['j1', 'j2', 'j3']
 
 
-def resolver(x_m, y_m, z_m):
-    """Objetivo en metros -> (posiciones [rad] o None, texto de estado). Sin ROS: se prueba en test/."""
-    soluciones, motivos = cinematica_inversa(x_m * 1000.0, y_m * 1000.0, z_m * 1000.0)
+def resolver(x_m, y_m, z_m, largo_herramienta=0.0):
+    """Objetivo (TCP) en metros -> (posiciones [rad] o None, texto de estado). Sin ROS: se prueba en test/."""
+    m = muneca_desde_herramienta(x_m, y_m, z_m, largo_herramienta)
+    if m is None:
+        return None, f'inalcanzable: el punto está a menos de {largo_herramienta:.3f} m (la herramienta) del eje de J1'
+    soluciones, motivos = cinematica_inversa(m[0] * 1000.0, m[1] * 1000.0, m[2] * 1000.0)
     if not soluciones:
         return None, 'inalcanzable: ' + '; '.join(motivos)
     s = soluciones[0]
@@ -36,10 +41,12 @@ class NodoIK(Node):
     def __init__(self):
         super().__init__('brazo_ik')
         self.marco = self.declare_parameter('marco', 'brazo_base').value
+        self.largo = float(self.declare_parameter('largo_herramienta', 0.0).value)  # m, muñeca -> TCP (MEDIR)
         self.pub_cmd = self.create_publisher(JointState, '/brazo/joint_cmd', 10)
         self.pub_estado = self.create_publisher(String, '/brazo/ik_estado', 10)
         self.create_subscription(PointStamped, '/brazo/objetivo', self.al_recibir, 10)
-        self.get_logger().info(f'brazo_ik listo: /brazo/objetivo (marco {self.marco}) -> /brazo/joint_cmd')
+        self.get_logger().info(f'brazo_ik listo: /brazo/objetivo (marco {self.marco}, herramienta {self.largo} m) '
+                               '-> /brazo/joint_cmd')
 
     def al_recibir(self, msg):
         if msg.header.frame_id and msg.header.frame_id != self.marco:
@@ -47,7 +54,7 @@ class NodoIK(Node):
             self.get_logger().warn(texto)
             self.pub_estado.publish(String(data=texto))
             return
-        q, texto = resolver(msg.point.x, msg.point.y, msg.point.z)
+        q, texto = resolver(msg.point.x, msg.point.y, msg.point.z, self.largo)
         self.pub_estado.publish(String(data=texto))
         if q is None:
             self.get_logger().warn(texto)

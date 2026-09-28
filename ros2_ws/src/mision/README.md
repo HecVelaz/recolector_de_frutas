@@ -31,7 +31,8 @@ y se queda ahí: reiniciar el nodo. Al cerrar el nodo (Ctrl+C, fin del launch) t
   INICIO).
 - Las muestras usan el tiempo de la imagen: se descartan las de más de 1 s (`edad_max_imagen`) y las repetidas.
 - La visión da la **superficie** del limón: el nodo le suma `radio_limon` (3 cm) sobre el rayo de la cámara.
-- El objetivo es la **muñeca P3** (lo que resuelve `brazo_ik`), no la punta de la pinza. Ajustar con la prueba.
+- El objetivo es el **punto de agarre (TCP)**: `brazo_ik` lo pasa a muñeca con `largo_herramienta` (herramienta
+  horizontal, brazo tipo uArm). `mision` usa el mismo `largo_herramienta` para ver si el limón es alcanzable.
 
 ## TF
 
@@ -45,9 +46,10 @@ absorbe en `roll`/`pitch`/`yaw`. **Sin valores por defecto**: el launch no arran
 mover el brazo con una TF inventada. Con el soporte rígido: medir x, y, z con cinta y ajustar los ángulos hasta que
 un limón medido a mano dé el mismo punto en `brazo_base`.
 
-**Pendiente antes de agarrar de verdad:** el objetivo es el centro del limón, pero `brazo_ik` lleva ahí la
-**muñeca**. Hay que medir la pinza y restar su desfase (depende de la orientación del antebrazo) antes de la primera
-prueba con fruta; hasta entonces, probar con `cierre` bajo y la mano en la seta.
+**Pendiente antes de agarrar de verdad:** medir `largo_herramienta` (muñeca P3 → centro del agarre entre los dedos,
+en horizontal) y pasarlo igual a `brazo_ik` y a `mision`. Si el centro del agarre no queda a la altura de la muñeca,
+hay que sumar ese desfase vertical (hoy no está contemplado). Hasta entonces, probar con `cierre` bajo y la mano en
+la seta.
 
 ## Parámetros
 

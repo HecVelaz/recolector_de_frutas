@@ -8,7 +8,10 @@ Mismo algoritmo y convenciones que el notebook de la E4 (Entrega4.md), sin numpy
     gamma4 = q2 + q3 - 90°        (ángulo del cuatro barras en la base)
     q3O = alpha4 - beta4          (antebrazo l3 respecto de la prolongación de l2; dependiente)
 
-El punto que se posiciona es la muñeca P3. Longitudes en mm, ángulos en radianes (límites en grados).
+El punto que se posiciona es la muñeca P3. El brazo es tipo uArm / Dobot Magician: un paralelogramo mantiene la
+herramienta siempre horizontal, apuntando hacia afuera en la dirección de q1 (E1). Por eso el punto de agarre (TCP)
+está a una distancia horizontal fija de la muñeca y muneca_desde_herramienta() pasa de uno al otro.
+Longitudes en mm, ángulos en radianes (límites en grados).
 Los límites deben coincidir con firmware/brazo/include/brazo_config.h.
 """
 
@@ -43,6 +46,19 @@ class Solucion:
     mu: float      # ángulo de transmisión
     p: tuple       # (x, y, z) de la muñeca por cinemática directa [mm]
     err: float     # mm
+
+
+def muneca_desde_herramienta(x, y, z, largo):
+    """Punto de agarre (TCP) -> muñeca P3: la herramienta es horizontal y apunta en la dirección de q1, así que el TCP
+    está `largo` más afuera que la muñeca en el mismo plano vertical que el eje de J1. Mismas unidades que la entrada.
+    Con el TCP a menos de `largo` del eje de J1 no hay solución: devuelve None."""
+    r = math.hypot(x, y)
+    if largo == 0.0:
+        return x, y, z
+    if r <= largo:
+        return None
+    k = (r - largo) / r
+    return x * k, y * k, z
 
 
 def norm_ang(a):

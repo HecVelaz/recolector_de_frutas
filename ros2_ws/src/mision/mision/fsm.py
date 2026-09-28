@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import math
 import re
 
-from brazo_ik.cinematica import cinematica_inversa
+from brazo_ik.cinematica import cinematica_inversa, muneca_desde_herramienta
 
 INICIO, ESPERAR, APROXIMAR, AGARRAR, RETIRAR, SOLTAR, FALLA = (
     'INICIO', 'ESPERAR', 'APROXIMAR', 'AGARRAR', 'RETIRAR', 'SOLTAR', 'FALLA')
@@ -33,7 +33,8 @@ class Parametros:
     tol_q: float = 0.0175        # rad (1°) entre la posición medida y la de brazo_ik (el firmware frena a 0,5°)
     tol_v: float = 0.02          # rad/s para considerarlo quieto
     cierre: float = 100.0        # % de cierre para agarrar (MEDIR con un limón: sin aplastarlo)
-    reposo: tuple = (0.36832, 0.0, 0.09103)  # m, donde lleva y suelta el limón (ejemplo E4: q = 0°, 45°, 0°)
+    reposo: tuple = (0.36832, 0.0, 0.09103)  # m, TCP donde lleva y suelta el limón (ejemplo E4: q = 0°, 45°, 0°)
+    largo_herramienta: float = 0.0  # m, muñeca -> TCP en horizontal: el mismo que brazo_ik (MEDIR en el real)
 
 
 def centro_desde_superficie(p, radio):
@@ -42,8 +43,10 @@ def centro_desde_superficie(p, radio):
     return tuple(c * (1.0 + radio / d) for c in p) if d > 0 else tuple(p)
 
 
-def alcanzable(p):
-    return bool(cinematica_inversa(p[0] * 1000.0, p[1] * 1000.0, p[2] * 1000.0)[0])
+def alcanzable(p, largo_herramienta=0.0):
+    """¿brazo_ik resuelve este TCP? (misma cuenta que el nodo: TCP -> muñeca -> cinemática inversa)."""
+    m = muneca_desde_herramienta(*p, largo_herramienta)
+    return m is not None and bool(cinematica_inversa(m[0] * 1000.0, m[1] * 1000.0, m[2] * 1000.0)[0])
 
 
 def leer_estado_brazo(texto):
@@ -122,7 +125,7 @@ class Mision:
         if any(math.dist(pm, prom) > self.par.tol_muestras for _, pm in self.muestras):
             return  # todavía se mueve (o el estéreo salta): seguir juntando
         self.muestras = []
-        if not alcanzable(prom):
+        if not alcanzable(prom, self.par.largo_herramienta):
             self.enviar('estado', 'ESPERAR: limón fuera de alcance en ({:.3f}, {:.3f}, {:.3f}) m'.format(*prom))
             return
         self._mover(prom, APROXIMAR, t)

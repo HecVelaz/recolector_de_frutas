@@ -6,7 +6,8 @@ Entra  /brazo/joint_cmd  sensor_msgs/JointState  j1, j2, j3 del actuador [rad]; 
        /pinza/giro       std_msgs/Float32        grados, -90..90 (solo ARMADO)
        /joint_states     sensor_msgs/JointState  de Gazebo: j1, j2, j3o (cadena serie equivalente), j4, dedos
 Sale   /brazo/joint_states (20 Hz), /brazo/estado (2 Hz, formato del firmware), /brazo/respuesta
-       /sim/j1, /sim/j2, /sim/j3o, /sim/j4, /sim/dedo_izq, /sim/dedo_der  std_msgs/Float64 -> JointPositionController
+       /sim/j1, /sim/j2, /sim/j3o, /sim/j_nivel, /sim/j4, /sim/dedo_izq, /sim/dedo_der  std_msgs/Float64 ->
+       JointPositionController. j_nivel = -(q2 + q3O) hace lo del paralelogramo del uArm: herramienta horizontal.
 
 Como el firmware: consigna con velocidad máxima por articulación (30 °/s J1, 20 °/s J2/J3), "llego" a 0,5°, arranca
 DESARMADO y con cero (en la simulación no hace falta el homing). El cuatro barras se convierte con cinematica.py.
@@ -24,7 +25,7 @@ from std_msgs.msg import Float32, Float64, String
 VEL_MAX = [math.radians(v) for v in (30.0, 20.0, 20.0)]  # brazo_config.h: velMax
 TOL = math.radians(0.5)                                   # brazo_config.h: tolerancia de llegada
 LIMITES = (Q1_LIM, Q2_LIM, Q3_LIM)
-DEDO_ABIERTO = 0.035  # m, cada dedo (urdf)
+DEDO_ABIERTO = 0.045  # m, cada dedo (urdf)
 TS = 0.02             # 50 Hz
 # Pose con la que aparece el brazo (= initial_position de los controladores en el urdf y reposo de mision en
 # sim.launch.py): al aparecer las articulaciones están en 0 y los controladores las llevan ahí; no tomar esa pose
@@ -69,7 +70,7 @@ class BrazoSim(Node):
         self.dedos = DEDO_ABIERTO  # m, cada dedo
         self.giro = 0.0            # rad (J4)
         self.tick = 0
-        self.pub = {n: self.create_publisher(Float64, f'/sim/{n}', 10) for n in ('j1', 'j2', 'j3o', 'j4', 'dedo_izq', 'dedo_der')}
+        self.pub = {n: self.create_publisher(Float64, f'/sim/{n}', 10) for n in ('j1', 'j2', 'j3o', 'j_nivel', 'j4', 'dedo_izq', 'dedo_der')}
         self.pub_joints = self.create_publisher(JointState, '/brazo/joint_states', 10)
         self.pub_estado = self.create_publisher(String, '/brazo/estado', 10)
         self.pub_resp = self.create_publisher(String, '/brazo/respuesta', 10)
@@ -148,7 +149,8 @@ class BrazoSim(Node):
         self.consigna = [acercar(c, o, v * TS) for c, o, v in zip(self.consigna, self.objetivo, VEL_MAX)]
         q3o = actuador_a_serie(self.consigna[1], self.consigna[2])
         # Todo en cada ciclo (como el PWM de los servos): un mensaje suelto al puente se puede perder
-        for n, val in (('j1', self.consigna[0]), ('j2', self.consigna[1]), ('j3o', q3o), ('j4', self.giro),
+        for n, val in (('j1', self.consigna[0]), ('j2', self.consigna[1]), ('j3o', q3o),
+                       ('j_nivel', -(self.consigna[1] + q3o)), ('j4', self.giro),
                        ('dedo_izq', self.dedos), ('dedo_der', self.dedos)):
             self.pub[n].publish(Float64(data=val))
 

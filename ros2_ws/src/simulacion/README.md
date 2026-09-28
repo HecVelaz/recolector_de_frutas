@@ -50,24 +50,27 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
   de la E4), `/brazo/estado` (mismo texto, 2 Hz), `/brazo/joint_states`, `armar` / `desarmar` / `s`, `/pinza/cierre`
   y `/pinza/giro` (solo ARMADO), perfil a 30 °/s (J1) y 20 °/s (J2, J3), "llego" a 0,5°. Arranca DESARMADO en la
   pose de reposo de `mision`, q = (0°, 45°, 0°).
-- Pinza: giro J4 y dos dedos (servos RDS3218); punta de los dedos 0,11 m más allá de la muñeca (MEDIR). Los dedos
-  no tienen colisión ni gravedad: el agarre se hará fijando el limón a la pinza al cerrar (etapa 4).
+- **Herramienta horizontal** (brazo tipo uArm / Dobot Magician): `j_nivel` en la muñeca, al que `brazo_sim` le manda
+  -(q2 + q3O), hace lo del paralelogramo. Medido: 0,0° de inclinación en todo el movimiento.
+- Pinza: giro J4 alrededor del eje de la herramienta y dos dedos (servos RDS3218) que abren 45 mm cada uno; punto de
+  agarre `tcp` a 0,075 m de la muñeca, entre los dedos, y punta a 0,11 m (MEDIR). `/brazo/objetivo` es el TCP
+  (`largo_herramienta` = 0,075 en `brazo_ik` y `mision`). Los dedos no tienen colisión.
 
 ## Agarre y misión (etapa 4)
 
 - Limones cosechables sin gravedad ni colisión: flotan donde están y la pinza no los empuja.
 - **`limones_sim`** hace de visión: publica `/limon/posicion` como `localizador_node` (marco `camera`, superficie
   del limón, hora de la imagen, ~3 Hz) solo si el limón está en el campo visual (33° × 25°, calibración v1) y a
-  0,40-0,95 m; y hace el agarre: dedos cerrados con la muñeca a < 3 cm del centro → engancha el limón a la pinza
-  (DetachableJoint); dedos abiertos → lo suelta y lo da por cosechado. Los enganches arrancan enganchados: el nodo
-  los suelta en los primeros 5 s.
+  0,40-0,95 m; y hace el agarre: dedos cerrados (cierre 40 %: sobre un limón de 56 mm) con el TCP a < 3 cm del
+  centro → mientras está agarrado, lo pone en el TCP 30 veces por segundo (`set_pose` de Gazebo); dedos abiertos → lo
+  deja y lo da por cosechado. Con un DetachableJoint el limón se atrasaba hasta 26 cm al girar J1 (unión blanda con
+  las articulaciones movidas por velocidad).
 - **Cámara** (`stereo_camera_link` + marco óptico `camera`, como `limon.launch.py`): mástil detrás del brazo, del lado
   izquierdo, a 0,55 m del piso, mirando 40° a la izquierda y 17° abajo (MEDIR; por qué ahí: ver etapa 3). La TF
   brazo → cámara sale del urdf: acá no se usa `mision.launch.py`. `limones_sim` solo "ve" lo que el estéreo real
   podría localizar (u >= 271 px, 0,40-0,95 m).
-- 12 limones cosechables (3 por árbol de la fila izquierda) en `config/limones_cosechables.xml`: `limones_sim` los
-  hace aparecer a los 4 s, con el brazo ya en reposo (si estaban desde el principio, los enganches, que arrancan
-  enganchados, se los llevaban con el brazo). La fila derecha tiene limones fijos de decoración.
+- 12 limones cosechables (3 por árbol de la fila izquierda, `limon_1..12` en el mundo); la fila derecha tiene limones
+  fijos de decoración.
 - Reposo del brazo: q = (-60°, 45°, 0°), estacionado hacia la derecha (no tapa las cámaras).
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
   izquierda: con el centro del robot sobre una **marca de parada** (x = 1,0 / 2,5 / 4,0 / 5,5 m), y frenar (`k`). Después la
@@ -131,6 +134,7 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-29 | Herramienta horizontal y TCP: con `mision:=true`, inclinación de la pinza 0,0° en todo el movimiento; limón agarrado a 0,2 cm del TCP y, durante el retiro, a 0-1,2 cm del TCP (medido en el mismo instante de simulación; con DetachableJoint llegaba a 26 cm). 29 pruebas `colcon test` | OK |
 | 2026-09-28 | Con ventana (usuario), la misión no arrancaba: `/brazo/estado` tenía dos publicadores, `brazo_sim` y el ESP32 real del brazo (ARMADO, por la red desde la Pi). Aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`: único publicador `brazo_sim`, la misión cosecha de nuevo | OK |
 | 2026-09-28 | Notebook, sin ventana, etapa 4 de nuevo tras los cambios de la etapa 3 (12 limones que aparecen a los 4 s, reposo J1 = -60°, cámara a 40°): en una misma parada, `mision` cosechó el limón 3 y después el 1 (muñeca a 0,0 cm del centro de cada uno), soltándolos en el reposo | OK |
 | 2026-09-28 | Notebook, sin ventana, etapa 3 (`vision:=yolo`): cámaras ~4 Hz, disparidad ~1 Hz, detector ~1,2 Hz; con texturas y la cámara a 40°, disparidad 100 % válida sobre los limones (z = 0,820 y 0,883 m = correlación a mano); YOLO no reconoce los limones sobre la copa texturada (≤ 0,27) → sin `/limon/posicion`. 29 pruebas `colcon test` | parcial |

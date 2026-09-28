@@ -62,7 +62,9 @@ def generate_launch_description():
         Node(package='ros_gz_bridge', executable='parameter_bridge', output='screen',
              parameters=[{'config_file': str(share / 'config' / 'puente.yaml'), 'use_sim_time': True}]),
         Node(package='simulacion', executable='brazo_sim', output='screen', parameters=[{'use_sim_time': True}]),
-        Node(package='brazo_ik', executable='nodo_ik', output='screen', parameters=[{'use_sim_time': True}]),
+        # Herramienta horizontal (uArm): /brazo/objetivo es el punto de agarre, a 0,075 m de la muñeca (urdf: largo_tcp)
+        Node(package='brazo_ik', executable='nodo_ik', output='screen',
+             parameters=[{'use_sim_time': True, 'largo_herramienta': 0.075}]),
         Node(package='simulacion', executable='limones_sim', output='screen',
              parameters=[{'use_sim_time': True,
                           'publicar_vision': PythonExpression(["'", LaunchConfiguration('vision'), "' != 'yolo'"])}]),
@@ -85,8 +87,10 @@ def generate_launch_description():
         Node(package='yolo_ros', executable='localizador_node', output='screen', condition=yolo,
              parameters=[{'use_sim_time': True, 'z_min': 0.40, 'z_max': 0.95, 'clase': 'limon'}]),
         # La TF brazo -> cámara la da el urdf (robot_state_publisher): no se usa mision.launch.py
-        # reposo = muñeca con q = (-60°, 45°, 0°), el de brazo_sim: el brazo no tapa las cámaras
+        # reposo = TCP con q = (-60°, 45°, 0°), el de brazo_sim (el brazo no tapa las cámaras): muñeca (0,18416;
+        # -0,31898; 0,09103) + 0,075 m en la dirección de J1. cierre 40 %: los dedos quedan sobre el limón (Ø 56 mm)
         Node(package='mision', executable='nodo_mision', output='screen',
-             parameters=[{'use_sim_time': True, 'reposo': [0.18416, -0.31898, 0.09103]}],
+             parameters=[{'use_sim_time': True, 'reposo': [0.22166, -0.38393, 0.09103], 'largo_herramienta': 0.075,
+                          'cierre': 40.0}],
              condition=IfCondition(LaunchConfiguration('mision'))),
     ])

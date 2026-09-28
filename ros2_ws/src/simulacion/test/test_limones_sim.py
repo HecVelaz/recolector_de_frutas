@@ -3,23 +3,16 @@
 import math
 from pathlib import Path
 
-from simulacion.limones_sim import leer_limones, pedido_crear, superficie, visible
+from simulacion.limones_sim import leer_limones, superficie, visible
 
-ARCHIVO = Path(__file__).resolve().parents[1] / 'config' / 'limones_cosechables.xml'
+MUNDO = Path(__file__).resolve().parents[1] / 'worlds' / 'hilera.sdf'
 
 
 def test_lee_los_12_limones_cosechables_del_mundo():
-    limones = leer_limones(ARCHIVO)
+    limones = leer_limones(MUNDO)  # los limon_fijo_* de la fila derecha no cuentan
     assert sorted(limones) == list(range(1, 13))
     for x, y, z in limones.values():
         assert 0.4 < y < 0.6 and 0.20 <= z <= 0.50  # fila izquierda, lado del pasillo, esfera de trabajo de R1
-
-
-def test_pedido_para_gazebo_sin_comillas_dobles_adentro():
-    p = pedido_crear(ARCHIVO)
-    assert p.startswith('data: [{sdf: "') and p.count('{sdf: "') == 12
-    for parte in p[len('data: ['):-1].split('}, {'):
-        assert parte.strip('{}').count('"') == 2  # solo las que delimitan el texto del sdf
 
 
 def test_lo_que_el_estereo_podria_localizar():

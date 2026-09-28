@@ -5,6 +5,7 @@ import random
 
 from brazo_ik.cinematica import (cinematica_directa, cinematica_inversa, config_valida, Q1_LIM, Q2_LIM,
                                  Q3_LIM)
+from brazo_ik.cinematica import cinematica_directa as directa, muneca_desde_herramienta
 from brazo_ik.nodo_ik import resolver
 
 
@@ -53,3 +54,16 @@ def test_resolver_en_metros():
     assert abs(math.degrees(q[1]) - 45.0) < 0.01
     q, texto = resolver(0.9, 0.0, 0.15)
     assert q is None and texto.startswith('inalcanzable')
+
+
+def test_herramienta_horizontal():
+    # TCP a 75 mm de la muñeca en horizontal, en la dirección de q1 (brazo tipo uArm)
+    assert muneca_desde_herramienta(0.3, 0.4, 0.1, 0.0) == (0.3, 0.4, 0.1)
+    m = muneca_desde_herramienta(0.3, 0.4, 0.1, 0.075)  # r = 0,5 -> 0,425
+    assert all(abs(a - b) < 1e-12 for a, b in zip(m, (0.255, 0.34, 0.1)))
+    assert muneca_desde_herramienta(0.05, 0.0, 0.1, 0.075) is None
+    # con resolver: la muñeca que resulta queda 75 mm antes del TCP, a la misma altura y en la misma dirección
+    q, texto = resolver(0.36832 + 0.075, 0.0, 0.09103, 0.075)
+    assert q is not None and abs(math.degrees(q[1]) - 45.0) < 0.01, texto
+    p = directa(q[0], q[1], q[2])[0]
+    assert abs(p[0] - 368.32) < 1e-6 and abs(p[2] - 91.03) < 1e-6

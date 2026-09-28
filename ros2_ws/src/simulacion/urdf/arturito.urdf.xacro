@@ -139,6 +139,7 @@
   <xacro:property name="L2" value="0.35022"/>
   <xacro:property name="L3" value="0.32951"/>
   <xacro:property name="largo_pinza" value="0.11"/>  <!-- muñeca P3 -> punta de los dedos (MEDIR) -->
+  <xacro:property name="largo_tcp" value="0.075"/>   <!-- muñeca P3 -> punto de agarre, entre los dedos (MEDIR); = largo_herramienta de brazo_ik -->
   <!-- Reposo: q = (-60°, 45°, 0°), el brazo estacionado hacia la derecha: con J1 = 0° la barra l2 tapaba los
        limones en la cámara derecha y el estéreo no los localizaba -->
   <xacro:property name="q1_ini" value="${radians(-60)}"/>
@@ -186,14 +187,24 @@
     <limit lower="${radians(-175)}" upper="${radians(10)}" effort="50" velocity="1.0"/>
   </joint>
 
-  <!-- Pinza: giro J4 alrededor de l3 y dos dedos (servos RDS3218) -->
+  <!-- Brazo tipo uArm / Dobot Magician: un paralelogramo mantiene la herramienta horizontal, apuntando en la dirección
+       de J1 (E1). Se simula con j_nivel en la muñeca, al que brazo_sim le manda -(q2 + q3O) -->
+  <link name="muneca">
+    <inertial><mass value="0.05"/><inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/></inertial>
+  </link>
+  <joint name="j_nivel" type="revolute">
+    <parent link="l3"/><child link="muneca"/><origin xyz="${L3} 0 0"/><axis xyz="0 -1 0"/>
+    <limit lower="${-pi}" upper="${pi}" effort="50" velocity="3.0"/>
+  </joint>
+
+  <!-- Pinza: giro J4 alrededor del eje de la herramienta (horizontal) y dos dedos (servos RDS3218) -->
   <link name="pinza">
     <visual><origin xyz="0.02 0 0"/><geometry><box size="0.04 0.09 0.03"/></geometry><material name="gris"/></visual>
     <collision><origin xyz="0.02 0 0"/><geometry><box size="0.04 0.09 0.03"/></geometry></collision>
     <xacro:inercia_caja m="0.2" x="0.04" y="0.09" z="0.03"/>
   </link>
   <joint name="j4" type="revolute">
-    <parent link="l3"/><child link="pinza"/><origin xyz="${L3} 0 0"/><axis xyz="1 0 0"/>
+    <parent link="muneca"/><child link="pinza"/><axis xyz="1 0 0"/>
     <limit lower="${radians(-90)}" upper="${radians(90)}" effort="20" velocity="3.0"/>
   </joint>
   <xacro:macro name="dedo" params="lado signo">
@@ -207,14 +218,19 @@
          caía al tope); el servo real sí los sostiene -->
     <gazebo reference="dedo_${lado}"><turnGravityOff>true</turnGravityOff></gazebo>
     <joint name="dedo_${lado}_joint" type="prismatic">
-      <!-- 0 = cerrada; 0,035 m = abierta (cada dedo). PENDIENTE: con J4 girado los dedos quedan trabados en 0 o
-           0,035 (probado: gravedad, colisiones, límites, control por fuerza, masas; sin resolver). Con J4 = 0 andan -->
+      <!-- 0 = cerrada; 0,045 m = abierta (cada dedo: entra un limón de 56 mm). La cara interna queda a la distancia
+           del prismático del eje de la herramienta -->
       <parent link="pinza"/><child link="dedo_${lado}"/><origin xyz="0.04 ${signo*0.005} 0"/><axis xyz="0 ${signo} 0"/>
-      <limit lower="0" upper="0.035" effort="20" velocity="0.2"/>
+      <limit lower="0" upper="0.045" effort="20" velocity="0.2"/>
     </joint>
   </xacro:macro>
   <xacro:dedo lado="izq" signo="1"/>
   <xacro:dedo lado="der" signo="-1"/>
+  <!-- Punto de agarre (TCP): ahí se engancha el limón y ahí apunta /brazo/objetivo -->
+  <link name="tcp"/>
+  <joint name="tcp_joint" type="fixed">
+    <parent link="pinza"/><child link="tcp"/><origin xyz="${largo_tcp} 0 0"/>
+  </joint>
 
   <xacro:macro name="control_posicion" params="joint topico ini ganancia">
     <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
@@ -232,10 +248,11 @@
     <xacro:control_posicion joint="j1" topico="/sim/j1" ini="${q1_ini}" ganancia="10"/>
     <xacro:control_posicion joint="j2" topico="/sim/j2" ini="${q2_ini}" ganancia="10"/>
     <xacro:control_posicion joint="j3o" topico="/sim/j3o" ini="${q3o_ini}" ganancia="10"/>
+    <xacro:control_posicion joint="j_nivel" topico="/sim/j_nivel" ini="${-(q2_ini + q3o_ini)}" ganancia="10"/>
     <xacro:control_posicion joint="j4" topico="/sim/j4" ini="0" ganancia="10"/>
     <!-- Un tópico por dedo: dos controladores en el mismo tópico no reciben los dos -->
-    <xacro:control_posicion joint="dedo_izq_joint" topico="/sim/dedo_izq" ini="0.035" ganancia="10"/>
-    <xacro:control_posicion joint="dedo_der_joint" topico="/sim/dedo_der" ini="0.035" ganancia="10"/>
+    <xacro:control_posicion joint="dedo_izq_joint" topico="/sim/dedo_izq" ini="0.045" ganancia="10"/>
+    <xacro:control_posicion joint="dedo_der_joint" topico="/sim/dedo_der" ini="0.045" ganancia="10"/>
   </gazebo>
   <!-- ===================== Cámaras y agarre (etapa 4) =====================
        stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil detrás del brazo, del lado izquierdo,
@@ -283,30 +300,4 @@
     </gazebo>
   </xacro:if>
 
-  <!-- Un enganche por limón cosechable (12, config/limones_cosechables.xml): limones_sim publica en agarrar/soltar -->
-  <xacro:macro name="enganche" params="n">
-    <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
-      <parent_link>pinza</parent_link>
-      <child_model>limon_${n}</child_model>
-      <child_link>link</child_link>
-      <attach_topic>/sim/limon_${n}/agarrar</attach_topic>
-      <detach_topic>/sim/limon_${n}/soltar</detach_topic>
-      <output_topic>/sim/limon_${n}/estado</output_topic>
-      <suppress_child_warning>true</suppress_child_warning>  <!-- el limón aparece después (limones_sim) -->
-    </plugin>
-  </xacro:macro>
-  <gazebo>
-    <xacro:enganche n="1"/>
-    <xacro:enganche n="2"/>
-    <xacro:enganche n="3"/>
-    <xacro:enganche n="4"/>
-    <xacro:enganche n="5"/>
-    <xacro:enganche n="6"/>
-    <xacro:enganche n="7"/>
-    <xacro:enganche n="8"/>
-    <xacro:enganche n="9"/>
-    <xacro:enganche n="10"/>
-    <xacro:enganche n="11"/>
-    <xacro:enganche n="12"/>
-  </gazebo>
 </robot>
