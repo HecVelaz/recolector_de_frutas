@@ -56,6 +56,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`): calibración estéreo v2 (RMS
   0,32 px, baseline 99,3 mm), disparidad y nube `/points2`, nodo `yolo_ros` con `yolo26n.pt` (COCO: sin clase
   limón; ~5 FPS en CPU). Detector propio: `vision/entrenamiento_limon/` (sin correr; faltan fotos NoIR propias).
+  Cadena visión → punto 3D (28/09, commit local `114f0f7` en la Pi, sin push): `detector_node` publica
+  `/yolo/detecciones`, `localizador_node` publica `/limon/posicion`; `scripts/start_limon.sh` arranca todo.
+  Funciona de punta a punta con COCO, pero lento: con estéreo + YOLO la CPU se satura (detección ~1,5-2 FPS,
+  disparidad ~1,3 Hz, cámaras ~7 de 10 FPS). Precisión sin medir: cámaras en soporte de cartón; recalibrar
+  con el soporte rígido (el usuario avisa) y apuntar `estereo.launch.py` a la calibración nueva (hoy usa la v1).
 - Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Misión: sin empezar.
 
 ## 6. Decisiones
