@@ -20,6 +20,9 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
 - Con el robot centrado, los limones del lado del pasillo quedan a ~0,45 m del eje de J1 (la esfera de R1 está en
   r = 450 mm): el brazo sobre el chasis alcanza **19 de 21** (21 de 21 con el robot 5 cm más cerca de la fila).
 - 3 obstáculos en el pasillo (caja, balde, cono) y marca de regreso en x = 7,5 m.
+- **Marcas de parada**: franjas blancas en el piso en x = 1,0 / 2,5 / 4,0 / 5,5 m, medio metro antes del tronco de
+  cada árbol izquierdo. Frenando con el centro del robot (eje de las ruedas) sobre una franja, los limones de ese
+  árbol quedan en la zona que ve el estéreo y al alcance del brazo.
 - `spherical_coordinates` en la FIUNA (aproximado): `/gps/fix` da lat/lon reales; x = este, y = norte.
 
 ## Robot (`urdf/arturito.urdf.xacro`)
@@ -67,7 +70,7 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
   enganchados, se los llevaban con el brazo). La fila derecha tiene limones fijos de decoración.
 - Reposo del brazo: q = (-60°, 45°, 0°), estacionado hacia la derecha (no tapa las cámaras).
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
-  izquierda: **x ≈ 1,0 m** para el árbol 1 (y ~1,5 m más por cada árbol siguiente), y frenar (`k`). Después la
+  izquierda: con el centro del robot sobre una **marca de parada** (x = 1,0 / 2,5 / 4,0 / 5,5 m), y frenar (`k`). Después la
   misión sola: detecta quieto, aproxima, cierra, retira al reposo y suelta; y sigue con el siguiente limón visible.
 - Limitación: el limón soltado queda flotando en el reposo (sin gravedad); falta el cajón.
 

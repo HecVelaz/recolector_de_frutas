@@ -244,6 +244,42 @@
       </link>
     </model>
 
+    <!-- Marcas de parada (solo visuales): frenar con el centro del robot (eje de las ruedas) sobre la franja, medio
+         metro antes del tronco de cada árbol izquierdo. Ahí los limones de ese árbol quedan en la zona que ve el
+         estéreo y al alcance del brazo. -->
+    <model name="parada_1">
+      <static>true</static>
+      <pose>1.0 0 0.003 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
+          <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
+      </link>
+    </model>
+    <model name="parada_2">
+      <static>true</static>
+      <pose>2.5 0 0.003 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
+          <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
+      </link>
+    </model>
+    <model name="parada_3">
+      <static>true</static>
+      <pose>4.0 0 0.003 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
+          <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
+      </link>
+    </model>
+    <model name="parada_4">
+      <static>true</static>
+      <pose>5.5 0 0.003 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
+          <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
+      </link>
+    </model>
+
     <!-- Punto de regreso al final de la hilera (marca en el piso, sin colisión) -->
     <model name="regreso">
       <static>true</static>
