@@ -28,8 +28,8 @@ Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa los 19 GPIO de uso general: no qu
 | 4 · 5 | IBT-2 izquierdo RPWM · LPWM | 20 kHz |
 | 6 · 7 | IBT-2 derecho RPWM · LPWM | 20 kHz |
 | 38 | R_EN + L_EN de los dos IBT-2 | pull-down 10 kΩ |
-| 15 · 16 | Encoder izquierdo A · B | como en la prueba 06 |
-| 17 · 18 | Encoder derecho A · B | |
+| 15 · 16 | Encoder izquierdo A · B | amarillo · blanco; ver "Antes de conectar" |
+| 17 · 18 | Encoder derecho A · B | amarillo · blanco |
 | 8 · 9 | IMU SDA · SCL | 400 kHz, 0x68 |
 | 41 · 42 | GPS: TX del GPS → RX1 · RX del GPS ← TX1 | 9600 8N1 |
 | 10 | TRIG de los 3 HC-SR04 | disparo común |
@@ -90,6 +90,10 @@ bus de 12 V puede salir de una fuente de laboratorio.
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
 - [ ] Pull-ups externos de 10 kΩ en WROOM 34, 35, 36 y 39 (no tienen pull-up interno).
 - [ ] Encoder de J1 alimentado a 3V3 (a 5 V sus salidas pueden quedar a 5 V).
+- [ ] Encoders de tracción (42GM-895H): azul = Vcc 5-24 V, verde = GND, amarillo = A, blanco = B; motor en negro y
+      rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
+      tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,
+      girando despacio, que el alto no pase de 3,3 V antes de conectar a la S3.
 - [ ] Servos con su propio Buck y GND común con la WROOM.
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
 - [ ] Sin GPIO de reserva: si hace falta uno, un INA219 por I²C libera el ADC de la S3 y además mide corriente.

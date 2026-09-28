@@ -97,9 +97,9 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 
 ## Pendiente (MEDIR / hacer)
 
-- [ ] **`cuentasPorVuelta`** del DC 895 planetario de 53 rpm (motor confirmado el 28/09; sin hoja de datos). Con
-      la base liberada (`l`), marcar la rueda, girarla a mano 10 vueltas hacia adelante y leer `vueltas` en `e`:
-      valor nuevo = 9600 × 10 / vueltas leídas. Después identificar `K`, `tau` y la zona muerta (`log` + `d`).
+- [ ] Verificar `cuentasPorVuelta` = 8316 (42GM-895H: 11 PPR × 4 × 189, de la hoja). Con la base liberada (`l`),
+      marcar la rueda, girarla a mano 10 vueltas hacia adelante y leer `vueltas` en `e`: si no da 10,
+      valor nuevo = 8316 × 10 / vueltas leídas. Después identificar `K`, `tau` y la zona muerta (`log` + `d`).
 - [ ] Sentido de motores y encoders (`MOTOR_INVERTIDO`, `ENC_INVERTIDO`).
 - [ ] Radio de rueda y trocha (`CFG_DIF`).
 - [ ] Umbral de batería según la química.

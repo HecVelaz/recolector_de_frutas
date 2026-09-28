@@ -9,7 +9,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 **el robot se mueve, detecta el limón con YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`).
 
 ## 2. Hardware y arquitectura
-- Tracción: 2× DC 895 planetario 42 mm, 12 V, 53 rpm, con encoder (confirmado 28/09; PPR sin datos: medir).
+- Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
+  a 3,3 V). Hoja del vendedor en `imagen_motor_traccion/`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
 - **ESP32-S3** (base): 2 motores de tracción + IBT-2, encoders, IMU MPU-6500, GPS UP501, 3 HC-SR04, 4 bumpers,
   seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2, J2/J3 5840-31ZY (sin fin) + L298N, 2 servos.
@@ -87,7 +88,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Videos (~500 MB) y artículos de terceros fuera de git.
 
 ## 7. Próximos pasos
-1. Medir `cuentasPorVuelta` de la tracción girando la rueda a mano (`vueltas` en `e`, ver README de la base).
+1. Verificar `cuentasPorVuelta` = 8316 de la tracción girando la rueda a mano (`vueltas` en `e`, README de la base).
 2. Probar el detector con limones verdes reales frente a las NoIR (con luz, a 40-90 cm): si falla, esas fotos van
    al entrenamiento (fotos propias, subirlas a Roboflow y sumarlas en la celda 3 del cuaderno).
 3. Soporte rígido de las cámaras, recalibrar y medir la precisión de `/limon/posicion` contra cinta.

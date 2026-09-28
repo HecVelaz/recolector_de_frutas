@@ -11,13 +11,13 @@
 constexpr float TS = 0.01f;  // periodo del control: 10 ms (100 Hz)
 
 // Control de velocidad de cada rueda (ControlArticulacion en modo velocidad; el modo posición no se usa).
-// Motor de tracción: DC 895 planetario de 42 mm, 12 V, 53 rpm, con encoder (confirmado el 28/09; sin hoja de datos:
-// PPR y reducción sin conocer, medir cuentasPorVuelta girando la rueda a mano, ver README).
+// Motor de tracción: 42GM-895H planetario, 12 V, 53 rpm, reductora 189:1, encoder Hall de 11 PPR en el eje del
+// motor (hoja del vendedor en imagen_motor_traccion/; 12 V: 2,6 A en vacío, 5,5 A nominal, 10 A bloqueado).
 // Modelo provisorio escalado del 36GP-555 de 160 rpm de la E5 (K = 1,58 rpm/%, τ = 65 ms) a 53 rpm -> K ≈ 0,52
 // rpm/%; hay que identificarlo de nuevo. PI con Ti = τ y lazo cerrado de 0,15 s: Kp = τ/(K·0,15).
 constexpr ConfigArticulacion CFG_RUEDA = {
     "rueda",
-    9600.0f,  // MEDIR: cuentas por vuelta de la rueda (x4); valor provisorio
+    8316.0f,  // 11 PPR x4 x 189 (hoja); verificar girando la rueda a mano, ver README
     1.0f,     // la rueda va directo al eje del motor
     60.0f,    // rpm máximas (para descartar saltos del encoder)
     -1e9f, 1e9f,          // sin límites de posición (una rueda gira sin fin)
