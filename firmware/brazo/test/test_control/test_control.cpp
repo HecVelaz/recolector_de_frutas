@@ -95,6 +95,25 @@ void test_atasco() {
   TEST_ASSERT_TRUE(k.irA(10.0f));
 }
 
+// En placa: atasco y después 's' dejaban la articulación "frenando" para siempre, y el watchdog la tomaba
+// como en movimiento y avisaba sin parar
+void test_detener_con_falla_termina_de_frenar() {
+  ControlArticulacion k;
+  k.configurar(CFG_ART[1]);
+  MotorSim m = simDe(1);
+  m.trabado = true;
+  k.fijarCero(m.leer(), 90.0f);
+  k.irA(0.0f);
+  correr(k, m, 3.0f);
+  TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Atasco, k.falla());
+  k.detener();
+  correr(k, m, 1.0f);
+  TEST_ASSERT_FALSE(k.frenando());
+  TEST_ASSERT_TRUE(k.llego());
+  TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Atasco, k.falla());  // la falla sigue hasta borrarla
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, k.u());
+}
+
 void test_descarta_salto_de_encoder() {
   ControlArticulacion k;
   k.configurar(CFG_ART[1]);
@@ -199,6 +218,7 @@ int main() {
   RUN_TEST(test_objetivo_recortado_a_limites);
   RUN_TEST(test_velocidad_sigue_consigna);
   RUN_TEST(test_atasco);
+  RUN_TEST(test_detener_con_falla_termina_de_frenar);
   RUN_TEST(test_descarta_salto_de_encoder);
   RUN_TEST(test_saltos_seguidos_son_falla);
   RUN_TEST(test_fuera_de_limites);

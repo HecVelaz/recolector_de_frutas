@@ -6,7 +6,7 @@ con el modelo de la Entrega 5) → duty. Corre a 100 Hz en una tarea del núcleo
 monitor serial. Más adelante la capa de comandos se cambia por micro-ROS (`/brazo/joint_cmd`,
 `/brazo/joint_states`, ver `docs/ARQUITECTURA.md` del proyecto), sin tocar el control.
 
-**Estado:** compila y las 14 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
+**Estado:** compila y las 15 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
 Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valores marcados `MEDIR` en `include/brazo_config.h` son estimaciones.
 
 ## Estructura
@@ -134,7 +134,7 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 | 2026-09-27 | `pio run -e ros` (micro-ROS Jazzy): RAM 15,3 %, flash 29,6 %, 0 warnings. Sin probar con el agente | OK |
 | 2026-09-28 | Placa sola, serial: arranque, rechazo sin cero, atasco, watchdog, límites de `giro` | OK |
 | 2026-09-28 | Placa sola, serial: J1 cuenta sola con 34/35 al aire (faltan los pull-ups externos) | esperado |
-| 2026-09-28 | Placa sola, serial: `s` sobre una articulación con falla + `wd` → aviso del watchdog repetido | **bug abierto** |
+| 2026-09-28 | Placa sola, serial: `s` sobre una articulación con falla + `wd` → aviso del watchdog repetido | corregido: con falla, `detener()` termina de frenar (prueba `test_detener_con_falla_termina_de_frenar`) y verificado en placa |
 | 2026-09-28 | Placa sola, micro-ROS a 921600: `joint_states` 20,0 Hz, `estado` 2,0 Hz; armado, validación de `joint_cmd` y `giro`; al perder el agente vuelve DESARMADO | OK |
 | | Signo de encoders J1/J3 | — |
 | | Lazo de velocidad J1/J2 en placa | — |

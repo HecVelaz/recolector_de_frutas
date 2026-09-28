@@ -151,6 +151,8 @@ float ControlArticulacion::paso(int64_t cuentas, float dt) {
       u = 0.0f;
       integ_ = 0.0f;
     }
+  } else if (frenando_) {
+    seguirFrenando();  // con falla el eje queda frenado igual: un detener() tiene que poder terminar
   }
   u_ = u;
   revisarProtecciones(dt);
@@ -158,16 +160,20 @@ float ControlArticulacion::paso(int64_t cuentas, float dt) {
   return u_;
 }
 
+void ControlArticulacion::seguirFrenando() {
+  quietoTicks_ = fabsf(w_) < W_QUIETO ? quietoTicks_ + 1 : 0;
+  if (quietoTicks_ >= QUIETO_TICKS) {
+    frenando_ = false;
+    qObj_ = q_;
+  }
+  wRefGps_ = 0.0f;
+  wRefRpm_ = 0.0f;
+  integ_ = 0.0f;
+}
+
 float ControlArticulacion::pasoPosicion(float dt) {
   if (frenando_) {
-    quietoTicks_ = fabsf(w_) < W_QUIETO ? quietoTicks_ + 1 : 0;
-    if (quietoTicks_ >= QUIETO_TICKS) {
-      frenando_ = false;
-      qObj_ = q_;
-    }
-    wRefGps_ = 0.0f;
-    wRefRpm_ = 0.0f;
-    integ_ = 0.0f;
+    seguirFrenando();
     return 0.0f;
   }
   const float e = qObj_ - q_;

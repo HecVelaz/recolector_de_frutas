@@ -89,6 +89,7 @@ class ControlArticulacion {
 
  private:
   float pasoPosicion(float dt);
+  void seguirFrenando();
   // sentidoFf: sentido del feedforward de zona muerta (0 = según wRefRpm, solo si supera un umbral)
   float pasoVelocidad(float wRefRpm, float dt, float sentidoFf = 0.0f);
   void revisarProtecciones(float dt);

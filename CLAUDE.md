@@ -1,6 +1,7 @@
 # CLAUDE.md — recolector_de_frutas
 
-Responder en castellano. Detalle histórico en `docs/BITACORA.md`.
+**Hablar siempre en castellano** (rioplatense, como el usuario): respuestas, avisos intermedios y explicaciones,
+también en sesiones largas o mientras se depura. Nunca pasar al inglés. Detalle histórico en `docs/BITACORA.md`.
 
 ## 1. Proyecto
 Robot móvil autónomo recolector de limones "Arturito R2D2" (Grupo 2, FIUNA Mecatrónica, 2026S2). Cubre dos
@@ -33,7 +34,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
 
 ## 5. Estado actual (2026-09-27)
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 14 pruebas OK. **Sin placa.**
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 15 pruebas OK. **Sin placa.**
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 19 pruebas OK.
   **Sin placa.**
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
