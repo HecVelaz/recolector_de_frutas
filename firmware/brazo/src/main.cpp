@@ -21,6 +21,11 @@
 
 #ifdef USAR_MICROROS
 #include "capa_ros.h"
+// Enlace con el agente por el CH340. Tiene que coincidir con el -b del agente (el de fábrica es 115200).
+// 115200 alcanza para 20 Hz; a 921600 el CH340 pierde datos conectado a la Pi 5.
+#ifndef MICROROS_BAUDIOS
+#define MICROROS_BAUDIOS 115200
+#endif
 #endif
 
 // Canales LEDC: de a pares comparten timer (misma frecuencia)
@@ -552,7 +557,7 @@ void setup() {
   hwOk = okPwm && okEnc && colaLog && colaMsg;
 
 #ifdef USAR_MICROROS
-  Serial.begin(921600);
+  Serial.begin(MICROROS_BAUDIOS);
   rosBegin();  // desde acá, out es el búfer que se publica en /brazo/respuesta
 #else
   Serial.begin(115200);

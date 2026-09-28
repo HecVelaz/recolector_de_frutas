@@ -62,8 +62,8 @@ Secuencia de primera prueba (una articulación a la vez, con la fuente limitada 
 
 ## micro-ROS (entorno `ros`)
 
-El mismo firmware, con los comandos por tópicos en vez del monitor serial (el USB lo usa el agente, a
-**921600 baudios**: a 115200 el enlace no alcanza y `joint_states` sale a 9 Hz en vez de 20). Todo pasa
+El mismo firmware, con los comandos por tópicos en vez del monitor serial (el USB lo usa el agente, a 115200
+baudios; se cambia con `-DMICROROS_BAUDIOS`, y el agente con `-b`). Todo pasa
 por los mismos comandos de texto, con las mismas validaciones y protecciones.
 
 | Tópico | Tipo | Sentido | Detalle |
@@ -86,7 +86,7 @@ con micro-ROS (usar `ros2 bag record`).
 ```bash
 $PIO run -e ros -t upload            # detener antes el agente (usa /dev/ttyUSB0)
 source ~/microros_ws/install/local_setup.bash
-ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0 -b 921600
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0
 # en otra terminal
 ros2 topic echo /brazo/respuesta --field data
 ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'z'}"
@@ -135,7 +135,8 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 | 2026-09-28 | Placa sola, serial: arranque, rechazo sin cero, atasco, watchdog, límites de `giro` | OK |
 | 2026-09-28 | Placa sola, serial: J1 cuenta sola con 34/35 al aire (faltan los pull-ups externos) | esperado |
 | 2026-09-28 | Placa sola, serial: `s` sobre una articulación con falla + `wd` → aviso del watchdog repetido | corregido: con falla, `detener()` termina de frenar (prueba `test_detener_con_falla_termina_de_frenar`) y verificado en placa |
-| 2026-09-28 | Placa sola, micro-ROS a 921600: `joint_states` 20,0 Hz, `estado` 2,0 Hz; armado, validación de `joint_cmd` y `giro`; al perder el agente vuelve DESARMADO | OK |
+| 2026-09-28 | Placa sola, micro-ROS en la notebook: `joint_states` 20,0 Hz, `estado` 2,0 Hz; armado, validación de `joint_cmd` y `giro`; al perder el agente vuelve DESARMADO | OK |
+| 2026-09-28 | Micro-ROS en la Pi 5, con la base a la vez: a 921600 el CH340 pierde datos (se reconecta cada ~1 s y no publica); a 115200, sesión estable y 20,0 Hz. Los 9 Hz vistos antes a 115200 eran por el reenvío de `/brazo/respuesta` (ya corregido) | OK a 115200 |
 | | Signo de encoders J1/J3 | — |
 | | Lazo de velocidad J1/J2 en placa | — |
 | | Movimiento en posición con carga | — |

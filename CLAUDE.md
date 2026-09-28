@@ -44,7 +44,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   modo descarga. Usar `/dev/serial/by-id/` porque el puerto pasa de ACM0 a ACM1.
 - `brazo_ik`: 5 pruebas OK, en la notebook y en la Pi.
 - Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
-  en `~/recolector_de_frutas` (por rsync, sin `.git`). Falta probar las placas conectadas a la Pi.
+  en `~/recolector_de_frutas` (por rsync, sin `.git`), esptool en `~/esptool_env`. Las dos placas conectadas a la
+  Pi con sus agentes: todas las tasas nominales. Brazo a 115200 (a 921600 el CH340 pierde datos en la Pi).
+  Agentes: `micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` (brazo) y
+  `.../usb-Espressif_USB_JTAG_serial_debug_unit_*-if00` (base). Si la S3 no abre sesión, está en modo descarga:
+  `~/esptool_env/bin/esptool.py --port <S3> --before no_reset --after watchdog_reset read_mac`.
+  Al reiniciar el agente o flashear el brazo, la base se reconectó una vez (vuelve DESARMADA): vigilar.
 - Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`): calibración estéreo v2 (RMS
   0,32 px, baseline 99,3 mm), disparidad y nube `/points2`, nodo `yolo_ros` con `yolo26n.pt` (COCO: sin clase
   limón; ~5 FPS en CPU).
