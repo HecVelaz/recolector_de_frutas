@@ -18,7 +18,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
-- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa. `vision/entrenamiento_limon/`: cuaderno de Colab del detector. `graphify-out/`: grafo del repo (local, fuera de git).
+- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa. `vision/entrenamiento_limon/`: cuaderno de Colab del
+  detector. `graphify-out/`: grafo del repo (local, fuera de git).
 
 ## 4. Cómo trabajar acá
 - Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF ni `.ipynb`** (bloqueados en
@@ -28,7 +29,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   **Apagar los 12 V antes de flashear o resetear.** ROS 2: unidades SI y `frame_id` explícito; `colcon test`.
 - Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
 - Plugins: **codex** (revisor en solo lectura; en esta PC su sandbox no lee archivos: pegar el código en el prompt,
-  lanzar con `< /dev/null` y esperar `tokens used` en la salida); **graphify** (grafo del repo); **ponytail**
+  lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
+  sesión); **graphify** (grafo del repo); **ponytail**
   (instalado, sin usar todavía). `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
   usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
@@ -55,18 +57,22 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   La base se había cortado 2 veces (ping de 20 ms, cortes falsos por latencia): ping a 100 ms y contadores
   `enlace: pings_fallidos cortes` en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
   la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).
-- Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`): calibración estéreo v2 (RMS
-  0,32 px, baseline 99,3 mm), disparidad y nube `/points2`, nodo `yolo_ros` con `yolo26n.pt` (COCO: sin clase
-  limón; ~5 FPS en CPU). Detector propio: `vision/entrenamiento_limon/` (sin correr; faltan fotos NoIR propias).
-  Cadena visión → punto 3D (28/09, commit local `114f0f7` en la Pi, sin push): `detector_node` publica
-  `/yolo/detecciones`, `localizador_node` publica `/limon/posicion`; `scripts/start_limon.sh` arranca todo.
-  Con `launch/limon.launch.py` (commits hasta `1068964`, sin push): NCNN + OpenMP pasivo + sin `/points2` +
-  disparidad BM con ventana calculada desde la calibración para 0,40-0,95 m (v1: f = 1076,5 px -> 112-271 px)
-  -> detección ~7-9 FPS, posición ~2-4 Hz. Revisado por Codex (disparidad inválida, ventana, sincronización
-  exacta). Pendientes: exposiciones izq/der sin sincronizar (medir con el robot quieto); el punto está en el
-  marco RECTIFICADO (tenerlo en cuenta en la TF al brazo). Calidad de BM y precisión sin medir: cámaras en
-  soporte de cartón; recalibrar con el soporte rígido (el usuario avisa) y apuntar `CARPETA_CALIBRACION`.
-- Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Misión: sin empezar.
+- Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`; en GitHub al día). Cadena
+  `scripts/start_limon.sh` = `launch/limon.launch.py` (cámaras, rectificación, disparidad BM) + `detector_node`
+  (`/yolo/detecciones`) + `localizador_node` (`/limon/posicion`, PointStamped en el marco óptico RECTIFICADO de
+  la cámara izquierda: tenerlo en cuenta en la TF al brazo). Con NCNN y OpenMP pasivo: detección ~7-9 FPS,
+  posición ~2-4 Hz. La ventana de disparidad sale de la calibración para 0,40-0,95 m (v1: f = 1076,5 px ->
+  112-271 px). Revisado por Codex. Calibración en uso: v1 (`config/calibracion/`); la v2 (RMS 0,32 px, baseline
+  99,3 mm, f ~680) es de un montaje de cartón: recalibrar con el soporte rígido (el usuario avisa) y apuntar
+  `CARPETA_CALIBRACION`. Exposiciones izq/der sin sincronizar: localizar con el robot quieto.
+- Detector de limones (28/09): entrenado en Colab con `vision/entrenamiento_limon/` (datasets de Roboflow, una
+  clase `limon`). Test: P 0,953, R 0,977, mAP50 0,978, mAP50-95 0,814 (285 imágenes, 200 sin limón, 173
+  limones; mismas fuentes que el entrenamiento: números optimistas). En la Pi:
+  `~/vision_estereo/modelos/limon_yolo26n_ncnn_model` (fuera de git; 23 FPS solo). El `.pt` quedó en Drive
+  (`arturito/limon_yolo`). **Sin probar con limones reales ni con las NoIR.** Uso:
+  `MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh`
+- Revisados por Codex (brazo, base, micro-ROS, cambios del 28/09 y visión) y hallazgos aplicados.
+  Misión: sin empezar.
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
@@ -81,11 +87,13 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 7. Próximos pasos
 1. Confirmar el motor de tracción: notas = 36GP-555 53 rpm, inventario = DC 895 planetario 53 rpm.
-2. Cablear según la lista "Antes de conectar" de `docs/CONEXIONES.md` (pull-down 10 kΩ en los EN, divisores de
-   ECHO, pull-ups externos).
-3. Primera prueba del brazo en placa (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
-4. Primera prueba de la base con ruedas en el aire (README) y medir sentidos, radio y trocha.
-5. Probar micro-ROS con los agentes (`/dev/ttyACM0` base, `/dev/ttyUSB0` brazo) y medir con `ros2 topic hz`.
-6. Probar las cámaras NoIR con YOLO y limones reales (riesgo de color); soporte rígido y calibración estéreo.
-7. Nodos de visión y `mision_fsm` mínima para la demo del objetivo mínimo.
+2. Probar el detector con limones verdes reales frente a las NoIR (con luz, a 40-90 cm): si falla, esas fotos van
+   al entrenamiento (fotos propias, subirlas a Roboflow y sumarlas en la celda 3 del cuaderno).
+3. Soporte rígido de las cámaras, recalibrar y medir la precisión de `/limon/posicion` contra cinta.
+4. Cablear según la lista "Antes de conectar" de `docs/CONEXIONES.md` (pull-down 10 kΩ en los EN, divisores de
+   ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
+5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
+6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
+7. TF cámara → brazo (marco rectificado; sumar ~3 cm al punto, que es la superficie) y `mision_fsm` mínima para la
+   demo: detectar → localizar quieto → `/brazo/objetivo` → agarrar.
 8. Preguntas a la cátedra (`docs/ARQUITECTURA.md` §11) y arreglar el salto de 32 000 cuentas de `EncoderPCNT`.
