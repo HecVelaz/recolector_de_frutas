@@ -116,7 +116,7 @@ float ControlArticulacion::paso(int64_t cuentas, float dt) {
     primerPaso_ = false;
   }
 
-  // Descartar lecturas imposibles (ver el salto falso de 32 000 cuentas pendiente en EncoderPCNT)
+  // Descartar lecturas imposibles (ruido o cable flojo; el salto falso de 32 000 cuentas de EncoderPCNT ya se corrigió)
   const float maxCuentas = FACTOR_SALTO * cfg_.rpmMax / 60.0f * cfg_.cuentasPorVuelta * dt + 2.0f;
   int64_t d = cuentas - cuentasPrev_;
   if (fabsf((float)d) > maxCuentas) {

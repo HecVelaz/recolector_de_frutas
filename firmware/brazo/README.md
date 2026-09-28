@@ -102,7 +102,7 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 - Objetivos recortados a los límites de la E4. En `d` y `v`, con cero, no empuja hacia afuera del límite.
   Fuera de los límites + 5° → falla y freno.
 - Atasco (duty alto sin avanzar en el sentido pedido) → falla y freno.
-- Lecturas imposibles del encoder (por ejemplo el salto falso de 32 000 cuentas pendiente en `EncoderPCNT`) se
+- Lecturas imposibles del encoder (ruido, cable flojo; el salto falso de 32 000 cuentas de `EncoderPCNT` ya se corrigió) se
   descartan; 5 seguidas → falla. El cero (`z`) usa la última lectura validada.
 - `s`, el fin de `d`/`v` y el watchdog **frenan hasta que el eje queda quieto** y recién ahí sostienen esa
   posición: no vuelven hacia atrás por la inercia.

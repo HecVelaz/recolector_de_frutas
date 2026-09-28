@@ -11,7 +11,7 @@ elementos a interconectar todos entre si
 - x2 camaras Noir para la pi 5 (para la vision estereo)
 - 1xMotor 36GP-555 160 rpm para la base rotativa 1ra articulacion (necesita control lazo cerrado)
 - x2 motores DC 5840-31zy para articulaciones (necesita control lazo cerrado)
-- x2 servo de alto torque para manipulador
+- x2 servo de alto torque para manipulador: DSSERVO RDS3218 digital, 20 kg·cm, 4,8-6,8 V (foto en `imagen_pinza/`); uno de apertura y otro de giro
 - x3 drivers IBT-2 BTS 7960 para los motores dc 36gp
 - x1 driver l298n para los motores articulares 
 - x2 Motor DC 895 planetario 42 mm con encoder, 12 V, 53 rpm, eje D 8 mm para traccion ruedas (necesita control cerrado)

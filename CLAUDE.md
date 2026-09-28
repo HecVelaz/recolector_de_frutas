@@ -14,7 +14,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
 - **ESP32-S3** (base): 2 motores de tracción + IBT-2, encoders, IMU MPU-6500, GPS UP501, 3 HC-SR04, 4 bumpers,
   seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2, J2/J3 5840-31ZY (sin fin) + L298N, 2 servos.
-- Brazo RRR con cuatro barras (medidas de la E4) + giro de pinza J4. Pines y alimentación: `docs/CONEXIONES.md`.
+- Brazo RRR con cuatro barras (medidas de la E4) + pinza con 2 servos DSSERVO RDS3218 20 kg·cm (apertura y giro J4;
+  foto en `imagen_pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
 
 ## 3. Estructura
 - `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
@@ -81,7 +82,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
-- Configuración RRR (opción 6 de la tabla R1); pinza con tracción + giro en vez de succión.
+- Configuración RRR (opción 6 de la tabla R1); pinza con agarre + tracción + giro en vez de succión (aprobado por
+  el profesor, 28/09).
 - Medidas del brazo vigentes: las de la E4; motor de J1 = 36GP-555 160 rpm (el DC 895 de 2700 rpm fue un error de compra).
 - Un ESP32 por subsistema y lazos cerrados en los ESP32: la Pi solo manda consignas y cada placa se detiene sola.
 - Control en cascada posición → velocidad, porque la E5 identificó modelos de velocidad.
@@ -101,4 +103,4 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
 7. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y el desfase muñeca → pinza (hoy el centro del limón va a la muñeca).
-8. Preguntas a la cátedra (`docs/ARQUITECTURA.md` §11) y arreglar el salto de 32 000 cuentas de `EncoderPCNT`.
+8. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).

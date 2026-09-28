@@ -2,21 +2,8 @@
 
 #include <Arduino.h>
 
+#include "Desenvolver.h"
 #include "driver/gpio.h"
-
-// Límites del contador de hardware. Al alcanzar uno, el PCNT vuelve a 0 y genera un evento.
-static constexpr int16_t LIM_ALTO = 32000;
-static constexpr int16_t LIM_BAJO = -32000;
-
-static bool isrServiceInstalado = false;
-
-void IRAM_ATTR EncoderPCNT::onLimit(void *arg) {
-  EncoderPCNT *self = static_cast<EncoderPCNT *>(arg);
-  uint32_t status = 0;
-  pcnt_get_event_status(self->unit_, &status);
-  if (status & PCNT_EVT_H_LIM) self->overflow_ += LIM_ALTO;
-  if (status & PCNT_EVT_L_LIM) self->overflow_ += LIM_BAJO;
-}
 
 bool EncoderPCNT::begin(int pinA, int pinB, pcnt_unit_t unit, uint32_t filterNs) {
   ready_ = false;
@@ -35,8 +22,8 @@ bool EncoderPCNT::begin(int pinA, int pinB, pcnt_unit_t unit, uint32_t filterNs)
   c.neg_mode = PCNT_COUNT_INC;
   c.lctrl_mode = PCNT_MODE_REVERSE;
   c.hctrl_mode = PCNT_MODE_KEEP;
-  c.counter_h_lim = LIM_ALTO;
-  c.counter_l_lim = LIM_BAJO;
+  c.counter_h_lim = PCNT_LIMITE;
+  c.counter_l_lim = -PCNT_LIMITE;
   if (pcnt_unit_config(&c) != ESP_OK) return false;
 
   // Canal 1: cuenta los flancos de B; el nivel de A decide el sentido.
@@ -61,37 +48,21 @@ bool EncoderPCNT::begin(int pinA, int pinB, pcnt_unit_t unit, uint32_t filterNs)
     pcnt_filter_disable(unit);
   }
 
-  // Eventos de límite: acumulan el desborde del contador de 16 bits
-  pcnt_event_enable(unit, PCNT_EVT_H_LIM);
-  pcnt_event_enable(unit, PCNT_EVT_L_LIM);
-  if (!isrServiceInstalado) {
-    if (pcnt_isr_service_install(0) != ESP_OK) return false;
-    isrServiceInstalado = true;
-  }
-  if (pcnt_isr_handler_add(unit, onLimit, this) != ESP_OK) return false;
-
-  pcnt_counter_pause(unit);
-  pcnt_counter_clear(unit);
-  overflow_ = 0;
-  lastDelta_ = 0;
-  pcnt_counter_resume(unit);
   ready_ = true;
+  reset();
   return true;
 }
 
-int64_t EncoderPCNT::count() const {
+int64_t EncoderPCNT::count() {
   if (!ready_) return 0;
-  // Si la interrupción de límite actualiza el acumulador entre las dos lecturas, repetir:
-  // así el acumulador y el contador de hardware son del mismo instante. (Queda la latencia de la
-  // interrupción, de menos de un microsegundo, una vez cada 32000 cuentas.)
-  int64_t antes, despues;
   int16_t v;
-  do {
-    antes = overflow_;
-    pcnt_get_counter_value(unit_, &v);
-    despues = overflow_;
-  } while (antes != despues);
-  return antes + v;
+  portENTER_CRITICAL(&mux_);  // lectura y acumulador juntos (se llama desde la tarea de control y la de comandos)
+  pcnt_get_counter_value(unit_, &v);
+  acc_ += desenvolverPcnt((int32_t)v - lastHw_);
+  lastHw_ = v;
+  const int64_t c = acc_;
+  portEXIT_CRITICAL(&mux_);
+  return c;
 }
 
 int32_t EncoderPCNT::delta() {
@@ -103,11 +74,14 @@ int32_t EncoderPCNT::delta() {
 
 void EncoderPCNT::reset() {
   if (!ready_) return;
+  portENTER_CRITICAL(&mux_);
   pcnt_counter_pause(unit_);
   pcnt_counter_clear(unit_);
-  overflow_ = 0;
+  lastHw_ = 0;
+  acc_ = 0;
   lastDelta_ = 0;
   pcnt_counter_resume(unit_);
+  portEXIT_CRITICAL(&mux_);
 }
 
 int EncoderPCNT::levelA() const { return gpio_get_level((gpio_num_t)pinA_); }

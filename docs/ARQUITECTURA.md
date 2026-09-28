@@ -203,7 +203,7 @@ Después del mínimo, en este orden: 2 cajones por tamaño → seguimiento de hi
 ## 11. Decisiones abiertas / preguntas para la cátedra
 
 1. **R1: eje lineal de 1,2 m.** ¿La base móvil cumple ese rol?
-2. **Herramienta:** confirmar por escrito que se acepta **pinza + tracción + giro** en lugar de succión.
+2. ~~**Herramienta:** confirmar que se acepta **pinza + tracción + giro** en lugar de succión.~~ **Aprobado por el profesor** (28/09/2026): agarre y tracción con giro de la pinza, 2 servos RDS3218 de 20 kg·cm.
 3. **GDL en R2:** B1 pide ≥4 GDL sin contar apertura (3R + J4 = 4 ✔), pero H6 dice "4 GDL + rotación". Confirmar que 3R + J4 alcanza.
 4. **Cajones por tamaño:** ¿son obligatorios para el mínimo?
 5. **Mecanismo no Grashof** (E4): verificar recorrido real y singularidades con el brazo armado antes de cambiar el balancín a 60 mm.

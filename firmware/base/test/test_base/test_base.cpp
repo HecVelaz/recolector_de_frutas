@@ -3,6 +3,7 @@
 #include <unity.h>
 
 #include "ControlArticulacion.h"
+#include "Desenvolver.h"
 #include "Diferencial.h"
 #include "SeguridadBase.h"
 #include "base_config.h"
@@ -260,6 +261,27 @@ void test_rueda_sigue_la_consigna() {
 void setUp() {}
 void tearDown() {}
 
+// EncoderPCNT: el contador de hardware vuelve a 0 en ±32000; el acumulado no tiene que saltar
+void test_encoder_pasa_el_limite_sin_saltos() {
+  TEST_ASSERT_EQUAL_INT32(5, desenvolverPcnt(5));
+  TEST_ASSERT_EQUAL_INT32(-7, desenvolverPcnt(-7));
+  TEST_ASSERT_EQUAL_INT32(12, desenvolverPcnt(3 - 31991));    // 31991 -> 32000 = 0 -> 3: avanzó 12
+  TEST_ASSERT_EQUAL_INT32(-12, desenvolverPcnt(-3 + 31991));  // lo mismo hacia atrás
+  TEST_ASSERT_EQUAL_INT32(-15999, desenvolverPcnt(-31999 - 16000 + 32000));
+  // Simulación: 5 vueltas del contador en cada sentido, leyendo cada 110 cuentas (J2 a 160 rpm cada 10 ms)
+  int64_t real = 0, acc = 0;
+  int32_t hw = 0, ultimo = 0;
+  for (int k = 0; k < 6000; k++) {
+    const int32_t paso = k < 3000 ? 110 : -110;
+    real += paso;
+    hw += paso;
+    if (hw >= 32000 || hw <= -32000) hw %= 32000;  // el PCNT vuelve a 0 al llegar al límite
+    acc += desenvolverPcnt(hw - ultimo);
+    ultimo = hw;
+    TEST_ASSERT_EQUAL_INT64(real, acc);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_recto_mismas_rpm);
@@ -281,5 +303,6 @@ int main() {
   RUN_TEST(test_watchdog_de_comandos);
   RUN_TEST(test_bateria_baja_avisa_sin_frenar);
   RUN_TEST(test_rueda_sigue_la_consigna);
+  RUN_TEST(test_encoder_pasa_el_limite_sin_saltos);
   return UNITY_END();
 }

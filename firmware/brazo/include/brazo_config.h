@@ -76,7 +76,8 @@ constexpr uint32_t PWM_BTS_HZ = 20000;  // IBT-2 (como en pruebas-esp32/06)
 constexpr uint32_t PWM_L298_HZ = 1000;  // L298N en modo Freno (como en pruebas-esp32/08)
 constexpr uint8_t PWM_BITS = 10;
 
-// Servos (50 Hz). Pulsos en µs: MEDIR con cada servo para no forzar la pinza contra el tope.
+// Servos DSSERVO RDS3218 (20 kg·cm, 4,8-6,8 V), 50 Hz. Pulsos en µs: MEDIR con cada servo para no forzar la pinza
+// contra el tope. El RDS3218 viene en versión de 180° y de 270°: con la de 270°, GIRO_US_POR_GRADO = 2000/270.
 constexpr uint32_t SERVO_HZ = 50;
 constexpr uint8_t SERVO_BITS = 16;
 constexpr float PINZA_US_ABIERTA = 1000.0f;

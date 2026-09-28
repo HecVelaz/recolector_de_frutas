@@ -72,7 +72,7 @@ DevKit con CH340, `/dev/ttyUSB0`. Fuente: `firmware/brazo/include/pins.h`.
 ```
 Batería 12 V → interruptor general (H8) → fusible 15 A → bus 12 V
   ├─ Buck 5 V 5 A → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
-  ├─ Buck 6 V 3 A → servos de la pinza (GND común con la WROOM)
+  ├─ Buck 6 V → 2 servos RDS3218 de la pinza (GND común con la WROOM): 3 A queda justo, ver "Antes de conectar"
   ├─ seta (NC) → relé de potencia (rearme manual)
   │     ├─ fusible 10 A → IBT-2 de tracción ×2
   │     └─ llave del brazo (H8) → fusible 5 A → IBT-2 J1 + L298N
@@ -94,7 +94,8 @@ bus de 12 V puede salir de una fuente de laboratorio.
       rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
       tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,
       girando despacio, que el alto no pase de 3,3 V antes de conectar a la S3.
-- [ ] Servos con su propio Buck y GND común con la WROOM.
+- [ ] Servos con su propio Buck y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de apertura queda bloqueado
+      apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar con la hoja): Buck de 5 A o más.
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
 - [ ] Sin GPIO de reserva: si hace falta uno, un INA219 por I²C libera el ADC de la S3 y además mide corriente.
 - [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son bumpers.
