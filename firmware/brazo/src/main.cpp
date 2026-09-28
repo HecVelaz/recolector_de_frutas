@@ -159,8 +159,10 @@ void tareaControl(void *) {
     if (watchdogMs > 0 && ahora - ultimoCmdMs > watchdogMs) {
       bool algoSeMovia = false;
       for (int i = 0; i < N_ART; i++) {
-        const bool moviendo = homing[i] || cortarEnMs[i] ||
-                              (ctl[i].modo() == ControlArticulacion::Modo::Posicion && !ctl[i].llego());
+        // Con falla el eje ya está frenado (duty 0) y llego() es falso: no cuenta como "en movimiento"
+        const bool enPosicion = ctl[i].falla() == ControlArticulacion::Falla::Ninguna &&
+                                ctl[i].modo() == ControlArticulacion::Modo::Posicion && !ctl[i].llego();
+        const bool moviendo = homing[i] || cortarEnMs[i] || enPosicion;
         if (moviendo) {
           algoSeMovia = true;
           cancelarPendientes(i);

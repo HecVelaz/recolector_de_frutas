@@ -34,7 +34,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
 
 ## 5. Estado actual (2026-09-28)
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 15 pruebas OK.
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 16 pruebas OK.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 19 pruebas OK.
   Probado en la placa sola (sin motores ni sensores).

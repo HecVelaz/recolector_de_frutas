@@ -79,7 +79,8 @@ class ControlArticulacion {
   float wRef() const { return wRefRpm_; }   // rpm del motor pedidas por el lazo de posición
   float w() const { return w_; }            // rpm del motor medidas (filtradas)
   float u() const { return u_; }            // duty aplicado, %
-  bool llego() const { return enReposo_ && !frenando_; }
+  // Con falla nunca "llegó", aunque esté quieto: el objetivo no se alcanzó (o el encoder no es confiable)
+  bool llego() const { return falla_ == Falla::Ninguna && enReposo_ && !frenando_; }
   bool frenando() const { return frenando_; }
   uint32_t saltosEncoder() const { return saltos_; }
 

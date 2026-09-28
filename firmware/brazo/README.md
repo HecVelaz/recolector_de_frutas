@@ -6,7 +6,7 @@ con el modelo de la Entrega 5) → duty. Corre a 100 Hz en una tarea del núcleo
 monitor serial. Más adelante la capa de comandos se cambia por micro-ROS (`/brazo/joint_cmd`,
 `/brazo/joint_states`, ver `docs/ARQUITECTURA.md` del proyecto), sin tocar el control.
 
-**Estado:** compila y las 15 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
+**Estado:** compila y las 16 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
 Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valores marcados `MEDIR` en `include/brazo_config.h` son estimaciones.
 
 ## Estructura
@@ -17,7 +17,7 @@ Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valor
 | `include/brazo_config.h` | Parámetros por articulación (encoder, transmisión, límites de la E4, modelo y PI de la E5), pose de cero, servos |
 | `include/pins.h` | Pines (usa los 15 GPIO de uso general de la placa) |
 | `src/main.cpp` | Drivers, tarea de control, comandos serie, homing, watchdog, CSV |
-| `test/test_control/` | 15 pruebas con el modelo de la E5 simulado |
+| `test/test_control/` | 16 pruebas con el modelo de la E5 simulado |
 
 Drivers compartidos en `firmware/lib/` (enlazados por `symlink://`): `BTS7960`, `EncoderPCNT` y `L298N`. Vienen del
 repo de pruebas `~/pruebas-esp32` (proyectos 06 y 08, donde se caracterizaron los motores); este proyecto empezó
@@ -135,6 +135,7 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 | 2026-09-28 | Placa sola, serial: arranque, rechazo sin cero, atasco, watchdog, límites de `giro` | OK |
 | 2026-09-28 | Placa sola, serial: J1 cuenta sola con 34/35 al aire (faltan los pull-ups externos) | esperado |
 | 2026-09-28 | Placa sola, serial: `s` sobre una articulación con falla + `wd` → aviso del watchdog repetido | corregido: con falla, `detener()` termina de frenar (prueba `test_detener_con_falla_termina_de_frenar`) y verificado en placa |
+| 2026-09-28 | Revisión de Codex de los cambios del día: con falla, `llego()` daba verdadero (y `/brazo/estado` decía "llego"). Ahora `llego()` exige no tener falla y el watchdog ignora los ejes con falla. En la Pi por micro-ROS: atasco + `s` + `wd 500` → sin "llego", 0 avisos del watchdog; tras `r`, "llego" | OK |
 | 2026-09-28 | Placa sola, micro-ROS en la notebook: `joint_states` 20,0 Hz, `estado` 2,0 Hz; armado, validación de `joint_cmd` y `giro`; al perder el agente vuelve DESARMADO | OK |
 | 2026-09-28 | Micro-ROS en la Pi 5, con la base a la vez: a 921600 el CH340 pierde datos (se reconecta cada ~1 s y no publica); a 115200, sesión estable y 20,0 Hz. Los 9 Hz vistos antes a 115200 eran por el reenvío de `/brazo/respuesta` (ya corregido) | OK a 115200 |
 | | Signo de encoders J1/J3 | — |

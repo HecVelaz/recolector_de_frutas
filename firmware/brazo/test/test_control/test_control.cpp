@@ -109,9 +109,24 @@ void test_detener_con_falla_termina_de_frenar() {
   k.detener();
   correr(k, m, 1.0f);
   TEST_ASSERT_FALSE(k.frenando());
-  TEST_ASSERT_TRUE(k.llego());
+  TEST_ASSERT_FALSE(k.llego());  // con falla nunca "llegó": /brazo/estado lo lee la misión (revisión de Codex)
   TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Atasco, k.falla());  // la falla sigue hasta borrarla
   TEST_ASSERT_EQUAL_FLOAT(0.0f, k.u());
+  k.borrarFalla();
+  correr(k, m, 1.0f);
+  TEST_ASSERT_TRUE(k.llego());  // sin falla y quieto: sostiene donde quedó
+}
+
+// Falla con el eje ya quieto en el objetivo: antes llego() seguía verdadero
+void test_falla_en_reposo_no_llego() {
+  ControlArticulacion k;
+  k.configurar(CFG_ART[1]);
+  k.fijarCero(0, 90.0f);
+  for (int n = 0; n < 100; n++) k.paso(0, TS);  // fijarCero() frena primero: 1 s quieto
+  TEST_ASSERT_TRUE(k.llego());
+  for (int n = 1; n <= 6; n++) k.paso((int64_t)n * 40000, TS);  // lecturas imposibles del encoder
+  TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Encoder, k.falla());
+  TEST_ASSERT_FALSE(k.llego());
 }
 
 void test_descarta_salto_de_encoder() {
@@ -219,6 +234,7 @@ int main() {
   RUN_TEST(test_velocidad_sigue_consigna);
   RUN_TEST(test_atasco);
   RUN_TEST(test_detener_con_falla_termina_de_frenar);
+  RUN_TEST(test_falla_en_reposo_no_llego);
   RUN_TEST(test_descarta_salto_de_encoder);
   RUN_TEST(test_saltos_seguidos_son_falla);
   RUN_TEST(test_fuera_de_limites);
