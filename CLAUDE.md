@@ -18,7 +18,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
-- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa. `graphify-out/`: grafo del repo (local, fuera de git).
+- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa. `vision/entrenamiento_limon/`: cuaderno de Colab del detector. `graphify-out/`: grafo del repo (local, fuera de git).
 
 ## 4. Cómo trabajar acá
 - Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF ni `.ipynb`** (bloqueados en
@@ -55,7 +55,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Al reiniciar el agente o flashear el brazo, la base se reconectó una vez (vuelve DESARMADA): vigilar.
 - Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`): calibración estéreo v2 (RMS
   0,32 px, baseline 99,3 mm), disparidad y nube `/points2`, nodo `yolo_ros` con `yolo26n.pt` (COCO: sin clase
-  limón; ~5 FPS en CPU).
+  limón; ~5 FPS en CPU). Detector propio: `vision/entrenamiento_limon/` (sin correr; faltan fotos NoIR propias).
 - Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Misión: sin empezar.
 
 ## 6. Decisiones
