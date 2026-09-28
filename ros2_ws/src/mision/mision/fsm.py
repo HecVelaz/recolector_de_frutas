@@ -3,8 +3,11 @@
     INICIO -> ESPERAR -> APROXIMAR -> AGARRAR -> RETIRAR -> SOLTAR -> ESPERAR ...
                               \\____________ FALLA (detiene el brazo y se queda ahí) ___/
 
-Entradas (con el tiempo t en s): al_limon() con el centro del limón ya en el marco del brazo [m], al_estado_brazo()
-con el texto de /brazo/estado, al_ik() con el de /brazo/ik_estado, y paso() periódico.
+Entradas (con el tiempo t en s): al_limon() con el centro del limón ya en el marco del brazo [m] y el tiempo de su
+imagen, al_estado_brazo() con el texto de /brazo/estado, al_ik() con el de /brazo/ik_estado, al_joint_cmd() con los
+ángulos que calculó brazo_ik, al_joints() con /brazo/joint_states y paso() periódico.
+"Llegó" = posición medida igual a la que calculó brazo_ik para ESTE objetivo, quieta, y el firmware dice llego: un
+estado viejo no alcanza (la posición de un movimiento anterior no coincide con el objetivo nuevo).
 Salidas por enviar(tipo, valor): 'comando' (str a /brazo/comando), 'objetivo' ((x, y, z) m a /brazo/objetivo),
 'cierre' (% a /pinza/cierre) y 'estado' (texto para /mision/estado).
 """
@@ -27,6 +30,8 @@ class Parametros:
     t_mov_max: float = 20.0      # s para llegar a un objetivo (J2/J3 con sin fin son lentos: MEDIR)
     t_pinza: float = 1.5         # s para cerrar o abrir la pinza
     t_estado_max: float = 2.0    # s sin /brazo/estado (sale a 2 Hz) -> enlace caído
+    tol_q: float = 0.0175        # rad (1°) entre la posición medida y la de brazo_ik (el firmware frena a 0,5°)
+    tol_v: float = 0.02          # rad/s para considerarlo quieto
     cierre: float = 100.0        # % de cierre para agarrar (MEDIR con un limón: sin aplastarlo)
     reposo: tuple = (0.36832, 0.0, 0.09103)  # m, donde lleva y suelta el limón (ejemplo E4: q = 0°, 45°, 0°)
 
@@ -42,8 +47,10 @@ def alcanzable(p):
 
 
 def leer_estado_brazo(texto):
-    """Texto de /brazo/estado -> (armado, llegaron las 3, fallas distintas de 'ninguna')."""
+    """Texto de /brazo/estado -> (armado, llegaron las 3, fallas distintas de 'ninguna' o articulaciones sin cero)."""
     fallas = [f for f in re.findall(r'falla=(.*?)(?: llego)?;', texto) if f != 'ninguna']
+    if texto.count(' cero ') < 3:
+        fallas.append('sin cero')
     return texto.startswith('ARMADO'), texto.count(' llego;') == 3, fallas
 
 
@@ -57,8 +64,8 @@ class Mision:
         self.muestras = []        # (t, p)
         self.brazo = (False, False, [])
         self.t_brazo = None       # último /brazo/estado
-        self.se_movio = False     # vio al brazo sin "llego" después de mandarle el objetivo
-        self.objetivo = None
+        self.q_obj = None         # ángulos de brazo_ik para el objetivo vigente [rad]
+        self.q, self.v = None, None  # /brazo/joint_states
 
     def _ir(self, estado, t, motivo=''):
         self.estado, self.t0 = estado, t
@@ -68,26 +75,47 @@ class Mision:
         self.enviar('comando', 's')  # detener J1-J3; la pinza queda como está para no soltar el limón
         self._ir(FALLA, t, motivo)
 
+    def _fresco(self, t):
+        return self.t_brazo is not None and t - self.t_brazo <= self.par.t_estado_max
+
     def _mover(self, p, estado, t):
-        self.se_movio = False
+        self.q_obj = None
         self.enviar('objetivo', p)
         self._ir(estado, t, 'objetivo ({:.3f}, {:.3f}, {:.3f}) m'.format(*p))
 
     def al_estado_brazo(self, texto, t):
         self.brazo, self.t_brazo = leer_estado_brazo(texto), t
-        if not self.brazo[1]:
-            self.se_movio = True
+        armado, _, fallas = self.brazo
+        # En el callback y no en paso(): un estado bueno posterior no tiene que tapar la falla
+        if self.estado in (APROXIMAR, AGARRAR, RETIRAR, SOLTAR) and (fallas or not armado):
+            self._fallar(t, 'brazo ' + (', '.join(fallas) if fallas else 'desarmado'))
+
+    def al_joint_cmd(self, q, t):
+        if self.estado in (APROXIMAR, RETIRAR) and self.q_obj is None:
+            self.q_obj = list(q)
+
+    def al_joints(self, q, v, t):
+        self.q, self.v = list(q), list(v)
+
+    def _llego(self):
+        return (self.q_obj is not None and self.q is not None and self.brazo[1]
+                and all(abs(a - b) <= self.par.tol_q for a, b in zip(self.q, self.q_obj))
+                and all(abs(w) <= self.par.tol_v for w in self.v))
 
     def al_ik(self, texto, t):
         if self.estado in (APROXIMAR, RETIRAR) and texto.startswith('inalcanzable'):
             self._fallar(t, texto)
 
-    def al_limon(self, p, t):
-        armado, _, fallas = self.brazo
-        if self.estado != ESPERAR or not armado or fallas:
-            return  # sin brazo listo no se manda nada (p. ej. tras reconectar queda desarmado)
-        self.muestras = [(tm, pm) for tm, pm in self.muestras if t - tm <= self.par.ventana][-(self.par.n_muestras - 1):]
-        self.muestras.append((t, p))
+    def al_limon(self, p, t_img, t):
+        """p: centro en el marco del brazo; t_img: tiempo de la imagen (ventana de muestras); t: ahora."""
+        armado, llego, fallas = self.brazo
+        if self.estado != ESPERAR or not self._fresco(t) or not armado or not llego or fallas:
+            # sin brazo listo y quieto no se junta nada (p. ej. tras reconectar queda desarmado)
+            self.muestras = []
+            return
+        n = self.par.n_muestras
+        self.muestras = [(tm, pm) for tm, pm in self.muestras if t_img - tm <= self.par.ventana]
+        self.muestras = (self.muestras[-(n - 1):] if n > 1 else []) + [(t_img, p)]
         if len(self.muestras) < self.par.n_muestras:
             return
         prom = tuple(sum(pm[k] for _, pm in self.muestras) / len(self.muestras) for k in range(3))
@@ -97,15 +125,14 @@ class Mision:
         if not alcanzable(prom):
             self.enviar('estado', 'ESPERAR: limón fuera de alcance en ({:.3f}, {:.3f}, {:.3f}) m'.format(*prom))
             return
-        self.objetivo = prom
         self._mover(prom, APROXIMAR, t)
 
     def paso(self, t):
-        armado, llego, fallas = self.brazo
+        armado = self.brazo[0]
         if self.estado == FALLA:
             return
         if self.estado == INICIO:
-            if self.t_brazo is None:
+            if not self._fresco(t):
                 return
             if not armado:
                 if t - self.t0 >= 1.0:  # reintentar cada segundo hasta ver ARMADO
@@ -115,12 +142,10 @@ class Mision:
             self.enviar('cierre', 0.0)
             self._ir(ESPERAR, t)
             return
-        if self.estado != ESPERAR and t - self.t_brazo > self.par.t_estado_max:
+        if self.estado != ESPERAR and not self._fresco(t):
             return self._fallar(t, 'sin /brazo/estado')
-        if self.estado != ESPERAR and (fallas or not armado):
-            return self._fallar(t, 'brazo ' + (', '.join(fallas) if fallas else 'desarmado'))
         if self.estado in (APROXIMAR, RETIRAR):
-            if self.se_movio and llego:
+            if self._llego():
                 if self.estado == APROXIMAR:
                     self.enviar('cierre', self.par.cierre)
                     self._ir(AGARRAR, t)

@@ -75,8 +75,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   `MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh`
 - Revisados por Codex (brazo, base, micro-ROS, cambios del 28/09 y visión) y hallazgos aplicados.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
-  `brazo_base → stereo_camera_link` en `mision.launch.py` (valores supuestos: MEDIR). 11 pruebas OK; probada en la
-  notebook con brazo y limón simulados. Sin probar con el brazo real.
+  `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
+  (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
+  brazo y limón simulados. Sin probar con el brazo real. Falta el desfase muñeca → pinza (medir la pinza).
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
@@ -99,5 +100,5 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
 6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
 7. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
-   brazo real: `cierre`, `reposo` y el desfase muñeca → pinza.
+   brazo real: `cierre`, `reposo` y el desfase muñeca → pinza (hoy el centro del limón va a la muñeca).
 8. Preguntas a la cátedra (`docs/ARQUITECTURA.md` §11) y arreglar el salto de 32 000 cuentas de `EncoderPCNT`.
