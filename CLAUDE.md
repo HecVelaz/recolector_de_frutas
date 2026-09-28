@@ -37,7 +37,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 19 pruebas OK.
   **Sin placa.**
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
-  **Sin probar con el agente.**
+  Brazo probado con el agente en la placa sola (28/09, 921600 baudios, 20 Hz); base sin probar.
 - `brazo_ik`: 5 pruebas OK y probado en la notebook.
 - Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Visión, estéreo y misión: sin empezar.
 

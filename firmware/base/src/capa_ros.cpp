@@ -310,8 +310,10 @@ void rosLoop() {
     respMsg.data.data = const_cast<char *>(salida.texto());
     respMsg.data.size = salida.largo();
     respMsg.data.capacity = salida.largo() + 1;
-    // Si no se pudo publicar, el texto queda para el próximo intento (el búfer corta lo que no entre)
-    if (rcl_publish(&pubResp, &respMsg, nullptr) == RCL_RET_OK) salida.limpiar();
+    // Un solo intento: con varios fragmentos rcl_publish puede dar error aunque el mensaje llegue, y
+    // reintentar en cada vuelta satura el enlace (visto en placa con el mensaje de arranque)
+    ignorar(rcl_publish(&pubResp, &respMsg, nullptr));
+    salida.limpiar();
   }
 }
 

@@ -551,10 +551,11 @@ void setup() {
   colaMsg = xQueueCreate(8, sizeof(Msg));
   hwOk = okPwm && okEnc && colaLog && colaMsg;
 
-  Serial.begin(115200);
 #ifdef USAR_MICROROS
+  Serial.begin(921600);
   rosBegin();  // desde acá, out es el búfer que se publica en /brazo/respuesta
 #else
+  Serial.begin(115200);
   delay(1500);  // dar tiempo a que abra el monitor
 #endif
   out->println();
