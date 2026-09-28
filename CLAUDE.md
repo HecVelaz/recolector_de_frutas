@@ -58,9 +58,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   limón; ~5 FPS en CPU). Detector propio: `vision/entrenamiento_limon/` (sin correr; faltan fotos NoIR propias).
   Cadena visión → punto 3D (28/09, commit local `114f0f7` en la Pi, sin push): `detector_node` publica
   `/yolo/detecciones`, `localizador_node` publica `/limon/posicion`; `scripts/start_limon.sh` arranca todo.
-  Funciona de punta a punta con COCO, pero lento: con estéreo + YOLO la CPU se satura (detección ~1,5-2 FPS,
-  disparidad ~1,3 Hz, cámaras ~7 de 10 FPS). Precisión sin medir: cámaras en soporte de cartón; recalibrar
-  con el soporte rígido (el usuario avisa) y apuntar `estereo.launch.py` a la calibración nueva (hoy usa la v1).
+  Con `launch/limon.launch.py` (commit `986182c`, sin push): NCNN + OpenMP pasivo + sin `/points2` + disparidad
+  BM en 72-168 px (~0,40-0,94 m; la ventana 0-128 original no mide a menos de ~0,53 m) -> detección ~9 FPS,
+  posición ~3 Hz. Calidad de BM y precisión sin medir: cámaras en soporte de cartón; recalibrar con el soporte
+  rígido (el usuario avisa) y apuntar `limon.launch.py` a la calibración nueva (hoy usa la v1).
 - Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Misión: sin empezar.
 
 ## 6. Decisiones
