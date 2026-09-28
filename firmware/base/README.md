@@ -103,7 +103,9 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 - [ ] Radio de rueda y trocha (`CFG_DIF`).
 - [ ] Umbral de batería según la química.
 - [ ] Detección de "plataforma levantada" (H9): la IMU sola no la distingue bien.
-- [ ] Probar la capa micro-ROS en placa (compila; ver la tabla de Resultados).
+- [ ] Probar la capa micro-ROS con sensores y motores (en la placa sola ya anda; ver Resultados).
+- [ ] Rearmar (`r`) exige IMU con datos: sin la IMU conectada no se puede probar el movimiento.
+- [ ] Con GPIO 1 al aire la batería lee valores creíbles (11–14 V): un divisor desconectado no se detecta.
 
 ## Resultados
 
@@ -112,6 +114,8 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 | 2026-09-27 | `pio test -e native` (19 pruebas, después de la revisión de Codex) | OK |
 | 2026-09-27 | `pio run -e esp32s3`: RAM 7,0 %, flash 5,5 %, 0 warnings | OK |
 | 2026-09-27 | `pio run -e ros` (micro-ROS Jazzy): RAM 22,7 %, flash 7,3 %, 0 warnings. Sin probar con el agente | OK |
+| 2026-09-28 | Placa sola, serial: seta al aire → EMERGENCIA; `d`/`v` recortados a 0 %; `r` rechazado | OK |
+| 2026-09-28 | Placa sola, micro-ROS: `/odom` 25,0 Hz, `/range/*` y `/bumpers` 10,0 Hz, `/base/estado` 2,0 Hz, `/battery` 1,0 Hz; armado y reconexión DESARMADA; en simultáneo con el brazo sin pérdidas | OK |
 | | Sentido de ruedas y encoders | — |
 | | Lazo de velocidad de las ruedas en placa | — |
 | | Odometría contra cinta métrica | — |
