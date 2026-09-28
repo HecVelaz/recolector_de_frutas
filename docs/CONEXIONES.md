@@ -11,7 +11,7 @@ flowchart LR
   PI -- USB · micro-ROS --> WR[ESP32-WROOM<br/>brazo]
   PI -- GPIO 17 · 27 --> IND[Luz + buzzer]
   PI -. USB .-> LID[LiDAR]
-  S3 --> TR[2 × IBT-2 + 36GP-555 53 rpm]
+  S3 --> TR[2 × IBT-2 + DC 895 planetario 53 rpm]
   S3 --> SEN[IMU · GPS · 3 × HC-SR04 · 4 bumpers]
   S3 --> SEG[Seta · batería]
   WR --> J1[J1: IBT-2 + 36GP-555 160 rpm]

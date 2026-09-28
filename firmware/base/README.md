@@ -97,8 +97,9 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 
 ## Pendiente (MEDIR / hacer)
 
-- [ ] **Qué motor de tracción es**: las notas dicen 36GP-555 de 53 rpm; el inventario, DC 895 planetario de 53 rpm.
-      Define `cuentasPorVuelta` (hoy 9600 = 16 PPR × 4 × 150), `K`, `tau` y la zona muerta.
+- [ ] **`cuentasPorVuelta`** del DC 895 planetario de 53 rpm (motor confirmado el 28/09; sin hoja de datos). Con
+      la base liberada (`l`), marcar la rueda, girarla a mano 10 vueltas hacia adelante y leer `vueltas` en `e`:
+      valor nuevo = 9600 × 10 / vueltas leídas. Después identificar `K`, `tau` y la zona muerta (`log` + `d`).
 - [ ] Sentido de motores y encoders (`MOTOR_INVERTIDO`, `ENC_INVERTIDO`).
 - [ ] Radio de rueda y trocha (`CFG_DIF`).
 - [ ] Umbral de batería según la química.

@@ -14,7 +14,8 @@ elementos a interconectar todos entre si
 - x2 servo de alto torque para manipulador
 - x3 drivers IBT-2 BTS 7960 para los motores dc 36gp
 - x1 driver l298n para los motores articulares 
-- x2 Motor 36GP-555 53 rpm para traccion ruedas (necesita control cerrado)
+- x2 Motor DC 895 planetario 42 mm con encoder, 12 V, 53 rpm, eje D 8 mm para traccion ruedas (necesita control cerrado)
+  (corregido el 28/09/2026: antes decía 36GP-555 53 rpm)
 - x1 gps up501
 - x1 imu mpu 9250 sin magnetometro
 - x1 lidar 

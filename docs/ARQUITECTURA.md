@@ -66,7 +66,7 @@ Criterio: **un ESP32 por subsistema** (base y brazo), no "motores en uno y senso
 
 | | **ESP32-S3 → BASE** | **ESP32-WROOM-32D → BRAZO** | **Raspberry Pi 5** |
 |---|---|---|---|
-| Motores | 2× 36GP-555 53 rpm (tracción) con 2× IBT-2 | J1: 36GP-555 160 rpm + IBT-2 · J2, J3: 2× 5840-31ZY + L298N | — |
+| Motores | 2× DC 895 planetario 53 rpm con encoder (tracción) con 2× IBT-2 | J1: 36GP-555 160 rpm + IBT-2 · J2, J3: 2× 5840-31ZY + L298N | — |
 | Encoders | 2 (Hall de rueda) → 2 de 4 PCNT | 3 (Hall J1 + 2 ópticos 1000 PPR) → 3 de 8 PCNT | — |
 | Actuadores extra | luz, buzzer | 2 servos (apertura, giro J4) | — |
 | Sensores | IMU MPU9250 (I²C), 4 bumpers, 3 HC-SR04, GPS UP501 (UART, ya probado en E1), monitor de batería, estado de seta | — | 2 cámaras NoIR (CSI), LiDAR (USB, fuera del mínimo) |

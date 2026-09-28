@@ -7,7 +7,7 @@ Rutas desde `docs/`. `R1/` = `TPF R1 Grupo 2-…/TPF R1 Grupo 2/`, `R2/` = `TPF 
 - `[2026S2]R2_GuiaTPF.txt` — Guía R2 v0.5 (27/07): robot ROS 2 de ≥40×35 cm y ≥5 kg, encoders+IMU+GPS, ≥3 sensores de distancia + 4 bumpers, autonomía ≥45 min, seta/luz/buzzer, FSM (INACTIVO…EMERGENCIA), rosbags, app móvil, hilera por GPS+visión. Opción B: ≥4 GDL; precisión y recobrado ≥0,80 (30 frutos); error 3D ≤35 mm; ≤45 s por fruto. Limón no figura entre las especies de la guía, pero **se acordó con el profesor usar limón**.
 
 **Contexto**
-- `elementos robot recogedor.md` — Hardware real (Pi 5 + ROS 2 Jazzy, 2 ESP32, 2 cámaras NoIR, motores 36GP-555 y 5840-31ZY, IBT-2/L298N, GPS UP501, MPU9250, LiDAR, HC-SR04). **Decisión:** opción 6 de la tabla R1 (RRR-Limón), con pinza con tracción+rotación en vez de succión. Al 27/09: solo pruebas preliminares; estéreo sin validar (falta soporte de cámaras).
+- `elementos robot recogedor.md` — Hardware real (Pi 5 + ROS 2 Jazzy, 2 ESP32, 2 cámaras NoIR, motores 36GP-555 (J1), DC 895 planetario 53 rpm (tracción) y 5840-31ZY, IBT-2/L298N, GPS UP501, MPU9250, LiDAR, HC-SR04). **Decisión:** opción 6 de la tabla R1 (RRR-Limón), con pinza con tracción+rotación en vez de succión. Al 27/09: solo pruebas preliminares; estéreo sin validar (falta soporte de cámaras).
 
 **Diseño**
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.

@@ -305,8 +305,9 @@ void estado() {
   out->printf("Comando: v=%.3f m/s w=%.3f rad/s | odometría: x=%.3f y=%.3f th=%.1f° v=%.3f w=%.3f\n", va, wa, x, y,
                 th * 57.2958f, vo, wo);
   for (int i = 0; i < 2; i++)
-    out->printf("Rueda %s: ref=%6.1f rpm w=%6.1f rpm u=%6.1f %% | falla: %s | saltos enc: %lu\n", LADO[i], r[i].wRef(),
-                  r[i].w(), r[i].u(), r[i].textoFalla(), (unsigned long)r[i].saltosEncoder());
+    out->printf("Rueda %s: ref=%6.1f rpm w=%6.1f rpm u=%6.1f %% vueltas=%.3f | falla: %s | saltos enc: %lu\n", LADO[i],
+                  r[i].wRef(), r[i].w(), r[i].u(), r[i].q() / 360.0f, r[i].textoFalla(),
+                  (unsigned long)r[i].saltosEncoder());
   out->printf("Ticks atrasados: %lu | watchdog: %lu ms\n", (unsigned long)atr, (unsigned long)wd);
 }
 

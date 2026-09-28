@@ -17,4 +17,6 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 | Otros | Rodamientos ABEC-9 | China Mainland, 51105, 2 PCS | US $7.16 | x1 |
 
 
+> **Confirmado (28/09/2026):** los 2 motores de tracción son los DC 895 planetarios de 53 rpm de la fila 1.
+
 > **Corrección (27/09/2026):** el motor DC 895 de 2700 rpm se compró por error. El motor que se usa en la base del brazo es el **36GP-555 de 160 rpm** (el caracterizado en la R1 E5).
