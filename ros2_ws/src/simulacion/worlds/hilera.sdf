@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <!-- Hilera de limoneros para la opción B de la guía R2: 4 plantas por lado (la guía pide >= 4 en un lateral), pasillo
      a lo largo de +x con el robot arrancando en el origen, 3 obstáculos en el pasillo y punto de regreso en x = 7,5 m.
-     Plantas a y = ±0,95 m: la copa (r = 0,35 m) deja un pasillo de 1,2 m. -->
+     Plantas a y = ±0,70 m: con el robot centrado, los limones quedan a ~0,45 m del eje de J1 (esfera de trabajo de R1:
+     r = 450 mm) y las copas (r = 0,22 m) dejan un pasillo de ~0,96 m. -->
 <sdf version="1.9">
   <world name="hilera">
     <physics name="1ms" type="ignored">
@@ -49,42 +50,42 @@
     <include>
       <name>limonero_izq_1</name>
       <uri>model://limonero</uri>
-      <pose>1.5 0.95 0 0 0 0.0</pose>
+      <pose>1.5 0.7 0 0 0 0.0</pose>
     </include>
     <include>
       <name>limonero_izq_2</name>
       <uri>model://limonero</uri>
-      <pose>3.0 0.95 0 0 0 0.7</pose>
+      <pose>3.0 0.7 0 0 0 0.7</pose>
     </include>
     <include>
       <name>limonero_izq_3</name>
       <uri>model://limonero</uri>
-      <pose>4.5 0.95 0 0 0 1.4</pose>
+      <pose>4.5 0.7 0 0 0 1.4</pose>
     </include>
     <include>
       <name>limonero_izq_4</name>
       <uri>model://limonero</uri>
-      <pose>6.0 0.95 0 0 0 2.1</pose>
+      <pose>6.0 0.7 0 0 0 2.1</pose>
     </include>
     <include>
       <name>limonero_der_1</name>
       <uri>model://limonero</uri>
-      <pose>1.5 -0.95 0 0 0 0.0</pose>
+      <pose>1.5 -0.7 0 0 0 0.0</pose>
     </include>
     <include>
       <name>limonero_der_2</name>
       <uri>model://limonero</uri>
-      <pose>3.0 -0.95 0 0 0 0.7</pose>
+      <pose>3.0 -0.7 0 0 0 0.7</pose>
     </include>
     <include>
       <name>limonero_der_3</name>
       <uri>model://limonero</uri>
-      <pose>4.5 -0.95 0 0 0 1.4</pose>
+      <pose>4.5 -0.7 0 0 0 1.4</pose>
     </include>
     <include>
       <name>limonero_der_4</name>
       <uri>model://limonero</uri>
-      <pose>6.0 -0.95 0 0 0 2.1</pose>
+      <pose>6.0 -0.7 0 0 0 2.1</pose>
     </include>
 
     <model name="obstaculo_caja">

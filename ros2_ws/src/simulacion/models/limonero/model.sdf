@@ -1,76 +1,76 @@
 <?xml version="1.0"?>
-<!-- Maqueta de limonero para la hilera (guía R2: plantas o maquetas representativas). Estática: los limones de esta
-     maqueta son solo para la visión; los que se agarran se agregan aparte como modelos sueltos.
-     Tronco de 0,6 m, copa de r = 0.35 m centrada a 0.85 m: limones entre ~0,6 y 1,1 m de altura. -->
+<!-- Maqueta de limonero según R1: tronco de 0,23 m y copa entre ~0,21 y 0,53 m (dibujo del árbol de la E2); limones
+     entre 0,22 y 0,50 m, dentro de la esfera de trabajo de la consigna (Ø 30 cm, centro a ~35 cm del suelo).
+     Estática: estos limones son para la visión; los que se agarran se agregan aparte como modelos sueltos. -->
 <sdf version="1.9">
   <model name="limonero">
     <static>true</static>
     <link name="link">
       <collision name="tronco_c">
-        <pose>0 0 0.3 0 0 0</pose>
-        <geometry><cylinder><radius>0.05</radius><length>0.6</length></cylinder></geometry>
+        <pose>0 0 0.115 0 0 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>0.23</length></cylinder></geometry>
       </collision>
       <visual name="tronco">
-        <pose>0 0 0.3 0 0 0</pose>
-        <geometry><cylinder><radius>0.05</radius><length>0.6</length></cylinder></geometry>
+        <pose>0 0 0.115 0 0 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>0.23</length></cylinder></geometry>
         <material><ambient>0.3 0.2 0.1 1</ambient><diffuse>0.4 0.26 0.13 1</diffuse></material>
       </visual>
       <collision name="copa_c">
-        <pose>0 0 0.85 0 0 0</pose>
-        <geometry><sphere><radius>0.35</radius></sphere></geometry>
+        <pose>0 0 0.37 0 0 0</pose>
+        <geometry><ellipsoid><radii>0.22 0.22 0.16</radii></ellipsoid></geometry>
       </collision>
       <visual name="copa">
-        <pose>0 0 0.85 0 0 0</pose>
-        <geometry><sphere><radius>0.35</radius></sphere></geometry>
+        <pose>0 0 0.37 0 0 0</pose>
+        <geometry><ellipsoid><radii>0.22 0.22 0.16</radii></ellipsoid></geometry>
         <material><ambient>0.05 0.25 0.05 1</ambient><diffuse>0.08 0.35 0.08 1</diffuse></material>
       </visual>
       <visual name="limon_0">
-        <pose>0.345 0.000 0.730 0 0 0</pose>
+        <pose>0.189 0.000 0.276 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_1">
-        <pose>0.277 0.232 0.900 0 0 0</pose>
+        <pose>0.184 0.129 0.403 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_2">
-        <pose>0.024 0.274 0.650 0 0 0</pose>
+        <pose>0.023 0.131 0.248 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_3">
-        <pose>-0.226 0.269 0.950 0 0 0</pose>
+        <pose>-0.115 0.164 0.450 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_4">
-        <pose>-0.356 0.000 0.770 0 0 0</pose>
+        <pose>-0.219 0.000 0.321 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_5">
-        <pose>-0.234 -0.196 1.000 0 0 0</pose>
+        <pose>-0.134 -0.094 0.470 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_6">
-        <pose>-0.029 -0.331 0.700 0 0 0</pose>
+        <pose>-0.030 -0.172 0.263 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_7">
-        <pose>0.234 -0.279 0.870 0 0 0</pose>
+        <pose>0.146 -0.174 0.387 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_8">
-        <pose>0.287 0.104 1.050 0 0 0</pose>
+        <pose>0.164 -0.060 0.477 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>
       <visual name="limon_9">
-        <pose>-0.274 -0.100 0.630 0 0 0</pose>
+        <pose>-0.138 0.080 0.251 0 0 0</pose>
         <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
         <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
       </visual>

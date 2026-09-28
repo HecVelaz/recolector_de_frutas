@@ -78,9 +78,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
   32 000 corregido). Hay que leer antes de ~1,5 s (J2/J3); si no, `ControlArticulacion` entra en falla de encoder.
   Revisado por Codex. **Sin probar en placa**: girar un motor a mano más de 32 000 cuentas y ver que no salte.
-- `simulacion` (28/09, Gazebo Harmonic en la notebook): etapa 1 hecha (hilera de 4+4 limoneros, 3 obstáculos, GPS de
-  la FIUNA, base diferencial con IMU/GPS y los tópicos del firmware; tiempo real sin ventana). Faltan brazo (etapa 2),
-  cámaras (3) y sensores + estados imitando el firmware (4). Después se pasa a la PC de escritorio.
+- `simulacion` (28/09, Gazebo Harmonic en la notebook): etapas 1 y 2 hechas. Hilera de 4+4 limoneros con las medidas
+  de R1 (limones a 0,22-0,50 m, esfera de trabajo Ø 30 cm a 35 cm del suelo), 3 obstáculos, GPS de la FIUNA, base con
+  IMU/GPS y brazo en la esquina delantera izquierda (J1 = 0° al frente) con `brazo_sim` imitando al firmware; con
+  `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo. Faltan cámaras (3) y sensores,
+  agarre y `mision` completa (4). Después se pasa a la PC de escritorio.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con

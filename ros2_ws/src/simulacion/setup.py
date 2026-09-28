@@ -23,4 +23,10 @@ setup(
     maintainer_email='hvelazquez@fiuna.edu.py',
     description='Simulación en Gazebo Harmonic del recolector de limones en una hilera',
     license='MIT',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'brazo_sim = simulacion.brazo_sim:main',
+        ],
+    },
 )

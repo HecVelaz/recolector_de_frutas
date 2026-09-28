@@ -1,4 +1,5 @@
-"""Simulación en Gazebo Harmonic: hilera de limoneros + Arturito (etapa 1: base con IMU y GPS).
+"""Simulación en Gazebo Harmonic: hilera de limoneros + Arturito (base con IMU y GPS, brazo y pinza).
+brazo_sim hace de firmware del brazo (arranca DESARMADO) y brazo_ik resuelve /brazo/objetivo.
 
     ros2 launch simulacion sim.launch.py              # con ventana de Gazebo
     ros2 launch simulacion sim.launch.py gui:=false   # solo el servidor (notebook lenta)
@@ -37,4 +38,6 @@ def generate_launch_description():
              arguments=['-topic', 'robot_description', '-name', 'arturito', '-z', '0.06']),
         Node(package='ros_gz_bridge', executable='parameter_bridge', output='screen',
              parameters=[{'config_file': str(share / 'config' / 'puente.yaml'), 'use_sim_time': True}]),
+        Node(package='simulacion', executable='brazo_sim', output='screen', parameters=[{'use_sim_time': True}]),
+        Node(package='brazo_ik', executable='nodo_ik', output='screen', parameters=[{'use_sim_time': True}]),
     ])
