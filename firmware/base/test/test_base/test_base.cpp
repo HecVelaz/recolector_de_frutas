@@ -268,6 +268,16 @@ void test_encoder_pasa_el_limite_sin_saltos() {
   TEST_ASSERT_EQUAL_INT32(12, desenvolverPcnt(3 - 31991));    // 31991 -> 32000 = 0 -> 3: avanzó 12
   TEST_ASSERT_EQUAL_INT32(-12, desenvolverPcnt(-3 + 31991));  // lo mismo hacia atrás
   TEST_ASSERT_EQUAL_INT32(-15999, desenvolverPcnt(-31999 - 16000 + 32000));
+  // Fronteras de la ambigüedad: hasta 15999 en cada sentido es exacto; 16000 ya se lee como -16000
+  TEST_ASSERT_EQUAL_INT32(15999, desenvolverPcnt(15999));
+  TEST_ASSERT_EQUAL_INT32(-15999, desenvolverPcnt(-15999));
+  TEST_ASSERT_EQUAL_INT32(-16000, desenvolverPcnt(16000));
+  TEST_ASSERT_EQUAL_INT32(-16000, desenvolverPcnt(-16000));
+  TEST_ASSERT_EQUAL_INT32(-15999, desenvolverPcnt(16001));
+  TEST_ASSERT_EQUAL_INT32(1, desenvolverPcnt(0 - 31999));   // 31999 -> 32000 = 0
+  TEST_ASSERT_EQUAL_INT32(-1, desenvolverPcnt(0 + 31999));  // -31999 -> -32000 = 0
+  TEST_ASSERT_EQUAL_INT32(-2, desenvolverPcnt(31999 - 1));  // vuelve atrás justo después de la vuelta a 0
+  TEST_ASSERT_EQUAL_INT32(15000, desenvolverPcnt(31000 + 15000 - 32000 - 31000));  // de 31000 a 14000 pasando por 0
   // Simulación: 5 vueltas del contador en cada sentido, leyendo cada 110 cuentas (J2 a 160 rpm cada 10 ms)
   int64_t real = 0, acc = 0;
   int32_t hw = 0, ultimo = 0;

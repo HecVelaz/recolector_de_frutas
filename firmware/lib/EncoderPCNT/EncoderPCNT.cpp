@@ -65,13 +65,6 @@ int64_t EncoderPCNT::count() {
   return c;
 }
 
-int32_t EncoderPCNT::delta() {
-  const int64_t c = count();
-  const int64_t d = c - lastDelta_;
-  lastDelta_ = c;
-  return (int32_t)d;
-}
-
 void EncoderPCNT::reset() {
   if (!ready_) return;
   portENTER_CRITICAL(&mux_);
@@ -79,7 +72,6 @@ void EncoderPCNT::reset() {
   pcnt_counter_clear(unit_);
   lastHw_ = 0;
   acc_ = 0;
-  lastDelta_ = 0;
   pcnt_counter_resume(unit_);
   portEXIT_CRITICAL(&mux_);
 }

@@ -39,9 +39,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
 
 ## 5. Estado actual (2026-09-28)
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 16 pruebas OK.
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK.
   Probado en la placa sola (sin motores ni sensores).
-- `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 19 pruebas OK.
+- `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Probado en la placa sola (sin motores ni sensores).
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
@@ -75,6 +75,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   (`arturito/limon_yolo`). **Sin probar con limones reales ni con las NoIR.** Uso:
   `MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh`
 - Revisados por Codex (brazo, base, micro-ROS, cambios del 28/09 y visión) y hallazgos aplicados.
+- `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
+  32 000 corregido). Hay que leer antes de ~1,5 s (J2/J3); si no, `ControlArticulacion` entra en falla de encoder.
+  Revisado por Codex. **Sin probar en placa**: girar un motor a mano más de 32 000 cuentas y ver que no salte.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con

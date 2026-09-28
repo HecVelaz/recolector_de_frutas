@@ -10,7 +10,9 @@
 // El contador de hardware (16 bits) nunca se borra durante la marcha: al llegar a ±32000 vuelve a 0, y cada
 // count() suma al acumulador de 64 bits lo que avanzó desde la lectura anterior (desenvolverPcnt).
 // Condición: leer antes de que el eje avance 16000 cuentas (el control lee cada 10 ms: 160 rpm con 1000 PPR x4
-// son ~110 cuentas). Antes se usaba la interrupción de límite, y leer entre la vuelta a 0 del contador y la
+// son ~110 cuentas; el límite es ~1,5 s en J2/J3, ~1,9 s en J1 y ~2,2 s en tracción). Si una lectura llega tarde
+// con el eje girando, el acumulado queda corrido en 32000 para siempre: ControlArticulacion lo ve como saltos
+// seguidos y entra en falla de encoder (prueba test_lectura_tardia_del_encoder_es_falla del brazo). Antes se usaba la interrupción de límite, y leer entre la vuelta a 0 del contador y la
 // interrupción daba un salto falso de 32000 cuentas. Sin Serial ni pines fijos.
 class EncoderPCNT {
  public:
@@ -19,8 +21,6 @@ class EncoderPCNT {
 
   // Cuentas acumuladas desde begin() (o desde reset()). Se puede llamar desde varias tareas.
   int64_t count();
-  // Cuentas desde la llamada anterior a delta().
-  int32_t delta();
   void reset();
 
   bool ready() const { return ready_; }
@@ -35,6 +35,5 @@ class EncoderPCNT {
   portMUX_TYPE mux_ = portMUX_INITIALIZER_UNLOCKED;
   int16_t lastHw_ = 0;  // última lectura del contador de hardware
   int64_t acc_ = 0;     // cuentas acumuladas
-  int64_t lastDelta_ = 0;
   bool ready_ = false;
 };

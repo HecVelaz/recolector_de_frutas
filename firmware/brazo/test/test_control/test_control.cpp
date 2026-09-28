@@ -149,6 +149,17 @@ void test_saltos_seguidos_son_falla() {
   TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Encoder, k.falla());
 }
 
+void test_lectura_tardia_del_encoder_es_falla() {
+  // EncoderPCNT leído tarde con el eje girando (J2: más de ~1,5 s): el acumulado queda corrido en -32000 para
+  // siempre (17120 cuentas reales se leen como -14880). Todas las lecturas siguientes son saltos -> falla.
+  ControlArticulacion k;
+  k.configurar(CFG_ART[1]);
+  k.fijarCero(1000, 0.0f);
+  k.paso(1000, TS);
+  for (int n = 0; n < 6; n++) k.paso(1000 + 17120 - 32000, 5 * TS);  // dt recortado a 50 ms en main
+  TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Encoder, k.falla());
+}
+
 void test_fuera_de_limites() {
   // Con cero, una lectura fuera de [qMin - margen, qMax + margen] es falla (por ejemplo, un cero mal fijado)
   ControlArticulacion k;
@@ -237,6 +248,7 @@ int main() {
   RUN_TEST(test_falla_en_reposo_no_llego);
   RUN_TEST(test_descarta_salto_de_encoder);
   RUN_TEST(test_saltos_seguidos_son_falla);
+  RUN_TEST(test_lectura_tardia_del_encoder_es_falla);
   RUN_TEST(test_fuera_de_limites);
   RUN_TEST(test_manual_no_empuja_afuera_del_limite);
   RUN_TEST(test_detener_no_vuelve_atras);
