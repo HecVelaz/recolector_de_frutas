@@ -17,7 +17,7 @@ Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valor
 | `include/brazo_config.h` | Parámetros por articulación (encoder, transmisión, límites de la E4, modelo y PI de la E5), pose de cero, servos |
 | `include/pins.h` | Pines (usa los 15 GPIO de uso general de la placa) |
 | `src/main.cpp` | Drivers, tarea de control, comandos serie, homing, watchdog, CSV |
-| `test/test_control/` | 14 pruebas con el modelo de la E5 simulado |
+| `test/test_control/` | 15 pruebas con el modelo de la E5 simulado |
 
 Drivers compartidos en `firmware/lib/` (enlazados por `symlink://`): `BTS7960`, `EncoderPCNT` y `L298N`. Vienen del
 repo de pruebas `~/pruebas-esp32` (proyectos 06 y 08, donde se caracterizaron los motores); este proyecto empezó

@@ -33,16 +33,22 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
   usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
 
-## 5. Estado actual (2026-09-27)
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 15 pruebas OK. **Sin placa.**
+## 5. Estado actual (2026-09-28)
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 15 pruebas OK.
+  Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 19 pruebas OK.
-  **Sin placa.**
+  Probado en la placa sola (sin motores ni sensores).
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
   S3: flashear con reset por watchdog (ya en `platformio.ini`); abrir el puerto con DTR/RTS bajos la deja en
   modo descarga. Usar `/dev/serial/by-id/` porque el puerto pasa de ACM0 a ACM1.
-- `brazo_ik`: 5 pruebas OK y probado en la notebook.
-- Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Visión, estéreo y misión: sin empezar.
+- `brazo_ik`: 5 pruebas OK, en la notebook y en la Pi.
+- Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
+  en `~/recolector_de_frutas` (por rsync, sin `.git`). Falta probar las placas conectadas a la Pi.
+- Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`): calibración estéreo v2 (RMS
+  0,32 px, baseline 99,3 mm), disparidad y nube `/points2`, nodo `yolo_ros` con `yolo26n.pt` (COCO: sin clase
+  limón; ~5 FPS en CPU).
+- Revisados por Codex (brazo, base, micro-ROS) y hallazgos aplicados. Misión: sin empezar.
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
