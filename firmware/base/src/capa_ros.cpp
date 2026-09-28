@@ -155,23 +155,28 @@ void alRecibirComando(const void *m) {
 }
 
 void publicarGps() {
-  UP501::Fix f;
-  while (gps.pollEpoch(f)) {
-    if (!enlace.hora(gpsMsg.header.stamp)) continue;
-    gpsMsg.status.status = f.fix ? (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_FIX
-                                 : (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
-    gpsMsg.latitude = f.fix ? f.latDeg : NAN;
-    gpsMsg.longitude = f.fix ? f.lonDeg : NAN;
-    // NavSatFix pide altura sobre el elipsoide: MSL + separación del geoide. Sin la separación no se puede
-    // calcular (usar MSL como si fuera elipsoidal sería un error de decenas de metros): NaN
-    gpsMsg.altitude = f.fix && isfinite(f.altMslM) && isfinite(f.geoidSepM) ? f.altMslM + f.geoidSepM : NAN;
-    // Covarianza aproximada a partir del HDOP (UERE ~5 m); vertical el doble
-    const double h = isfinite(f.hdop) ? f.hdop * 5.0 : 50.0;
-    gpsMsg.position_covariance[0] = gpsMsg.position_covariance[4] = h * h;
-    gpsMsg.position_covariance[8] = 4 * h * h;
-    gpsMsg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
-    ignorar(rcl_publish(&pubGps, &gpsMsg, nullptr));
+  // Vaciar la cola pero publicar solo la época más reciente: si se juntaron varias, publicarlas todas alarga
+  // la vuelta del loop sin aportar nada (revisión de Codex)
+  UP501::Fix f, ultima;
+  bool hay = false;
+  while (gps.pollEpoch(ultima)) {
+    f = ultima;
+    hay = true;
   }
+  if (!hay || !enlace.hora(gpsMsg.header.stamp)) return;
+  gpsMsg.status.status = f.fix ? (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_FIX
+                               : (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+  gpsMsg.latitude = f.fix ? f.latDeg : NAN;
+  gpsMsg.longitude = f.fix ? f.lonDeg : NAN;
+  // NavSatFix pide altura sobre el elipsoide: MSL + separación del geoide. Sin la separación no se puede
+  // calcular (usar MSL como si fuera elipsoidal sería un error de decenas de metros): NaN
+  gpsMsg.altitude = f.fix && isfinite(f.altMslM) && isfinite(f.geoidSepM) ? f.altMslM + f.geoidSepM : NAN;
+  // Covarianza aproximada a partir del HDOP (UERE ~5 m); vertical el doble
+  const double h = isfinite(f.hdop) ? f.hdop * 5.0 : 50.0;
+  gpsMsg.position_covariance[0] = gpsMsg.position_covariance[4] = h * h;
+  gpsMsg.position_covariance[8] = 4 * h * h;
+  gpsMsg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+  ignorar(rcl_publish(&pubGps, &gpsMsg, nullptr));
 }
 
 void alTimer(rcl_timer_t *t, int64_t) {
@@ -222,12 +227,14 @@ void alTimer(rcl_timer_t *t, int64_t) {
 
   if (tick % ESTADO_CADA == 0) {
     const int n = snprintf(estadoBuf, sizeof(estadoBuf),
-                           "%s modo=%s seguridad=%s%s%s%s%s%s imu=%s rueda_izq=%s rueda_der=%s",
+                           "%s modo=%s seguridad=%s%s%s%s%s%s imu=%s rueda_izq=%s rueda_der=%s"
+                           " enlace: pings_fallidos=%lu cortes=%lu",
                            armado ? "ARMADA" : "DESARMADA", e.modo,
                            SeguridadBase::texto(e.seg), e.seta ? " SETA" : "", e.bloqAdelante ? " no_avanza" : "",
                            e.frenteSinDato ? "(frente_sin_eco)" : "", e.bloqAtras ? " no_retrocede" : "",
                            e.bateriaBaja ? " BATERIA_BAJA" : "", e.imuValida ? "ok" : "SIN_DATOS",
-                           ControlArticulacion::texto(e.falla[0]), ControlArticulacion::texto(e.falla[1]));
+                           ControlArticulacion::texto(e.falla[0]), ControlArticulacion::texto(e.falla[1]),
+                           (unsigned long)enlace.pingsFallidos(), (unsigned long)enlace.cortes());
     estadoMsg.data.size = n < (int)sizeof(estadoBuf) ? n : sizeof(estadoBuf) - 1;
     ignorar(rcl_publish(&pubEstado, &estadoMsg, nullptr));
   }

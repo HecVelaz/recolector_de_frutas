@@ -116,6 +116,7 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 | 2026-09-27 | `pio run -e ros` (micro-ROS Jazzy): RAM 22,7 %, flash 7,3 %, 0 warnings. Sin probar con el agente | OK |
 | 2026-09-28 | Placa sola, serial: seta al aire → EMERGENCIA; `d`/`v` recortados a 0 %; `r` rechazado | OK |
 | 2026-09-28 | Placa sola, micro-ROS: `/odom` 25,0 Hz, `/range/*` y `/bumpers` 10,0 Hz, `/base/estado` 2,0 Hz, `/battery` 1,0 Hz; armado y reconexión DESARMADA; en simultáneo con el brazo sin pérdidas | OK |
+| 2026-09-28 | Revisión de Codex de la reconexión: ping de 20 a 100 ms, executor antes de sincronizar la hora (y sin sincronizar con pings perdidos), GPS publica solo la última época, contadores `enlace: pings_fallidos cortes` en `/<parte>/estado`. En la Pi con los 4 núcleos al 100 %, 6 `topic hz` y 3 reinicios del agente del brazo: base con 7 pings tardíos y 0 cortes (una sola sesión); brazo, 3 cortes = los 3 reinicios | OK |
 | | Sentido de ruedas y encoders | — |
 | | Lazo de velocidad de las ruedas en placa | — |
 | | Odometría contra cinta métrica | — |

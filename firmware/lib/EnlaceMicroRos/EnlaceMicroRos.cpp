@@ -8,7 +8,9 @@ template <typename T>
 inline void ignorar(T) {}
 
 constexpr uint32_t PING_CADA_MS = 500;
-constexpr int PING_TIMEOUT_MS = 20;
+// Con 20 ms la base se cortó dos veces con la Pi cargada (sin desconexión USB): cortes falsos por latencia
+// (revisión de Codex). 3 x 100 ms sigue muy por debajo de los 1,5 s que hacen falta para declarar el corte.
+constexpr int PING_TIMEOUT_MS = 100;
 constexpr uint8_t PINGS_PARA_CORTE = 3;  // ~1,5 s sin respuesta = agente desconectado
 constexpr uint32_t HORA_REINTENTO_MS = 500;
 constexpr uint32_t HORA_CADA_MS = 60000;
@@ -75,19 +77,26 @@ void EnlaceMicroRos::loop() {
     case Estado::Conectado:
       if (ahora - ultimoPingMs_ >= PING_CADA_MS) {
         ultimoPingMs_ = ahora;
-        pingsPerdidos_ = rmw_uros_ping_agent(PING_TIMEOUT_MS, 1) == RMW_RET_OK ? 0 : pingsPerdidos_ + 1;
+        if (rmw_uros_ping_agent(PING_TIMEOUT_MS, 1) == RMW_RET_OK) {
+          pingsPerdidos_ = 0;
+        } else {
+          pingsPerdidos_++;
+          pingsFallidos_++;
+        }
         if (pingsPerdidos_ >= PINGS_PARA_CORTE) {
           // Avisar el corte ya, antes de destruir las entidades (lo que puede tardar): el robot se detiene antes
           estado_ = Estado::Desconectado;
           corte_ = true;
+          cortes_++;
           break;
         }
       }
-      if (ahora - ultimaHoraMs_ >= (conHora_ ? HORA_CADA_MS : HORA_REINTENTO_MS)) {
+      // Primero los comandos (/cmd_vel y demás); la hora, que puede esperar 50 ms, después y solo con el enlace sano
+      ignorar(rclc_executor_spin_some(&executor_, SPIN_NS));
+      if (pingsPerdidos_ == 0 && ahora - ultimaHoraMs_ >= (conHora_ ? HORA_CADA_MS : HORA_REINTENTO_MS)) {
         ultimaHoraMs_ = ahora;
         if (rmw_uros_sync_session(HORA_TIMEOUT_MS) == RMW_RET_OK && rmw_uros_epoch_synchronized()) conHora_ = true;
       }
-      ignorar(rclc_executor_spin_some(&executor_, SPIN_NS));
       break;
 
     case Estado::Desconectado:

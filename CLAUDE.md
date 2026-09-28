@@ -52,7 +52,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Agentes: `micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` (brazo) y
   `.../usb-Espressif_USB_JTAG_serial_debug_unit_*-if00` (base). Si la S3 no abre sesión, está en modo descarga:
   `~/esptool_env/bin/esptool.py --port <S3> --before no_reset --after watchdog_reset read_mac`.
-  Al reiniciar el agente o flashear el brazo, la base se reconectó una vez (vuelve DESARMADA): vigilar.
+  La base se había cortado 2 veces (ping de 20 ms, cortes falsos por latencia): ping a 100 ms y contadores
+  `enlace: pings_fallidos cortes` en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
+  la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).
 - Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`): calibración estéreo v2 (RMS
   0,32 px, baseline 99,3 mm), disparidad y nube `/points2`, nodo `yolo_ros` con `yolo26n.pt` (COCO: sin clase
   limón; ~5 FPS en CPU). Detector propio: `vision/entrenamiento_limon/` (sin correr; faltan fotos NoIR propias).

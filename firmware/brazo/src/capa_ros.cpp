@@ -230,6 +230,9 @@ void alTimer(rcl_timer_t *t, int64_t) {
       n += snprintf(estadoBuf + n, sizeof(estadoBuf) - n, "J%d %s %s u=%.0f%% falla=%s%s; ", i + 1,
                     textoModo(c[i].modo()), c[i].conCero() ? "cero" : "SIN_CERO", c[i].u(), c[i].textoFalla(),
                     c[i].modo() == ControlArticulacion::Modo::Posicion && c[i].llego() ? " llego" : "");
+    if (n < sizeof(estadoBuf))
+      n += snprintf(estadoBuf + n, sizeof(estadoBuf) - n, "enlace: pings_fallidos=%lu cortes=%lu",
+                    (unsigned long)enlace.pingsFallidos(), (unsigned long)enlace.cortes());
     estadoMsg.data.size = n < sizeof(estadoBuf) ? n : sizeof(estadoBuf) - 1;
     ignorar(rcl_publish(&pubEstado, &estadoMsg, nullptr));
   }

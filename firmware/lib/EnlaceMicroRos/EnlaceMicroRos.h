@@ -22,7 +22,7 @@ class EnlaceMicroRos {
   // puerto: Serial ya abierto (Serial.begin) antes de llamar.
   void begin(Stream &puerto, const char *nodo, size_t nHandles, Crear crear, Destruir destruir);
 
-  // Llamar seguido desde loop(). Las esperas propias están acotadas (ping 20 ms, hora 50 ms, executor 5 ms), pero
+  // Llamar seguido desde loop(). Las esperas propias están acotadas (ping 100 ms, hora 50 ms, executor 5 ms), pero
   // al conectar (sincronización inicial hasta 1 s, creación de entidades) y dentro de los callbacks puede tardar
   // más: la seguridad del robot no debe depender de loop() (vive en la tarea de control).
   void loop();
@@ -32,6 +32,9 @@ class EnlaceMicroRos {
   bool seCorto();
   // Hora del agente. false si todavía no hay sincronización: no publicar mensajes con stamp sin hora.
   bool hora(builtin_interfaces__msg__Time &t) const;
+  // Diagnóstico desde el arranque (no se reinician al reconectar): pings sin respuesta y cortes declarados
+  uint32_t pingsFallidos() const { return pingsFallidos_; }
+  uint32_t cortes() const { return cortes_; }
 
   // Espera máxima de confirmación de un publisher reliable (acota cuánto bloquea cada rcl_publish)
   static bool timeoutPublicador(rcl_publisher_t *p, int ms);
@@ -57,6 +60,8 @@ class EnlaceMicroRos {
   uint32_t ultimaHoraMs_ = 0;
   bool conHora_ = false;
   bool corte_ = false;
+  uint32_t pingsFallidos_ = 0;
+  uint32_t cortes_ = 0;
 };
 
 // Print que junta texto en memoria, para mandar por un tópico lo que en modo serial se imprimiría.

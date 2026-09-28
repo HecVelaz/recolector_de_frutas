@@ -138,6 +138,7 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 | 2026-09-28 | Revisión de Codex de los cambios del día: con falla, `llego()` daba verdadero (y `/brazo/estado` decía "llego"). Ahora `llego()` exige no tener falla y el watchdog ignora los ejes con falla. En la Pi por micro-ROS: atasco + `s` + `wd 500` → sin "llego", 0 avisos del watchdog; tras `r`, "llego" | OK |
 | 2026-09-28 | Placa sola, micro-ROS en la notebook: `joint_states` 20,0 Hz, `estado` 2,0 Hz; armado, validación de `joint_cmd` y `giro`; al perder el agente vuelve DESARMADO | OK |
 | 2026-09-28 | Micro-ROS en la Pi 5, con la base a la vez: a 921600 el CH340 pierde datos (se reconecta cada ~1 s y no publica); a 115200, sesión estable y 20,0 Hz. Los 9 Hz vistos antes a 115200 eran por el reenvío de `/brazo/respuesta` (ya corregido) | OK a 115200 |
+| 2026-09-28 | Revisión de Codex de la reconexión: ping de 20 a 100 ms, executor antes de sincronizar la hora (y sin sincronizar con pings perdidos), GPS publica solo la última época, contadores `enlace: pings_fallidos cortes` en `/<parte>/estado`. En la Pi con los 4 núcleos al 100 %, 6 `topic hz` y 3 reinicios del agente del brazo: base con 7 pings tardíos y 0 cortes (una sola sesión); brazo, 3 cortes = los 3 reinicios | OK |
 | | Signo de encoders J1/J3 | — |
 | | Lazo de velocidad J1/J2 en placa | — |
 | | Movimiento en posición con carga | — |
