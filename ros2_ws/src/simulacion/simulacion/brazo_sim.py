@@ -26,9 +26,10 @@ TOL = math.radians(0.5)                                   # brazo_config.h: tole
 LIMITES = (Q1_LIM, Q2_LIM, Q3_LIM)
 DEDO_ABIERTO = 0.035  # m, cada dedo (urdf)
 TS = 0.02             # 50 Hz
-# Pose con la que aparece el brazo (= initial_position de los controladores en el urdf y reposo de mision): al
-# aparecer las articulaciones están en 0 y los controladores las llevan ahí; no tomar esa pose intermedia como consigna
-REPOSO = [0.0, math.radians(45.0), 0.0]
+# Pose con la que aparece el brazo (= initial_position de los controladores en el urdf y reposo de mision en
+# sim.launch.py): al aparecer las articulaciones están en 0 y los controladores las llevan ahí; no tomar esa pose
+# intermedia como consigna. J1 = -60°: estacionado hacia la derecha, fuera de la vista de las cámaras
+REPOSO = [math.radians(-60.0), math.radians(45.0), 0.0]
 
 
 def actuador_a_serie(q2, q3):

@@ -139,7 +139,10 @@
   <xacro:property name="L2" value="0.35022"/>
   <xacro:property name="L3" value="0.32951"/>
   <xacro:property name="largo_pinza" value="0.11"/>  <!-- muñeca P3 -> punta de los dedos (MEDIR) -->
-  <xacro:property name="q2_ini" value="${pi/4}"/>          <!-- reposo de mision: q = (0°, 45°, 0°) -->
+  <!-- Reposo: q = (-60°, 45°, 0°), el brazo estacionado hacia la derecha: con J1 = 0° la barra l2 tapaba los
+       limones en la cámara derecha y el estéreo no los localizaba -->
+  <xacro:property name="q1_ini" value="${radians(-60)}"/>
+  <xacro:property name="q2_ini" value="${pi/4}"/>
   <xacro:property name="q3o_ini" value="-1.981223"/>       <!-- q3O = -113,516° para q2 = 45°, q3 = 0° (E4) -->
 
   <xacro:macro name="barra" params="nombre largo_b ancho_b m color">
@@ -226,7 +229,7 @@
   </xacro:macro>
   <gazebo>
     <!-- brazo_sim publica en /sim/* consignas ya limitadas en velocidad (como el perfil del firmware) -->
-    <xacro:control_posicion joint="j1" topico="/sim/j1" ini="0" ganancia="10"/>
+    <xacro:control_posicion joint="j1" topico="/sim/j1" ini="${q1_ini}" ganancia="10"/>
     <xacro:control_posicion joint="j2" topico="/sim/j2" ini="${q2_ini}" ganancia="10"/>
     <xacro:control_posicion joint="j3o" topico="/sim/j3o" ini="${q3o_ini}" ganancia="10"/>
     <xacro:control_posicion joint="j4" topico="/sim/j4" ini="0" ganancia="10"/>
@@ -235,21 +238,52 @@
     <xacro:control_posicion joint="dedo_der_joint" topico="/sim/dedo_der" ini="0.035" ganancia="10"/>
   </gazebo>
   <!-- ===================== Cámaras y agarre (etapa 4) =====================
-       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil del lado derecho mirando adelante a
-       la izquierda (55°) y un poco hacia abajo (MEDIR con el soporte rígido): mirando de costado (90°) veía limones
-       detrás del alcance de J1 (±75° desde el frente). "camera" es el marco óptico, con la misma rotación que publica
-       limon.launch.py de vision_estereo: /limon/posicion viene ahí. -->
+       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil detrás del brazo, del lado izquierdo,
+       a 0,55 m del piso, mirando 40° a la izquierda y 17° hacia abajo (MEDIR con el soporte rígido). El estéreo solo
+       localiza en la parte derecha de la imagen izquierda (u >= 271 px: con disparidad mínima 112 y rango 160, más a
+       la izquierda la búsqueda se sale de la imagen derecha): con el robot a x ~ 1 m, los 3 limones del árbol 1 caen
+       ahí, a 0,4-0,95 m y al alcance del brazo, y el brazo estacionado hacia la derecha queda fuera de la vista.
+       Probado antes: del lado derecho mirando de costado (90°) veía limones fuera del alcance de J1; a 55° la barra
+       l2 tapaba los limones en la cámara derecha; a 30° caían en la franja ciega del estéreo.
+       "camera" es el marco óptico, con la misma rotación que publica limon.launch.py de vision_estereo:
+       /limon/posicion viene ahí. -->
   <link name="stereo_camera_link"/>
   <joint name="stereo_camera_joint" type="fixed">
     <parent link="base_link"/><child link="stereo_camera_link"/>
-    <origin xyz="0.10 -0.10 ${alto + 0.30}" rpy="0 0.25 ${radians(55)}"/>
+    <origin xyz="-0.20 0.08 ${alto + 0.35}" rpy="0 0.30 ${radians(40)}"/>
   </joint>
   <link name="camera"/>
   <joint name="camera_optical_joint" type="fixed">
     <parent link="stereo_camera_link"/><child link="camera"/><origin rpy="${-pi/2} 0 ${-pi/2}"/>
   </joint>
 
-  <!-- Un enganche por limón cosechable (worlds/hilera.sdf): limones_sim publica en agarrar/soltar -->
+  <!-- Cámaras estéreo de Gazebo (etapa 3), solo con camaras:=true (renderizar es lo más pesado): como la calibración
+       v1, 640x480, f = 1076,5 px (33,1° de campo horizontal) y 99,26 mm de separación (Tx = -106,854). Imágenes
+       ideales, sin distorsión: salen directo como /left/image_rect y /right/image_rect (camara_info_sim les pone el
+       camera_info). La cámara derecha queda a la derecha de la izquierda (-y de stereo_camera_link). -->
+  <xacro:arg name="camaras" default="false"/>
+  <xacro:macro name="camara" params="nombre topico marco y">
+    <sensor name="${nombre}" type="camera">
+      <pose>0 ${y} 0 0 0 0</pose>
+      <always_on>true</always_on>
+      <update_rate>10</update_rate>
+      <topic>${topico}</topic>
+      <gz_frame_id>${marco}</gz_frame_id>
+      <camera>
+        <horizontal_fov>${2*atan(320/1076.537901)}</horizontal_fov>
+        <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+        <clip><near>0.05</near><far>10</far></clip>
+      </camera>
+    </sensor>
+  </xacro:macro>
+  <xacro:if value="$(arg camaras)">
+    <gazebo reference="stereo_camera_link">
+      <xacro:camara nombre="cam_izq" topico="/left/image_rect" marco="camera" y="0"/>
+      <xacro:camara nombre="cam_der" topico="/right/image_rect" marco="camera_der" y="-0.099258"/>
+    </gazebo>
+  </xacro:if>
+
+  <!-- Un enganche por limón cosechable (12, config/limones_cosechables.xml): limones_sim publica en agarrar/soltar -->
   <xacro:macro name="enganche" params="n">
     <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
       <parent_link>pinza</parent_link>
@@ -258,6 +292,7 @@
       <attach_topic>/sim/limon_${n}/agarrar</attach_topic>
       <detach_topic>/sim/limon_${n}/soltar</detach_topic>
       <output_topic>/sim/limon_${n}/estado</output_topic>
+      <suppress_child_warning>true</suppress_child_warning>  <!-- el limón aparece después (limones_sim) -->
     </plugin>
   </xacro:macro>
   <gazebo>
@@ -265,5 +300,13 @@
     <xacro:enganche n="2"/>
     <xacro:enganche n="3"/>
     <xacro:enganche n="4"/>
+    <xacro:enganche n="5"/>
+    <xacro:enganche n="6"/>
+    <xacro:enganche n="7"/>
+    <xacro:enganche n="8"/>
+    <xacro:enganche n="9"/>
+    <xacro:enganche n="10"/>
+    <xacro:enganche n="11"/>
+    <xacro:enganche n="12"/>
   </gazebo>
 </robot>

@@ -83,8 +83,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   IMU/GPS y brazo en la esquina delantera izquierda (J1 = 0° al frente) con `brazo_sim` imitando al firmware; con
   `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo. Etapa 4 hecha: `limones_sim` hace
   de visión (`/limon/posicion` en `camera`) y engancha el limón a la pinza; con `mision:=true` la misión completa
-  cosechó el limón 1 (detectar → aproximar → agarrar → retirar → soltar). Faltan cámaras de Gazebo + YOLO (3) y
-  sensores de la base (5). Después se pasa a la PC de escritorio.
+  cosechó el limón 1 (detectar → aproximar → agarrar → retirar → soltar). Etapa 3 parcial (`vision:=yolo`): cámaras
+  de Gazebo + cadena real de `vision_estereo` (clonado en `~/vision_estereo`, `~/yolo_ws`, venv `~/yolo_env` con
+  numpy < 2); el estéreo localiza bien, pero YOLO no reconoce los limones sintéticos sobre la copa. Hallazgos para el
+  robot real: el estéreo solo localiza con u >= 271 px (42 % izquierdo de la imagen ciego) y el brazo en reposo no
+  debe tapar las cámaras (reposo con J1 = -60°). Falta la etapa 5 (sensores de la base). Después, PC de escritorio.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con

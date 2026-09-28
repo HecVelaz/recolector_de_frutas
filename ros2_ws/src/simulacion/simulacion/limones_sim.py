@@ -1,20 +1,25 @@
 """Nodo limones_sim: la "visión" y el agarre de los limones cosechables en Gazebo.
 
 Visión: publica /limon/posicion (geometry_msgs/PointStamped) como el localizador_node real: marco `camera` (óptico
-de la cámara izquierda), superficie del limón visible y hora de la "imagen", ~3 Hz. Solo los limones dentro del campo
-visual (33° x 25°: 640x480 con f = 1076 px, calibración v1) y de la ventana de disparidad de 0,40 a 0,95 m; el más
-cercano. Así `mision` corre igual que con las cámaras reales.
+de la cámara izquierda), superficie del limón visible y hora de la "imagen", ~3 Hz. Solo los limones que la cadena
+real podría localizar: dentro de la imagen (640x480, f = 1076,5 px, calibración v1), a 0,40-0,95 m y con u >= 271 px
+(más a la izquierda el BM no tiene disparidad: min 112 + rango 160); el más cercano. Así `mision` corre igual que con
+las cámaras reales.
 
 Agarre: cuando los dedos cierran (/joint_states) con la muñeca a menos de `dist_agarre` del centro de un limón, lo
 engancha a la pinza (/sim/limon_N/agarrar, DetachableJoint); cuando abren, lo suelta y lo da por cosechado (no se
 vuelve a "ver").
 
-Las posiciones de los limones salen del mundo (no se mueven hasta que se agarran) y la del robot, de `odom`: en la
-simulación la base arranca en el origen del mundo, así que odom = mundo salvo patinamiento.
+Los limones cosechables están en config/limones_cosechables.xml y este nodo los hace aparecer a los 4 s, con el
+brazo ya quieto en el reposo: los enganches arrancan enganchados y, si los limones estuvieran desde el principio, el
+brazo se los llevaba al ir al reposo. Después los suelta. Sus posiciones son las del archivo (no se mueven hasta que
+se agarran) y la del robot sale de `odom`: la base arranca en el origen del mundo, así que odom = mundo salvo
+patinamiento.
 """
 
 import math
 from pathlib import Path
+import subprocess
 import xml.etree.ElementTree as ET
 
 from ament_index_python.packages import get_package_share_directory
@@ -28,20 +33,40 @@ import tf2_geometry_msgs  # noqa: F401  (registra PointStamped en tf2)
 from tf2_ros import Buffer, TransformException, TransformListener
 
 
-def leer_limones(mundo):
-    """Modelos limon_N del mundo -> {N: (x, y, z)} [m]."""
+T_APARECER = 4.0  # s de simulación: el brazo ya llegó al reposo
+T_SOLTAR = 5.0    # s soltando los enganches después de que aparecen
+
+
+def leer_limones(archivo):
+    """Modelos limon_N del archivo -> {N: (x, y, z)} [m]."""
     limones = {}
-    for m in ET.parse(mundo).getroot().iter('model'):
+    for m in ET.parse(archivo).getroot().iter('model'):
         nombre = m.get('name', '')
         if nombre.startswith('limon_') and nombre[6:].isdigit():
             limones[int(nombre[6:])] = tuple(float(v) for v in m.find('pose').text.split()[:3])
     return limones
 
 
-def visible(p, hfov, vfov, z_min, z_max):
-    """Punto en el marco óptico (x derecha, y abajo, z adelante): ¿dentro del campo visual y de la ventana?"""
+def pedido_crear(archivo):
+    """Modelos del archivo -> pedido gz.msgs.EntityFactory_V (formato texto) para /world/hilera/create_multiple."""
+    pedidos = []
+    for m in ET.parse(archivo).getroot().iter('model'):
+        sdf = "<sdf version='1.9'>" + ET.tostring(m, encoding='unicode').replace('"', "'").replace('\n', ' ') + '</sdf>'
+        pedidos.append('{sdf: "' + sdf + '"}')
+    return 'data: [' + ', '.join(pedidos) + ']'
+
+
+F, CX, CY, ANCHO, ALTO = 1076.537901, 320.0, 240.0, 640, 480  # como camara_info_sim
+U_MIN = 271  # min_disparity + disparity_range - 1 del disparity_node: a la izquierda de esto no hay disparidad
+
+
+def visible(p, z_min, z_max, u_min=U_MIN):
+    """Punto en el marco óptico (x derecha, y abajo, z adelante): ¿lo podría localizar el estéreo?"""
     x, y, z = p
-    return (z_min <= z <= z_max and abs(math.atan2(x, z)) <= hfov / 2 and abs(math.atan2(y, z)) <= vfov / 2)
+    if not z_min <= z <= z_max:
+        return False
+    u, v = CX + F * x / z, CY + F * y / z
+    return u_min <= u < ANCHO and 0 <= v < ALTO
 
 
 def superficie(p, radio):
@@ -54,17 +79,19 @@ class LimonesSim(Node):
 
     def __init__(self):
         super().__init__('limones_sim')
-        mundo = str(Path(get_package_share_directory('simulacion')) / 'worlds' / 'hilera.sdf')
-        self.limones = leer_limones(self.declare_parameter('mundo', mundo).value)
+        archivo = str(Path(get_package_share_directory('simulacion')) / 'config' / 'limones_cosechables.xml')
+        self.archivo = self.declare_parameter('archivo', archivo).value
+        self.limones = leer_limones(self.archivo)
         self.radio = self.declare_parameter('radio_limon', 0.03).value
-        self.hfov = math.radians(self.declare_parameter('hfov_deg', 33.0).value)
-        self.vfov = math.radians(self.declare_parameter('vfov_deg', 25.0).value)
         self.z_min = self.declare_parameter('z_min', 0.40).value
         self.z_max = self.declare_parameter('z_max', 0.95).value
         self.dist_agarre = self.declare_parameter('dist_agarre', 0.03).value  # m, muñeca -> centro del limón
+        # false: /limon/posicion lo da la cadena real (cámaras de Gazebo + YOLO); acá queda solo el agarre
+        self.publicar_vision = self.declare_parameter('publicar_vision', True).value
         self.enganchado = None
         self.cosechados = set()
         self.t_arranque = None
+        self.aparecieron = False
 
         self.tf = Buffer()
         self.tf_listener = TransformListener(self.tf, self)
@@ -93,17 +120,29 @@ class LimonesSim(Node):
         ahora = self.get_clock().now()
         if self.t_arranque is None:
             self.t_arranque = ahora
-        if (ahora - self.t_arranque).nanoseconds < 5e9:
-            # El enganche puede arrancar enganchado: soltar todo al principio (si ya estaba suelto, no hace nada)
+        t = (ahora - self.t_arranque).nanoseconds * 1e-9
+        if t < T_APARECER:
+            return
+        if not self.aparecieron:
+            r = subprocess.run(['gz', 'service', '-s', '/world/hilera/create_multiple', '--reqtype',
+                                'gz.msgs.EntityFactory_V', '--reptype', 'gz.msgs.Boolean', '--timeout', '5000',
+                                '--req', pedido_crear(self.archivo)], capture_output=True, text=True)
+            self.aparecieron = True
+            self.get_logger().info(f'limones cosechables agregados: {r.stdout.strip() or r.stderr.strip()}')
+            return
+        if t < T_APARECER + T_SOLTAR:
+            # Los enganches se enganchan solos cuando aparece el limón: soltarlos (si ya estaba suelto, no hace nada)
             for pub in self.pub_soltar.values():
                 pub.publish(Empty())
+            return
+        if not self.publicar_vision:
             return
         vistos = []
         for n, p in self.limones.items():
             if n == self.enganchado or n in self.cosechados:
                 continue
             c = self.en_marco(p, 'camera')
-            if c is not None and visible(c, self.hfov, self.vfov, self.z_min, self.z_max):
+            if c is not None and visible(c, self.z_min, self.z_max):
                 vistos.append(c)
         if vistos:
             s = superficie(min(vistos, key=lambda c: c[2]), self.radio)

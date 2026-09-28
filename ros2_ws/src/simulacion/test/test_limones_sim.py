@@ -3,25 +3,33 @@
 import math
 from pathlib import Path
 
-from simulacion.limones_sim import leer_limones, superficie, visible
+from simulacion.limones_sim import leer_limones, pedido_crear, superficie, visible
 
-MUNDO = Path(__file__).resolve().parents[1] / 'worlds' / 'hilera.sdf'
+ARCHIVO = Path(__file__).resolve().parents[1] / 'config' / 'limones_cosechables.xml'
 
 
-def test_lee_los_4_limones_cosechables_del_mundo():
-    limones = leer_limones(MUNDO)
-    assert sorted(limones) == [1, 2, 3, 4]
+def test_lee_los_12_limones_cosechables_del_mundo():
+    limones = leer_limones(ARCHIVO)
+    assert sorted(limones) == list(range(1, 13))
     for x, y, z in limones.values():
-        assert 0.4 < y < 0.55 and 0.20 <= z <= 0.50  # fila izquierda, lado del pasillo, esfera de trabajo de R1
+        assert 0.4 < y < 0.6 and 0.20 <= z <= 0.50  # fila izquierda, lado del pasillo, esfera de trabajo de R1
 
 
-def test_campo_visual_y_ventana():
-    h, v = math.radians(33), math.radians(25)
-    assert visible((0.0, 0.0, 0.6), h, v, 0.40, 0.95)
-    assert not visible((0.0, 0.0, 0.3), h, v, 0.40, 0.95)   # demasiado cerca para la disparidad
-    assert not visible((0.0, 0.0, 1.2), h, v, 0.40, 0.95)   # demasiado lejos
-    assert not visible((0.25, 0.0, 0.6), h, v, 0.40, 0.95)  # 22,6° a la derecha: fuera de los 16,5°
-    assert not visible((0.0, 0.2, 0.6), h, v, 0.40, 0.95)   # 18,4° abajo: fuera de los 12,5°
+def test_pedido_para_gazebo_sin_comillas_dobles_adentro():
+    p = pedido_crear(ARCHIVO)
+    assert p.startswith('data: [{sdf: "') and p.count('{sdf: "') == 12
+    for parte in p[len('data: ['):-1].split('}, {'):
+        assert parte.strip('{}').count('"') == 2  # solo las que delimitan el texto del sdf
+
+
+def test_lo_que_el_estereo_podria_localizar():
+    assert visible((0.0, 0.0, 0.6), 0.40, 0.95)             # centro de la imagen
+    assert not visible((0.0, 0.0, 0.3), 0.40, 0.95)         # demasiado cerca para la disparidad
+    assert not visible((0.0, 0.0, 1.2), 0.40, 0.95)         # demasiado lejos
+    assert not visible((0.25, 0.0, 0.6), 0.40, 0.95)        # u = 769: fuera de la imagen
+    assert not visible((0.0, 0.2, 0.6), 0.40, 0.95)         # v = 599: fuera de la imagen
+    assert not visible((-0.05, 0.0, 0.6), 0.40, 0.95)       # u = 230: franja ciega del BM (u < 271)
+    assert visible((-0.02, 0.0, 0.6), 0.40, 0.95)           # u = 284
 
 
 def test_superficie_y_centro_son_inversos():
