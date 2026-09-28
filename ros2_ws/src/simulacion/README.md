@@ -7,8 +7,9 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
 |---|---|---|
 | 1 | Mundo (hilera, obstáculos, GPS de la FIUNA) + base diferencial con IMU y GPS | **hecha** |
 | 2 | Brazo (J1-J3 como cadena serie equivalente al cuatro barras) + pinza, respondiendo a `brazo_ik` | **hecha** |
-| 3 | Cámaras estéreo + cadena de visión (o posición exacta de Gazebo si YOLO no ve limones sintéticos) | — |
-| 4 | Ultrasonidos, bumpers y un nodo que imite `/base/estado` y `/brazo/estado`; `mision` completa | — |
+| 3 | Cámaras estéreo de Gazebo + cadena de visión real (YOLO puede no ver limones sintéticos) | — |
+| 4 | Agarre + `mision` completa con "visión" simulada (`limones_sim`) | **hecha** |
+| 5 | Ultrasonidos, bumpers y `/base/estado` imitando el firmware de la base | — |
 
 ## Mundo (`worlds/hilera.sdf`)
 
@@ -49,12 +50,29 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
 - Pinza: giro J4 y dos dedos (servos RDS3218); punta de los dedos 0,11 m más allá de la muñeca (MEDIR). Los dedos
   no tienen colisión ni gravedad: el agarre se hará fijando el limón a la pinza al cerrar (etapa 4).
 
+## Agarre y misión (etapa 4)
+
+- **4 limones cosechables** (`limon_1..4` en `worlds/hilera.sdf`), uno por árbol de la fila izquierda, del lado del
+  pasillo, entre 0,32 y 0,45 m de altura. Sin gravedad ni colisión: flotan donde están y la pinza no los empuja.
+- **`limones_sim`** hace de visión: publica `/limon/posicion` como `localizador_node` (marco `camera`, superficie
+  del limón, hora de la imagen, ~3 Hz) solo si el limón está en el campo visual (33° × 25°, calibración v1) y a
+  0,40-0,95 m; y hace el agarre: dedos cerrados con la muñeca a < 3 cm del centro → engancha el limón a la pinza
+  (DetachableJoint); dedos abiertos → lo suelta y lo da por cosechado. Los enganches arrancan enganchados: el nodo
+  los suelta en los primeros 5 s.
+- **Cámara** (`stereo_camera_link` + marco óptico `camera`, como `limon.launch.py`): mástil del lado derecho a 0,50 m
+  del piso, mirando 55° a la izquierda y 14° abajo (MEDIR). Mirando de costado (90°) veía limones detrás del alcance
+  de J1 (±75°). La TF brazo → cámara sale del urdf: acá no se usa `mision.launch.py`.
+- Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
+  izquierda: **x ≈ 1,0 / 2,6 / 4,0 / 5,5 m** para los limones 1 a 4, y frenar (`k`). Después la misión sola: detecta
+  quieto, aproxima, cierra, retira al reposo y suelta.
+- Limitación: el limón soltado queda flotando en el reposo (sin gravedad); falta el cajón.
+
 ## Uso
 
 ```bash
 cd ros2_ws && source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select simulacion && source install/setup.bash
-ros2 launch simulacion sim.launch.py                 # gui:=false: solo el servidor (más liviano)
+ros2 launch simulacion sim.launch.py                 # gui:=false: solo el servidor (más liviano); mision:=true
 ros2 run teleop_twist_keyboard teleop_twist_keyboard  # otra terminal: i/j/l/, para mover
 
 # brazo (otra terminal): armar y mandar un punto en brazo_base
@@ -64,12 +82,14 @@ ros2 topic pub --once /brazo/objetivo geometry_msgs/msg/PointStamped \
 ros2 topic pub --once /pinza/cierre std_msgs/msg/Float32 "{data: 100}"
 ```
 
-Si Gazebo queda colgado después de cortar (pasa al matar solo el proceso del launch, no con Ctrl+C en la terminal):
-`pkill -9 -f "[g]z sim"`. Varios servidores a la vez publican en los mismos tópicos y todo se vuelve errático.
+Si Gazebo o algún nodo queda colgado después de cortar (pasa al matar solo el proceso del launch, no con Ctrl+C en la
+terminal): `pkill -9 -f "[g]z sim"` y `pkill -9 -f "[b]razo_sim|[l]imones_sim|[p]arameter_bridge"`. Un `brazo_sim`
+viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mismos tópicos: todo se vuelve errático.
 
 ## Resultados
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-28 | Notebook, sin ventana, etapa 4 con `mision:=true`: base a x = 1,02 m → `mision` ESPERAR → APROXIMAR (0,285; 0,394; 0,170) m → `brazo_ik` q = (54,1°; 44,9°; −28,6°) → AGARRAR (limón 1 enganchado, muñeca a 0,1 cm del centro) → RETIRAR al reposo → SOLTAR (cosechado) → ESPERAR. 28 pruebas `colcon test` | OK |
 | 2026-09-28 | Notebook, sin ventana, etapa 2: arranca en reposo (muñeca en (0,368; 0; 0,091) m = ejemplo E4); `armar` + `/brazo/objetivo` (0,40; 0,25; 0,30) → `brazo_ik` q = (32,0°; 59,3°; −45,1°) → llega en ~3 s con "llego" en las 3 y la muñeca **exacta** en el objetivo (TF); pinza cerrada y girada 45° (dedos a ≤ 1 mm). Factor de tiempo real 0,6-0,7 con el brazo. 25 pruebas `colcon test` | OK |
 | 2026-09-28 | Notebook (i5 de 4 hilos, Intel HD 5500), sin ventana: `/odom` 24,9 Hz, `/imu/data_raw` 49,8 Hz, `/gps/fix` 1,0 Hz con lat −25,3320 lon −57,5190; `/cmd_vel` 0,2 m/s por 6 s → x = 1,16 m (con la rampa); factor de tiempo real 1,0 | OK |

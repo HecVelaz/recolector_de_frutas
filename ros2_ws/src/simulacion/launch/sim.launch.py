@@ -1,8 +1,10 @@
 """Simulación en Gazebo Harmonic: hilera de limoneros + Arturito (base con IMU y GPS, brazo y pinza).
-brazo_sim hace de firmware del brazo (arranca DESARMADO) y brazo_ik resuelve /brazo/objetivo.
+brazo_sim hace de firmware del brazo (arranca DESARMADO) y brazo_ik resuelve /brazo/objetivo. limones_sim publica
+/limon/posicion como la visión real y engancha el limón a la pinza al cerrar. Con mision:=true corre la misión.
 
     ros2 launch simulacion sim.launch.py              # con ventana de Gazebo
     ros2 launch simulacion sim.launch.py gui:=false   # solo el servidor (notebook lenta)
+    ros2 launch simulacion sim.launch.py mision:=true # con la misión: arrimar el robot a un limón con el teleop
     ros2 run teleop_twist_keyboard teleop_twist_keyboard   # mover la base (en otra terminal)
 """
 
@@ -26,6 +28,7 @@ def generate_launch_description():
     robot = ParameterValue(Command(['xacro ', str(share / 'urdf' / 'arturito.urdf.xacro')]), value_type=str)
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='true', description='false = solo el servidor de Gazebo'),
+        DeclareLaunchArgument('mision', default_value='false', description='true = correr la misión (arma el brazo)'),
         AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', str(share / 'models')),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_launch),
                                  launch_arguments={'gz_args': f'-r {mundo}'}.items(), condition=IfCondition(gui)),
@@ -40,4 +43,8 @@ def generate_launch_description():
              parameters=[{'config_file': str(share / 'config' / 'puente.yaml'), 'use_sim_time': True}]),
         Node(package='simulacion', executable='brazo_sim', output='screen', parameters=[{'use_sim_time': True}]),
         Node(package='brazo_ik', executable='nodo_ik', output='screen', parameters=[{'use_sim_time': True}]),
+        Node(package='simulacion', executable='limones_sim', output='screen', parameters=[{'use_sim_time': True}]),
+        # La TF brazo -> cámara la da el urdf (robot_state_publisher): no se usa mision.launch.py
+        Node(package='mision', executable='nodo_mision', output='screen', parameters=[{'use_sim_time': True}],
+             condition=IfCondition(LaunchConfiguration('mision'))),
     ])

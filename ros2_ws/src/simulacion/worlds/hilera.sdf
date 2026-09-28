@@ -113,6 +113,54 @@
       </link>
     </model>
 
+    <!-- Limones cosechables: uno por árbol de la fila izquierda (la que alcanza el brazo), del lado del pasillo.
+         Sueltos, sin gravedad ni colisión (flotan donde están y la pinza no los empuja al acercarse): limones_sim los
+         engancha a la pinza con DetachableJoint al cerrar y los suelta al abrir. -->
+    <model name="limon_1">
+      <pose>1.500 0.474 0.320 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_2">
+      <pose>3.060 0.482 0.420 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_3">
+      <pose>4.450 0.468 0.360 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_4">
+      <pose>6.030 0.496 0.450 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.35 0.6 0.1 1</ambient><diffuse>0.4 0.7 0.12 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+      </link>
+    </model>
+
     <!-- Punto de regreso al final de la hilera (marca en el piso, sin colisión) -->
     <model name="regreso">
       <static>true</static>

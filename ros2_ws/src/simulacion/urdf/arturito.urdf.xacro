@@ -234,4 +234,36 @@
     <xacro:control_posicion joint="dedo_izq_joint" topico="/sim/dedo_izq" ini="0.035" ganancia="10"/>
     <xacro:control_posicion joint="dedo_der_joint" topico="/sim/dedo_der" ini="0.035" ganancia="10"/>
   </gazebo>
+  <!-- ===================== Cámaras y agarre (etapa 4) =====================
+       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil del lado derecho mirando adelante a
+       la izquierda (55°) y un poco hacia abajo (MEDIR con el soporte rígido): mirando de costado (90°) veía limones
+       detrás del alcance de J1 (±75° desde el frente). "camera" es el marco óptico, con la misma rotación que publica
+       limon.launch.py de vision_estereo: /limon/posicion viene ahí. -->
+  <link name="stereo_camera_link"/>
+  <joint name="stereo_camera_joint" type="fixed">
+    <parent link="base_link"/><child link="stereo_camera_link"/>
+    <origin xyz="0.10 -0.10 ${alto + 0.30}" rpy="0 0.25 ${radians(55)}"/>
+  </joint>
+  <link name="camera"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="stereo_camera_link"/><child link="camera"/><origin rpy="${-pi/2} 0 ${-pi/2}"/>
+  </joint>
+
+  <!-- Un enganche por limón cosechable (worlds/hilera.sdf): limones_sim publica en agarrar/soltar -->
+  <xacro:macro name="enganche" params="n">
+    <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
+      <parent_link>pinza</parent_link>
+      <child_model>limon_${n}</child_model>
+      <child_link>link</child_link>
+      <attach_topic>/sim/limon_${n}/agarrar</attach_topic>
+      <detach_topic>/sim/limon_${n}/soltar</detach_topic>
+      <output_topic>/sim/limon_${n}/estado</output_topic>
+    </plugin>
+  </xacro:macro>
+  <gazebo>
+    <xacro:enganche n="1"/>
+    <xacro:enganche n="2"/>
+    <xacro:enganche n="3"/>
+    <xacro:enganche n="4"/>
+  </gazebo>
 </robot>

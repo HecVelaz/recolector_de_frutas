@@ -81,8 +81,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `simulacion` (28/09, Gazebo Harmonic en la notebook): etapas 1 y 2 hechas. Hilera de 4+4 limoneros con las medidas
   de R1 (limones a 0,22-0,50 m, esfera de trabajo Ø 30 cm a 35 cm del suelo), 3 obstáculos, GPS de la FIUNA, base con
   IMU/GPS y brazo en la esquina delantera izquierda (J1 = 0° al frente) con `brazo_sim` imitando al firmware; con
-  `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo. Faltan cámaras (3) y sensores,
-  agarre y `mision` completa (4). Después se pasa a la PC de escritorio.
+  `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo. Etapa 4 hecha: `limones_sim` hace
+  de visión (`/limon/posicion` en `camera`) y engancha el limón a la pinza; con `mision:=true` la misión completa
+  cosechó el limón 1 (detectar → aproximar → agarrar → retirar → soltar). Faltan cámaras de Gazebo + YOLO (3) y
+  sensores de la base (5). Después se pasa a la PC de escritorio.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
