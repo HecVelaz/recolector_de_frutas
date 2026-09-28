@@ -9,6 +9,8 @@ Con vision:=yolo, /limon/posicion sale de la cadena real: cámaras de Gazebo -> 
     ros2 launch simulacion sim.launch.py mision:=true # con la misión: arrimar el robot a un limón con el teleop
     ros2 launch simulacion sim.launch.py mision:=true vision:=yolo   # con cámaras y YOLO
     ros2 run teleop_twist_keyboard teleop_twist_keyboard   # mover la base (en otra terminal)
+En cada terminal que hable con la simulación: export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST (si no, no la ve y, peor,
+puede hablar con los ESP32 reales de la Pi por la red).
 """
 
 import os
@@ -16,7 +18,8 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import AppendEnvironmentVariable, DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, EqualsSubstitution, LaunchConfiguration, PythonExpression
@@ -38,6 +41,11 @@ def generate_launch_description():
     modelo = str(Path.home() / 'vision_estereo' / 'modelos' / 'limon_yolo26n_ncnn_model')
     venv = str(Path.home() / 'yolo_env' / 'lib' / 'python3.12' / 'site-packages')
     return LaunchDescription([
+        # AISLAMIENTO: la simulación no sale de esta máquina. Sin esto, ROS 2 descubre por la red los ESP32 reales
+        # (conectados a la Pi): la misión simulada leía el /brazo/estado del brazo real y le mandaba comandos.
+        # Las terminales del teleop y de los `ros2 topic` necesitan lo mismo: export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+        SetEnvironmentVariable('ROS_AUTOMATIC_DISCOVERY_RANGE', 'LOCALHOST'),
+        SetEnvironmentVariable('GZ_IP', '127.0.0.1'),
         DeclareLaunchArgument('gui', default_value='true', description='false = solo el servidor de Gazebo'),
         DeclareLaunchArgument('mision', default_value='false', description='true = correr la misión (arma el brazo)'),
         DeclareLaunchArgument('vision', default_value='simulada', description='simulada | yolo (cámaras + YOLO)'),

@@ -104,6 +104,12 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
 
 ## Uso
 
+**La simulación no sale de la notebook** (`sim.launch.py` pone `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` y
+`GZ_IP=127.0.0.1`). Sin eso, ROS 2 descubría por la red los ESP32 reales conectados a la Pi: la misión simulada
+leyó el `/brazo/estado` del brazo real (ARMADO) y los comandos de la simulación le llegaban también a él. **Cada
+terminal que hable con la simulación** (teleop, `ros2 topic`) necesita lo mismo:
+`export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`.
+
 ```bash
 cd ros2_ws && source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select simulacion && source install/setup.bash
@@ -125,6 +131,7 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-28 | Con ventana (usuario), la misión no arrancaba: `/brazo/estado` tenía dos publicadores, `brazo_sim` y el ESP32 real del brazo (ARMADO, por la red desde la Pi). Aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`: único publicador `brazo_sim`, la misión cosecha de nuevo | OK |
 | 2026-09-28 | Notebook, sin ventana, etapa 4 de nuevo tras los cambios de la etapa 3 (12 limones que aparecen a los 4 s, reposo J1 = -60°, cámara a 40°): en una misma parada, `mision` cosechó el limón 3 y después el 1 (muñeca a 0,0 cm del centro de cada uno), soltándolos en el reposo | OK |
 | 2026-09-28 | Notebook, sin ventana, etapa 3 (`vision:=yolo`): cámaras ~4 Hz, disparidad ~1 Hz, detector ~1,2 Hz; con texturas y la cámara a 40°, disparidad 100 % válida sobre los limones (z = 0,820 y 0,883 m = correlación a mano); YOLO no reconoce los limones sobre la copa texturada (≤ 0,27) → sin `/limon/posicion`. 29 pruebas `colcon test` | parcial |
 | 2026-09-28 | Notebook, sin ventana, etapa 4 con `mision:=true`: base a x = 1,02 m → `mision` ESPERAR → APROXIMAR (0,285; 0,394; 0,170) m → `brazo_ik` q = (54,1°; 44,9°; −28,6°) → AGARRAR (limón 1 enganchado, muñeca a 0,1 cm del centro) → RETIRAR al reposo → SOLTAR (cosechado) → ESPERAR. 28 pruebas `colcon test` | OK |

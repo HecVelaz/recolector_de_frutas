@@ -91,8 +91,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   4. 12 limones cosechables (`limones_sim` hace de visión y los engancha a la pinza): hecha; con `mision:=true`
      cosechó dos limones seguidos.
   5. Ultrasonidos, bumpers y `/base/estado` (que los obstáculos frenen la base): falta.
-  Probado solo sin ventana en la notebook (factor de tiempo real ~0,5-1). Al probar desde Bash, Gazebo y los nodos
-  quedan vivos si se corta solo el launch: limpiar siempre (ver memoria).
+  Probado sin ventana y con ventana en la notebook (factor de tiempo real ~0,5-1). Al probar desde Bash, Gazebo y los
+  nodos quedan vivos si se corta solo el launch: limpiar siempre (ver memoria). **Aislada de la red**
+  (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal que la use): antes veía los ESP32 reales
+  de la Pi por la LAN y les mandaba comandos.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
@@ -107,6 +109,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Control en cascada posición → velocidad, porque la E5 identificó modelos de velocidad.
 - Seguridad de la base decidida en la S3 (seta NC, vuelco, bumpers, distancia, watchdog), sin depender de la Pi.
 - Armado por sesión en micro-ROS, para que un nodo que siga publicando no mueva el robot al reconectar.
+- Cualquier nodo de ROS 2 en la misma LAN que la Pi ve y comanda los ESP32 reales (dominio 0): la simulación va
+  aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`; con el robot real, no dejar agentes corriendo con el brazo
+  armado si no se usa.
 - TRIG común de HC-SR04, EN común de tracción y luz/buzzer en la Pi: la S3 no tiene más GPIO libres.
 - Videos (~500 MB) y artículos de terceros fuera de git.
 - Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo solo localiza con u >= 271 px en la
