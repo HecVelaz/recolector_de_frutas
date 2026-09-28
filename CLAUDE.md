@@ -20,7 +20,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
-- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa. `vision/entrenamiento_limon/`: cuaderno de Colab del
+- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `vision/entrenamiento_limon/`: cuaderno de Colab del
   detector. `graphify-out/`: grafo del repo (local, fuera de git).
 
 ## 4. Cómo trabajar acá
@@ -74,7 +74,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   (`arturito/limon_yolo`). **Sin probar con limones reales ni con las NoIR.** Uso:
   `MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh`
 - Revisados por Codex (brazo, base, micro-ROS, cambios del 28/09 y visión) y hallazgos aplicados.
-  Misión: sin empezar.
+- `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
+  `brazo_base → stereo_camera_link` en `mision.launch.py` (valores supuestos: MEDIR). 11 pruebas OK; probada en la
+  notebook con brazo y limón simulados. Sin probar con el brazo real.
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
@@ -96,6 +98,6 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
 5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
 6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
-7. TF cámara → brazo (marco rectificado; sumar ~3 cm al punto, que es la superficie) y `mision_fsm` mínima para la
-   demo: detectar → localizar quieto → `/brazo/objetivo` → agarrar.
+7. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
+   brazo real: `cierre`, `reposo` y el desfase muñeca → pinza.
 8. Preguntas a la cátedra (`docs/ARQUITECTURA.md` §11) y arreglar el salto de 32 000 cuentas de `EncoderPCNT`.
