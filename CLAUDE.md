@@ -38,7 +38,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
   usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
 
-## 5. Estado actual (2026-09-28)
+## 5. Estado actual (2026-09-29)
 - `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
@@ -78,16 +78,21 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
   32 000 corregido). Hay que leer antes de ~1,5 s (J2/J3); si no, `ControlArticulacion` entra en falla de encoder.
   Revisado por Codex. **Sin probar en placa**: girar un motor a mano más de 32 000 cuentas y ver que no salte.
-- `simulacion` (28/09, Gazebo Harmonic en la notebook): etapas 1 y 2 hechas. Hilera de 4+4 limoneros con las medidas
-  de R1 (limones a 0,22-0,50 m, esfera de trabajo Ø 30 cm a 35 cm del suelo), 3 obstáculos, GPS de la FIUNA, base con
-  IMU/GPS y brazo en la esquina delantera izquierda (J1 = 0° al frente) con `brazo_sim` imitando al firmware; con
-  `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo. Etapa 4 hecha: `limones_sim` hace
-  de visión (`/limon/posicion` en `camera`) y engancha el limón a la pinza; con `mision:=true` la misión completa
-  cosechó el limón 1 (detectar → aproximar → agarrar → retirar → soltar). Etapa 3 parcial (`vision:=yolo`): cámaras
-  de Gazebo + cadena real de `vision_estereo` (clonado en `~/vision_estereo`, `~/yolo_ws`, venv `~/yolo_env` con
-  numpy < 2); el estéreo localiza bien, pero YOLO no reconoce los limones sintéticos sobre la copa. Hallazgos para el
-  robot real: el estéreo solo localiza con u >= 271 px (42 % izquierdo de la imagen ciego) y el brazo en reposo no
-  debe tapar las cámaras (reposo con J1 = -60°). Falta la etapa 5 (sensores de la base). Después, PC de escritorio.
+- `simulacion` (28/09, Gazebo Harmonic en la notebook; README del paquete): `ros2 launch simulacion sim.launch.py`
+  (`gui:=false`, `mision:=true`, `vision:=yolo`). Mismos tópicos que los ESP32 (`brazo_sim` imita al firmware del
+  brazo), así que `mision`, `brazo_ik` y la visión corren sin cambios. Etapas:
+  1. Hilera de 4+4 limoneros con las medidas de R1 (limones a 0,22-0,50 m, esfera de trabajo Ø 30 cm a 35 cm del
+     suelo), 3 obstáculos, GPS de la FIUNA, base diferencial con IMU/GPS: hecha.
+  2. Brazo en la esquina delantera izquierda (J1 = 0° al frente) como cadena serie equivalente al cuatro barras,
+     pinza: hecha; con `brazo_ik`, la muñeca llega exacta. Alcanza 19/21 limones del lado del pasillo.
+  3. Cámaras de Gazebo + cadena real de `vision_estereo` (`vision:=yolo`; `~/vision_estereo`, `~/yolo_ws`, venv
+     `~/yolo_env` con numpy < 2): parcial. El estéreo localiza bien (con texturas), pero YOLO no reconoce los limones
+     sintéticos sobre la copa: sin `/limon/posicion`.
+  4. 12 limones cosechables (`limones_sim` hace de visión y los engancha a la pinza): hecha; con `mision:=true`
+     cosechó dos limones seguidos.
+  5. Ultrasonidos, bumpers y `/base/estado` (que los obstáculos frenen la base): falta.
+  Probado solo sin ventana en la notebook (factor de tiempo real ~0,5-1). Al probar desde Bash, Gazebo y los nodos
+  quedan vivos si se corta solo el launch: limpiar siempre (ver memoria).
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
@@ -104,12 +109,18 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Armado por sesión en micro-ROS, para que un nodo que siga publicando no mueva el robot al reconectar.
 - TRIG común de HC-SR04, EN común de tracción y luz/buzzer en la Pi: la S3 no tiene más GPIO libres.
 - Videos (~500 MB) y artículos de terceros fuera de git.
+- Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo solo localiza con u >= 271 px en la
+  imagen izquierda (ventana 0,40-0,95 m: el 42 % izquierdo queda ciego) y el brazo en reposo no puede quedar entre
+  las cámaras y la fila. En la simulación: cámaras en un mástil detrás del brazo, del lado izquierdo, mirando 40° a la
+  izquierda, y reposo con J1 = -60° (estacionado hacia la derecha).
+- Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
 1. Verificar `cuentasPorVuelta` = 8316 de la tracción girando la rueda a mano (`vueltas` en `e`, README de la base).
 2. Probar el detector con limones verdes reales frente a las NoIR (con luz, a 40-90 cm): si falla, esas fotos van
    al entrenamiento (fotos propias, subirlas a Roboflow y sumarlas en la celda 3 del cuaderno).
-3. Soporte rígido de las cámaras, recalibrar y medir la precisión de `/limon/posicion` contra cinta.
+3. Soporte rígido de las cámaras (con los hallazgos de §6: que el limón caiga en la parte derecha de la imagen
+   izquierda y el brazo en reposo no las tape), recalibrar y medir la precisión de `/limon/posicion` contra cinta.
 4. Cablear según la lista "Antes de conectar" de `docs/CONEXIONES.md` (pull-down 10 kΩ en los EN, divisores de
    ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
 5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
@@ -117,3 +128,5 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 7. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y el desfase muñeca → pinza (hoy el centro del limón va a la muñeca).
 8. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).
+9. Simulación: etapa 5 (sensores de la base) y pasarla a la PC de escritorio; cargar las medidas reales (chasis,
+   posición del brazo y de las cámaras, pinza) cuando estén. Pendiente: cajón para el limón soltado.
