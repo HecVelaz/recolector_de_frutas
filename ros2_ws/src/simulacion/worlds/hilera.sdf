@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<!-- Hilera de limoneros para la opción B de la guía R2: 4 plantas por lado (la guía pide >= 4 en un lateral), pasillo
+     a lo largo de +x con el robot arrancando en el origen, 3 obstáculos en el pasillo y punto de regreso en x = 7,5 m.
+     Plantas a y = ±0,95 m: la copa (r = 0,35 m) deja un pasillo de 1,2 m. -->
+<sdf version="1.9">
+  <world name="hilera">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+
+    <!-- FIUNA, San Lorenzo (aproximado): el GPS simulado da coordenadas de ahí; x = este, y = norte -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>-25.3320</latitude_deg>
+      <longitude_deg>-57.5190</longitude_deg>
+      <elevation>120</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
+    <light type="directional" name="sol">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.4 0.3 -0.9</direction>
+    </light>
+
+    <model name="suelo">
+      <static>true</static>
+      <link name="link">
+        <collision name="c"><geometry><plane><normal>0 0 1</normal><size>30 30</size></plane></geometry></collision>
+        <visual name="v">
+          <geometry><plane><normal>0 0 1</normal><size>30 30</size></plane></geometry>
+          <material><ambient>0.35 0.3 0.2 1</ambient><diffuse>0.45 0.38 0.25 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <include>
+      <name>limonero_izq_1</name>
+      <uri>model://limonero</uri>
+      <pose>1.5 0.95 0 0 0 0.0</pose>
+    </include>
+    <include>
+      <name>limonero_izq_2</name>
+      <uri>model://limonero</uri>
+      <pose>3.0 0.95 0 0 0 0.7</pose>
+    </include>
+    <include>
+      <name>limonero_izq_3</name>
+      <uri>model://limonero</uri>
+      <pose>4.5 0.95 0 0 0 1.4</pose>
+    </include>
+    <include>
+      <name>limonero_izq_4</name>
+      <uri>model://limonero</uri>
+      <pose>6.0 0.95 0 0 0 2.1</pose>
+    </include>
+    <include>
+      <name>limonero_der_1</name>
+      <uri>model://limonero</uri>
+      <pose>1.5 -0.95 0 0 0 0.0</pose>
+    </include>
+    <include>
+      <name>limonero_der_2</name>
+      <uri>model://limonero</uri>
+      <pose>3.0 -0.95 0 0 0 0.7</pose>
+    </include>
+    <include>
+      <name>limonero_der_3</name>
+      <uri>model://limonero</uri>
+      <pose>4.5 -0.95 0 0 0 1.4</pose>
+    </include>
+    <include>
+      <name>limonero_der_4</name>
+      <uri>model://limonero</uri>
+      <pose>6.0 -0.95 0 0 0 2.1</pose>
+    </include>
+
+    <model name="obstaculo_caja">
+      <static>true</static>
+      <pose>2.25 0.15 0.15 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.25 0.25 0.3</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.25 0.25 0.3</size></box></geometry><material><ambient>0.6 0.4 0.2 1</ambient><diffuse>0.6 0.4 0.2 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="obstaculo_balde">
+      <static>true</static>
+      <pose>3.75 -0.2 0.15 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><cylinder><radius>0.13</radius><length>0.3</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.13</radius><length>0.3</length></cylinder></geometry><material><ambient>0.1 0.3 0.8 1</ambient><diffuse>0.1 0.3 0.8 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="obstaculo_cono">
+      <static>true</static>
+      <pose>5.25 0.0 0.175 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><cone><radius>0.12</radius><length>0.35</length></cone></geometry></collision>
+        <visual name="v"><geometry><cone><radius>0.12</radius><length>0.35</length></cone></geometry><material><ambient>1 0.4 0 1</ambient><diffuse>1 0.4 0 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Punto de regreso al final de la hilera (marca en el piso, sin colisión) -->
+    <model name="regreso">
+      <static>true</static>
+      <pose>7.5 0 0.005 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><cylinder><radius>0.25</radius><length>0.01</length></cylinder></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material></visual>
+      </link>
+    </model>
+  </world>
+</sdf>

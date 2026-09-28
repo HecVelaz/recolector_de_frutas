@@ -21,7 +21,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
-- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `vision/entrenamiento_limon/`: cuaderno de Colab del
+- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
   detector. `graphify-out/`: grafo del repo (local, fuera de git).
 
 ## 4. Cómo trabajar acá
@@ -78,6 +78,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
   32 000 corregido). Hay que leer antes de ~1,5 s (J2/J3); si no, `ControlArticulacion` entra en falla de encoder.
   Revisado por Codex. **Sin probar en placa**: girar un motor a mano más de 32 000 cuentas y ver que no salte.
+- `simulacion` (28/09, Gazebo Harmonic en la notebook): etapa 1 hecha (hilera de 4+4 limoneros, 3 obstáculos, GPS de
+  la FIUNA, base diferencial con IMU/GPS y los tópicos del firmware; tiempo real sin ventana). Faltan brazo (etapa 2),
+  cámaras (3) y sensores + estados imitando el firmware (4). Después se pasa a la PC de escritorio.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
