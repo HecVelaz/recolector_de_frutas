@@ -65,3 +65,34 @@ ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0   # base (sou
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0   # brazo
 codex exec --skip-git-repo-check -s read-only "<prompt con el código pegado>" < /dev/null > salida.txt
 ```
+
+## 2026-09-28 / 29
+
+### Hardware y documentación
+- Tracción confirmada: 42GM-895H planetario 189:1, encoder Hall 11 PPR a 5 V (`cuentasPorVuelta` = 8316; A/B bajar a
+  3,3 V). Pinza con 2 servos RDS3218 (agarre + tracción + giro aprobado por el profesor). IMU MPU-6500.
+- Base real de la R2 E3: caja en T (adelante 40 × 23 cm con el brazo, atrás 34 × 17 cm con las ruedas), ruedas
+  inflables de 150 mm, 3 bumpers. Batería 10S de 36 V (30-42 V): buck 36 → 12 V para motores, divisor 120 k / 8,2 k.
+- `docs` reorganizado: `TPF R1/`, `TPF R2/`, `fotos/`; entregas nuevas (R2 E2, R2 E3, R1 E5) convertidas a `.md`.
+
+### Software
+- `mision` (FSM de la demo + TF cámara → brazo), revisada por Codex; llegada por posición (`joint_states` contra
+  `joint_cmd`). `brazo_ik`: herramienta horizontal (brazo tipo uArm), `/brazo/objetivo` es el TCP.
+- `EncoderPCNT`: sin interrupción, desenvuelve el contador por software (salto de 32 000 corregido), revisado por Codex.
+- `firmware/base`: ruedas de 150 mm, trocha 0,40, 3 bumpers, batería 10S.
+- `simulacion` (Gazebo Harmonic): hilera con medidas de R1, base real, brazo con `brazo_sim`, `limones_sim`, cámaras y
+  cadena real (`vision:=yolo`, parcial: YOLO no reconoce limones sintéticos). Con `mision:=true`: 12 de 12 limones.
+
+### Lecciones
+- La simulación veía por la LAN los ESP32 reales de la Pi (el brazo real ARMADO): ahora va aislada con
+  `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`. Cualquier nodo en la LAN puede comandar el robot real.
+- En Gazebo: servidores y nodos quedan vivos si se corta solo el launch (limpiar siempre); la base se deslizaba por
+  los impulsos del brazo movido por velocidad (masas del brazo al 5 %); el estéreo solo localiza con u >= 271 px y el
+  brazo en reposo no debe tapar las cámaras.
+
+### Comandos
+```bash
+cd ros2_ws && source /opt/ros/jazzy/setup.bash && source install/setup.bash
+ros2 launch simulacion sim.launch.py mision:=true            # otra terminal: export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el eje sobre las franjas blancas
+```
