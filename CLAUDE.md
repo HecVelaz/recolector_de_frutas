@@ -22,7 +22,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro), GPS UP501,
   3 HC-SR04, **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
   J2/J3 5840-31ZY (sin fin) + un L298N, 2 servos. En total 4 drivers.
-- Brazo RRR montado **adelante a la izquierda**, a ~6 cm del frente y del costado (preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
+- Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
   20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
 
@@ -95,9 +95,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `simulacion` (Gazebo Harmonic en la notebook; README del paquete): `ros2 launch simulacion sim.launch.py`
   (`gui:=false`, `mision:=true`, `vision:=yolo`). Mismos tópicos que los ESP32 (`brazo_sim` imita al firmware del
   brazo), así que `mision`, `brazo_ik` y la visión corren sin cambios. Base real de la R2 E3 (T, ruedas de 150 mm,
-  brazo adelante a la izquierda, mástil de cámaras atrás a la izquierda). Hilera de 4+4 limoneros con las medidas de
-  R1, 12 limones cosechables, 3 obstáculos entre las **marcas de parada** (x = 0,95 / 2,45 / 3,95 / 5,45: frenar
-  con el eje de las ruedas sobre la franja). Con `mision:=true`, **12 de 12 limones cosechados** en las 4 paradas
+  brazo atrás a la izquierda sobre el eje, mástil de cámaras adelante a la derecha, dibujado). Hilera de 4+4 limoneros con las medidas de
+  R1, 12 limones cosechables, 3 obstáculos entre las **marcas de parada** (x = 1,19 / 2,70 / 4,17 / 5,69: frenar
+  con el eje de las ruedas sobre la franja, ±2 cm, en el centro del pasillo). Con `mision:=true`, **12 de 12 limones cosechados** en las 4 paradas
   (TCP a ≤ 0,1 cm, base quieta). Etapa 3 (`vision:=yolo`, cámaras de Gazebo + cadena real) parcial: el estéreo
   localiza, YOLO no reconoce los limones sintéticos. Falta la etapa 5 (sensores de la base) y pasarla a la PC de
   escritorio. **Aislada de la red** (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal): si
@@ -126,8 +126,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Videos (~500 MB) y artículos de terceros fuera de git.
 - Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo solo localiza con u >= 271 px en la
   imagen izquierda (ventana 0,40-0,95 m: el 42 % izquierdo queda ciego) y el brazo en reposo no puede quedar entre
-  las cámaras y la fila. En la simulación: cámaras en un mástil detrás del brazo, del lado izquierdo, mirando 40° a la
-  izquierda, y reposo con J1 = -60° (estacionado hacia la derecha).
+  las cámaras y la fila. Con el brazo sobre el eje (29/09): mástil adelante a la derecha, cámara a 0,85 m mirando 94°
+  a la izquierda y 28° abajo (del lado izquierdo quedaba tan cerca de la fila que ningún ángulo veía los 3 limones de
+  un árbol), y reposo q = (-75°, 95°, -25°), girado a la derecha sobre la caja.
+- Simulación: brazo por velocidad (`JointController`, velocidad del perfil + corrección) y `/joint_states` a 50 Hz;
+  con `JointPositionController` + `use_velocity_commands` el brazo temblaba (Gazebo va a la consigna en un paso).
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos

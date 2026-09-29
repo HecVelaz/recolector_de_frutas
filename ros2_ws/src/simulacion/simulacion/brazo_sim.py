@@ -7,7 +7,8 @@ Entra  /brazo/joint_cmd  sensor_msgs/JointState  j1, j2, j3 del actuador [rad]; 
        /joint_states     sensor_msgs/JointState  de Gazebo: j1, j2, j3o (cadena serie equivalente), j4, dedos
 Sale   /brazo/joint_states (20 Hz), /brazo/estado (2 Hz, formato del firmware), /brazo/respuesta
        /sim/j1, /sim/j2, /sim/j3o, /sim/j_nivel, /sim/j4, /sim/dedo_izq, /sim/dedo_der  std_msgs/Float64 ->
-       JointPositionController. j_nivel = -(q2 + q3O) hace lo del paralelogramo del uArm: herramienta horizontal.
+       JointController (j1, j2, j3o, j_nivel: velocidad [rad/s]) y JointPositionController (j4, dedos: posición).
+       j_nivel = -(q2 + q3O) hace lo del paralelogramo del uArm: herramienta horizontal.
 
 Como el firmware: consigna con perfil trapezoidal (30 °/s y 60 °/s² J1, 20 °/s y 40 °/s² J2/J3), "llego" a 0,5°, arranca
 DESARMADO y con cero (en la simulación no hace falta el homing). El cuatro barras se convierte con cinematica.py.
@@ -28,10 +29,12 @@ TOL = math.radians(0.5)                                   # brazo_config.h: tole
 LIMITES = (Q1_LIM, Q2_LIM, Q3_LIM)
 DEDO_ABIERTO = 0.045  # m, cada dedo (urdf)
 TS = 0.02             # 50 Hz
-# Pose con la que aparece el brazo (= initial_position de los controladores en el urdf y reposo de mision en
-# sim.launch.py): al aparecer las articulaciones están en 0 y los controladores las llevan ahí; no tomar esa pose
-# intermedia como consigna. J1 = -60°: estacionado hacia la derecha, fuera de la vista de las cámaras
-REPOSO = [math.radians(-60.0), math.radians(45.0), 0.0]
+# Reposo (= reposo de mision en sim.launch.py): las articulaciones aparecen en 0 y brazo_sim las lleva ahí; no tomar
+# esa pose intermedia como consigna. Levantado y girado a la derecha, sobre la caja: lejos del mástil y de la vista de
+# las cámaras. Con q3 ~ -10° el cuatro barras queda en el pliegue (dos q3 para el mismo q3O): -25° tiene solución única
+REPOSO = [math.radians(-75.0), math.radians(95.0), math.radians(-25.0)]
+K_POS = 5.0  # 1/s: velocidad = la de la consigna + K_POS * error (K_POS * TS << 1: estable a 50 Hz)
+V_LIM = 1.0  # rad/s, límite de las articulaciones en el urdf
 
 
 def actuador_a_serie(q2, q3):
@@ -77,6 +80,8 @@ class BrazoSim(Node):
         super().__init__('brazo_sim')
         self.armado = False
         self.q = None          # actuador medido [j1, j2, j3] rad
+        self.medido = {}       # articulaciones de Gazebo (j1, j2, j3o, j_nivel) rad
+        self.previo = {}       # consigna del ciclo anterior, para su velocidad
         self.v = [0.0] * 3
         self.consigna = list(REPOSO)  # actuador, se acerca al objetivo a VEL_MAX
         self.objetivo = list(REPOSO)
@@ -107,8 +112,9 @@ class BrazoSim(Node):
     def al_gazebo(self, m):
         d = dict(zip(m.name, m.position))
         dv = dict(zip(m.name, m.velocity)) if m.velocity else {}
-        if not all(j in d for j in ('j1', 'j2', 'j3o')):
+        if not all(j in d for j in ('j1', 'j2', 'j3o', 'j_nivel')):
             return
+        self.medido = {j: d[j] for j in ('j1', 'j2', 'j3o', 'j_nivel')}
         q3_prev = self.q[2] if self.q else 0.0
         q = [d['j1'], d['j2'], serie_a_actuador(d['j2'], d['j3o'], q3_prev)]
         if self.q:
@@ -158,17 +164,24 @@ class BrazoSim(Node):
             self.giro = math.radians(min(max(m.data, -90.0), 90.0))
 
     def paso(self):
-        if self.q is None or not math.isfinite(self.q[2]):
+        if not self.medido:
             return
-        for i in range(3):
-            self.consigna[i], self.vel[i] = perfil(self.consigna[i], self.vel[i], self.objetivo[i], VEL_MAX[i],
-                                                   ACC_MAX[i], TS)
+        # Al aparecer (articulaciones en 0) q3 no tiene sentido: la consigna sigue en el reposo y se llega igual
+        if self.q is not None and math.isfinite(self.q[2]):
+            for i in range(3):
+                self.consigna[i], self.vel[i] = perfil(self.consigna[i], self.vel[i], self.objetivo[i], VEL_MAX[i],
+                                                       ACC_MAX[i], TS)
         q3o = actuador_a_serie(self.consigna[1], self.consigna[2])
         # Todo en cada ciclo (como el PWM de los servos): un mensaje suelto al puente se puede perder
         for n, val in (('j1', self.consigna[0]), ('j2', self.consigna[1]), ('j3o', q3o),
-                       ('j_nivel', -(self.consigna[1] + q3o)), ('j4', self.giro),
-                       ('dedo_izq', self.dedos), ('dedo_der', self.dedos)):
+                       ('j_nivel', -(self.consigna[1] + q3o))):
+            v = (val - self.previo.get(n, val)) / TS + K_POS * (val - self.medido[n])
+            self.previo[n] = val
+            self.pub[n].publish(Float64(data=max(-V_LIM, min(V_LIM, v))))
+        for n, val in (('j4', self.giro), ('dedo_izq', self.dedos), ('dedo_der', self.dedos)):
             self.pub[n].publish(Float64(data=val))
+        if self.q is None or not math.isfinite(self.q[2]):
+            return
 
         self.tick += 1
         if self.tick % 2 == 0:  # 25 Hz (el firmware: 20)

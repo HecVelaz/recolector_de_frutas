@@ -144,17 +144,20 @@
     </plugin>
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
       <topic>joint_states</topic>
+      <!-- sin esto sale en cada paso de física (1 kHz): ahogaba a los nodos de Python y la consigna del brazo llegaba
+           a saltos (temblor) -->
+      <update_rate>50</update_rate>
     </plugin>
   </gazebo>
 
   <!-- ===================== Brazo (etapa 2) =====================
-       Montado adelante a la izquierda, sobre la parte ancha, a ~6 cm del frente y del costado (preliminar); J1 = 0°
+       Montado atrás a la izquierda, sobre el eje de las ruedas de tracción, a ~6 cm del costado (preliminar); J1 = 0°
        mira al frente, paralelo al costado. Medidas de la E4 (brazo_ik/cinematica.py). El cuatro barras se simula como
        la cadena serie equivalente: j2 = q2 (hombro) y j3o = q3O (antebrazo respecto de la prolongación de l2);
        brazo_sim convierte el actuador q3 <-> q3O. Articulaciones movidas por velocidad (JointPositionController con
        use_velocity_commands): la gravedad no las afloja, como el sin fin de J2/J3. -->
-  <xacro:property name="brazo_x" value="${frente - 0.06}"/>  <!-- adelante a la izquierda, a ~6 cm de cada borde (MEDIR) -->
-  <xacro:property name="brazo_y" value="${ancho_ancho/2 - 0.06}"/>
+  <xacro:property name="brazo_x" value="0.0"/>  <!-- sobre el eje de tracción (MEDIR) -->
+  <xacro:property name="brazo_y" value="${ancho_angosto/2 - 0.06}"/>  <!-- a ~6 cm del costado izquierdo de la parte angosta -->
   <!-- Masas del brazo al 5 %: las articulaciones se mueven por velocidad (fuerza ilimitada) y, con las masas reales,
        cada movimiento hacía deslizar la base con las ruedas frenadas (~2-7 cm y 1,5-5° por movimiento). El brazo se
        controla cinemáticamente (brazo_sim), así que su masa no se usa para nada más -->
@@ -164,11 +167,6 @@
   <xacro:property name="L3" value="0.32951"/>
   <xacro:property name="largo_pinza" value="0.11"/>  <!-- muñeca P3 -> punta de los dedos (MEDIR) -->
   <xacro:property name="largo_tcp" value="0.075"/>   <!-- muñeca P3 -> punto de agarre, entre los dedos (MEDIR); = largo_herramienta de brazo_ik -->
-  <!-- Reposo: q = (-60°, 45°, 0°), el brazo estacionado hacia la derecha: con J1 = 0° la barra l2 tapaba los
-       limones en la cámara derecha y el estéreo no los localizaba -->
-  <xacro:property name="q1_ini" value="${radians(-60)}"/>
-  <xacro:property name="q2_ini" value="${pi/4}"/>
-  <xacro:property name="q3o_ini" value="-1.981223"/>       <!-- q3O = -113,516° para q2 = 45°, q3 = 0° (E4) -->
 
   <xacro:macro name="barra" params="nombre largo_b ancho_b m color">
     <link name="${nombre}">
@@ -267,31 +265,60 @@
       <initial_position>${ini}</initial_position>
     </plugin>
   </xacro:macro>
+  <!-- J1-J3 y el nivelador, por velocidad: brazo_sim manda la del perfil más una corrección del error. Con
+       JointPositionController (use_velocity_commands) Gazebo intentaba llegar a cada consigna en un paso de física
+       (±1 rad/s y frenar, 50 veces por segundo): el brazo temblaba -->
+  <xacro:macro name="control_velocidad" params="joint topico">
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>${joint}</joint_name>
+      <topic>${topico}</topic>
+    </plugin>
+  </xacro:macro>
   <gazebo>
-    <!-- brazo_sim publica en /sim/* consignas ya limitadas en velocidad (como el perfil del firmware) -->
-    <xacro:control_posicion joint="j1" topico="/sim/j1" ini="${q1_ini}" ganancia="10"/>
-    <xacro:control_posicion joint="j2" topico="/sim/j2" ini="${q2_ini}" ganancia="10"/>
-    <xacro:control_posicion joint="j3o" topico="/sim/j3o" ini="${q3o_ini}" ganancia="10"/>
-    <xacro:control_posicion joint="j_nivel" topico="/sim/j_nivel" ini="${-(q2_ini + q3o_ini)}" ganancia="10"/>
+    <!-- Aparecen en 0 y brazo_sim las lleva al reposo -->
+    <xacro:control_velocidad joint="j1" topico="/sim/j1"/>
+    <xacro:control_velocidad joint="j2" topico="/sim/j2"/>
+    <xacro:control_velocidad joint="j3o" topico="/sim/j3o"/>
+    <xacro:control_velocidad joint="j_nivel" topico="/sim/j_nivel"/>
     <xacro:control_posicion joint="j4" topico="/sim/j4" ini="0" ganancia="10"/>
     <!-- Un tópico por dedo: dos controladores en el mismo tópico no reciben los dos -->
     <xacro:control_posicion joint="dedo_izq_joint" topico="/sim/dedo_izq" ini="0.045" ganancia="10"/>
     <xacro:control_posicion joint="dedo_der_joint" topico="/sim/dedo_der" ini="0.045" ganancia="10"/>
   </gazebo>
   <!-- ===================== Cámaras y agarre (etapa 4) =====================
-       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil atrás a la izquierda (detrás del
-       brazo), a 0,55 m del piso, mirando 40° a la izquierda y 17° hacia abajo (MEDIR con el soporte rígido). El estéreo solo
-       localiza en la parte derecha de la imagen izquierda (u >= 271 px: con disparidad mínima 112 y rango 160, más a
-       la izquierda la búsqueda se sale de la imagen derecha): con el robot a x ~ 1 m, los 3 limones del árbol 1 caen
-       ahí, a 0,4-0,95 m y al alcance del brazo, y el brazo estacionado hacia la derecha queda fuera de la vista.
-       Probado antes: del lado derecho mirando de costado (90°) veía limones fuera del alcance de J1; a 55° la barra
-       l2 tapaba los limones en la cámara derecha; a 30° caían en la franja ciega del estéreo.
+       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil adelante a la DERECHA, a 0,85 m del
+       piso, mirando 94° a la izquierda (de costado, hacia la fila, por encima del robot) y 28° hacia abajo (MEDIR con
+       el soporte rígido). El estéreo solo localiza en la parte derecha de la imagen izquierda (u >= 271 px: con
+       disparidad mínima 112 y rango 160, más a la izquierda la búsqueda se sale de la imagen derecha) y a 0,4-0,95 m.
+       Posición y ángulos buscados (brazo sobre el eje): para que desde cada marca de parada los 3 limones del árbol
+       caigan ahí y al alcance de J1 (±75°). Del lado izquierdo, pegada a la fila, quedaba demasiado cerca: los 3
+       limones ocupaban ~26° y la zona útil de la imagen tiene ~19°. Tolerancia de parada: ±2 cm.
        "camera" es el marco óptico, con la misma rotación que publica limon.launch.py de vision_estereo:
        /limon/posicion viene ahí. -->
-  <link name="stereo_camera_link"/>
+  <xacro:property name="mastil_x" value="${frente - 0.06}"/>          <!-- a ~6 cm del frente (MEDIR) -->
+  <xacro:property name="mastil_y" value="${-(ancho_ancho/2 - 0.03)}"/> <!-- a ~3 cm del costado derecho (MEDIR) -->
+  <xacro:property name="mastil_alto" value="0.85"/>                    <!-- cámara izquierda sobre el piso (MEDIR) -->
+  <!-- Mástil y cámaras dibujados (solo visual): para ver si el brazo las tapa o las toca al moverse -->
+  <link name="mastil">
+    <visual><origin xyz="0 0 ${(mastil_alto - radio - alto)/2}"/>
+      <geometry><cylinder radius="0.012" length="${mastil_alto - radio - alto}"/></geometry>
+      <material name="gris"/></visual>
+  </link>
+  <joint name="mastil_joint" type="fixed">
+    <parent link="base_link"/><child link="mastil"/><origin xyz="${mastil_x} ${mastil_y} ${alto}"/>
+  </joint>
+  <link name="stereo_camera_link">
+    <!-- barra de las cámaras (99 mm entre ejes) y los dos "ojos", mirando por +x -->
+    <visual><origin xyz="-0.015 -0.0496 0"/><geometry><box size="0.02 0.14 0.02"/></geometry>
+      <material name="negro"/></visual>
+    <visual><origin xyz="0.005 0 0" rpy="0 ${pi/2} 0"/><geometry><cylinder radius="0.01" length="0.02"/></geometry>
+      <material name="azul"/></visual>
+    <visual><origin xyz="0.005 -0.099258 0" rpy="0 ${pi/2} 0"/><geometry><cylinder radius="0.01" length="0.02"/></geometry>
+      <material name="azul"/></visual>
+  </link>
   <joint name="stereo_camera_joint" type="fixed">
     <parent link="base_link"/><child link="stereo_camera_link"/>
-    <origin xyz="-0.06 ${brazo_y} ${0.55 - radio}" rpy="0 0.30 ${radians(40)}"/>
+    <origin xyz="${mastil_x} ${mastil_y} ${mastil_alto - radio}" rpy="0 ${radians(28)} ${radians(94)}"/>
   </joint>
   <link name="camera"/>
   <joint name="camera_optical_joint" type="fixed">

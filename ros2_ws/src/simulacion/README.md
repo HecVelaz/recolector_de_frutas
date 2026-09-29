@@ -22,9 +22,11 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
 - 3 obstáculos en el pasillo (caja, balde, cono) en x = 2,0 / 3,5 / 5,0, entre las marcas de parada: hay que
   esquivarlos (y volver al centro del pasillo antes de la marca), pero no tocan al robot parado en una marca ni al
   brazo, que al barrer J1 llega a ~0,70 m delante de la marca. Marca de regreso en x = 7,5 m.
-- **Marcas de parada**: franjas blancas en el piso en x = 0,95 / 2,45 / 3,95 / 5,45 m, 0,55 m antes del tronco de
-  cada árbol izquierdo. Frenando con el eje de las ruedas de tracción (atrás) sobre una franja, los 3 limones de ese
-  árbol quedan en la zona que ve el estéreo y al alcance del brazo (calculado con la geometría de la base).
+- **Marcas de parada**: franjas blancas en el piso en x = 1,19 / 2,70 / 4,17 / 5,69 m, ~0,3 m antes del tronco de
+  cada árbol izquierdo. Frenando con el eje de las ruedas de tracción (atrás) sobre una franja (±2 cm, en el centro
+  del pasillo), los 3 limones de ese árbol quedan en la zona que ve el estéreo y al alcance del brazo (calculado con
+  la geometría de la base, el brazo y el mástil). Corrido hacia un costado el brazo ya no los alcanza: `mision` se
+  queda en ESPERAR con "limón fuera de alcance".
 - `spherical_coordinates` en la FIUNA (aproximado): `/gps/fix` da lat/lon reales; x = este, y = norte.
 
 ## Robot (`urdf/arturito.urdf.xacro`)
@@ -46,12 +48,17 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
 
 ## Brazo y pinza (etapa 2)
 
-- Montado **adelante a la izquierda**, sobre la parte ancha, a ~6 cm del frente y del costado (preliminar), sobre la
-  tapa (0,23 m del piso); J1 = 0° mira al frente, paralelo al costado.
+- Montado **atrás a la izquierda, sobre el eje de las ruedas de tracción**, a ~6 cm del costado de la parte angosta
+  (y = 0,11 m; preliminar), sobre la tapa (0,23 m del piso); J1 = 0° mira al frente, paralelo al costado.
 - El cuatro barras no entra en URDF (cadena cerrada): se simula la **cadena serie equivalente** (`j2` = q2, `j3o` =
   q3O) y `brazo_sim` convierte el q3 del actuador con `cinematica.py`. Verificado: la muñeca de la cadena serie cae
   donde la directa de la E4 (500 configuraciones). Cerca del pliegue del cuatro barras (q3O ≈ -131,7°, borde del
   espacio de trabajo) dos q3 a ~2,5° dan el mismo q3O: el q3 informado lo decide la continuidad.
+- **Control por velocidad sin temblor.** J1, J2, J3o y el nivelador tienen `JointController`: `brazo_sim` les manda a
+  50 Hz la velocidad de la consigna más 5/s por el error. Antes eran `JointPositionController` con
+  `use_velocity_commands`, que intenta llegar a cada consigna en un solo paso de física: ±1 rad/s y frenar, 50 veces
+  por segundo (84 inversiones de J1 en una parada; ahora 0). Además `/joint_states` salía a 1 kHz y ahogaba a los
+  nodos de Python (consigna a saltos y la simulación al 17-75 % del tiempo real): ahora sale a 50 Hz.
 - **La base no se mueve cuando trabaja el brazo.** Las articulaciones se mueven por velocidad (fuerza ilimitada) y,
   con las masas reales del brazo, cada movimiento deslizaba la base con las ruedas frenadas (hasta 7 cm y 10° por
   movimiento, siempre hacia adelante). Las masas del brazo van al 5 % (`k_masa`; el brazo se controla
@@ -59,8 +66,7 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
 - **`brazo_sim`** reemplaza al firmware del brazo con sus mismos tópicos: `/brazo/joint_cmd` (todo o nada, límites
   de la E4), `/brazo/estado` (mismo texto, 2 Hz), `/brazo/joint_states`, `armar` / `desarmar` / `s`, `/pinza/cierre`
   y `/pinza/giro` (solo ARMADO), perfil trapezoidal como el firmware (30 °/s y 60 °/s² J1, 20 °/s y 40 °/s² J2/J3),
-  "llego" a 0,5°. Arranca DESARMADO en la
-  pose de reposo de `mision`, q = (0°, 45°, 0°).
+  "llego" a 0,5°. Arranca DESARMADO y lleva el brazo al reposo de `mision` (aparece con las articulaciones en 0).
 - **Herramienta horizontal** (brazo tipo uArm / Dobot Magician): `j_nivel` en la muñeca, al que `brazo_sim` le manda
   -(q2 + q3O), hace lo del paralelogramo. Medido: 0,0° de inclinación en todo el movimiento.
 - Pinza: giro J4 alrededor del eje de la herramienta y dos dedos (servos RDS3218) que abren 45 mm cada uno; punto de
@@ -78,16 +84,21 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
   centro → mientras está agarrado, lo pone en el TCP 30 veces por segundo (`set_pose` de Gazebo); dedos abiertos → lo
   deja y lo da por cosechado. Con un DetachableJoint el limón se atrasaba hasta 26 cm al girar J1 (unión blanda con
   las articulaciones movidas por velocidad).
-- **Cámara** (`stereo_camera_link` + marco óptico `camera`, como `limon.launch.py`): mástil detrás del brazo, del lado
-  izquierdo, a 0,55 m del piso, mirando 40° a la izquierda y 17° abajo (MEDIR; por qué ahí: ver etapa 3). La TF
-  brazo → cámara sale del urdf: acá no se usa `mision.launch.py`. Mástil atrás a la izquierda, a (-0,06; 0,14) del
-  eje: la Pi 5 iría arriba con las cámaras (ver `docs/CONEXIONES.md`). `limones_sim` solo "ve" lo que el estéreo real
-  podría localizar (u >= 271 px, 0,40-0,95 m).
+- **Cámara** (`stereo_camera_link` + marco óptico `camera`, como `limon.launch.py`): mástil **adelante a la
+  derecha**, a (0,255; -0,17) del eje, con la cámara izquierda a 0,85 m del piso, mirando 94° a la izquierda (de
+  costado, por encima del robot, hacia la fila) y 28° abajo (MEDIR). El mástil, la barra y las dos cámaras están
+  dibujados (solo visual) para ver si el brazo las tapa. La TF brazo → cámara sale del urdf: acá no se usa
+  `mision.launch.py`. La Pi 5 iría arriba con las cámaras (ver `docs/CONEXIONES.md`). `limones_sim` solo "ve" lo que
+  el estéreo real podría localizar (u >= 271 px, 0,40-0,95 m).
+  Por qué ahí: con el brazo sobre el eje, el mástil adelante a la izquierda queda a ~0,45 m de los limones, que
+  ocupan ~26° de la imagen, y la zona útil (u >= 271) tiene ~19°: ningún ángulo ve los 3 de un árbol. Se buscaron
+  posición, altura y ángulos para que desde cada marca los 3 limones se vean y estén al alcance de J1 (±75°).
 - 12 limones cosechables (3 por árbol de la fila izquierda, `limon_1..12` en el mundo); la fila derecha tiene limones
   fijos de decoración.
-- Reposo del brazo: q = (-60°, 45°, 0°), estacionado hacia la derecha (no tapa las cámaras).
+- Reposo del brazo: q = (-75°, 95°, -25°), levantado y girado a la derecha, sobre la caja: a ~17 cm del mástil y
+  ~22 cm de las visuales de las cámaras a los limones (con q3 ~ -10° quedaba en el pliegue del cuatro barras).
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
-  izquierda: con el eje de las ruedas (atrás) sobre una **marca de parada** (x = 0,95 / 2,45 / 3,95 / 5,45 m), y
+  izquierda: con el eje de las ruedas (atrás) sobre una **marca de parada** (x = 1,19 / 2,70 / 4,17 / 5,69 m), y
   frenar (`k`). Después la
   misión sola: detecta quieto, aproxima, cierra, retira al reposo y suelta; y sigue con el siguiente limón visible.
 - Limitación: el limón soltado queda flotando en el reposo (sin gravedad); falta el cajón.
@@ -106,8 +117,8 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
      y rango 160, más a la izquierda la búsqueda se sale de la imagen derecha). Un limón en el 42 % izquierdo de la
      imagen nunca tiene posición.
   2. El brazo no puede quedar entre las cámaras y la fila: con J1 = 0° en reposo, la barra l2 tapaba los limones
-     en la cámara derecha. Reposo con J1 = -60° (estacionado hacia la derecha) y cámaras en un mástil detrás del
-     brazo del lado izquierdo, mirando 40° a la izquierda.
+     en la cámara derecha. Con el brazo atrás sobre el eje: cámaras en un mástil adelante a la derecha mirando de
+     costado a la fila, y reposo girado a la derecha, sobre la caja.
 - **Lo que no anda:** YOLO (entrenado con fotos reales) no reconoce los limones de Gazebo sobre la copa texturada
   (≤ 0,27 de confianza; sobre copa lisa les daba 0,73-0,79), y marca como limón la copa de un árbol lejano (0,4-0,6),
   que el localizador descarta por distancia. Por eso `/limon/posicion` no sale en esta configuración y la misión
@@ -149,6 +160,8 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-29 | Brazo atrás sobre el eje, mástil adelante a la derecha (dibujado), marcas y reposo nuevos; control por velocidad (`JointController`) y `/joint_states` a 50 Hz. Notebook, sin ventana, robot puesto en cada marca con `set_pose`: **12 de 12 limones cosechados**, TCP a 0,0-0,1 cm; 0 inversiones de velocidad en J1-J3 y el nivelador (antes 84 en J1 en una parada: el temblor); tiempo real 0,8-0,95 (antes 0,17-0,75). 30 pruebas `colcon test` | OK |
+| 2026-09-29 | Usuario con teleop: en la parada 2 el brazo quedó quieto. El robot había frenado 27 cm a la derecha del centro del pasillo (tras esquivar la caja): veía el limón 4 pero fuera de alcance, `mision` en ESPERAR. No es falla | — |
 | 2026-09-29 | Base real de la R2 E3 (T de 40 cm, ruedas de 150 mm, trocha 0,40, brazo adelante a la izquierda a 6 cm de los bordes, mástil atrás a la izquierda) y marcas recalculadas: **12 de 12 limones cosechados** en las 4 paradas, TCP a 0,0-0,1 cm, base quieta. 30 pruebas `colcon test` | OK |
 | 2026-09-29 | Cuatro paradas (usuario: "la segunda no recoge", "la base se mueve", "el limón no queda en el centro"): la base se deslizaba con las ruedas frenadas por los impulsos del brazo (26 cm y 19° en una parada) y la odometría no se enteraba, así que la visión simulada erraba cada vez más; además la caja del pasillo tapaba la parada 2 y, movida a 1,75 m, el brazo le pegaba al barrer. Con perfil trapezoidal, masas del brazo al 5 %, pose real en `limones_sim` y obstáculos en 2,05 / 3,55 / 5,05: **10 de 12 limones cosechados en las 4 paradas**, TCP a 0,0-0,2 cm de cada limón, base quieta (0,0 cm, ≤ 0,01°). Los 2 restantes: uno fuera de alcance y uno fuera de la zona que ve el estéreo | OK |
 | 2026-09-29 | Herramienta horizontal y TCP: con `mision:=true`, inclinación de la pinza 0,0° en todo el movimiento; limón agarrado a 0,2 cm del TCP y, durante el retiro, a 0-1,2 cm del TCP (medido en el mismo instante de simulación; con DetachableJoint llegaba a 26 cm). 29 pruebas `colcon test` | OK |

@@ -381,11 +381,12 @@
     </model>
 
     <!-- Marcas de parada (solo visuales): frenar con el eje de las ruedas de tracción (atrás) sobre la franja,
-         0,55 m antes del tronco de cada árbol izquierdo. Ahí los 3 limones de ese árbol quedan en la zona que ve el
-         estéreo y al alcance del brazo (calculado con la geometría de la base de la R2 E3). -->
+         ~0,3 m antes del tronco de cada árbol izquierdo. Ahí los 3 limones de ese árbol quedan en la zona que ve el
+         estéreo y al alcance del brazo (calculado con la base de la R2 E3, el brazo sobre el eje y el mástil adelante
+         a la derecha). Tolerancia: ±2 cm en x, sobre el centro del pasillo (y = 0). -->
     <model name="parada_1">
       <static>true</static>
-      <pose>0.95 0 0.003 0 0 0</pose>
+      <pose>1.19 0 0.003 0 0 0</pose>
       <link name="link">
         <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
           <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
@@ -393,7 +394,7 @@
     </model>
     <model name="parada_2">
       <static>true</static>
-      <pose>2.45 0 0.003 0 0 0</pose>
+      <pose>2.70 0 0.003 0 0 0</pose>
       <link name="link">
         <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
           <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
@@ -401,7 +402,7 @@
     </model>
     <model name="parada_3">
       <static>true</static>
-      <pose>3.95 0 0.003 0 0 0</pose>
+      <pose>4.17 0 0.003 0 0 0</pose>
       <link name="link">
         <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
           <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>
@@ -409,7 +410,7 @@
     </model>
     <model name="parada_4">
       <static>true</static>
-      <pose>5.45 0 0.003 0 0 0</pose>
+      <pose>5.69 0 0.003 0 0 0</pose>
       <link name="link">
         <visual name="v"><geometry><box><size>0.04 0.9 0.004</size></box></geometry>
           <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>0.4 0.4 0.4 1</emissive></material></visual>

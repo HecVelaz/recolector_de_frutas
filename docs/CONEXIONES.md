@@ -59,7 +59,7 @@ DevKit con CH340, `/dev/ttyUSB0`. Fuente: `firmware/brazo/include/pins.h`.
 
 **Ubicación: la Pi y las cámaras juntas, arriba del mástil.** Las NoIR van a la Pi por cable plano CSI (22 pines del
 lado de la Pi 5), que es corto y sensible a interferencias; los ESP32 van por USB, que aguanta 1-2 m sin problema.
-Así: soporte rígido en el mástil (atrás a la izquierda, detrás del brazo, como en la simulación) con las dos cámaras
+Así: soporte rígido en el mástil (adelante a la derecha, con el brazo atrás sobre el eje, como en la simulación) con las dos cámaras
 y la Pi 5 con su disipador activo; bajan por el mástil los 2 cables USB a los ESP32 (con ferrite) y la alimentación.
 El buck de 5 V va **arriba, al lado de la Pi** (con 5 A, un cable de 5 V largo cae demasiado y la Pi se queja de
 tensión baja): por el mástil sube el bus de 12 V (o 36 V si el buck lo acepta), que lleva poca corriente.
