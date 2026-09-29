@@ -1,10 +1,12 @@
 """Nodo limones_sim: la "visión" y el agarre de los limones cosechables en Gazebo.
 
-Visión: publica /limon/posicion (geometry_msgs/PointStamped) como el localizador_node real: marco `camera` (óptico
-de la cámara izquierda), superficie del limón visible y hora de la "imagen", ~3 Hz. Solo los limones que la cadena
-real podría localizar: dentro de la imagen (640x480, f = 1076,5 px, calibración v1), a 0,40-0,95 m y con u >= 271 px
-(más a la izquierda el BM no tiene disparidad: min 112 + rango 160); el más cercano. Así `mision` corre igual que con
-las cámaras reales.
+Visión, como la cadena real (así `mision` y el recorrido corren igual que con las cámaras):
+- "YOLO": /yolo/detecciones (vision_msgs/Detection2DArray, clase `limon`, ~5 Hz) con la caja de cada limón dentro
+  de la imagen (640x480, f = 1076,5 px, calibración v1), a 0,2-2 m. Una imagen sola: sale también en movimiento.
+- "Estéreo": /limon/posicion (geometry_msgs/PointStamped) como el localizador_node: marco `camera` (óptico de la
+  cámara izquierda), superficie del limón y hora de la "imagen". Solo con el robot quieto (las exposiciones izq/der
+  no están sincronizadas) y solo los que la cadena real podría localizar: a 0,40-0,95 m y con u >= 271 px (más a la
+  izquierda el BM no tiene disparidad: min 112 + rango 160); el más cercano.
 
 Agarre: cuando los dedos cierran (/joint_states) con el punto de agarre (`tcp`, entre los dedos) a menos de
 `dist_agarre` del centro de un limón, lo toma: mientras está agarrado lo pone en el TCP 30 veces por segundo
@@ -29,6 +31,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
 from sensor_msgs.msg import JointState
+from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 import tf2_geometry_msgs  # noqa: F401  (registra PointStamped en tf2)
 from tf2_ros import Buffer, TransformException, TransformListener
 
@@ -74,6 +77,17 @@ def visible(p, z_min, z_max, u_min=U_MIN):
         return False
     u, v = CX + F * x / z, CY + F * y / z
     return u_min <= u < ANCHO and 0 <= v < ALTO
+
+
+def caja_yolo(c, radio):
+    """Centro del limón en el marco óptico -> Detection2D como la de detector_node (caja en píxeles)."""
+    d = Detection2D()
+    d.bbox.center.position.x, d.bbox.center.position.y = CX + F * c[0] / c[2], CY + F * c[1] / c[2]
+    d.bbox.size_x = d.bbox.size_y = F * 2 * radio / c[2]
+    h = ObjectHypothesisWithPose()
+    h.hypothesis.class_id, h.hypothesis.score = 'limon', 0.9
+    d.results.append(h)
+    return d
 
 
 def superficie(p, radio):
@@ -136,8 +150,10 @@ class LimonesSim(Node):
         self.tf = Buffer()
         self.tf_listener = TransformListener(self.tf, self)
         self.pub_pos = self.create_publisher(PointStamped, '/limon/posicion', 10)
+        self.pub_det = self.create_publisher(Detection2DArray, '/yolo/detecciones', 10)
         self.create_subscription(JointState, '/joint_states', self.al_joints, 10)
-        self.create_timer(1.0 / 3.0, self.ver)
+        self.pose_prev = None  # pose del robot en la "imagen" anterior: quieto = no se movió
+        self.create_timer(1.0 / 5.0, self.ver)
         self.create_timer(1.0 / 30.0, self.llevar)
         self.get_logger().info(f'limones_sim: {len(self.limones)} limones cosechables')
 
@@ -158,14 +174,24 @@ class LimonesSim(Node):
         ahora = self.get_clock().now()
         if not self.publicar_vision:
             return
-        vistos = []
+        anterior, actual = self.pose_prev, self.gz.robot
+        self.pose_prev = actual
+        quieto = (anterior is not None and actual is not None and math.dist(anterior[0], actual[0]) < 0.002
+                  and abs(anterior[1][2] - actual[1][2]) < 0.002)  # qz ~ sen(rumbo/2): 0,2°
+        vistos, cajas = [], Detection2DArray()
+        cajas.header.stamp, cajas.header.frame_id = ahora.to_msg(), 'camera'
         for n, p in self.limones.items():
             if n == self.enganchado or n in self.cosechados:
                 continue
             c = self.en_marco(p, 'camera')
-            if c is not None and visible(c, self.z_min, self.z_max):
+            if c is None:
+                continue
+            if visible(c, 0.2, 2.0, u_min=0):
+                cajas.detections.append(caja_yolo(c, self.radio))
+            if visible(c, self.z_min, self.z_max):
                 vistos.append(c)
-        if vistos:
+        self.pub_det.publish(cajas)
+        if vistos and quieto:
             s = superficie(min(vistos, key=lambda c: c[2]), self.radio)
             msg = PointStamped()
             msg.header.stamp = ahora.to_msg()

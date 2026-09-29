@@ -19,9 +19,11 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
   centro a ~35 cm del suelo). 2 hundidos en la copa: oclusión parcial.
 - Con el robot centrado, los limones del lado del pasillo quedan a ~0,45 m del eje de J1 (la esfera de R1 está en
   r = 450 mm): el brazo sobre el chasis alcanza **19 de 21** (21 de 21 con el robot 5 cm más cerca de la fila).
-- 3 obstáculos en el pasillo (caja, balde, cono) en x = 2,0 / 3,5 / 5,0, entre las marcas de parada: hay que
-  esquivarlos (y volver al centro del pasillo antes de la marca), pero no tocan al robot parado en una marca ni al
-  brazo, que al barrer J1 llega a ~0,70 m delante de la marca. Marca de regreso en x = 7,5 m.
+- 2 obstáculos en el pasillo (caja y balde) en x = 2,0 / 3,5 e y = 0,25 / -0,28 (el cono de x = 5,0 se sacó a
+  pedido del usuario), entre los
+  árboles: tapan el camino del robot por el centro, pero dejan pasar por el otro lado con el robot a ±0,25 m (el
+  carril de esquive: más afuera, las copas, a 0,48 m del centro). Centrados no dejaban pasar por ningún lado. Marca de
+  regreso en x = 7,5 m.
 - **Marcas de parada**: franjas blancas en el piso en x = 1,19 / 2,70 / 4,17 / 5,69 m, ~0,3 m antes del tronco de
   cada árbol izquierdo. Frenando con el eje de las ruedas de tracción (atrás) sobre una franja (±2 cm, en el centro
   del pasillo), los 3 limones de ese árbol quedan en la zona que ve el estéreo y al alcance del brazo (calculado con
@@ -57,7 +59,10 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
   vuelco (> 25°) enclavados hasta `r`; sin IMU no se mueve; watchdog de comandos de 300 ms (`wd 50..1000`);
   obstáculo al frente < 0,20 m no avanza y entre 0,20 y 0,50 m tope de velocidad lineal; sin eco al frente no avanza;
   bumper del frente no avanza ni gira, lateral no gira. **Arranca DESARMADA**, como cada sesión de micro-ROS.
-- **3 HC-SR04** (frente y costados de la parte ancha, a 14 cm del piso; MEDIR): `gpu_lidar` de 5 rayos en un
+- **3 HC-SR04 en el frente** (a 14 cm del piso; MEDIR): el central recto y los de las esquinas (y = ±0,15) abiertos
+  15°. Mirando a los costados, un obstáculo corrido hacia un lado del pasillo no lo veía ninguno hasta chocarlo con
+  la esquina (el haz del central cubre ±7,5° y los bumpers, 10 cm en el medio de cada cara). Abiertos y no paralelos:
+  con el TRIG común, paralelos se oirían entre ellos. Cada uno es un `gpu_lidar` de 5 rayos en un
   abanico horizontal de ~15°, y `base_sim` toma el eco más cercano. Sin rayos hacia abajo: el de -7,5° veía el piso a
   1,07 m. Un obstáculo más bajo que el sensor (≤ 14 cm) no se ve: para eso están los bumpers.
 - **3 bumpers** de madera de 10 × 5 cm (frente y costados, a 6 cm del piso, sobresalen 1 cm): plancha con resorte en
@@ -165,6 +170,7 @@ terminal que hable con la simulación** (teleop, `ros2 topic`) necesita lo mismo
 cd ros2_ws && source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select simulacion && source install/setup.bash
 ros2 launch simulacion sim.launch.py                 # gui:=false: solo el servidor (más liviano); mision:=true
+ros2 launch simulacion sim.launch.py mision:=true autonomo:=true   # recorre la hilera y cosecha sola (sin teleop)
 ros2 topic pub --once /base/comando std_msgs/msg/String "{data: armar}"   # la base arranca DESARMADA
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0  # i/j/l/, para mover
 # repeat_rate: sin él, el teleop publica solo al tocar una tecla y el watchdog de 300 ms frena la base
@@ -184,6 +190,7 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-29 | **Recorrido autónomo** (`mision:=true autonomo:=true`), sin ventana: recorre la hilera sola hasta x = 7,32 m en ~9 min simulados y cosecha **12 de 12**; esquiva la caja por la derecha y el balde por la izquierda sin tocarlos; vuelve al centro (±1 cm) y retrocede a buscar los limones que quedaron atrás (árboles 2 y 3). Antes: 5/12 (la odometría de ruedas se desviaba 13 cm en los giros: ahora rumbo del giróscopo), 8/12 (árbol 3 pasado de largo) y 11/12 (terminaba el corrimiento torcido). `limones_sim` publica `/yolo/detecciones` (también en movimiento) y `/limon/posicion` solo con el robot quieto; HC-SR04 los 3 al frente; cono sacado. 46 pruebas `colcon test` (mision, simulacion, brazo_ik) | OK |
 | 2026-09-29 | Etapa 5 (`base_sim`, 3 HC-SR04, 3 bumpers con resorte): frena a 0,20 m de la caja; bumper contra un escalón de 8 cm (el ultrasonido no lo ve): no avanza ni gira, retrocede y se suelta; watchdog 300 ms (11,5 cm con la rampa); seta enclavada hasta `r`. Misión en las 4 marcas: **12 de 12**. Tiempo real 0,3-0,75 (antes 0,8-0,95: los 3 `gpu_lidar` y `base_sim`). 36 pruebas `colcon test` | OK |
 | 2026-09-29 | Reposo girado a la izquierda (75°, 110°, -30°): el de la derecha atravesaba el mástil (2 mm del eje). 12 de 12 | OK |
 | 2026-09-29 | Brazo atrás sobre el eje, mástil adelante a la derecha (dibujado), marcas y reposo nuevos; control por velocidad (`JointController`) y `/joint_states` a 50 Hz. Notebook, sin ventana, robot puesto en cada marca con `set_pose`: **12 de 12 limones cosechados**, TCP a 0,0-0,1 cm; 0 inversiones de velocidad en J1-J3 y el nivelador (antes 84 en J1 en una parada: el temblor); tiempo real 0,8-0,95 (antes 0,17-0,75). 30 pruebas `colcon test` | OK |

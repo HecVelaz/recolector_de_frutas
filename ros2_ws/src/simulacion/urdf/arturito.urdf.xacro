@@ -121,7 +121,7 @@
   </gazebo>
 
   <!-- ===================== Ultrasonidos y bumpers (etapa 5) =====================
-       3 HC-SR04 (frente y costados de la parte ancha, a 14 cm del piso) y 3 bumpers de madera de 10 x 5 cm
+       3 HC-SR04 (en el frente, a 14 cm del piso) y 3 bumpers de madera de 10 x 5 cm
        (R2 E3) abajo, a 6 cm del piso, que sobresalen 1 cm, con resorte. Ubicación: MEDIR. base_sim lee los sensores por
        gz-transport y publica /range/* y /bumpers como la S3. Cada HC-SR04 es un gpu_lidar de 5 rayos en un abanico
        horizontal de ~15° (field_of_view del firmware): base_sim toma el eco más cercano. Sin rayos hacia abajo: a
@@ -149,9 +149,12 @@
       </sensor>
     </gazebo>
   </xacro:macro>
+  <!-- Los 3 en el frente: el central recto y los de las esquinas abiertos 15°. Mirando a los costados, un
+       obstáculo corrido hacia un lado del pasillo no lo veía ninguno hasta chocarlo con la esquina (el haz del
+       central cubre ±7,5°). Abiertos y no paralelos: con el TRIG común, paralelos se oirían entre ellos -->
   <xacro:ultrasonido nombre="frente" x="${frente + 0.008}" y="0" yaw="0"/>
-  <xacro:ultrasonido nombre="izq" x="${frente - largo_ancho/2}" y="${ancho_ancho/2 + 0.008}" yaw="${pi/2}"/>
-  <xacro:ultrasonido nombre="der" x="${frente - largo_ancho/2}" y="${-(ancho_ancho/2 + 0.008)}" yaw="${-pi/2}"/>
+  <xacro:ultrasonido nombre="izq" x="${frente + 0.008}" y="0.15" yaw="${radians(15)}"/>
+  <xacro:ultrasonido nombre="der" x="${frente + 0.008}" y="-0.15" yaw="${radians(-15)}"/>
 
   <xacro:macro name="bumper" params="nombre x y yaw">
     <link name="bumper_${nombre}">

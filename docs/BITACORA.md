@@ -96,3 +96,39 @@ cd ros2_ws && source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 launch simulacion sim.launch.py mision:=true            # otra terminal: export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el eje sobre las franjas blancas
 ```
+
+## 2026-09-29 (noche): simulación, brazo atrás, etapa 5 y recorrido autónomo
+
+### Cambios
+- **Temblor del brazo en Gazebo**: `JointPositionController` con `use_velocity_commands` va a la consigna en un paso
+  de física (±1 rad/s y frenar, 50 veces por segundo). Ahora `JointController` por velocidad: `brazo_sim` manda la del
+  perfil + 5/s por el error. Además `/joint_states` salía a 1 kHz y ahogaba a los nodos de Python: ahora 50 Hz.
+- **Brazo atrás a la izquierda, sobre el eje de tracción** (pedido del usuario), a 6 cm del costado (y = 0,11).
+  Mástil de cámaras adelante a la derecha (0,255; -0,17), cámara a 0,85 m mirando 94° a la izquierda y 28° abajo:
+  buscado para que los 3 limones de cada árbol se vean (u >= 271) y se alcancen (J1 ±75°) desde la misma parada. Del
+  lado izquierdo quedaba muy cerca de la fila y ningún ángulo servía. Mástil y cámaras dibujados.
+- **Reposo del brazo q = (75°, 110°, -30°)**, girado a la izquierda: el de la derecha (-75°) atravesaba el mástil al
+  ir a cada limón (2 mm del eje). Buscado simulando los recorridos a los 12 limones (≥ 33 cm del mástil).
+- **Etapa 5**: `base_sim` imita la S3 (`SeguridadBase.cpp` portada, arranca DESARMADA, watchdog 300 ms) y publica
+  `/range/*`, `/bumpers`, `/battery`, `/base/estado`. HC-SR04 como `gpu_lidar` de 5 rayos horizontales (con rayos
+  hacia abajo veía el piso a 1,07 m). Bumpers: planchas con resorte en prismáticas (el sensor de contacto de Gazebo
+  no informaba nada en links fijos). Teleop: `armar` por `/base/comando` y `repeat_rate:=10.0`.
+- **HC-SR04 los 3 en el frente** (central recto, esquinas ±15°): mirando a los costados, un obstáculo corrido a un
+  lado del pasillo no lo veía nadie hasta chocarlo con la esquina. **Vale para el robot real** (ubicación MEDIR).
+- **Recorrido autónomo** (`mision/recorrido.py`, `autonomo:=true`): avanza de a 10 cm, frena y deja mirar; si la
+  misión ve un limón fuera de alcance, se arrima lo mínimo (`desplazamiento_para_alcanzar`); si un eco cae dentro
+  del ancho del robot, esquiva por el lado con lugar (peor caso del cono de ±7,5°) al carril y = ±0,25 m, pasa y
+  vuelve al centro. La misión solo junta muestras con la base quieta (`base_quieta`).
+- Obstáculos del mundo corridos a un costado (y = 0,25 / -0,28 / 0,25): centrados no dejaban pasar por ningún lado
+  entre las copas (a 0,48 m del centro, robot de 0,445 m).
+
+### Lecciones
+- El usuario manejando con teclado no clavaba las marcas (±2 cm): la parada la tiene que decidir la visión.
+- Probar en paralelo sin tocar la simulación del usuario: `ROS_DOMAIN_ID=42 GZ_PARTITION=prueba_claude`.
+- **Resultado del recorrido autónomo**: 12 de 12 limones sin teleop, sin tocar obstáculos (corridas: 5/12 por la
+  odometría de ruedas desviada 13 cm → rumbo del giróscopo; 8/12 por pasar el árbol 3 al volver del balde →
+  retroceso con tope hacia limones en la zona ciega; 11/12 por terminar el corrimiento torcido → exigir rumbo < 3°).
+  `limones_sim` hace de YOLO (`/yolo/detecciones`, también en movimiento) y de estéreo (posición solo quieto). El cono
+  se sacó del mundo a pedido del usuario.
+- Error propio: dejé viva una simulación de prueba y la siguiente se mezcló en la misma partición (15 min perdidos):
+  cerrar siempre las de `GZ_PARTITION=prueba_claude` al terminar.

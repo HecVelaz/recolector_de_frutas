@@ -7,6 +7,7 @@ Con vision:=yolo, /limon/posicion sale de la cadena real: cámaras de Gazebo -> 
     ros2 launch simulacion sim.launch.py              # con ventana de Gazebo
     ros2 launch simulacion sim.launch.py gui:=false   # solo el servidor (notebook lenta)
     ros2 launch simulacion sim.launch.py mision:=true # con la misión: arrimar el robot a un limón con el teleop
+    ros2 launch simulacion sim.launch.py mision:=true autonomo:=true   # recorre la hilera y cosecha sola
     ros2 launch simulacion sim.launch.py mision:=true vision:=yolo   # con cámaras y YOLO
     ros2 topic pub --once /base/comando std_msgs/msg/String "{data: armar}"   # base_sim arranca DESARMADA
     ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0   # mover la base
@@ -50,6 +51,8 @@ def generate_launch_description():
         SetEnvironmentVariable('GZ_IP', '127.0.0.1'),
         DeclareLaunchArgument('gui', default_value='true', description='false = solo el servidor de Gazebo'),
         DeclareLaunchArgument('mision', default_value='false', description='true = correr la misión (arma el brazo)'),
+        DeclareLaunchArgument('autonomo', default_value='false',
+                              description='true (con mision:=true) = recorre la hilera sola: avanza, se arrima, esquiva'),
         DeclareLaunchArgument('vision', default_value='simulada', description='simulada | yolo (cámaras + YOLO)'),
         AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', str(share / 'models')),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(gz_launch),
@@ -96,6 +99,6 @@ def generate_launch_description():
         # muñeca + 0,075 m en la dirección de J1. cierre 40 %: los dedos quedan sobre el limón (Ø 56 mm)
         Node(package='mision', executable='nodo_mision', output='screen',
              parameters=[{'use_sim_time': True, 'reposo': [0.06789, 0.25336, 0.35960], 'largo_herramienta': 0.075,
-                          'cierre': 40.0}],
+                          'cierre': 40.0, 'autonomo': ParameterValue(LaunchConfiguration('autonomo'), value_type=bool)}],
              condition=IfCondition(LaunchConfiguration('mision'))),
     ])

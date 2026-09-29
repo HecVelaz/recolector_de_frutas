@@ -9,7 +9,8 @@ imagen, al_estado_brazo() con el texto de /brazo/estado, al_ik() con el de /braz
 "Llegó" = posición medida igual a la que calculó brazo_ik para ESTE objetivo, quieta, y el firmware dice llego: un
 estado viejo no alcanza (la posición de un movimiento anterior no coincide con el objetivo nuevo).
 Salidas por enviar(tipo, valor): 'comando' (str a /brazo/comando), 'objetivo' ((x, y, z) m a /brazo/objetivo),
-'cierre' (% a /pinza/cierre) y 'estado' (texto para /mision/estado).
+'cierre' (% a /pinza/cierre), 'estado' (texto para /mision/estado) y 'fuera_de_alcance' ((x, y, z) m del limón que
+vio quieto y no alcanza: el recorrido autónomo se arrima). Con el recorrido, `base_quieta` dice si se puede mirar.
 """
 
 from dataclasses import dataclass
@@ -69,6 +70,7 @@ class Mision:
         self.t_brazo = None       # último /brazo/estado
         self.q_obj = None         # ángulos de brazo_ik para el objetivo vigente [rad]
         self.q, self.v = None, None  # /brazo/joint_states
+        self.base_quieta = True   # False mientras el recorrido mueve la base: el estéreo necesita el robot quieto
 
     def _ir(self, estado, t, motivo=''):
         self.estado, self.t0 = estado, t
@@ -112,7 +114,7 @@ class Mision:
     def al_limon(self, p, t_img, t):
         """p: centro en el marco del brazo; t_img: tiempo de la imagen (ventana de muestras); t: ahora."""
         armado, llego, fallas = self.brazo
-        if self.estado != ESPERAR or not self._fresco(t) or not armado or not llego or fallas:
+        if self.estado != ESPERAR or not self._fresco(t) or not armado or not llego or fallas or not self.base_quieta:
             # sin brazo listo y quieto no se junta nada (p. ej. tras reconectar queda desarmado)
             self.muestras = []
             return
@@ -127,6 +129,7 @@ class Mision:
         self.muestras = []
         if not alcanzable(prom, self.par.largo_herramienta):
             self.enviar('estado', 'ESPERAR: limón fuera de alcance en ({:.3f}, {:.3f}, {:.3f}) m'.format(*prom))
+            self.enviar('fuera_de_alcance', prom)
             return
         self._mover(prom, APROXIMAR, t)
 

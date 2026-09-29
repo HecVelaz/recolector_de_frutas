@@ -1,14 +1,23 @@
 # mision — misión mínima y TF cámara → brazo (ROS 2 Jazzy)
 
 Coordina la demo del objetivo mínimo: **detectar → localizar quieto → `/brazo/objetivo` → agarrar → soltar**.
-La base no se mueve (el estéreo se usa con el robot quieto).
+Con `autonomo:=true` además **recorre la hilera sola** (`recorrido.py`): avanza de corrido por el centro del pasillo,
+frena cuando YOLO (`/yolo/detecciones`) ve un limón en la zona que localiza el estéreo (u >= 271 px, 0,40-0,95 m por
+el tamaño de la caja), deja mirar a la misión con la base quieta, se arrima lo mínimo si el limón está fuera de
+alcance, retrocede (con tope) si un limón quedó atrás en la zona ciega de la imagen, y esquiva los obstáculos del
+pasillo con los 3 HC-SR04 del frente (lado con lugar, peor caso del cono de ±7,5°, carril y = ±0,25 m) hasta el fin
+de la hilera. Posición: avance de las ruedas (`/odom`) y **rumbo del giróscopo** (`/imu/data_raw`): en los giros
+cerrados las ruedas patinan y la odometría sola dejaba el robot 13 cm corrido sin enterarse. Supone que arranca en
+el centro del pasillo mirando a lo largo.
 
 | Archivo | Qué tiene |
 |---|---|
 | `mision/fsm.py` | Máquina de estados **sin ROS** (se prueba sola) |
-| `mision/nodo_mision.py` | Nodo `mision`: tópicos, TF y centro del limón |
+| `mision/recorrido.py` | Recorrido autónomo **sin ROS**: avanzar, mirar, arrimar, esquivar; odometría con giróscopo |
+| `mision/nodo_mision.py` | Nodo `mision`: tópicos, TF y centro del limón (y el recorrido con `autonomo:=true`) |
 | `launch/mision.launch.py` | TF `brazo_base → stereo_camera_link` + `brazo_ik` + `mision` |
 | `test/test_fsm.py` | Ciclo completo con brazo simulado, muestras inestables o viejas, fuera de alcance, fallas, estados viejos, tiempos |
+| `test/test_recorrido.py` | Avance y frenado por YOLO, arrime, retroceso con tope, esquive, bloqueo, giróscopo |
 
 ## Estados
 

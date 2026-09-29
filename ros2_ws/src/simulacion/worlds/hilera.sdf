@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!-- Hilera de limoneros para la opción B de la guía R2: 4 plantas por lado (la guía pide >= 4 en un lateral), pasillo
-     a lo largo de +x con el robot arrancando en el origen, 3 obstáculos en el pasillo entre las marcas de parada
-     (x = 2,0 / 3,5 / 5,0: hay que esquivarlos, pero no tocan al robot parado en una marca ni al brazo, que al
-     barrer J1 llega hasta ~0,70 m delante de la marca) y punto de regreso en x = 7,5 m.
+     a lo largo de +x con el robot arrancando en el origen, 2 obstáculos en el pasillo entre las marcas de parada
+     (x = 2,0 / 3,5; y = 0,25 / -0,28: tapan el camino del robot por el centro, pero dejan pasar por el
+     otro lado con el robot a ±0,25 m, el carril de esquive entre las copas) y punto de regreso en x = 7,5 m.
      Plantas a y = ±0,70 m: con el robot centrado, los limones quedan a ~0,45 m del eje de J1 (esfera de trabajo de R1:
      r = 450 mm) y las copas (r = 0,22 m) dejan un pasillo de ~0,96 m. -->
 <sdf version="1.9">
@@ -99,7 +99,7 @@
 
     <model name="obstaculo_caja">
       <static>true</static>
-      <pose>2.0 0.15 0.15 0 0 0</pose>
+      <pose>2.0 0.25 0.15 0 0 0</pose>
       <link name="link">
         <collision name="c"><geometry><box><size>0.25 0.25 0.3</size></box></geometry></collision>
         <visual name="v"><geometry><box><size>0.25 0.25 0.3</size></box></geometry><material><ambient>0.6 0.4 0.2 1</ambient><diffuse>0.6 0.4 0.2 1</diffuse></material></visual>
@@ -107,18 +107,10 @@
     </model>
     <model name="obstaculo_balde">
       <static>true</static>
-      <pose>3.5 -0.2 0.15 0 0 0</pose>
+      <pose>3.5 -0.28 0.15 0 0 0</pose>
       <link name="link">
         <collision name="c"><geometry><cylinder><radius>0.13</radius><length>0.3</length></cylinder></geometry></collision>
         <visual name="v"><geometry><cylinder><radius>0.13</radius><length>0.3</length></cylinder></geometry><material><ambient>0.1 0.3 0.8 1</ambient><diffuse>0.1 0.3 0.8 1</diffuse></material></visual>
-      </link>
-    </model>
-    <model name="obstaculo_cono">
-      <static>true</static>
-      <pose>5.0 0.0 0.175 0 0 0</pose>
-      <link name="link">
-        <collision name="c"><geometry><cone><radius>0.12</radius><length>0.35</length></cone></geometry></collision>
-        <visual name="v"><geometry><cone><radius>0.12</radius><length>0.35</length></cone></geometry><material><ambient>1 0.4 0 1</ambient><diffuse>1 0.4 0 1</diffuse></material></visual>
       </link>
     </model>
 

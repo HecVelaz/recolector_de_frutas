@@ -9,22 +9,31 @@ Publica   /brazo/objetivo  geometry_msgs/PointStamped  centro del limón [m], ma
           /brazo/comando   std_msgs/String             armar, s
           /pinza/cierre    std_msgs/Float32            0 = abierta, 100 = cerrada
           /mision/estado   std_msgs/String             estado y motivo de cada cambio
-Al cerrarse (Ctrl+C o ros2 launch) manda `s` al brazo: si no, seguiría hacia el último objetivo.
+Con autonomo:=true además recorre la hilera solo (recorrido.py):
+Suscribe  /odom nav_msgs/Odometry (avance), /imu/data_raw sensor_msgs/Imu (rumbo), /range/frente|izq|der sensor_msgs/Range, /bumpers std_msgs/UInt8,
+          /base/estado std_msgs/String, /yolo/detecciones vision_msgs/Detection2DArray (clase `clase_limon`)
+Publica   /cmd_vel geometry_msgs/Twist (10 Hz, siempre: el watchdog de la base es de 300 ms), /base/comando (armar),
+          /recorrido/estado std_msgs/String
+Al cerrarse (Ctrl+C o ros2 launch) manda `s` al brazo y a la base: si no, seguirían hacia el último objetivo.
 """
 
+import math
 import time
 
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PointStamped, Twist
+from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 from rclpy.time import Time
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Float32, String
+from sensor_msgs.msg import Imu, JointState, Range
+from std_msgs.msg import Float32, String, UInt8
+from vision_msgs.msg import Detection2DArray
 import tf2_geometry_msgs  # noqa: F401  (registra PointStamped en tf2)
 from tf2_ros import Buffer, TransformException, TransformListener
 
 from mision.fsm import centro_desde_superficie, Mision, Parametros
+from mision.recorrido import OdometriaGiro, ParRecorrido, Recorrido
 
 
 class NodoMision(Node):
@@ -54,13 +63,75 @@ class NodoMision(Node):
         self.create_subscription(JointState, '/brazo/joint_cmd',
                                  lambda m: self.mision.al_joint_cmd(self.ordenar(m.name, m.position), self.t()), 10)
         self.create_subscription(JointState, '/brazo/joint_states', self.al_joints, 10)
-        self.create_timer(0.1, lambda: self.mision.paso(self.t()))
-        self.get_logger().info(f'mision lista (marco {self.marco}): esperando /brazo/estado')
+        self.recorrido = None
+        if self.declare_parameter('autonomo', False).value:
+            base_r = ParRecorrido(largo_herramienta=par.largo_herramienta)
+            par_r = ParRecorrido(**{k: self.declare_parameter(k, v).value for k, v in vars(base_r).items()
+                                    if k != 'largo_herramienta'}, largo_herramienta=par.largo_herramienta)
+            self.pubs.update({
+                'cmd_vel': self.create_publisher(Twist, '/cmd_vel', 10),
+                'comando_base': self.create_publisher(String, '/base/comando', 10),
+                'estado_recorrido': self.create_publisher(String, '/recorrido/estado', 10),
+            })
+            self.recorrido = Recorrido(self.enviar_recorrido, par_r)
+            self.rangos = [None] * 3
+            self.odo = OdometriaGiro()
+            self.create_subscription(Odometry, '/odom', self.al_odom, 10)
+            self.create_subscription(Imu, '/imu/data_raw',
+                                     lambda m: self.odo.al_giro(m.angular_velocity.z,
+                                                                Time.from_msg(m.header.stamp).nanoseconds * 1e-9), 50)
+            for k, n in enumerate(('frente', 'izq', 'der')):
+                self.create_subscription(Range, f'/range/{n}', lambda m, k=k: self.al_rango(k, m), 10)
+            self.create_subscription(UInt8, '/bumpers', lambda m: self.recorrido.al_bumpers(m.data, self.t()), 10)
+            self.create_subscription(String, '/base/estado',
+                                     lambda m: self.recorrido.al_estado_base(m.data, self.t()), 10)
+            self.clase_limon = self.declare_parameter('clase_limon', 'limon').value
+            self.create_subscription(Detection2DArray, '/yolo/detecciones', self.al_detecciones, 10)
+        self.create_timer(0.1, self.paso)
+        self.get_logger().info(f'mision lista (marco {self.marco}{", recorrido autónomo" if self.recorrido else ""})'
+                               ': esperando /brazo/estado')
+
+    def paso(self):
+        t = self.t()
+        if self.recorrido:
+            self.recorrido.al_estado_mision(self.mision.estado, t)
+            self.recorrido.paso(t)
+            self.mision.base_quieta = self.recorrido.base_quieta(t)
+        self.mision.paso(t)
+
+    def al_odom(self, m):
+        p, q = m.pose.pose.position, m.pose.pose.orientation
+        self.odo.al_odom(p.x, p.y, math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)))
+        self.recorrido.al_odom(self.odo.x, self.odo.y, self.odo.rumbo, self.t())
+
+    def al_detecciones(self, m):
+        cajas = [(d.bbox.center.position.x, d.bbox.size_x) for d in m.detections
+                 if d.results and d.results[0].hypothesis.class_id == self.clase_limon]
+        self.recorrido.al_detecciones(cajas, self.t())
+
+    def al_rango(self, k, m):
+        self.rangos[k] = m.range
+        self.recorrido.al_rangos(self.rangos, self.t())
+
+    def enviar_recorrido(self, tipo, valor):
+        if tipo == 'cmd_vel':
+            msg = Twist()
+            msg.linear.x, msg.angular.z = float(valor[0]), float(valor[1])
+            self.pubs['cmd_vel'].publish(msg)
+        elif tipo == 'comando_base':
+            self.pubs['comando_base'].publish(String(data=valor))
+        else:
+            self.pubs['estado_recorrido'].publish(String(data=valor))
+            self.get_logger().info('recorrido: ' + valor)
 
     def t(self):
         return self.get_clock().now().nanoseconds * 1e-9
 
     def enviar(self, tipo, valor):
+        if tipo == 'fuera_de_alcance':
+            if self.recorrido:
+                self.recorrido.al_fuera_de_alcance(valor, self.t())
+            return
         if tipo == 'objetivo':
             msg = PointStamped()
             msg.header.stamp = self.get_clock().now().to_msg()
@@ -115,6 +186,9 @@ def main(args=None):
         pass
     finally:
         nodo.enviar('comando', 's')  # detener J1-J3; la pinza queda como está
+        if nodo.recorrido:
+            nodo.enviar_recorrido('cmd_vel', (0.0, 0.0))
+            nodo.pubs['comando_base'].publish(String(data='s'))
         time.sleep(0.3)  # que DDS lo entregue antes de destruir el publicador
         nodo.get_logger().info('mision cerrada: brazo detenido')
         nodo.destroy_node()
