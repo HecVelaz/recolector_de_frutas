@@ -87,10 +87,10 @@ def generate_launch_description():
         Node(package='yolo_ros', executable='localizador_node', output='screen', condition=yolo,
              parameters=[{'use_sim_time': True, 'z_min': 0.40, 'z_max': 0.95, 'clase': 'limon'}]),
         # La TF brazo -> cámara la da el urdf (robot_state_publisher): no se usa mision.launch.py
-        # reposo = TCP con q = (-75°, 95°, -25°), el de brazo_sim (el brazo no tapa las cámaras ni toca el mástil):
+        # reposo = TCP con q = (75°, 110°, -30°), el de brazo_sim (el brazo no tapa las cámaras ni toca el mástil):
         # muñeca + 0,075 m en la dirección de J1. cierre 40 %: los dedos quedan sobre el limón (Ø 56 mm)
         Node(package='mision', executable='nodo_mision', output='screen',
-             parameters=[{'use_sim_time': True, 'reposo': [0.08262, -0.30833, 0.31695], 'largo_herramienta': 0.075,
+             parameters=[{'use_sim_time': True, 'reposo': [0.06789, 0.25336, 0.35960], 'largo_herramienta': 0.075,
                           'cierre': 40.0}],
              condition=IfCondition(LaunchConfiguration('mision'))),
     ])

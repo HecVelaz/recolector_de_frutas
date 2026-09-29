@@ -128,7 +128,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   imagen izquierda (ventana 0,40-0,95 m: el 42 % izquierdo queda ciego) y el brazo en reposo no puede quedar entre
   las cámaras y la fila. Con el brazo sobre el eje (29/09): mástil adelante a la derecha, cámara a 0,85 m mirando 94°
   a la izquierda y 28° abajo (del lado izquierdo quedaba tan cerca de la fila que ningún ángulo veía los 3 limones de
-  un árbol), y reposo q = (-75°, 95°, -25°), girado a la derecha sobre la caja.
+  un árbol), y reposo q = (75°, 110°, -30°), girado a la izquierda: J1 no cruza el mástil (girado a la derecha lo
+  atravesaba al ir al limón).
 - Simulación: brazo por velocidad (`JointController`, velocidad del perfil + corrección) y `/joint_states` a 50 Hz;
   con `JointPositionController` + `use_velocity_commands` el brazo temblaba (Gazebo va a la consigna en un paso).
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).

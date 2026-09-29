@@ -30,9 +30,10 @@ LIMITES = (Q1_LIM, Q2_LIM, Q3_LIM)
 DEDO_ABIERTO = 0.045  # m, cada dedo (urdf)
 TS = 0.02             # 50 Hz
 # Reposo (= reposo de mision en sim.launch.py): las articulaciones aparecen en 0 y brazo_sim las lleva ahí; no tomar
-# esa pose intermedia como consigna. Levantado y girado a la derecha, sobre la caja: lejos del mástil y de la vista de
-# las cámaras. Con q3 ~ -10° el cuatro barras queda en el pliegue (dos q3 para el mismo q3O): -25° tiene solución única
-REPOSO = [math.radians(-75.0), math.radians(95.0), math.radians(-25.0)]
+# esa pose intermedia como consigna. Levantado y girado a la izquierda, del lado de la fila: J1 nunca cruza el mástil
+# (adelante a la derecha) al ir a un limón y volver (girado a la derecha, a -75°, lo atravesaba). Buscado simulando
+# los recorridos a los 12 limones: ninguno pasa a menos de 33 cm del mástil, y queda a 17 cm de la vista de las cámaras
+REPOSO = [math.radians(75.0), math.radians(110.0), math.radians(-30.0)]
 K_POS = 5.0  # 1/s: velocidad = la de la consigna + K_POS * error (K_POS * TS << 1: estable a 50 Hz)
 V_LIM = 1.0  # rad/s, límite de las articulaciones en el urdf
 

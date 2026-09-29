@@ -95,8 +95,9 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
   posición, altura y ángulos para que desde cada marca los 3 limones se vean y estén al alcance de J1 (±75°).
 - 12 limones cosechables (3 por árbol de la fila izquierda, `limon_1..12` en el mundo); la fila derecha tiene limones
   fijos de decoración.
-- Reposo del brazo: q = (-75°, 95°, -25°), levantado y girado a la derecha, sobre la caja: a ~17 cm del mástil y
-  ~22 cm de las visuales de las cámaras a los limones (con q3 ~ -10° quedaba en el pliegue del cuatro barras).
+- Reposo del brazo: q = (75°, 110°, -30°), levantado y girado a la izquierda: J1 nunca cruza el mástil al ir a un
+  limón y volver (con el reposo girado a la derecha, a -75°, el brazo pasaba a 2 mm del eje del mástil). Simulando los
+  recorridos a los 12 limones, ninguno pasa a menos de 33 cm del mástil; queda a 17 cm de la vista de las cámaras.
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
   izquierda: con el eje de las ruedas (atrás) sobre una **marca de parada** (x = 1,19 / 2,70 / 4,17 / 5,69 m), y
   frenar (`k`). Después la
@@ -118,7 +119,7 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
      imagen nunca tiene posición.
   2. El brazo no puede quedar entre las cámaras y la fila: con J1 = 0° en reposo, la barra l2 tapaba los limones
      en la cámara derecha. Con el brazo atrás sobre el eje: cámaras en un mástil adelante a la derecha mirando de
-     costado a la fila, y reposo girado a la derecha, sobre la caja.
+     costado a la fila, y reposo girado a la izquierda (J1 no cruza el mástil).
 - **Lo que no anda:** YOLO (entrenado con fotos reales) no reconoce los limones de Gazebo sobre la copa texturada
   (≤ 0,27 de confianza; sobre copa lisa les daba 0,73-0,79), y marca como limón la copa de un árbol lejano (0,4-0,6),
   que el localizador descarta por distancia. Por eso `/limon/posicion` no sale en esta configuración y la misión
