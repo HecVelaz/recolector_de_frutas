@@ -12,8 +12,10 @@ Agarre: cuando los dedos cierran (/joint_states) con el punto de agarre (`tcp`, 
 usaba un DetachableJoint, pero con las articulaciones movidas por velocidad la unión quedaba blanda y el limón se
 atrasaba hasta 26 cm al girar J1.
 
-Las posiciones de los limones salen del mundo (no se mueven hasta que se agarran) y la del robot, de `odom`: la base
-arranca en el origen del mundo, así que odom = mundo salvo patinamiento.
+Las posiciones de los limones salen del mundo (no se mueven hasta que se agarran) y la del robot, de Gazebo (pose
+real de `arturito`, /world/hilera/dynamic_pose/info), no de `odom`: la base patina cuando el brazo se mueve (la
+reacción la gira) y la odometría no se entera. Con odom la visión simulada ubicaba mal los limones y el agarre quedaba
+corrido, cada vez más.
 """
 
 import math
@@ -29,6 +31,26 @@ from rclpy.time import Time
 from sensor_msgs.msg import JointState
 import tf2_geometry_msgs  # noqa: F401  (registra PointStamped en tf2)
 from tf2_ros import Buffer, TransformException, TransformListener
+
+
+def rotar(q, v):
+    """Vector v rotado por el cuaternión q = (x, y, z, w)."""
+    x, y, z, w = q
+    tx, ty, tz = 2 * (y * v[2] - z * v[1]), 2 * (z * v[0] - x * v[2]), 2 * (x * v[1] - y * v[0])
+    return (v[0] + w * tx + y * tz - z * ty, v[1] + w * ty + z * tx - x * tz, v[2] + w * tz + x * ty - y * tx)
+
+
+def a_mundo(pose, p):
+    """Punto en base_link -> mundo, con la pose (t, q) del robot."""
+    t, q = pose
+    r = rotar(q, p)
+    return (r[0] + t[0], r[1] + t[1], r[2] + t[2])
+
+
+def a_robot(pose, p):
+    """Punto del mundo -> base_link."""
+    t, (x, y, z, w) = pose
+    return rotar((-x, -y, -z, w), (p[0] - t[0], p[1] - t[1], p[2] - t[2]))
 
 
 def leer_limones(archivo):
@@ -61,7 +83,7 @@ def superficie(p, radio):
 
 
 class GazeboPoses:
-    """Mueve modelos con el servicio set_pose de Gazebo (bindings de Python de gz-transport, vienen con Jazzy)."""
+    """Pose real del robot y set_pose de Gazebo (bindings de Python de gz-transport, vienen con Jazzy)."""
 
     def __init__(self):
         for vendor in ('gz_transport_vendor', 'gz_msgs_vendor'):
@@ -70,8 +92,18 @@ class GazeboPoses:
                 sys.path.append(ruta)
         from gz.msgs10.boolean_pb2 import Boolean
         from gz.msgs10.pose_pb2 import Pose
+        from gz.msgs10.pose_v_pb2 import Pose_V
         from gz.transport13 import Node as NodoGz
         self.Boolean, self.Pose, self.nodo = Boolean, Pose, NodoGz()
+        self.robot = None  # ((x, y, z), (qx, qy, qz, qw)) de arturito en el mundo
+        self.nodo.subscribe(Pose_V, '/world/hilera/dynamic_pose/info', self._al_poses)
+
+    def _al_poses(self, msg):
+        for p in msg.pose:
+            if p.name == 'arturito':
+                o = p.orientation
+                self.robot = ((p.position.x, p.position.y, p.position.z), (o.x, o.y, o.z, o.w))
+                return
 
     def mover(self, nombre, p):
         pedido = self.Pose(name=nombre)
@@ -105,10 +137,12 @@ class LimonesSim(Node):
         self.get_logger().info(f'limones_sim: {len(self.limones)} limones cosechables')
 
     def en_marco(self, p, marco):
-        """Punto (x, y, z) en odom -> marco del robot, o None sin TF."""
+        """Punto (x, y, z) del mundo -> marco del robot, o None sin pose o sin TF."""
+        if self.gz.robot is None:
+            return None
         msg = PointStamped()
-        msg.header.frame_id = 'odom'
-        msg.point.x, msg.point.y, msg.point.z = p
+        msg.header.frame_id = 'base_link'
+        msg.point.x, msg.point.y, msg.point.z = a_robot(self.gz.robot, p)
         try:
             q = self.tf.transform(msg, marco)
         except TransformException:
@@ -135,11 +169,14 @@ class LimonesSim(Node):
             self.pub_pos.publish(msg)
 
     def tcp(self):
+        """Punto de agarre en el mundo, o None."""
+        if self.gz.robot is None:
+            return None
         try:
-            t = self.tf.lookup_transform('odom', 'tcp', Time()).transform.translation
+            t = self.tf.lookup_transform('base_link', 'tcp', Time()).transform.translation
         except TransformException:
             return None
-        return (t.x, t.y, t.z)
+        return a_mundo(self.gz.robot, (t.x, t.y, t.z))
 
     def llevar(self):
         """Mientras está agarrado, el limón va en el TCP."""

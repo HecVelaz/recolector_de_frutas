@@ -9,7 +9,7 @@ Sale   /brazo/joint_states (20 Hz), /brazo/estado (2 Hz, formato del firmware), 
        /sim/j1, /sim/j2, /sim/j3o, /sim/j_nivel, /sim/j4, /sim/dedo_izq, /sim/dedo_der  std_msgs/Float64 ->
        JointPositionController. j_nivel = -(q2 + q3O) hace lo del paralelogramo del uArm: herramienta horizontal.
 
-Como el firmware: consigna con velocidad máxima por articulación (30 °/s J1, 20 °/s J2/J3), "llego" a 0,5°, arranca
+Como el firmware: consigna con perfil trapezoidal (30 °/s y 60 °/s² J1, 20 °/s y 40 °/s² J2/J3), "llego" a 0,5°, arranca
 DESARMADO y con cero (en la simulación no hace falta el homing). El cuatro barras se convierte con cinematica.py.
 """
 
@@ -23,6 +23,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32, Float64, String
 
 VEL_MAX = [math.radians(v) for v in (30.0, 20.0, 20.0)]  # brazo_config.h: velMax
+ACC_MAX = [math.radians(a) for a in (60.0, 40.0, 40.0)]  # brazo_config.h: accMax (sin rampa, la reacción movía la base)
 TOL = math.radians(0.5)                                   # brazo_config.h: tolerancia de llegada
 LIMITES = (Q1_LIM, Q2_LIM, Q3_LIM)
 DEDO_ABIERTO = 0.045  # m, cada dedo (urdf)
@@ -54,8 +55,20 @@ def serie_a_actuador(q2, q3o, q3_prev=0.0):
     return min(cands, key=lambda q: abs(q - q3_prev)) if cands else float('nan')
 
 
-def acercar(actual, objetivo, paso):
-    return objetivo if abs(objetivo - actual) <= paso else actual + math.copysign(paso, objetivo - actual)
+def perfil(pos, vel, objetivo, v_max, a_max, dt):
+    """Un paso de perfil trapezoidal hacia `objetivo`: acelera a a_max hasta v_max y frena a tiempo. -> (pos, vel)"""
+    falta = objetivo - pos
+    if abs(falta) < 1e-9 and abs(vel) <= a_max * dt:
+        return objetivo, 0.0
+    # velocidad deseada: la máxima que todavía deja frenar justo en el objetivo, en pasos de dt (versión discreta de
+    # sqrt(2·a·d): con la continua llegaba a ~6°/s y cortaba a 0 de golpe)
+    ad = a_max * dt
+    v_des = math.copysign(min(v_max, abs(falta) / dt, ad * (math.sqrt(0.25 + 2 * abs(falta) / (ad * dt)) - 0.5)), falta)
+    vel += max(-a_max * dt, min(a_max * dt, v_des - vel))
+    pos += vel * dt
+    if (objetivo - pos) * falta <= 0:  # se pasó: queda en el objetivo
+        return objetivo, 0.0
+    return pos, vel
 
 
 class BrazoSim(Node):
@@ -67,6 +80,7 @@ class BrazoSim(Node):
         self.v = [0.0] * 3
         self.consigna = list(REPOSO)  # actuador, se acerca al objetivo a VEL_MAX
         self.objetivo = list(REPOSO)
+        self.vel = [0.0] * 3          # velocidad de la consigna
         self.dedos = DEDO_ABIERTO  # m, cada dedo
         self.giro = 0.0            # rad (J4)
         self.tick = 0
@@ -130,7 +144,7 @@ class BrazoSim(Node):
             self.responder('>> Brazo DESARMADO.')
         elif c == 's':
             if self.q:
-                self.objetivo, self.consigna = list(self.q), list(self.q)
+                self.objetivo, self.consigna, self.vel = list(self.q), list(self.q), [0.0] * 3
             self.responder('>> Detenido.')
         else:
             self.responder(f'>> "{c}" no está en la simulación (solo armar, desarmar, s)')
@@ -146,7 +160,9 @@ class BrazoSim(Node):
     def paso(self):
         if self.q is None or not math.isfinite(self.q[2]):
             return
-        self.consigna = [acercar(c, o, v * TS) for c, o, v in zip(self.consigna, self.objetivo, VEL_MAX)]
+        for i in range(3):
+            self.consigna[i], self.vel[i] = perfil(self.consigna[i], self.vel[i], self.objetivo[i], VEL_MAX[i],
+                                                   ACC_MAX[i], TS)
         q3o = actuador_a_serie(self.consigna[1], self.consigna[2])
         # Todo en cada ciclo (como el PWM de los servos): un mensaje suelto al puente se puede perder
         for n, val in (('j1', self.consigna[0]), ('j2', self.consigna[1]), ('j3o', q3o),

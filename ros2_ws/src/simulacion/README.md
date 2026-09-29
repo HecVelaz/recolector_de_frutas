@@ -19,7 +19,9 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
   centro a ~35 cm del suelo). 2 hundidos en la copa: oclusión parcial.
 - Con el robot centrado, los limones del lado del pasillo quedan a ~0,45 m del eje de J1 (la esfera de R1 está en
   r = 450 mm): el brazo sobre el chasis alcanza **19 de 21** (21 de 21 con el robot 5 cm más cerca de la fila).
-- 3 obstáculos en el pasillo (caja, balde, cono) y marca de regreso en x = 7,5 m.
+- 3 obstáculos en el pasillo (caja, balde, cono) en x = 2,05 / 3,55 / 5,05, entre las marcas de parada: hay que
+  esquivarlos, pero no tocan al robot parado en una marca ni al brazo (que al barrer J1 llega a ~0,66 m delante de
+  la marca). Marca de regreso en x = 7,5 m.
 - **Marcas de parada**: franjas blancas en el piso en x = 1,0 / 2,5 / 4,0 / 5,5 m, medio metro antes del tronco de
   cada árbol izquierdo. Frenando con el centro del robot (eje de las ruedas) sobre una franja, los limones de ese
   árbol quedan en la zona que ve el estéreo y al alcance del brazo.
@@ -46,9 +48,14 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
   q3O) y `brazo_sim` convierte el q3 del actuador con `cinematica.py`. Verificado: la muñeca de la cadena serie cae
   donde la directa de la E4 (500 configuraciones). Cerca del pliegue del cuatro barras (q3O ≈ -131,7°, borde del
   espacio de trabajo) dos q3 a ~2,5° dan el mismo q3O: el q3 informado lo decide la continuidad.
+- **La base no se mueve cuando trabaja el brazo.** Las articulaciones se mueven por velocidad (fuerza ilimitada) y,
+  con las masas reales del brazo, cada movimiento deslizaba la base con las ruedas frenadas (hasta 7 cm y 10° por
+  movimiento, siempre hacia adelante). Las masas del brazo van al 5 % (`k_masa`; el brazo se controla
+  cinemáticamente) y la base pesa 20 kg (MEDIR): 6 movimientos seguidos, 0,00 cm.
 - **`brazo_sim`** reemplaza al firmware del brazo con sus mismos tópicos: `/brazo/joint_cmd` (todo o nada, límites
   de la E4), `/brazo/estado` (mismo texto, 2 Hz), `/brazo/joint_states`, `armar` / `desarmar` / `s`, `/pinza/cierre`
-  y `/pinza/giro` (solo ARMADO), perfil a 30 °/s (J1) y 20 °/s (J2, J3), "llego" a 0,5°. Arranca DESARMADO en la
+  y `/pinza/giro` (solo ARMADO), perfil trapezoidal como el firmware (30 °/s y 60 °/s² J1, 20 °/s y 40 °/s² J2/J3),
+  "llego" a 0,5°. Arranca DESARMADO en la
   pose de reposo de `mision`, q = (0°, 45°, 0°).
 - **Herramienta horizontal** (brazo tipo uArm / Dobot Magician): `j_nivel` en la muñeca, al que `brazo_sim` le manda
   -(q2 + q3O), hace lo del paralelogramo. Medido: 0,0° de inclinación en todo el movimiento.
@@ -59,6 +66,8 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
 ## Agarre y misión (etapa 4)
 
 - Limones cosechables sin gravedad ni colisión: flotan donde están y la pinza no los empuja.
+- `limones_sim` usa la **pose real** del robot en Gazebo (`/world/hilera/dynamic_pose/info`), no `odom`: si la base
+  patina, la odometría no se entera.
 - **`limones_sim`** hace de visión: publica `/limon/posicion` como `localizador_node` (marco `camera`, superficie
   del limón, hora de la imagen, ~3 Hz) solo si el limón está en el campo visual (33° × 25°, calibración v1) y a
   0,40-0,95 m; y hace el agarre: dedos cerrados (cierre 40 %: sobre un limón de 56 mm) con el TCP a < 3 cm del
@@ -134,6 +143,7 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-29 | Cuatro paradas (usuario: "la segunda no recoge", "la base se mueve", "el limón no queda en el centro"): la base se deslizaba con las ruedas frenadas por los impulsos del brazo (26 cm y 19° en una parada) y la odometría no se enteraba, así que la visión simulada erraba cada vez más; además la caja del pasillo tapaba la parada 2 y, movida a 1,75 m, el brazo le pegaba al barrer. Con perfil trapezoidal, masas del brazo al 5 %, pose real en `limones_sim` y obstáculos en 2,05 / 3,55 / 5,05: **10 de 12 limones cosechados en las 4 paradas**, TCP a 0,0-0,2 cm de cada limón, base quieta (0,0 cm, ≤ 0,01°). Los 2 restantes: uno fuera de alcance y uno fuera de la zona que ve el estéreo | OK |
 | 2026-09-29 | Herramienta horizontal y TCP: con `mision:=true`, inclinación de la pinza 0,0° en todo el movimiento; limón agarrado a 0,2 cm del TCP y, durante el retiro, a 0-1,2 cm del TCP (medido en el mismo instante de simulación; con DetachableJoint llegaba a 26 cm). 29 pruebas `colcon test` | OK |
 | 2026-09-28 | Con ventana (usuario), la misión no arrancaba: `/brazo/estado` tenía dos publicadores, `brazo_sim` y el ESP32 real del brazo (ARMADO, por la red desde la Pi). Aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`: único publicador `brazo_sim`, la misión cosecha de nuevo | OK |
 | 2026-09-28 | Notebook, sin ventana, etapa 4 de nuevo tras los cambios de la etapa 3 (12 limones que aparecen a los 4 s, reposo J1 = -60°, cámara a 40°): en una misma parada, `mision` cosechó el limón 3 y después el 1 (muñeca a 0,0 cm del centro de cada uno), soltándolos en el reposo | OK |

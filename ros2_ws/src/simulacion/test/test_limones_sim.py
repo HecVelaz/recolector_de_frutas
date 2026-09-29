@@ -3,7 +3,7 @@
 import math
 from pathlib import Path
 
-from simulacion.limones_sim import leer_limones, superficie, visible
+from simulacion.limones_sim import a_mundo, a_robot, leer_limones, superficie, visible
 
 MUNDO = Path(__file__).resolve().parents[1] / 'worlds' / 'hilera.sdf'
 
@@ -32,3 +32,12 @@ def test_superficie_y_centro_son_inversos():
     d = math.dist(s, (0, 0, 0))
     assert math.isclose(math.dist(c, (0, 0, 0)) - d, 0.03)
     assert all(math.isclose(ci, si * (1 + 0.03 / d)) for ci, si in zip(c, s))
+
+
+def test_pose_del_robot_ida_y_vuelta():
+    # robot en (1, 2, 0,05) girado 90° (cuaternión de yaw 90°): un punto 1 m adelante queda en (1, 3, 0,05)
+    pose = ((1.0, 2.0, 0.05), (0.0, 0.0, math.sin(math.pi / 4), math.cos(math.pi / 4)))
+    m = a_mundo(pose, (1.0, 0.0, 0.0))
+    assert all(math.isclose(a, b, abs_tol=1e-12) for a, b in zip(m, (1.0, 3.0, 0.05)))
+    r = a_robot(pose, m)
+    assert all(math.isclose(a, b, abs_tol=1e-12) for a, b in zip(r, (1.0, 0.0, 0.0)))

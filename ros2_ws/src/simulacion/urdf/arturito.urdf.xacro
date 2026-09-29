@@ -29,7 +29,7 @@
       <origin xyz="0 0 ${alto/2}"/>
       <geometry><box size="${largo} ${ancho} ${alto}"/></geometry>
     </collision>
-    <xacro:inercia_caja m="8.0" x="${largo}" y="${ancho}" z="${alto}"/>
+    <xacro:inercia_caja m="20.0" x="${largo}" y="${ancho}" z="${alto}"/>
   </link>
 
   <xacro:macro name="rueda" params="lado signo">
@@ -135,6 +135,10 @@
        use_velocity_commands): la gravedad no las afloja, como el sin fin de J2/J3. -->
   <xacro:property name="brazo_x" value="${largo/2 - 0.05}"/>  <!-- MEDIR -->
   <xacro:property name="brazo_y" value="${ancho/2 - 0.04}"/>  <!-- MEDIR -->
+  <!-- Masas del brazo al 5 %: las articulaciones se mueven por velocidad (fuerza ilimitada) y, con las masas reales,
+       cada movimiento hacía deslizar la base con las ruedas frenadas (~2-7 cm y 1,5-5° por movimiento). El brazo se
+       controla cinemáticamente (brazo_sim), así que su masa no se usa para nada más -->
+  <xacro:property name="k_masa" value="0.05"/>
   <xacro:property name="H1" value="0.150"/>
   <xacro:property name="L2" value="0.35022"/>
   <xacro:property name="L3" value="0.32951"/>
@@ -166,7 +170,7 @@
     <visual><origin xyz="0 0 ${H1/2}"/><geometry><cylinder radius="0.04" length="${H1}"/></geometry>
       <material name="naranja"><color rgba="0.9 0.45 0.1 1"/></material></visual>
     <collision><origin xyz="0 0 ${H1/2}"/><geometry><cylinder radius="0.04" length="${H1}"/></geometry></collision>
-    <xacro:inercia_caja m="0.8" x="0.08" y="0.08" z="${H1}"/>
+    <xacro:inercia_caja m="${0.8*k_masa}" x="0.08" y="0.08" z="${H1}"/>
   </link>
   <joint name="j1" type="revolute">
     <parent link="brazo_base"/><child link="torreta"/><axis xyz="0 0 1"/>
@@ -175,13 +179,13 @@
 
   <material name="verde"><color rgba="0.1 0.6 0.2 1"/></material>
   <material name="azul"><color rgba="0.1 0.3 0.8 1"/></material>
-  <xacro:barra nombre="l2" largo_b="${L2}" ancho_b="0.03" m="0.5" color="verde"/>
+  <xacro:barra nombre="l2" largo_b="${L2}" ancho_b="0.03" m="${0.5*k_masa}" color="verde"/>
   <joint name="j2" type="revolute">
     <!-- eje -y: q2 positivo levanta la barra (q2 desde la horizontal, como en la E4) -->
     <parent link="torreta"/><child link="l2"/><origin xyz="0 0 ${H1}"/><axis xyz="0 -1 0"/>
     <limit lower="${radians(-25)}" upper="${radians(135)}" effort="50" velocity="1.0"/>
   </joint>
-  <xacro:barra nombre="l3" largo_b="${L3}" ancho_b="0.025" m="0.4" color="azul"/>
+  <xacro:barra nombre="l3" largo_b="${L3}" ancho_b="0.025" m="${0.4*k_masa}" color="azul"/>
   <joint name="j3o" type="revolute">
     <parent link="l2"/><child link="l3"/><origin xyz="${L2} 0 0"/><axis xyz="0 -1 0"/>
     <limit lower="${radians(-175)}" upper="${radians(10)}" effort="50" velocity="1.0"/>
@@ -190,7 +194,7 @@
   <!-- Brazo tipo uArm / Dobot Magician: un paralelogramo mantiene la herramienta horizontal, apuntando en la dirección
        de J1 (E1). Se simula con j_nivel en la muñeca, al que brazo_sim le manda -(q2 + q3O) -->
   <link name="muneca">
-    <inertial><mass value="0.05"/><inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/></inertial>
+    <inertial><mass value="${0.05*k_masa}"/><inertia ixx="${1e-5*k_masa}" iyy="${1e-5*k_masa}" izz="${1e-5*k_masa}" ixy="0" ixz="0" iyz="0"/></inertial>
   </link>
   <joint name="j_nivel" type="revolute">
     <parent link="l3"/><child link="muneca"/><origin xyz="${L3} 0 0"/><axis xyz="0 -1 0"/>
@@ -201,7 +205,7 @@
   <link name="pinza">
     <visual><origin xyz="0.02 0 0"/><geometry><box size="0.04 0.09 0.03"/></geometry><material name="gris"/></visual>
     <collision><origin xyz="0.02 0 0"/><geometry><box size="0.04 0.09 0.03"/></geometry></collision>
-    <xacro:inercia_caja m="0.2" x="0.04" y="0.09" z="0.03"/>
+    <xacro:inercia_caja m="${0.2*k_masa}" x="0.04" y="0.09" z="0.03"/>
   </link>
   <joint name="j4" type="revolute">
     <parent link="muneca"/><child link="pinza"/><axis xyz="1 0 0"/>
@@ -212,7 +216,7 @@
       <visual><origin xyz="${(largo_pinza - 0.04)/2} 0 0"/><geometry><box size="${largo_pinza - 0.04} 0.01 0.025"/></geometry>
         <material name="negro"/></visual>
       <!-- sin colisión: el agarre en la simulación se hará fijando el limón a la pinza al cerrar (etapa 4) -->
-      <xacro:inercia_caja m="0.05" x="${largo_pinza - 0.04}" y="0.01" z="0.025"/>
+      <xacro:inercia_caja m="${0.05*k_masa}" x="${largo_pinza - 0.04}" y="0.01" z="0.025"/>
     </link>
     <!-- Sin gravedad: con la pinza girada, el control por velocidad de Gazebo no sostenía el peso de los dedos (uno
          caía al tope); el servo real sí los sostiene -->

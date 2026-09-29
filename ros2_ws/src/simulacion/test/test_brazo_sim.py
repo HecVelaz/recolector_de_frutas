@@ -4,7 +4,7 @@ import math
 import random
 
 from brazo_ik.cinematica import cinematica_directa, config_valida, L2, L3, H1
-from simulacion.brazo_sim import acercar, actuador_a_serie, serie_a_actuador
+from simulacion.brazo_sim import actuador_a_serie, perfil, serie_a_actuador
 
 
 def test_ejemplo_e4():
@@ -34,7 +34,18 @@ def test_ida_y_vuelta_y_misma_muneca():
         assert abs(x - p[0]) < 1e-6 and abs(z - p[2]) < 1e-6  # mm
 
 
-def test_acercar_respeta_el_paso():
-    assert acercar(0.0, 1.0, 0.1) == 0.1
-    assert acercar(0.95, 1.0, 0.1) == 1.0
-    assert acercar(0.0, -1.0, 0.1) == -0.1
+def test_perfil_trapezoidal():
+    v_max, a_max, dt = math.radians(30), math.radians(60), 0.02
+    for objetivo, t_min in ((math.radians(90), 3.4), (-math.radians(5), 0.5)):  # llega a v_max / triangular
+        pos, vel, t, velocidades = 0.0, 0.0, 0.0, [0.0]
+        while (pos, vel) != (objetivo, 0.0) and t < 10:
+            pos, vel = perfil(pos, vel, objetivo, v_max, a_max, dt)
+            velocidades.append(vel)
+            t += dt
+        assert (pos, vel) == (objetivo, 0.0)
+        assert max(abs(v) for v in velocidades) <= v_max + 1e-9
+        # aceleración limitada en todos los pasos menos el último (al llegar corta a 0 desde una velocidad chica)
+        acel = [abs(b - a) / dt for a, b in zip(velocidades[:-2], velocidades[1:-1])]
+        assert max(acel) <= a_max + 1e-6
+        assert abs(velocidades[-2]) <= a_max * dt * 2  # llega casi frenado
+        assert t >= t_min  # 90° a 30°/s: 3 s + 0,5 s de rampas
