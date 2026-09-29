@@ -11,16 +11,16 @@ elementos a interconectar todos entre si
 - x2 camaras Noir para la pi 5 (para la vision estereo)
 - 1xMotor 36GP-555 160 rpm para la base rotativa 1ra articulacion (necesita control lazo cerrado)
 - x2 motores DC 5840-31zy para articulaciones (necesita control lazo cerrado)
-- x2 servo de alto torque para manipulador: DSSERVO RDS3218 digital, 20 kg·cm, 4,8-6,8 V (foto en `imagen_pinza/`); uno de apertura y otro de giro
+- x2 servo de alto torque para manipulador: DSSERVO RDS3218 digital, 20 kg·cm, 4,8-6,8 V (foto en `docs/fotos/pinza/`); uno de apertura y otro de giro
 - x3 drivers IBT-2 BTS 7960 para los motores dc 36gp
 - x1 driver l298n para los motores articulares 
 - x2 Motor DC 895 planetario 42 mm con encoder, 12 V, 53 rpm, eje D 8 mm para traccion ruedas (necesita control cerrado)
   (corregido el 28/09/2026: antes decía 36GP-555 53 rpm)
 - x1 gps up501
-- x1 imu mpu 9250 sin magnetometro
+- x1 imu MPU-6500 (vendida como MPU-9250; sin magnetómetro, WHO_AM_I 0x70)
 - x1 lidar 
 - x3 sensor Ultrasonico hcsr04
-- x4 bumpers o finales de carrera cant minima
+- x3 bumpers de madera con final de carrera: frente y los dos laterales (R2 E3; corregido el 29/09: antes decía x4)
 TPF R1 grupo 2 son los trabajos que se entregan en la catedra de robotica 1 , se evalua solo el brazo. 
 TPF R2 son los trabajos que se entregan en la catedra robotica 2 , se evalua el robot movil.
 De la guia TPF se elijio limon opcion 6 (RRR - Limon), en vez de succion se usara agarre y traccion con manipulador tipo pinza que rota sobre su eje 
@@ -30,3 +30,7 @@ en la pi 5 se corre ubuntu 24.04.5 lts noble con ros 2 jazzy , alli se tienen al
 los archivos estan en el github 
 se cuenta con una notebook dell 5458 inspiron de 8 gb ram con ubuntu 24.04.5.1 noble y ros 2 jazzy
 
+
+- x1 batería YONGZHI 10S2P de 18650: 36 V nominales (42 V cargada), 4400 mAh, 158 Wh, 135 x 90 x 60 mm, XT60
+  (foto en `docs/fotos/bateria/`). Motores de 12 V por un buck 36 -> 12 V de alta corriente (ver CONEXIONES.md).
+- x2 ruedas inflables de 150 mm, 45 mm de ancho, 650 g, acople de 8 mm (foto en `docs/fotos/rueda/`).

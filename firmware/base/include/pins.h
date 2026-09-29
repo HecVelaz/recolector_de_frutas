@@ -33,10 +33,10 @@ constexpr int PIN_US_ECHO_IZQ = 12;
 constexpr int PIN_US_ECHO_DER = 13;
 
 // Bumpers: normalmente abiertos a GND, pull-up interno (apretado = LOW)
-constexpr int PIN_BUMPER_FRENTE_IZQ = 14;
-constexpr int PIN_BUMPER_FRENTE_DER = 21;
-constexpr int PIN_BUMPER_ATRAS_IZQ = 39;
-constexpr int PIN_BUMPER_ATRAS_DER = 40;
+// 3 bumpers (R2 E3): frente y los dos laterales. GPIO 40 quedó libre (era el 4.º bumper, atrás)
+constexpr int PIN_BUMPER_FRENTE = 14;
+constexpr int PIN_BUMPER_IZQ = 21;
+constexpr int PIN_BUMPER_DER = 39;
 
 // Seta: contacto auxiliar NORMALMENTE CERRADO a GND, pull-up interno. Seta suelta = LOW; apretada o cable
 // cortado = HIGH (falla segura).

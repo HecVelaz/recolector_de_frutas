@@ -69,7 +69,7 @@ Criterio: **un ESP32 por subsistema** (base y brazo), no "motores en uno y senso
 | Motores | 2× DC 895 planetario 53 rpm con encoder (tracción) con 2× IBT-2 | J1: 36GP-555 160 rpm + IBT-2 · J2, J3: 2× 5840-31ZY + L298N | — |
 | Encoders | 2 (Hall de rueda) → 2 de 4 PCNT | 3 (Hall J1 + 2 ópticos 1000 PPR) → 3 de 8 PCNT | — |
 | Actuadores extra | luz, buzzer | 2 servos (apertura, giro J4) | — |
-| Sensores | IMU MPU9250 (I²C), 4 bumpers, 3 HC-SR04, GPS UP501 (UART, ya probado en E1), monitor de batería, estado de seta | — | 2 cámaras NoIR (CSI), LiDAR (USB, fuera del mínimo) |
+| Sensores | IMU MPU-6500 (I²C), 3 bumpers (frente y laterales), 3 HC-SR04, GPS UP501 (UART, ya probado en E1), monitor de batería, estado de seta | — | 2 cámaras NoIR (CSI), LiDAR (USB, fuera del mínimo) |
 | Enlace | USB nativo → micro-ROS | USB (CH340) → micro-ROS | — |
 | Watchdog | sin `/cmd_vel` por 300 ms → freno | sin comando por 300 ms → mantiene posición y frena | — |
 
@@ -179,6 +179,8 @@ J2 y J3 son de tornillo sin fin (irreversibles): al cortar potencia el brazo no 
 - Rama **lógica**: Buck 5 V/5 A dedicado a la Pi 5 (fuente oficial o equivalente), Buck 5–6 V separado para los servos.
 - Masa común en un único punto. Medir corriente pico con todos los motores arrancando.
 - Para el mínimo se puede usar **fuente de laboratorio** (la guía permite no depender de batería).
+- Batería real: 10S Li-ion de 36 V (30-42 V), 4400 mAh: motores por un buck 36 → 12 V de alta corriente y todos
+  los buck con entrada ≥ 45 V (ver `CONEXIONES.md`).
 
 ⚠ **L298N:** cae ~2,4–3 V (en E5, 9,6 V efectivos, ~140 rpm máx.). Medir corriente y temperatura con el brazo cargado; si calienta o no alcanza par, reemplazar por un segundo IBT-2 o un puente MOSFET pequeño.
 

@@ -19,18 +19,22 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
   centro a ~35 cm del suelo). 2 hundidos en la copa: oclusión parcial.
 - Con el robot centrado, los limones del lado del pasillo quedan a ~0,45 m del eje de J1 (la esfera de R1 está en
   r = 450 mm): el brazo sobre el chasis alcanza **19 de 21** (21 de 21 con el robot 5 cm más cerca de la fila).
-- 3 obstáculos en el pasillo (caja, balde, cono) en x = 2,05 / 3,55 / 5,05, entre las marcas de parada: hay que
-  esquivarlos, pero no tocan al robot parado en una marca ni al brazo (que al barrer J1 llega a ~0,66 m delante de
-  la marca). Marca de regreso en x = 7,5 m.
-- **Marcas de parada**: franjas blancas en el piso en x = 1,0 / 2,5 / 4,0 / 5,5 m, medio metro antes del tronco de
-  cada árbol izquierdo. Frenando con el centro del robot (eje de las ruedas) sobre una franja, los limones de ese
-  árbol quedan en la zona que ve el estéreo y al alcance del brazo.
+- 3 obstáculos en el pasillo (caja, balde, cono) en x = 2,0 / 3,5 / 5,0, entre las marcas de parada: hay que
+  esquivarlos (y volver al centro del pasillo antes de la marca), pero no tocan al robot parado en una marca ni al
+  brazo, que al barrer J1 llega a ~0,70 m delante de la marca. Marca de regreso en x = 7,5 m.
+- **Marcas de parada**: franjas blancas en el piso en x = 0,95 / 2,45 / 3,95 / 5,45 m, 0,55 m antes del tronco de
+  cada árbol izquierdo. Frenando con el eje de las ruedas de tracción (atrás) sobre una franja, los 3 limones de ese
+  árbol quedan en la zona que ve el estéreo y al alcance del brazo (calculado con la geometría de la base).
 - `spherical_coordinates` en la FIUNA (aproximado): `/gps/fix` da lat/lon reales; x = este, y = norte.
 
 ## Robot (`urdf/arturito.urdf.xacro`)
 
-Radio 0,05 m y trocha 0,30 m de `base_config.h`; chasis 0,50 × 0,24 × 0,15 m **supuesto (MEDIR)**. Tracción con el
-plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
+Base de la **R2 E3**: caja de madera en T de 40 cm de largo y 0,20 m de alto; **adelante** la parte ancha (40 × 23 cm,
+con el brazo), **atrás** la angosta (34 × 17 cm) con las ruedas de tracción en los rebajes. Ruedas inflables de 150 mm
+(radio 0,075 m) y trocha 0,40 m, como `base_config.h`; `base_link` en el eje de las ruedas, a 8,5 cm del borde
+trasero; dos ruedas locas bajo la parte ancha; 20 kg. Estimado (**MEDIR**): trocha, posición del eje y de las ruedas
+locas, altura de la caja sobre el piso (0,03 m: tapa a 0,23 m). Tracción con el plugin DiffDrive de Gazebo y los
+límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
 
 | Tópico | Tipo | Como el firmware |
 |---|---|---|
@@ -42,8 +46,8 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
 
 ## Brazo y pinza (etapa 2)
 
-- Montado en la **esquina delantera izquierda** del chasis, junto a las ruedas, a 0,20 m del piso; J1 = 0° mira al
-  frente, paralelo al costado. Posición supuesta (`brazo_x`, `brazo_y` en el xacro): MEDIR.
+- Montado **adelante a la izquierda**, sobre la parte ancha, a ~6 cm del frente y del costado (preliminar), sobre la
+  tapa (0,23 m del piso); J1 = 0° mira al frente, paralelo al costado.
 - El cuatro barras no entra en URDF (cadena cerrada): se simula la **cadena serie equivalente** (`j2` = q2, `j3o` =
   q3O) y `brazo_sim` convierte el q3 del actuador con `cinematica.py`. Verificado: la muñeca de la cadena serie cae
   donde la directa de la E4 (500 configuraciones). Cerca del pliegue del cuatro barras (q3O ≈ -131,7°, borde del
@@ -76,13 +80,15 @@ plugin DiffDrive de Gazebo y los límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m
   las articulaciones movidas por velocidad).
 - **Cámara** (`stereo_camera_link` + marco óptico `camera`, como `limon.launch.py`): mástil detrás del brazo, del lado
   izquierdo, a 0,55 m del piso, mirando 40° a la izquierda y 17° abajo (MEDIR; por qué ahí: ver etapa 3). La TF
-  brazo → cámara sale del urdf: acá no se usa `mision.launch.py`. `limones_sim` solo "ve" lo que el estéreo real
+  brazo → cámara sale del urdf: acá no se usa `mision.launch.py`. Mástil atrás a la izquierda, a (-0,06; 0,14) del
+  eje: la Pi 5 iría arriba con las cámaras (ver `docs/CONEXIONES.md`). `limones_sim` solo "ve" lo que el estéreo real
   podría localizar (u >= 271 px, 0,40-0,95 m).
 - 12 limones cosechables (3 por árbol de la fila izquierda, `limon_1..12` en el mundo); la fila derecha tiene limones
   fijos de decoración.
 - Reposo del brazo: q = (-60°, 45°, 0°), estacionado hacia la derecha (no tapa las cámaras).
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
-  izquierda: con el centro del robot sobre una **marca de parada** (x = 1,0 / 2,5 / 4,0 / 5,5 m), y frenar (`k`). Después la
+  izquierda: con el eje de las ruedas (atrás) sobre una **marca de parada** (x = 0,95 / 2,45 / 3,95 / 5,45 m), y
+  frenar (`k`). Después la
   misión sola: detecta quieto, aproxima, cierra, retira al reposo y suelta; y sigue con el siguiente limón visible.
 - Limitación: el limón soltado queda flotando en el reposo (sin gravedad); falta el cajón.
 
@@ -143,6 +149,7 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-29 | Base real de la R2 E3 (T de 40 cm, ruedas de 150 mm, trocha 0,40, brazo adelante a la izquierda a 6 cm de los bordes, mástil atrás a la izquierda) y marcas recalculadas: **12 de 12 limones cosechados** en las 4 paradas, TCP a 0,0-0,1 cm, base quieta. 30 pruebas `colcon test` | OK |
 | 2026-09-29 | Cuatro paradas (usuario: "la segunda no recoge", "la base se mueve", "el limón no queda en el centro"): la base se deslizaba con las ruedas frenadas por los impulsos del brazo (26 cm y 19° en una parada) y la odometría no se enteraba, así que la visión simulada erraba cada vez más; además la caja del pasillo tapaba la parada 2 y, movida a 1,75 m, el brazo le pegaba al barrer. Con perfil trapezoidal, masas del brazo al 5 %, pose real en `limones_sim` y obstáculos en 2,05 / 3,55 / 5,05: **10 de 12 limones cosechados en las 4 paradas**, TCP a 0,0-0,2 cm de cada limón, base quieta (0,0 cm, ≤ 0,01°). Los 2 restantes: uno fuera de alcance y uno fuera de la zona que ve el estéreo | OK |
 | 2026-09-29 | Herramienta horizontal y TCP: con `mision:=true`, inclinación de la pinza 0,0° en todo el movimiento; limón agarrado a 0,2 cm del TCP y, durante el retiro, a 0-1,2 cm del TCP (medido en el mismo instante de simulación; con DetachableJoint llegaba a 26 cm). 29 pruebas `colcon test` | OK |
 | 2026-09-28 | Con ventana (usuario), la misión no arrancaba: `/brazo/estado` tenía dos publicadores, `brazo_sim` y el ESP32 real del brazo (ARMADO, por la red desde la Pi). Aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`: único publicador `brazo_sim`, la misión cosecha de nuevo | OK |

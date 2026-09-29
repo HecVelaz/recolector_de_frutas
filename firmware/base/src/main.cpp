@@ -1,5 +1,5 @@
 // Firmware de la base (ESP32-S3): tracción diferencial en lazo cerrado, odometría, sensores (IMU, GPS,
-// 3 HC-SR04, 4 bumpers, batería) y seguridad local (seta, vuelco, contacto, distancia al frente, watchdog).
+// 3 HC-SR04, 3 bumpers, batería) y seguridad local (seta, vuelco, contacto, distancia al frente, watchdog).
 //
 // Esqueleto, primera versión: comandos por el monitor serial (115200). Más adelante la misma lógica se
 // comandará por micro-ROS (/cmd_vel -> /odom, /imu/data_raw, /range/*, /bumpers, /battery), cambiando solo
@@ -64,7 +64,7 @@ uint32_t ultimoCmdMs = 0;
 uint32_t ticksAtrasados = 0;
 
 struct Sensores {
-  bool bumper[4];
+  bool bumper[3];
   bool seta;
   float dist[3];     // frente, izq, der [m]
   float roll, pitch; // grados
@@ -72,7 +72,7 @@ struct Sensores {
   float bateria;     // V
   bool imuValida;    // muestra de la IMU de hace menos de IMU_VALIDA_MS
 };
-Sensores sens = {{false, false, false, false}, false, {NAN, NAN, NAN}, 0, 0, {0, 0, 0}, {0, 0, 0}, NAN, false};
+Sensores sens = {{false, false, false}, false, {NAN, NAN, NAN}, 0, 0, {0, 0, 0}, {0, 0, 0}, NAN, false};
 float vAct = 0, wAct = 0;  // comando después de rampa y seguridad
 
 // CSV del comando log
@@ -101,7 +101,7 @@ void aplicarMotores(const float u[2], bool libre) {
   for (int i = 0; i < 2; i++) motor[i].setDuty((MOTOR_INVERTIDO[i] ? -u[i] : u[i]) / 100.0f);
 }
 
-const int PIN_BUMPER[4] = {PIN_BUMPER_FRENTE_IZQ, PIN_BUMPER_FRENTE_DER, PIN_BUMPER_ATRAS_IZQ, PIN_BUMPER_ATRAS_DER};
+const int PIN_BUMPER[3] = {PIN_BUMPER_FRENTE, PIN_BUMPER_IZQ, PIN_BUMPER_DER};
 
 // ---------------------------------------------------------------- tarea de control
 
@@ -129,8 +129,8 @@ void tareaControl(void *) {
 
     // Sensores (fuera de la sección crítica: I2C y GPIO)
     int64_t c[2] = {cuentas(0), cuentas(1)};
-    bool bump[4];
-    for (int k = 0; k < 4; k++) bump[k] = digitalRead(PIN_BUMPER[k]) == LOW;
+    bool bump[3];
+    for (int k = 0; k < 3; k++) bump[k] = digitalRead(PIN_BUMPER[k]) == LOW;
     const bool seta = digitalRead(PIN_SETA) == HIGH;  // contacto NC: HIGH = apretada o cable cortado
     MPU9250::Vec3 acc{0, 0, 0}, gyro{0, 0, 0};
     bool imuNueva = false;
@@ -158,7 +158,7 @@ void tareaControl(void *) {
     portENTER_CRITICAL(&mux);
     const uint32_t ahora = millis();
     if (atrasado) ticksAtrasados++;
-    for (int k = 0; k < 4; k++) sens.bumper[k] = bump[k];
+    for (int k = 0; k < 3; k++) sens.bumper[k] = bump[k];
     sens.seta = seta;
     for (int k = 0; k < 3; k++) sens.dist[k] = ultrasonido.distancia(k);
     sens.roll = roll;
@@ -185,7 +185,7 @@ void tareaControl(void *) {
       default: dif.reiniciarRampa(); break;
     }
     const float vPedida = v, wPedida = w;
-    const EntradasSeguridad in = {{bump[0], bump[1], bump[2], bump[3]}, sens.dist[0], seta, roll, pitch,
+    const EntradasSeguridad in = {{bump[0], bump[1], bump[2]}, sens.dist[0], seta, roll, pitch,
                                   ahora - ultimoCmdMs, sens.bateria, sens.imuValida};
     const bool puede = seg.filtrar(in, v, w);
     if (modo == Modo::Cmd) dif.fijarRampa(v, w);
@@ -334,8 +334,8 @@ void sensores() {
     else if (isinf(s.dist[k])) out->printf(" %s=libre", nom[k]);
     else out->printf(" %s=SIN ECO", nom[k]);
   }
-  out->printf("\nBumpers: FI=%d FD=%d AI=%d AD=%d | seta: %s | batería: ", s.bumper[0], s.bumper[1], s.bumper[2],
-                s.bumper[3], s.seta ? "APRETADA" : "suelta");
+  out->printf("\nBumpers: frente=%d izq=%d der=%d | seta: %s | batería: ", s.bumper[0], s.bumper[1], s.bumper[2],
+                s.seta ? "APRETADA" : "suelta");
   if (isfinite(s.bateria)) out->printf("%.2f V\n", s.bateria);
   else out->println("--");
 }
@@ -415,7 +415,7 @@ void ejecutar(char *linea) {
   } else if (!strcmp(cmd, "r")) {
     bool ok;
     portENTER_CRITICAL(&mux);
-    const EntradasSeguridad in = {{sens.bumper[0], sens.bumper[1], sens.bumper[2], sens.bumper[3]}, sens.dist[0],
+    const EntradasSeguridad in = {{sens.bumper[0], sens.bumper[1], sens.bumper[2]}, sens.dist[0],
                                   sens.seta, sens.roll, sens.pitch, 0, sens.bateria, sens.imuValida};
     ok = seg.rearmar(in);
     if (ok) {
@@ -541,7 +541,7 @@ void baseLeer(EstadoBase &e) {
   e.gyro[2] = sens.gyro.z;
   e.imuValida = sens.imuValida;
   for (int k = 0; k < 3; k++) e.dist[k] = sens.dist[k];
-  for (int k = 0; k < 4; k++) e.bumper[k] = sens.bumper[k];
+  for (int k = 0; k < 3; k++) e.bumper[k] = sens.bumper[k];
   e.seta = sens.seta;
   e.bateria = sens.bateria;
   e.seg = seg.estado();
@@ -571,7 +571,7 @@ void setup() {
   const bool okEnc = enc[0].begin(PIN_IZQ_ENC_A, PIN_IZQ_ENC_B, PCNT_UNIT_0) &&
                      enc[1].begin(PIN_DER_ENC_A, PIN_DER_ENC_B, PCNT_UNIT_1);
 
-  for (int k = 0; k < 4; k++) pinMode(PIN_BUMPER[k], INPUT_PULLUP);
+  for (int k = 0; k < 3; k++) pinMode(PIN_BUMPER[k], INPUT_PULLUP);
   pinMode(PIN_SETA, INPUT_PULLUP);
   const int ecos[3] = {PIN_US_ECHO_FRENTE, PIN_US_ECHO_IZQ, PIN_US_ECHO_DER};
   const bool okUs = ultrasonido.begin(PIN_US_TRIG, ecos, 3);

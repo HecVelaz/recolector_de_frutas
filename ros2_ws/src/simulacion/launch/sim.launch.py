@@ -58,7 +58,7 @@ def generate_launch_description():
         Node(package='robot_state_publisher', executable='robot_state_publisher',
              parameters=[{'robot_description': robot, 'use_sim_time': True}]),
         Node(package='ros_gz_sim', executable='create', output='screen',
-             arguments=['-topic', 'robot_description', '-name', 'arturito', '-z', '0.06']),
+             arguments=['-topic', 'robot_description', '-name', 'arturito', '-z', '0.08']),
         Node(package='ros_gz_bridge', executable='parameter_bridge', output='screen',
              parameters=[{'config_file': str(share / 'config' / 'puente.yaml'), 'use_sim_time': True}]),
         Node(package='simulacion', executable='brazo_sim', output='screen', parameters=[{'use_sim_time': True}]),

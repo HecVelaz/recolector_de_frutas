@@ -16,7 +16,7 @@ struct ConfigSeguridad {
 };
 
 struct EntradasSeguridad {
-  bool bumper[4];      // frente-izq, frente-der, atrás-izq, atrás-der (true = apretado)
+  bool bumper[3];      // frente, izquierda, derecha (true = apretado; R2 E3: 3 bumpers de madera con final de carrera)
   float distFrente;    // m; INFINITY = nada a la vista; NAN = sensor sin eco (desconectado o sin medir)
   bool seta;           // true = seta apretada (o cable cortado)
   float roll, pitch;   // grados

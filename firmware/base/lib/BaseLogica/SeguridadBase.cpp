@@ -44,12 +44,14 @@ bool SeguridadBase::filtrar(const EntradasSeguridad &in, float &v, float &w) {
   }
   estado_ = Estado::Ok;
 
-  // Contacto: solo se permite alejarse en línea recta (un giro puede seguir apretando contra el objeto)
-  const bool contactoAdelante = in.bumper[0] || in.bumper[1];
-  const bool contactoAtras = in.bumper[2] || in.bumper[3];
-  if (contactoAdelante || contactoAtras) w = 0.0f;
+  // Contacto: solo se permite alejarse en línea recta (un giro puede seguir apretando contra el objeto). Frente:
+  // no avanza. Laterales: sin giro (el costado barrería contra el objeto). Sin bumper trasero: el retroceso lo cuida
+  // el que maneja (o la Pi)
+  const bool contactoAdelante = in.bumper[0];
+  const bool contactoLado = in.bumper[1] || in.bumper[2];
+  if (contactoAdelante || contactoLado) w = 0.0f;
   bloqAdelante_ = contactoAdelante;
-  bloqAtras_ = contactoAtras;
+  bloqAtras_ = false;
 
   // Distancia al frente. Sin dato (sensor desconectado o sin medir todavía) no se avanza.
   // Cerca: tope de velocidad (un min(), así no se acumula con la rampa en pasos sucesivos).

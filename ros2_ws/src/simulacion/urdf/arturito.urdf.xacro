@@ -1,16 +1,25 @@
 <?xml version="1.0"?>
 <!-- Arturito R2D2 en Gazebo Harmonic: base diferencial con IMU y GPS + brazo RRR y pinza.
      Mismos marcos y tópicos que firmware/base: /cmd_vel, /odom (odom -> base_link), /imu/data_raw (imu_link),
-     /gps/fix (gps_link). Radio y trocha de firmware/base/include/base_config.h; el chasis es una suposición (MEDIR). -->
+     /gps/fix (gps_link). Base de la R2 E3: caja de madera en T, 40 cm de largo; adelante la parte ancha (40 x 23 cm,
+     donde va el brazo), atrás la angosta (34 x 17 cm) con las ruedas de tracción en rebajes de 3 cm; paredes de 18 cm.
+     Ruedas inflables de 150 mm (docs/fotos/rueda). Lo marcado MEDIR es estimado. -->
 <robot name="arturito" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:property name="radio" value="0.05"/>     <!-- CFG_DIF.radioRueda (MEDIR) -->
-  <xacro:property name="trocha" value="0.30"/>    <!-- CFG_DIF.trocha (MEDIR) -->
-  <xacro:property name="ancho_rueda" value="0.04"/>
-  <xacro:property name="largo" value="0.50"/>     <!-- chasis (MEDIR) -->
-  <xacro:property name="ancho" value="0.24"/>     <!-- entre las ruedas -->
-  <xacro:property name="alto" value="0.15"/>
-  <xacro:property name="r_rueda_loca" value="0.025"/>
+  <xacro:property name="radio" value="0.075"/>      <!-- CFG_DIF.radioRueda: 150 mm, inflable (MEDIR con el inflado) -->
+  <xacro:property name="trocha" value="0.40"/>      <!-- CFG_DIF.trocha: entre centros de rueda (MEDIR) -->
+  <xacro:property name="ancho_rueda" value="0.045"/>
+  <xacro:property name="eje_atras" value="0.085"/>  <!-- eje: ranura centrada en el lateral de 17 cm (R2 E3, Lateral_Ejes) -->
+  <xacro:property name="largo_angosto" value="0.17"/>
+  <xacro:property name="ancho_angosto" value="0.34"/>
+  <xacro:property name="largo_ancho" value="0.23"/>
+  <xacro:property name="ancho_ancho" value="0.40"/>
+  <xacro:property name="alto_caja" value="0.20"/>   <!-- paredes de 18 cm + base y tapa de 1 cm -->
+  <xacro:property name="piso" value="0.03"/>        <!-- base de la caja sobre el piso: ranura del eje de 5 cm, ~2-3 cm (MEDIR) -->
+  <xacro:property name="abajo" value="${piso - radio}"/>        <!-- base de la caja respecto de base_link -->
+  <xacro:property name="alto" value="${abajo + alto_caja}"/>    <!-- tapa respecto de base_link (0,23 m del piso) -->
+  <xacro:property name="frente" value="${largo_angosto - eje_atras + largo_ancho}"/>  <!-- frente respecto del eje -->
+  <xacro:property name="r_rueda_loca" value="0.03"/>
 
   <xacro:macro name="inercia_caja" params="m x y z">
     <inertial><mass value="${m}"/>
@@ -18,18 +27,29 @@
     </inertial>
   </xacro:macro>
 
-  <!-- base_link en el centro del eje de las ruedas (a la altura del radio) -->
+  <!-- base_link en el centro del eje de las ruedas de tracción (atrás), a la altura del radio -->
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 ${alto/2}"/>
-      <geometry><box size="${largo} ${ancho} ${alto}"/></geometry>
-      <material name="gris"><color rgba="0.5 0.5 0.55 1"/></material>
+      <origin xyz="${largo_angosto/2 - eje_atras} 0 ${abajo + alto_caja/2}"/>
+      <geometry><box size="${largo_angosto} ${ancho_angosto} ${alto_caja}"/></geometry>
+      <material name="gris"><color rgba="0.25 0.25 0.27 1"/></material>
+    </visual>
+    <visual>
+      <origin xyz="${frente - largo_ancho/2} 0 ${abajo + alto_caja/2}"/>
+      <geometry><box size="${largo_ancho} ${ancho_ancho} ${alto_caja}"/></geometry>
+      <material name="gris"/>
     </visual>
     <collision>
-      <origin xyz="0 0 ${alto/2}"/>
-      <geometry><box size="${largo} ${ancho} ${alto}"/></geometry>
+      <origin xyz="${largo_angosto/2 - eje_atras} 0 ${abajo + alto_caja/2}"/>
+      <geometry><box size="${largo_angosto} ${ancho_angosto} ${alto_caja}"/></geometry>
     </collision>
-    <xacro:inercia_caja m="20.0" x="${largo}" y="${ancho}" z="${alto}"/>
+    <collision>
+      <origin xyz="${frente - largo_ancho/2} 0 ${abajo + alto_caja/2}"/>
+      <geometry><box size="${largo_ancho} ${ancho_ancho} ${alto_caja}"/></geometry>
+    </collision>
+    <!-- 20 kg (MEDIR): madera, batería de 36 V, 2 motores de ~1 kg, drivers -->
+    <inertial><origin xyz="0.10 0 ${abajo + alto_caja/2}"/><mass value="20.0"/>
+      <inertia ixx="0.29" iyy="0.33" izz="0.53" ixy="0" ixz="0" iyz="0"/></inertial>
   </link>
 
   <xacro:macro name="rueda" params="lado signo">
@@ -43,8 +63,8 @@
         <origin rpy="${pi/2} 0 0"/>
         <geometry><cylinder radius="${radio}" length="${ancho_rueda}"/></geometry>
       </collision>
-      <inertial><mass value="0.6"/>
-        <inertia ixx="0.0004" iyy="0.00075" izz="0.0004" ixy="0" ixz="0" iyz="0"/>
+      <inertial><mass value="0.65"/>  <!-- 650 g por rueda -->
+        <inertia ixx="0.00102" iyy="0.00183" izz="0.00102" ixy="0" ixz="0" iyz="0"/>
       </inertial>
     </link>
     <joint name="rueda_${lado}_joint" type="continuous">
@@ -57,30 +77,30 @@
   <xacro:rueda lado="izq" signo="1"/>
   <xacro:rueda lado="der" signo="-1"/>
 
-  <!-- Ruedas locas adelante y atrás, sin fricción -->
-  <xacro:macro name="rueda_loca" params="nombre x">
+  <!-- Dos ruedas locas bajo la parte ancha (adelante), sin fricción (MEDIR la posición) -->
+  <xacro:macro name="rueda_loca" params="nombre y">
     <link name="${nombre}">
       <visual><geometry><sphere radius="${r_rueda_loca}"/></geometry><material name="negro"/></visual>
       <collision><geometry><sphere radius="${r_rueda_loca}"/></geometry></collision>
-      <inertial><mass value="0.1"/><inertia ixx="2.5e-5" iyy="2.5e-5" izz="2.5e-5" ixy="0" ixz="0" iyz="0"/></inertial>
+      <inertial><mass value="0.1"/><inertia ixx="4e-5" iyy="4e-5" izz="4e-5" ixy="0" ixz="0" iyz="0"/></inertial>
     </link>
     <joint name="${nombre}_joint" type="fixed">
       <parent link="base_link"/>
       <child link="${nombre}"/>
-      <origin xyz="${x} 0 ${r_rueda_loca - radio}"/>
+      <origin xyz="${frente - 0.05} ${y} ${r_rueda_loca - radio}"/>
     </joint>
     <gazebo reference="${nombre}"><mu1>0.0</mu1><mu2>0.0</mu2></gazebo>
   </xacro:macro>
-  <xacro:rueda_loca nombre="rueda_loca_del" x="${largo/2 - 0.04}"/>
-  <xacro:rueda_loca nombre="rueda_loca_tras" x="${-largo/2 + 0.04}"/>
+  <xacro:rueda_loca nombre="rueda_loca_izq" y="0.13"/>
+  <xacro:rueda_loca nombre="rueda_loca_der" y="-0.13"/>
 
   <link name="imu_link"/>
   <joint name="imu_joint" type="fixed">
-    <parent link="base_link"/><child link="imu_link"/><origin xyz="0 0 0.05"/>
+    <parent link="base_link"/><child link="imu_link"/><origin xyz="0.10 0 ${abajo + 0.03}"/>
   </joint>
   <link name="gps_link"/>
   <joint name="gps_joint" type="fixed">
-    <parent link="base_link"/><child link="gps_link"/><origin xyz="-0.15 0 ${alto + 0.05}"/>
+    <parent link="base_link"/><child link="gps_link"/><origin xyz="0 -0.10 ${alto + 0.05}"/>
   </joint>
 
   <gazebo reference="imu_link">
@@ -128,13 +148,13 @@
   </gazebo>
 
   <!-- ===================== Brazo (etapa 2) =====================
-       Montado en la esquina delantera izquierda del chasis, junto a las ruedas; J1 = 0° mira al frente, paralelo al
-       costado (MEDIR la posición real). Medidas de la E4 (brazo_ik/cinematica.py). El cuatro barras se simula como
+       Montado adelante a la izquierda, sobre la parte ancha, a ~6 cm del frente y del costado (preliminar); J1 = 0°
+       mira al frente, paralelo al costado. Medidas de la E4 (brazo_ik/cinematica.py). El cuatro barras se simula como
        la cadena serie equivalente: j2 = q2 (hombro) y j3o = q3O (antebrazo respecto de la prolongación de l2);
        brazo_sim convierte el actuador q3 <-> q3O. Articulaciones movidas por velocidad (JointPositionController con
        use_velocity_commands): la gravedad no las afloja, como el sin fin de J2/J3. -->
-  <xacro:property name="brazo_x" value="${largo/2 - 0.05}"/>  <!-- MEDIR -->
-  <xacro:property name="brazo_y" value="${ancho/2 - 0.04}"/>  <!-- MEDIR -->
+  <xacro:property name="brazo_x" value="${frente - 0.06}"/>  <!-- adelante a la izquierda, a ~6 cm de cada borde (MEDIR) -->
+  <xacro:property name="brazo_y" value="${ancho_ancho/2 - 0.06}"/>
   <!-- Masas del brazo al 5 %: las articulaciones se mueven por velocidad (fuerza ilimitada) y, con las masas reales,
        cada movimiento hacía deslizar la base con las ruedas frenadas (~2-7 cm y 1,5-5° por movimiento). El brazo se
        controla cinemáticamente (brazo_sim), así que su masa no se usa para nada más -->
@@ -259,8 +279,8 @@
     <xacro:control_posicion joint="dedo_der_joint" topico="/sim/dedo_der" ini="0.045" ganancia="10"/>
   </gazebo>
   <!-- ===================== Cámaras y agarre (etapa 4) =====================
-       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil detrás del brazo, del lado izquierdo,
-       a 0,55 m del piso, mirando 40° a la izquierda y 17° hacia abajo (MEDIR con el soporte rígido). El estéreo solo
+       stereo_camera_link = cámara izquierda (x adelante, z arriba), en un mástil atrás a la izquierda (detrás del
+       brazo), a 0,55 m del piso, mirando 40° a la izquierda y 17° hacia abajo (MEDIR con el soporte rígido). El estéreo solo
        localiza en la parte derecha de la imagen izquierda (u >= 271 px: con disparidad mínima 112 y rango 160, más a
        la izquierda la búsqueda se sale de la imagen derecha): con el robot a x ~ 1 m, los 3 limones del árbol 1 caen
        ahí, a 0,4-0,95 m y al alcance del brazo, y el brazo estacionado hacia la derecha queda fuera de la vista.
@@ -271,7 +291,7 @@
   <link name="stereo_camera_link"/>
   <joint name="stereo_camera_joint" type="fixed">
     <parent link="base_link"/><child link="stereo_camera_link"/>
-    <origin xyz="-0.20 0.08 ${alto + 0.35}" rpy="0 0.30 ${radians(40)}"/>
+    <origin xyz="-0.06 ${brazo_y} ${0.55 - radio}" rpy="0 0.30 ${radians(40)}"/>
   </joint>
   <link name="camera"/>
   <joint name="camera_optical_joint" type="fixed">

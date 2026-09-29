@@ -28,7 +28,7 @@ struct EstadoBase {
   float acc[3], gyro[3];      // [g], [°/s]
   bool imuValida;
   float dist[3];              // frente, izq, der [m]
-  bool bumper[4];
+  bool bumper[3];  // frente, izquierda, derecha
   bool seta;
   float bateria;              // V
   SeguridadBase::Estado seg;

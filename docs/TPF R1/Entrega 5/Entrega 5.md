@@ -70,17 +70,22 @@ Sin embargo, tiene claras desventajas porque no compensa perturbaciones. Como se
 | **Motor Articulación** | ESP32-WROOM + Driver L298N (PWM a 1 kHz) + Motor 5840-31ZY (sin fin, encoder óptico 1000 PPR / 4000 CPR). |
 | **Alimentación** | Fuente de laboratorio a 12 V con límite de corriente en 3 A (base) y 2 A (articulación). |
 
-### 2.2 Consideraciones eléctricas críticas
+### 2.2 Consideraciones eléctricas
 
 * **Protección de entradas GPIO:** El encoder óptico (NPN colector abierto) se alimenta con 5 V pero conmuta a GND. El nivel alto lo fijan los *pull-ups* internos del ESP32 a 3.3 V para evitar sobretensiones.
 * **Niveles lógicos IBT-2:** $V_{CC}$ del driver conectado a 3.3 V para acople directo con las salidas del ESP32-S3.
-* **Control L298N:** Jumper de `ENA` retirado y controlado por GPIO (nivel alto constante) para forzar el modo **Freno**.
+* **Control L298N:** Jumper de `ENA` retirado y controlado por GPIO (nivel alto constante) para forzar el modo Freno.
 ---
+
+
+
+
 
 # 3. Código de control de motores
 
+
+
 ### 3.1 Organización y estructura
-El código está en el repositorio del grupo, organizado con un proyecto de PlatformIO por prueba. Los drivers se implementaron como bibliotecas propias, sin pines fijos ni dependencias de Serial, para poder reutilizarlas directamente en el lazo cerrado.
 
 | Proyecto | Archivo Principal | Contenido y Funcionalidad |
 | :--- | :--- | :--- |
@@ -89,13 +94,11 @@ El código está en el repositorio del grupo, organizado con un proyecto de Plat
 | | lib/EncoderPCNT/ | Encoder en cuadratura x4 por PCNT. |
 | | tools/graficar.py | Ejecuta pruebas desde PC, guarda CSV/PNG y calcula K, zona muerta y tau. |
 | 07-motor-rampa-vueltas | src/main.cpp y rampa.py | Rampa de PWM que termina a N vueltas; comparación sin carga vs con carga. |
-| 08-motor-5840-l298n | src/main.cpp y lib/L298N/ | Mismo firmware y análisis adaptados al L298N y al ESP32 clásico. |
+| 08-motor-5840-l298n | src/main.cpp y lib/L298N/ | Mismo firmware y análisis adaptados al L298N y al ESP32. |
 
 
+Motor base (`06-motor-36gp555/include/pins.h` y `motor_config.h`):
 
-### 3.2 Pines y configuración del motor base (`06-motor-36gp555`)
-
-**Archivo:** `src/motor_config.h` (Asignación de pines)
 ```cpp
 #pragma once
 
@@ -105,39 +108,31 @@ El código está en el repositorio del grupo, organizado con un proyecto de Plat
 // así se pueden conectar todos juntos más adelante. GPIO4-7 y 15/16 son de la cámara, que no se usa.
 
 // Driver IBT-2 (doble BTS7960). Su VCC va a 3V3 del ESP32 (ver README).
-constexpr int PIN_RPWM = 4;  // PWM del medio puente derecho: motor hacia adelante
-constexpr int PIN_LPWM = 5;  // PWM del medio puente izquierdo: motor hacia atrás
-constexpr int PIN_R_EN = 6;  // habilitación del medio puente derecho
-constexpr int PIN_L_EN = 7;  // habilitación del medio puente izquierdo
+constexpr int PIN_RPWM = 4;  // PWM del medio puente derecho: motor hacia adelante
+constexpr int PIN_LPWM = 5;  // PWM del medio puente izquierdo: motor hacia atrás
+constexpr int PIN_R_EN = 6;  // habilitación del medio puente derecho
+constexpr int PIN_L_EN = 7;  // habilitación del medio puente izquierdo
 // R_IS y L_IS (sensado de corriente) sin conectar.
 
 // Encoder Hall del motor (fases A y B), alimentado con 3V3.
 constexpr int PIN_ENC_A = 15;
 constexpr int PIN_ENC_B = 16;
-
-**Archivo:** `src/motor_config.h` (Parámetros y límites)
-
+```
 
 ```cpp
 constexpr float REDUCCION = 50.0f;
-constexpr float ENCODER_PPR = 16.0f;  // pulsos por vuelta del eje del motor, por fase (dato del vendedor)
-constexpr float ENCODER_X = 4.0f;     // se cuentan los flancos de subida y bajada de A y de B
+constexpr float ENCODER_PPR = 16.0f;  // pulsos por vuelta del eje del motor, por fase (dato del vendedor)
+constexpr float ENCODER_X = 4.0f;     // se cuentan los flancos de subida y bajada de A y de B
 constexpr bool ENCODER_INVERTIDO = false;
 constexpr uint32_t PWM_FREQ_HZ = 20000;
-constexpr uint8_t PWM_BITS = 10;  // 0..1023
-constexpr float RAMPA_PCT_S = 50.0f;    // cambio máximo del duty: 0 -> 100 % en 2 s
+constexpr uint8_t PWM_BITS = 10;  // 0..1023
+constexpr float RAMPA_PCT_S = 50.0f;    // cambio máximo del duty: 0 -> 100 % en 2 s
 constexpr float ATASCO_DUTY_PCT = 40.0f;
 constexpr float ATASCO_RPM = 300.0f;
 constexpr uint32_t ATASCO_MS = 1000;
-
 ```
 
-
-
-###3.3 Pines y configuración motor articulación (`08-motor-5840-l298n`)
-**Archivo**: `src/motor_config.h` (Asignación de pines)
-
-
+Motor articulación (`08-motor-5840-l298n/include/pins.h` y `motor_config.h`):
 
 ```cpp
 #pragma once
@@ -146,42 +141,32 @@ constexpr uint32_t ATASCO_MS = 1000;
 // Evitar: GPIO6-11 (flash), 0/2/5/12/15 (strapping), 1/3 (UART0 = USB), 34-39 (solo entrada y sin pull-up).
 
 // Driver L298N, canal A (OUT1/OUT2)
-constexpr int PIN_ENA = 25;  // PWM: velocidad. Sacar el jumper de ENA y conectar el pin de señal (no el de 5 V)
-constexpr int PIN_IN1 = 26;  // sentido
-constexpr int PIN_IN2 = 27;  // sentido
+constexpr int PIN_ENA = 25;  // PWM: velocidad. Sacar el jumper de ENA y conectar el pin de señal (no el de 5 V)
+constexpr int PIN_IN1 = 26;  // sentido
+constexpr int PIN_IN2 = 27;  // sentido
 
 // Encoder incremental externo 38S6G5-B-G24N (NPN colector abierto): necesita pull-up a 3V3
-constexpr int PIN_ENC_A = 32;  // cable blanco
-constexpr int PIN_ENC_B = 33;  // cable verde
+constexpr int PIN_ENC_A = 32;  // cable blanco
+constexpr int PIN_ENC_B = 33;  // cable verde
 ```
-
-
-
-**Archivo**: `src/motor_config.h` (Parámetros y límites)
-
 
 ```cpp
 constexpr float REDUCCION = 1.0f;
-constexpr float ENCODER_PPR = 1000.0f;  // pulsos por vuelta, por fase
-constexpr float ENCODER_X = 4.0f;       // flancos de A y B: 4000 cuentas por vuelta de salida
+constexpr float ENCODER_PPR = 1000.0f;  // pulsos por vuelta, por fase
+constexpr float ENCODER_X = 4.0f;       // flancos de A y B: 4000 cuentas por vuelta de salida
 constexpr bool ENCODER_INVERTIDO = true;
 constexpr L298N::Modo PWM_MODO = L298N::Modo::Freno;
 constexpr uint32_t PWM_FREQ_HZ = 1000;
-constexpr uint8_t PWM_BITS = 10;  // 0..1023
-constexpr float RAMPA_PCT_S = 50.0f;  // 0 -> 100 % en 2 s
+constexpr uint8_t PWM_BITS = 10;  // 0..1023
+constexpr float RAMPA_PCT_S = 50.0f;  // 0 -> 100 % en 2 s
 constexpr float ATASCO_DUTY_PCT = 50.0f;
 constexpr float ATASCO_RPM = 5.0f;
 constexpr uint32_t ATASCO_MS = 1000;
 ```
 
-
-
 ### 3.4 Aplicación del PWM
 
-**Driver IBT-2 (motor base)**
-Para el control del motor base, el sentido de giro y la velocidad se comandan dividiendo el ciclo de trabajo (*duty cycle*) en dos pines. Un *duty* positivo aplica la señal PWM en el pin `RPWM` (avance), un *duty* negativo la aplica en `LPWM` (retroceso), y un valor de 0 actúa como freno.
 
-Por cuestiones de seguridad, la lógica implementada garantiza que siempre se apague primero el medio puente que no corresponde. De esta manera, se evita por completo la posibilidad de tener ambos pines PWM activos de forma simultánea.
 
 **Archivo:** `lib/BTS7960/BTS7960.cpp`
 ```cpp
@@ -206,8 +191,6 @@ bool BTS7960::setDuty(float duty) {
   return true;
 }
 ```
-**Driver L298N (motor de la articulación)**
-La biblioteca implementa dos modos. Se utiliza el modo **Freno**: `ENA` se mantiene en alto y el PWM se aplica a `IN1` (adelante) o `IN2` (atrás). Al frenar en la parte apagada del ciclo, la velocidad resulta proporcional al *duty*. El modo **Rueda Libre** (PWM en `ENA`) se descartó por saturar la curva de respuesta. Al invertir el sentido, el pin inactivo pasa a bajo inmediatamente para evitar pulsos parásitos.
 
 **Archivo:** `lib/L298N/L298N.cpp`
 ```cpp
@@ -257,7 +240,8 @@ bool L298N::setDuty(float duty) {
 
 ### 3.5 Lectura del encoder por PCNT
 
-Lectura en cuadratura x4 usando el periférico PCNT. Cada canal cuenta los flancos de una fase y lee el nivel de la otra para determinar el sentido.
+
+
 
 **Archivo:** `lib/EncoderPCNT/EncoderPCNT.cpp`
 ```cpp
@@ -294,19 +278,14 @@ bool EncoderPCNT::begin(int pinA, int pinB, pcnt_unit_t unit, uint32_t filterNs)
 
 ### 3.6 Perfil en escalera (lazo abierto)
 
-Se definen niveles escalonados y tiempos por defecto para las pruebas de respuesta en distintos ciclos de trabajo.
+
 
 **Archivo:** `06-motor-36gp555/src/main.cpp`
 ```cpp
 constexpr uint32_t PERFIL_SEG_MS_DEF = 5000;
 constexpr float PERFIL_NIVELES_DEF[] = {20, 40, 60, 80, 100};
 constexpr uint32_t PERFIL_PARADA_MS = 1000;  // freno entre la mitad positiva y la negativa
-```
-El perfil avanza automáticamente cada 10 ms e imprime los datos (`t_ms,duty_pct,cuentas`). Al invertir el sentido, frena hasta que el motor se detiene por completo. El PWM aplicado es independiente de las lecturas, operando estrictamente en lazo abierto.
 
-
-
-```cpp
 void pasoPerfil() {
   const uint32_t t = micros();
   Serial.printf("%lu,%.1f,%lld\n", (unsigned long)((t - perfilInicioUs) / 1000), dutyAct,
@@ -351,7 +330,8 @@ void pasoPerfil() {
 
 ### 3.7 Rampa por vueltas (motor base, con y sin carga)
 
-El PWM aumenta linealmente en el tiempo cada 10 ms. El encoder se utiliza únicamente para detener la prueba al alcanzar las vueltas deseadas o para cortar el PWM como medida de seguridad si detecta un atasco.
+
+
 
 **Archivo:** `07-motor-rampa-vueltas/src/main.cpp`
 ```cpp
@@ -399,6 +379,8 @@ void pasoRampa() {
 
 El script `tools/graficar.py perfil` separa los tramos de PWM constante y, en cada uno, ajusta a la velocidad un modelo de primer orden usando `scipy.optimize.curve_fit`. De este ajuste se obtiene la constante de tiempo $\tau$:
 
+
+
 **Archivo:** `tools/graficar.py`
 ```python
 def ajustar_primer_orden(ts, v):
@@ -426,9 +408,7 @@ La ganancia $K$ y la zona muerta se calculan a partir de una recta ajustada a la
 k, b = np.polyfit(x[gira], y[gira], 1)
 zona = -b / k if k else float("nan")
 
-### 3.9 Cómo reproducir las pruebas
 
-A continuación se detallan los comandos para compilar, subir el firmware y ejecutar los scripts de adquisición de datos para ambos motores:
 
 ```bash
 # Motor base (ESP32-S3). Con los 12 V apagados al flashear:
@@ -448,7 +428,7 @@ cd ../08-motor-5840-l298n
 ~/.platformio/penv/bin/pio run -t upload
 python3 tools/graficar.py perfil
 
-# 4. Resultados y Caracterización
+# 4. Resultados
 
 ### 4.1 Caracterización de los motores en lazo abierto
 
@@ -493,12 +473,6 @@ El análisis dinámico de ambos actuadores se realizó mediante ensayos de barri
 
 - **Efecto de la carga:** La incorporación de par resistente desplaza en paralelo la respuesta ($21\text{ rpm}$ menos a medio ciclo), eleva el umbral de arranque a $25\%$ PWM e incrementa el tiempo de posicionamiento de $2{,}99\text{ s}$ a $3{,}42\text{ s}$ para completar 3 vueltas.
 
- **Registros audiovisual de ensayos (YouTube):**
-
-[![Prueba](https://img.youtube.com/vi/OZjjWf5ewQA/0.jpg)](https://www.youtube.com/watch?v=OZjjWf5ewQA)
-
-- [Ver ensayo de rampa con carga - Motor Base](https://www.youtube.com/watch?v=URL_VIDEO_BASE_CONCARGA)
-
 ---
 
 #### Motor Articulación (5840-31ZY + L298N)
@@ -516,8 +490,6 @@ El análisis dinámico de ambos actuadores se realizó mediante ensayos de barri
 - **Modo Freno vs. Rueda Libre:** La conmutación en las entradas `IN1`/`IN2` (modo Freno) corrigió la saturación prematura observada con PWM en `ENA`, logrando una respuesta lineal entre $40\%$ y $100\%$ ($K \approx 1{,}33\text{ rpm/\%}$, $\tau \approx 59\text{ ms}$).
 - **Fricción y limitaciones:** La alta fricción del mecanismo de tornillo sin fin fija la zona muerta de arranque entre $20\%$ y $40\%$ PWM. La velocidad máxima queda acotada a $\sim 140\text{ rpm}$ debido a la caída de tensión en los transistores BJT del L298N ($\sim 9{,}6\text{ V}$ efectivos).
 
- **Registro audiovisual de ensayos (YouTube):**
--  [Ver ensayo de perfil en escalera - Motor Articulación](https://www.youtube.com/watch?v=URL_VIDEO_ARTICULACION)
 
 ---
 
@@ -527,7 +499,7 @@ $$G_{\text{base}}(s) \approx \frac{1{,}58}{0{,}065s + 1} \quad (20\% \le \vert{}
 
 ---
 
-### 4.2 Resumen comparativo
+### Resumen comparativo
 
 | Parámetro | Motor base (36GP-555 + IBT-2) | Motor articulación (5840-31ZY + L298N) |
 |---|---|---|
@@ -538,33 +510,22 @@ $$G_{\text{base}}(s) \approx \frac{1{,}58}{0{,}065s + 1} \quad (20\% \le \vert{}
 | **Constante de tiempo ($\tau$)**| 65 ms | 59 ms |
 | **Simetría y Repetibilidad** | Error < 2,5 rpm / ±1,5 rpm | Error < 5 rpm / ±5 rpm |
 
----
 
-### 4.3 Problemas encontrados y soluciones
-
-| Problema | Causa raíz | Solución / Estado |
-|---|---|---|
-| **Pines flotantes en arranque** | Entradas `EN` flotan durante el boot del ESP32 | Parada por software en inicio + pull-down $10\text{ k}\Omega$ a GND |
-| **Saturación en L298N** | Conmutación en modo Rueda Libre (PWM en ENA) | Migración a modo Freno (PWM en IN1/IN2 con ENA activo) |
-| **Caída de RPM con carga** | Par resistente no compensado | Requiere control en lazo cerrado |
-| **Corte de la fuente** | Límite de protección por corriente bajo | Ajuste de corriente máxima en la fuente a $3\text{ A}$ |
 
 ---
+ ### 4.2 Registros audiovisual de ensayos (YouTube):
 
-### 4.4 Conclusiones
+[![Ver video](https://img.youtube.com/vi/OZjjWf5ewQA/hqdefault.jpg)](https://www.youtube.com/watch?v=OZjjWf5ewQA)
 
-Se caracterizaron ambos actuadores mediante modelos de primer orden con $\tau \approx 60\text{ ms}$. Las pruebas confirmaron la vulnerabilidad del lazo abierto: la carga redujo la velocidad en $21\text{ rpm}$ al $50\%$ PWM e incrementó la zona muerta del $16\%$ al $25\%$. Asimismo, se verificó que la conmutación en modo Freno es indispensable para linealizar la respuesta del driver L298N.
+- [Ver ensayo de rampa sin carga - Motor Base](https://www.youtube.com/watch?v=OZjjWf5ewQA)
 
----
+[![Ver video](https://img.youtube.com/vi/ROGtw1KI-i8/hqdefault.jpg)](https://www.youtube.com/watch?v=ROGtw1KI-i8)
 
-### 4.5 Próximo paso: Control PI + Feedforward
+- [Ver ensayo de rampa con carga](https://www.youtube.com/watch?v=ROGtw1KI-i8)
 
-Diseño del lazo discreto ($T_s = 10\text{ ms}$) cancelando el polo del motor ($T_i = \tau$) para fijar un tiempo de respuesta en lazo cerrado de $0{,}1\text{ s}$:
+[![Ver video](https://img.youtube.com/vi/p8SSlHjaULA/hqdefault.jpg)](https://www.youtube.com/watch?v=p8SSlHjaULA)
 
-$$u(t) = \text{sgn}(\omega_{\text{ref}})\cdot u_0 + \frac{\omega_{\text{ref}}}{K} + K_p \cdot e(t) + K_i \int e(t)\,dt$$
-
-- **Motor base:** $K_p \approx 0{,}41\ \%/\text{rpm}$, $K_i \approx 6{,}3\ \%/(\text{rpm}\cdot\text{s})$
-- **Motor articulación:** $K_p \approx 0{,}44\ \%/\text{rpm}$, $K_i \approx 7{,}5\ \%/(\text{rpm}\cdot\text{s})$
+- [Ver Resultados de la prueba en lazo abierto](https://www.youtube.com/watch?v=p8SSlHjaULA)
 
 ---
 
@@ -573,23 +534,13 @@ $$u(t) = \text{sgn}(\omega_{\text{ref}})\cdot u_0 + \frac{\omega_{\text{ref}}}{K
 
 [2] STMicroelectronics, *L298 Dual Full-Bridge Driver*, hoja de datos.
 
-[3] Espressif Systems, *ESP-IDF Programming Guide v4.4: Pulse Counter (PCNT)*. Disponible en: <https://docs.espressif.com/projects/esp-idf/en/v4.4/esp32s3/api-reference/peripherals/pcnt.html>.
+[3] Espressif Systems, ejemplo *rotary_encoder* de ESP-IDF v4.4. Disponible en: <https://github.com/espressif/esp-idf/tree/v4.4/examples/peripherals/pcnt/rotary_encoder>.
 
-[4] Espressif Systems, *ESP-IDF Programming Guide v4.4: LED Control (LEDC)*. Disponible en: <https://docs.espressif.com/projects/esp-idf/en/v4.4/esp32s3/api-reference/peripherals/ledc.html>.
+[4] PlatformIO, *Espressif 32 — PlatformIO documentation*. Disponible en: <https://docs.platformio.org/en/latest/platforms/espressif32.html>.
 
-[5] Espressif Systems, ejemplo *rotary_encoder* de ESP-IDF v4.4. Disponible en: <https://github.com/espressif/esp-idf/tree/v4.4/examples/peripherals/pcnt/rotary_encoder>.
-
-[6] PlatformIO, *Espressif 32 — PlatformIO documentation*. Disponible en: <https://docs.platformio.org/en/latest/platforms/espressif32.html>.
-
-[7] K. Ogata, *Ingeniería de control moderna*, 5.ª ed. Madrid: Pearson, 2010 (sistemas de primer orden y controladores PID).
-
-[8] Naylamp Mechatronics, “Ejemplos_L298N”, GitHub. Disponible en: <https://github.com/naylampmechatronics/Ejemplos_L298N>.
-
-[9] **Proyectos Robóticos**, *Control PID para Arduino*. Disponible en: <https://sites.google.com/site/proyectosroboticos/control-de-motores/control-pid-mejorado?authuser=0>.
+[5] Naylamp Mechatronics, “Ejemplos_L298N”, GitHub. Disponible en: <https://github.com/naylampmechatronics/Ejemplos_L298N>.
 
 ---
 ### **6. Carpeta del proyecto**
-Carpeta del grupo E2:
-[TPF - Estación 2](https://drive.google.com/drive/folders/1JggH_t1V1V1kcT6KU79V80s9d-Px1JNs?usp=sharing)
-
-Código fuente, CSV y gráficos de esta entrega: [github.com/HecVelaz/pruebas-esp32](https://github.com/HecVelaz/pruebas-esp32) (carpetas `06-motor-36gp555`, `07-motor-rampa-vueltas` y `08-motor-5840-l298n`).
+En el link se encuentra la carpeta del proyecto.
+[TPF R1 Grupo 2](https://drive.google.com/drive/folders/1d2jONLnkB8FMkP2iqF4ia4UeQ2jRpffz)

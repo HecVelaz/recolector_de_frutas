@@ -215,7 +215,7 @@ void alTimer(rcl_timer_t *t, int64_t) {
       ignorar(rcl_publish(&pubRango[k], &rangoMsg[k], nullptr));
     }
     bumpersMsg.data = 0;
-    for (int k = 0; k < 4; k++) bumpersMsg.data |= e.bumper[k] ? (1u << k) : 0;
+    for (int k = 0; k < 3; k++) bumpersMsg.data |= e.bumper[k] ? (1u << k) : 0;  // bit 0 frente, 1 izq, 2 der
     ignorar(rcl_publish(&pubBumpers, &bumpersMsg, nullptr));
   }
 

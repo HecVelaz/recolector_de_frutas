@@ -28,7 +28,8 @@ por Codex (9 hallazgos, aplicados). **No probado en placa.** Los valores marcado
 | Seta apretada (o cable cortado: contacto NC) | EMERGENCIA: puentes deshabilitados (EN = 0) | Soltar la seta y `r` |
 | Roll o pitch > 25° | VUELCO: frena | Nivelar la base y `r` |
 | IMU sin muestras por más de 200 ms (o sin responder al arrancar) | No se mueve: sin IMU no se puede vigilar el vuelco | Solo, al volver los datos |
-| Bumper delantero / trasero | Solo se permite alejarse **en línea recta** (sin giro) | Solo, al soltarse |
+| Bumper del frente | No avanza; solo se permite alejarse **en línea recta** (sin giro) | Solo, al soltarse |
+| Bumper lateral (izquierdo o derecho) | Sin giro (el costado barrería contra el objeto); recto sí | Solo, al soltarse |
 | Ultrasonido del frente sin eco (desconectado o sin medir) | No avanza; retroceder y girar sí | Solo, al volver el eco |
 | Obstáculo al frente < 0,20 m | No avanza | Solo |
 | Obstáculo al frente entre 0,20 y 0,50 m | Tope de velocidad que baja linealmente hasta 0 | Solo |
@@ -56,7 +57,7 @@ micro-ROS (usar `ros2 bag record`).
 | `/odom` | `nav_msgs/Odometry` | sale, 25 Hz | `odom` → `base_link` |
 | `/imu/data_raw` | `sensor_msgs/Imu` | sale, 50 Hz | m/s² y rad/s, sin orientación (para `imu_filter_madgwick`) |
 | `/range/frente`, `/range/izq`, `/range/der` | `sensor_msgs/Range` | sale, 10 Hz | +Inf = nada al alcance; NaN = sin eco (REP-117) |
-| `/bumpers` | `std_msgs/UInt8` | sale, 10 Hz | bits 0..3: frente-izq, frente-der, atrás-izq, atrás-der |
+| `/bumpers` | `std_msgs/UInt8` | sale, 10 Hz | bits 0..2: frente, izquierda, derecha (3 bumpers, R2 E3) |
 | `/gps/fix` | `sensor_msgs/NavSatFix` | sale, ~1 Hz | un mensaje por epoch; covarianza aproximada por HDOP; altitud elipsoidal o NaN |
 | `/battery` | `sensor_msgs/BatteryState` | sale, 1 Hz | tensión |
 | `/base/estado` | `std_msgs/String` | sale, 2 Hz | modo, seguridad, bloqueos, IMU y fallas |
@@ -101,8 +102,8 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
       marcar la rueda, girarla a mano 10 vueltas hacia adelante y leer `vueltas` en `e`: si no da 10,
       valor nuevo = 8316 × 10 / vueltas leídas. Después identificar `K`, `tau` y la zona muerta (`log` + `d`).
 - [ ] Sentido de motores y encoders (`MOTOR_INVERTIDO`, `ENC_INVERTIDO`).
-- [ ] Radio de rueda y trocha (`CFG_DIF`).
-- [ ] Umbral de batería según la química.
+- [ ] Radio de rueda y trocha (`CFG_DIF`): hoy 0,075 m (rueda de 150 mm) y 0,40 m (estimada), medir con cinta.
+- [x] Umbral de batería: batería 10S de 36 V (30-42 V): aviso a 32 V; divisor 120 k / 8,2 k (29/09).
 - [ ] Detección de "plataforma levantada" (H9): la IMU sola no la distingue bien.
 - [ ] Probar la capa micro-ROS con sensores y motores (en la placa sola ya anda; ver Resultados).
 - [ ] Rearmar (`r`) exige IMU con datos: sin la IMU conectada no se puede probar el movimiento.

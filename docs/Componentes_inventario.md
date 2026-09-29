@@ -18,6 +18,9 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 
 
 > **Confirmado (28/09/2026):** los 2 motores de tracción son los DC 895 planetarios de 53 rpm de la fila 1: modelo 42GM-895H, reductora 189:1,
-> encoder Hall de 11 PPR (5-24 V, salida con pull-up de 10 kΩ a Vcc). Capturas de la hoja en `imagen_motor_traccion/`.
+> encoder Hall de 11 PPR (5-24 V, salida con pull-up de 10 kΩ a Vcc). Capturas de la hoja en `docs/fotos/motor_traccion/`.
 
 > **Corrección (27/09/2026):** el motor DC 895 de 2700 rpm se compró por error. El motor que se usa en la base del brazo es el **36GP-555 de 160 rpm** (el caracterizado en la R1 E5).
+
+> **Agregado (29/09/2026):** batería YONGZHI 10S2P (18650) 36 V 4400 mAh 158 Wh, XT60 (`docs/fotos/bateria/`), y 2 ruedas
+> inflables de 150 mm × 45 mm, 650 g, acople de 8 mm (`docs/fotos/rueda/`).

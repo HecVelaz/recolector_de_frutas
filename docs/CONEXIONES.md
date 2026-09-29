@@ -12,7 +12,7 @@ flowchart LR
   PI -- GPIO 17 · 27 --> IND[Luz + buzzer]
   PI -. USB .-> LID[LiDAR]
   S3 --> TR[2 × IBT-2 + DC 895 planetario 53 rpm]
-  S3 --> SEN[IMU · GPS · 3 × HC-SR04 · 4 bumpers]
+  S3 --> SEN[IMU · GPS · 3 × HC-SR04 · 3 bumpers]
   S3 --> SEG[Seta · batería]
   WR --> J1[J1: IBT-2 + 36GP-555 160 rpm]
   WR --> J23[J2, J3: L298N + 5840-31ZY]
@@ -34,9 +34,9 @@ Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa los 19 GPIO de uso general: no qu
 | 41 · 42 | GPS: TX del GPS → RX1 · RX del GPS ← TX1 | 9600 8N1 |
 | 10 | TRIG de los 3 HC-SR04 | disparo común |
 | 11 · 12 · 13 | ECHO frente · izquierda · derecha | divisor 1 k / 2 k |
-| 14 · 21 · 39 · 40 | Bumpers | NA a GND, pull-up interno |
+| 14 · 21 · 39 | Bumpers frente · izquierda · derecha | NA a GND, pull-up interno (GPIO 40 queda libre) |
 | 47 | Contacto auxiliar **NC** de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
-| 1 | Divisor de batería 100 k / 27 k | ADC1 canal 0 |
+| 1 | Divisor de batería 120 k / 8,2 k | ADC1 canal 0 (42 V → 2,69 V) |
 
 ## ESP32-WROOM-32D · brazo
 
@@ -57,6 +57,15 @@ DevKit con CH340, `/dev/ttyUSB0`. Fuente: `firmware/brazo/include/pins.h`.
 
 ## Raspberry Pi 5 (propuesta)
 
+**Ubicación: la Pi y las cámaras juntas, arriba del mástil.** Las NoIR van a la Pi por cable plano CSI (22 pines del
+lado de la Pi 5), que es corto y sensible a interferencias; los ESP32 van por USB, que aguanta 1-2 m sin problema.
+Así: soporte rígido en el mástil (atrás a la izquierda, detrás del brazo, como en la simulación) con las dos cámaras
+y la Pi 5 con su disipador activo; bajan por el mástil los 2 cables USB a los ESP32 (con ferrite) y la alimentación.
+El buck de 5 V va **arriba, al lado de la Pi** (con 5 A, un cable de 5 V largo cae demasiado y la Pi se queja de
+tensión baja): por el mástil sube el bus de 12 V (o 36 V si el buck lo acepta), que lleva poca corriente.
+Alternativa si la Pi tiene que ir abajo: cables CSI de 22 a 15 pines de 300-500 mm (existen hasta 1 m, pero a más
+largo más riesgo de errores de imagen); los adaptadores CSI→HDMI no están garantizados con la Pi 5.
+
 | Puerto | Conecta a | Nota |
 |---|---|---|
 | CSI0 · CSI1 | Cámaras NoIR izquierda · derecha | cable de 15 a 22 pines |
@@ -69,23 +78,33 @@ DevKit con CH340, `/dev/ttyUSB0`. Fuente: `firmware/brazo/include/pins.h`.
 
 ## Alimentación
 
+Batería real: **YONGZHI 10S2P de 18650, 36 V nominales, 4400 mAh (158 Wh), 135 × 90 × 60 mm, XT60**, de
+hoverboard (con BMS). Tensión real: **~42 V cargada**, 36 V nominal, ~30-32 V descargada. Los motores son de 12 V,
+el IBT-2 aguanta 27 V como máximo y el L298N 46 V: los motores van por un **buck 36 → 12 V de alta corriente**.
+
 ```
-Batería 12 V → interruptor general (H8) → fusible 15 A → bus 12 V
-  ├─ Buck 5 V 5 A → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
-  ├─ Buck 6 V → 2 servos RDS3218 de la pinza (GND común con la WROOM): 3 A queda justo, ver "Antes de conectar"
-  ├─ seta (NC) → relé de potencia (rearme manual)
-  │     ├─ fusible 10 A → IBT-2 de tracción ×2
-  │     └─ llave del brazo (H8) → fusible 5 A → IBT-2 J1 + L298N
+Batería 10S 36 V (30-42 V) → interruptor general (H8) → fusible 20 A → bus 36 V
+  ├─ Buck 36 → 12 V (lógica), entrada ≥ 45 V → sube por el mástil
+  │     └─ Buck 12 → 5 V 5 A, arriba al lado de la Pi → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
+  ├─ Buck 36 → 6 V ≥ 5 A, entrada ≥ 45 V → 2 servos RDS3218 de la pinza (GND común con la WROOM)
+  ├─ seta (NC) → relé de potencia apto para 36 V DC (rearme manual)
+  │     └─ Buck 36 → 12 V ≥ 25 A (≥ 300 W), entrada ≥ 45 V → bus 12 V de motores
+  │           ├─ fusible 15 A → IBT-2 de tracción ×2
+  │           └─ llave del brazo (H8) → fusible 5 A → IBT-2 J1 + L298N (J2, J3)
   │   contacto auxiliar de la seta → S3 GPIO 47
-  └─ divisor 100 k / 27 k → S3 GPIO 1 (12,6 V → 2,68 V; hasta ~15 V)
+  └─ divisor 120 k / 8,2 k → S3 GPIO 1 (42 V → 2,69 V; con 11 dB mide hasta ~46 V)
 GND común en un solo punto.
 ```
 
-La seta corta solo la potencia de los motores: la Pi y los ESP32 siguen encendidos. Para el objetivo mínimo el
-bus de 12 V puede salir de una fuente de laboratorio.
+Consumo a 12 V: tracción 2 × 5,5 A nominal (2 × 10 A bloqueados), J1 y J2/J3 unos pocos A: pico de ~25-30 A a 12 V
+(~10 A de la batería). La seta corta solo la potencia de los motores: la Pi y los ESP32 siguen encendidos. Para las
+pruebas de banco el bus de 12 V de motores puede salir de una fuente de laboratorio (sin la batería conectada).
 
 ## Antes de conectar
 
+- [ ] **Batería de 36 V (42 V cargada):** todos los buck con entrada de ≥ 45 V (los LM2596 comunes llegan a 40 V: no
+      sirven), relé de la seta apto para 36 V DC, y el **divisor de batería 120 k / 8,2 k** (el viejo de 100 k / 27 k
+      pondría ~8,9 V en el GPIO 1 y lo quema). Cargar solo con su cargador de 42 V.
 - [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38; WROOM 23, 25 y 13.
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
 - [ ] Pull-ups externos de 10 kΩ en WROOM 34, 35, 36 y 39 (no tienen pull-up interno).

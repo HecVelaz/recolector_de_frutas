@@ -84,7 +84,7 @@ void test_odometria_circulo_completo_vuelve() {
 // ---------------------------------------------------------------- seguridad
 
 // Todo en orden: nada al frente (INFINITY = eco largo), IMU con datos, batería cargada
-static EntradasSeguridad tranquilo() { return {{false, false, false, false}, INFINITY, false, 0, 0, 0, 12.5f, true}; }
+static EntradasSeguridad tranquilo() { return {{false, false, false}, INFINITY, false, 0, 0, 0, 40.0f, true}; }  // 10S cargada
 
 void test_seta_enclava_hasta_rearmar() {
   SeguridadBase s(CFG_SEG);
@@ -123,7 +123,7 @@ void test_vuelco_enclava() {
 void test_bumper_delantero_solo_deja_retroceder_recto() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
-  in.bumper[1] = true;
+  in.bumper[0] = true;
   float v = 0.1f, w = 0.5f;  // avanzar girando: una rueda seguiría empujando contra el objeto
   TEST_ASSERT_TRUE(s.filtrar(in, v, w));
   TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
@@ -135,13 +135,15 @@ void test_bumper_delantero_solo_deja_retroceder_recto() {
   TEST_ASSERT_EQUAL_FLOAT(0.0f, w);
 }
 
-void test_bumper_trasero_no_deja_retroceder() {
+void test_bumper_lateral_no_deja_girar() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
-  in.bumper[3] = true;
-  float v = -0.1f, w = 0;
-  s.filtrar(in, v, w);
-  TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
+  in.bumper[2] = true;  // derecho
+  float v = 0.1f, w = -0.5f;  // girando: el costado barrería contra el objeto
+  TEST_ASSERT_TRUE(s.filtrar(in, v, w));
+  TEST_ASSERT_EQUAL_FLOAT(0.1f, v);  // alejarse recto, hacia adelante o atrás, sí
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, w);
+  TEST_ASSERT_FALSE(s.bloqueaAdelante());
 }
 
 void test_obstaculo_al_frente() {
@@ -227,7 +229,7 @@ void test_watchdog_de_comandos() {
 void test_bateria_baja_avisa_sin_frenar() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
-  in.bateria = 10.5f;
+  in.bateria = 31.0f;  // 10S: 3,1 V por celda
   float v = 0.1f, w = 0;
   TEST_ASSERT_TRUE(s.filtrar(in, v, w));
   TEST_ASSERT_TRUE(s.bateriaBaja());
@@ -305,7 +307,7 @@ int main() {
   RUN_TEST(test_seta_enclava_hasta_rearmar);
   RUN_TEST(test_vuelco_enclava);
   RUN_TEST(test_bumper_delantero_solo_deja_retroceder_recto);
-  RUN_TEST(test_bumper_trasero_no_deja_retroceder);
+  RUN_TEST(test_bumper_lateral_no_deja_girar);
   RUN_TEST(test_obstaculo_al_frente);
   RUN_TEST(test_tope_por_cercania_no_se_acumula_con_la_rampa);
   RUN_TEST(test_frente_sin_eco_no_deja_avanzar);

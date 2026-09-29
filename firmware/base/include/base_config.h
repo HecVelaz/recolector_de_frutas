@@ -12,7 +12,7 @@ constexpr float TS = 0.01f;  // periodo del control: 10 ms (100 Hz)
 
 // Control de velocidad de cada rueda (ControlArticulacion en modo velocidad; el modo posición no se usa).
 // Motor de tracción: 42GM-895H planetario, 12 V, 53 rpm, reductora 189:1, encoder Hall de 11 PPR en el eje del
-// motor (hoja del vendedor en imagen_motor_traccion/; 12 V: 2,6 A en vacío, 5,5 A nominal, 10 A bloqueado).
+// motor (hoja del vendedor en docs/fotos/motor_traccion/; 12 V: 2,6 A en vacío, 5,5 A nominal, 10 A bloqueado).
 // Modelo provisorio escalado del 36GP-555 de 160 rpm de la E5 (K = 1,58 rpm/%, τ = 65 ms) a 53 rpm -> K ≈ 0,52
 // rpm/%; hay que identificarlo de nuevo. PI con Ti = τ y lazo cerrado de 0,15 s: Kp = τ/(K·0,15).
 constexpr ConfigArticulacion CFG_RUEDA = {
@@ -34,12 +34,13 @@ constexpr ConfigArticulacion CFG_RUEDA = {
 constexpr bool MOTOR_INVERTIDO[2] = {false, true};  // {izquierdo, derecho}
 constexpr bool ENC_INVERTIDO[2] = {false, true};
 
-// Geometría y límites de movimiento (MEDIR radio y trocha)
+// Geometría y límites de movimiento. Ruedas inflables de 150 mm (docs/fotos/rueda); la trocha es estimada (R2 E3:
+// ruedas en los rebajes de 3 cm de la parte angosta de 34 cm): MEDIR las dos con cinta
 constexpr ConfigDiferencial CFG_DIF = {
-    0.05f,  // radio de rueda [m]
-    0.30f,  // trocha: distancia entre ruedas [m]
-    50.0f,  // rpm máximas de rueda pedidas al control (el motor da ~53 en vacío)
-    0.25f,  // v máx [m/s]  (50 rpm con r = 5 cm: 0,26 m/s)
+    0.075f,  // radio de rueda [m] (150 mm de diámetro, inflable: MEDIR con el inflado real)
+    0.40f,   // trocha: distancia entre centros de rueda [m] (MEDIR)
+    50.0f,   // rpm máximas de rueda pedidas al control (el motor da ~53 en vacío)
+    0.25f,   // v máx [m/s] (50 rpm con r = 7,5 cm darían 0,39 m/s: se limita para las pruebas)
     1.0f,   // w máx [rad/s]
     0.3f,   // aceleración lineal [m/s²]
     1.5f,   // aceleración angular [rad/s²]
@@ -51,7 +52,7 @@ constexpr ConfigSeguridad CFG_SEG = {
     0.50f,  // desde acá el avance tiene un tope que baja linealmente hasta 0 [m]
     25.0f,  // roll o pitch de vuelco [°]
     0,      // watchdog de comandos [ms]: 0 al arrancar (comandos a mano); con la Pi, wd 300
-    11.0f,  // batería baja [V] (MEDIR según la química de la batería)
+    32.0f,  // batería baja [V]: 10S Li-ion (YONGZHI 36 V, 4400 mAh) a 3,2 V por celda; el BMS corta ~30 V
     0.25f,  // tope de avance lejos de obstáculos [m/s] (= vMax de CFG_DIF)
 };
 
@@ -61,8 +62,9 @@ constexpr int US_CADA = 7;   // 70 ms entre disparos de los HC-SR04
 constexpr float IMU_FILTRO = 0.1f;  // pasa bajos de roll y pitch (a 50 Hz: ~0,2 s)
 constexpr uint32_t IMU_VALIDA_MS = 200;  // sin muestras de la IMU por más de esto, la base no se mueve
 
-// Batería: divisor 100 k / 27 k
-constexpr float BATERIA_DIVISOR = (100.0f + 27.0f) / 27.0f;
+// Batería 10S (30-42 V): divisor 120 k / 8,2 k -> 42 V da 2,69 V en el ADC (con 11 dB mide hasta ~3,1 V: ~46 V).
+// El de 100 k / 27 k era para 12 V: con 42 V pondría ~8,9 V en el GPIO y lo quema
+constexpr float BATERIA_DIVISOR = (120.0f + 8.2f) / 8.2f;
 constexpr uint32_t BATERIA_CADA_MS = 200;
 
 // PWM de los IBT-2 (como en pruebas-esp32/06)

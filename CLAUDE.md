@@ -9,17 +9,26 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 **el robot se mueve, detecta el limón con YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`).
 
 ## 2. Hardware y arquitectura
+- Base (R2 E3): caja de madera en **T** de 40 cm de largo y ~20 cm de alto. **Adelante** la parte ancha (40 × 23 cm,
+  con el brazo); **atrás** la angosta (34 × 17 cm) con las ruedas de tracción en rebajes de 3 cm; 2 ruedas locas.
+  Ruedas inflables de **150 mm** × 45 mm (`docs/fotos/rueda/`), trocha ~0,40 m (MEDIR).
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
-  a 3,3 V). Hoja del vendedor en `imagen_motor_traccion/`.
+  a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
+- **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria/`). Los motores son de
+  12 V: van por un buck 36 → 12 V de alta corriente; todos los buck con entrada ≥ 45 V; divisor de batería
+  120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). Ver `docs/CONEXIONES.md`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
-- **ESP32-S3** (base): 2 motores de tracción + IBT-2, encoders, IMU MPU-6500, GPS UP501, 3 HC-SR04, 4 bumpers,
-  seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2, J2/J3 5840-31ZY (sin fin) + L298N, 2 servos.
-- Brazo RRR **tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
+  Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32.
+- **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro), GPS UP501,
+  3 HC-SR04, **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
+  J2/J3 5840-31ZY (sin fin) + un L298N, 2 servos. En total 4 drivers.
+- Brazo RRR montado **adelante a la izquierda**, a ~6 cm del frente y del costado (preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
-  20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `imagen_pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
+  20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
 
 ## 3. Estructura
-- `docs/`: consignas, entregas R1/R2, `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
+- `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (motor, pinza, rueda, batería),
+  `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
 - `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
@@ -43,6 +52,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
+  Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
+  10S (aviso a 32 V, divisor 120 k / 8,2 k).
   Probado en la placa sola (sin motores ni sensores).
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
@@ -80,23 +91,17 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
   32 000 corregido). Hay que leer antes de ~1,5 s (J2/J3); si no, `ControlArticulacion` entra en falla de encoder.
   Revisado por Codex. **Sin probar en placa**: girar un motor a mano más de 32 000 cuentas y ver que no salte.
-- `simulacion` (28/09, Gazebo Harmonic en la notebook; README del paquete): `ros2 launch simulacion sim.launch.py`
+- `simulacion` (Gazebo Harmonic en la notebook; README del paquete): `ros2 launch simulacion sim.launch.py`
   (`gui:=false`, `mision:=true`, `vision:=yolo`). Mismos tópicos que los ESP32 (`brazo_sim` imita al firmware del
-  brazo), así que `mision`, `brazo_ik` y la visión corren sin cambios. Etapas:
-  1. Hilera de 4+4 limoneros con las medidas de R1 (limones a 0,22-0,50 m, esfera de trabajo Ø 30 cm a 35 cm del
-     suelo), 3 obstáculos, GPS de la FIUNA, base diferencial con IMU/GPS: hecha.
-  2. Brazo en la esquina delantera izquierda (J1 = 0° al frente) como cadena serie equivalente al cuatro barras,
-     con la herramienta horizontal (`j_nivel`) y el TCP a 0,075 m de la muñeca: hecha; con `brazo_ik`, llega exacto.
-  3. Cámaras de Gazebo + cadena real de `vision_estereo` (`vision:=yolo`; `~/vision_estereo`, `~/yolo_ws`, venv
-     `~/yolo_env` con numpy < 2): parcial. El estéreo localiza bien (con texturas), pero YOLO no reconoce los limones
-     sintéticos sobre la copa: sin `/limon/posicion`.
-  4. 12 limones cosechables (`limones_sim` hace de visión y lleva el limón en el TCP mientras está agarrado): hecha;
-     con `mision:=true` cosecha limón tras limón, con el limón entre los dedos (≤ 1,2 cm del TCP).
-  5. Ultrasonidos, bumpers y `/base/estado` (que los obstáculos frenen la base): falta.
-  Probado sin ventana y con ventana en la notebook (factor de tiempo real ~0,5-1). Al probar desde Bash, Gazebo y los
-  nodos quedan vivos si se corta solo el launch: limpiar siempre (ver memoria). **Aislada de la red**
-  (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal que la use): antes veía los ESP32 reales
-  de la Pi por la LAN y les mandaba comandos.
+  brazo), así que `mision`, `brazo_ik` y la visión corren sin cambios. Base real de la R2 E3 (T, ruedas de 150 mm,
+  brazo adelante a la izquierda, mástil de cámaras atrás a la izquierda). Hilera de 4+4 limoneros con las medidas de
+  R1, 12 limones cosechables, 3 obstáculos entre las **marcas de parada** (x = 0,95 / 2,45 / 3,95 / 5,45: frenar
+  con el eje de las ruedas sobre la franja). Con `mision:=true`, **12 de 12 limones cosechados** en las 4 paradas
+  (TCP a ≤ 0,1 cm, base quieta). Etapa 3 (`vision:=yolo`, cámaras de Gazebo + cadena real) parcial: el estéreo
+  localiza, YOLO no reconoce los limones sintéticos. Falta la etapa 5 (sensores de la base) y pasarla a la PC de
+  escritorio. **Aislada de la red** (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal): si
+  no, ve y comanda los ESP32 reales de la Pi. Trucos de la física: masas del brazo al 5 % (si no, la base se deslizaba
+  con las ruedas frenadas), el limón agarrado se lleva con `set_pose` y `limones_sim` usa la pose real de Gazebo.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
   `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
   (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; 17 pruebas OK; probada en la notebook con
@@ -104,6 +109,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
+- Base: frente = parte ancha (brazo), atrás = parte angosta (ruedas de tracción). 3 bumpers, sin trasero.
+- Pi 5 arriba con las cámaras (no hay cable CSI largo): bajan USB a los ESP32 y sube 12 V con el buck de 5 V arriba.
 - Configuración RRR (opción 6 de la tabla R1); pinza con agarre + tracción + giro en vez de succión (aprobado por
   el profesor, 28/09).
 - Medidas del brazo vigentes: las de la E4; motor de J1 = 36GP-555 160 rpm (el DC 895 de 2700 rpm fue un error de compra).
@@ -132,9 +139,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
 5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
 6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
-7. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
+7. Conseguir los buck de entrada ≥ 45 V (36 → 12 V ≥ 25 A para motores, 5 V 5 A para la Pi, 6 V ≥ 5 A servos),
+   el relé de la seta para 36 V DC y armar el divisor 120 k / 8,2 k antes de conectar la batería.
+8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).
-8. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).
-9. Simulación: etapa 5 (sensores de la base) y pasarla a la PC de escritorio; cargar las medidas reales (chasis,
-   posición del brazo y de las cámaras, pinza) cuando estén. Pendiente: cajón para el limón soltado.
+9. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).
+10. Simulación: etapa 5 (sensores de la base) y pasarla a la PC de escritorio; cargar las medidas reales que faltan
+   (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
+11. Corregir los informes: R2 E2 (MPU-6050 → MPU-6500; Humble/22.04 → Jazzy/24.04.5), R2 E3 (drivers del brazo: 2).
