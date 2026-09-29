@@ -82,14 +82,19 @@ def superficie(p, radio):
     return tuple(c * (1.0 - radio / d) for c in p)
 
 
+def rutas_gz():
+    """Bindings de Python de gz-transport y gz-msgs (vienen con Jazzy, fuera del sys.path)."""
+    for vendor in ('gz_transport_vendor', 'gz_msgs_vendor'):
+        ruta = str(Path(get_package_prefix(vendor)) / 'opt' / vendor / 'lib' / 'python')
+        if ruta not in sys.path:
+            sys.path.append(ruta)
+
+
 class GazeboPoses:
-    """Pose real del robot y set_pose de Gazebo (bindings de Python de gz-transport, vienen con Jazzy)."""
+    """Pose real del robot y set_pose de Gazebo."""
 
     def __init__(self):
-        for vendor in ('gz_transport_vendor', 'gz_msgs_vendor'):
-            ruta = str(Path(get_package_prefix(vendor)) / 'opt' / vendor / 'lib' / 'python')
-            if ruta not in sys.path:
-                sys.path.append(ruta)
+        rutas_gz()
         from gz.msgs10.boolean_pb2 import Boolean
         from gz.msgs10.pose_pb2 import Pose
         from gz.msgs10.pose_v_pb2 import Pose_V

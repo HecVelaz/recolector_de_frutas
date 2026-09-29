@@ -99,8 +99,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   R1, 12 limones cosechables, 3 obstáculos entre las **marcas de parada** (x = 1,19 / 2,70 / 4,17 / 5,69: frenar
   con el eje de las ruedas sobre la franja, ±2 cm, en el centro del pasillo). Con `mision:=true`, **12 de 12 limones cosechados** en las 4 paradas
   (TCP a ≤ 0,1 cm, base quieta). Etapa 3 (`vision:=yolo`, cámaras de Gazebo + cadena real) parcial: el estéreo
-  localiza, YOLO no reconoce los limones sintéticos. Falta la etapa 5 (sensores de la base) y pasarla a la PC de
-  escritorio. **Aislada de la red** (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal): si
+  localiza, YOLO no reconoce los limones sintéticos. Etapa 5 (29/09): `base_sim` imita la S3 (seguridad de
+  `SeguridadBase` portada, arranca DESARMADA: `armar` por `/base/comando`, teleop con `repeat_rate:=10.0`), 3 HC-SR04
+  (`gpu_lidar`) y 3 bumpers con resorte. Falta pasarla a la PC de escritorio. **Aislada de la red** (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal): si
   no, ve y comanda los ESP32 reales de la Pi. Trucos de la física: masas del brazo al 5 % (si no, la base se deslizaba
   con las ruedas frenadas), el limón agarrado se lleva con `set_pose` y `limones_sim` usa la pose real de Gazebo.
 - `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
@@ -150,6 +151,6 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).
 9. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).
-10. Simulación: etapa 5 (sensores de la base) y pasarla a la PC de escritorio; cargar las medidas reales que faltan
+10. Simulación: modo autónomo (recorrer la hilera sola: frenar por visión, arrimar y cosechar) y pasarla a la PC de escritorio; cargar las medidas reales que faltan
    (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
 11. Corregir los informes: R2 E2 (MPU-6050 → MPU-6500; Humble/22.04 → Jazzy/24.04.5), R2 E3 (drivers del brazo: 2).

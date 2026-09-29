@@ -120,6 +120,63 @@
     </sensor>
   </gazebo>
 
+  <!-- ===================== Ultrasonidos y bumpers (etapa 5) =====================
+       3 HC-SR04 (frente y costados de la parte ancha, a 14 cm del piso) y 3 bumpers de madera de 10 x 5 cm
+       (R2 E3) abajo, a 6 cm del piso, que sobresalen 1 cm, con resorte. Ubicación: MEDIR. base_sim lee los sensores por
+       gz-transport y publica /range/* y /bumpers como la S3. Cada HC-SR04 es un gpu_lidar de 5 rayos en un abanico
+       horizontal de ~15° (field_of_view del firmware): base_sim toma el eco más cercano. Sin rayos hacia abajo: a
+       14 cm de altura, el de -7,5° veía el piso a 1,07 m (el HC-SR04 real casi no tiene eco del piso liso). -->
+  <xacro:property name="z_us" value="${0.14 - radio}"/>
+  <xacro:property name="z_bumper" value="${0.06 - radio}"/>
+  <xacro:macro name="ultrasonido" params="nombre x y yaw">
+    <link name="us_${nombre}">
+      <visual><geometry><box size="0.015 0.045 0.02"/></geometry><material name="azul"/></visual>
+    </link>
+    <joint name="us_${nombre}_joint" type="fixed">
+      <parent link="base_link"/><child link="us_${nombre}"/><origin xyz="${x} ${y} ${z_us}" rpy="0 0 ${yaw}"/>
+    </joint>
+    <gazebo reference="us_${nombre}">
+      <sensor name="us_${nombre}" type="gpu_lidar">
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>/sim/us_${nombre}</topic>
+        <lidar>
+          <scan>
+            <horizontal><samples>5</samples><resolution>1</resolution><min_angle>-0.13</min_angle><max_angle>0.13</max_angle></horizontal>
+          </scan>
+          <range><min>0.02</min><max>4.0</max></range>
+        </lidar>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+  <xacro:ultrasonido nombre="frente" x="${frente + 0.008}" y="0" yaw="0"/>
+  <xacro:ultrasonido nombre="izq" x="${frente - largo_ancho/2}" y="${ancho_ancho/2 + 0.008}" yaw="${pi/2}"/>
+  <xacro:ultrasonido nombre="der" x="${frente - largo_ancho/2}" y="${-(ancho_ancho/2 + 0.008)}" yaw="${-pi/2}"/>
+
+  <xacro:macro name="bumper" params="nombre x y yaw">
+    <link name="bumper_${nombre}">
+      <visual><geometry><box size="0.01 0.10 0.05"/></geometry>
+        <material name="madera"><color rgba="0.75 0.6 0.4 1"/></material></visual>
+      <collision><geometry><box size="0.01 0.10 0.05"/></geometry></collision>
+      <inertial><mass value="0.05"/><inertia ixx="5e-5" iyy="1e-5" izz="4e-5" ixy="0" ixz="0" iyz="0"/></inertial>
+    </link>
+    <!-- Plancha con resorte (como la real): se hunde hasta 1 cm hacia el cuerpo; base_sim la da por apretada
+         (final de carrera) con más de 3 mm. El sensor de contacto de Gazebo no informaba nada en links fijos -->
+    <joint name="bumper_${nombre}_joint" type="prismatic">
+      <parent link="base_link"/><child link="bumper_${nombre}"/><origin xyz="${x} ${y} ${z_bumper}" rpy="0 0 ${yaw}"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="-0.01" upper="0" effort="100" velocity="1"/>
+      <dynamics damping="2.0"/>
+    </joint>
+    <gazebo reference="bumper_${nombre}_joint">
+      <springStiffness>300</springStiffness>
+      <springReference>0</springReference>
+    </gazebo>
+  </xacro:macro>
+  <xacro:bumper nombre="frente" x="${frente + 0.015}" y="0" yaw="0"/>
+  <xacro:bumper nombre="izq" x="${frente - largo_ancho/2}" y="${ancho_ancho/2 + 0.015}" yaw="${pi/2}"/>
+  <xacro:bumper nombre="der" x="${frente - largo_ancho/2}" y="${-(ancho_ancho/2 + 0.015)}" yaw="${-pi/2}"/>
+
   <gazebo>
     <!-- Tracción diferencial con los límites de CFG_DIF (v 0,25 m/s, w 1 rad/s, a 0,3 m/s², alfa 1,5 rad/s²) -->
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">

@@ -9,7 +9,7 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
 | 2 | Brazo (J1-J3 como cadena serie equivalente al cuatro barras) + pinza, respondiendo a `brazo_ik` | **hecha** |
 | 3 | Cámaras estéreo de Gazebo + cadena de visión real (`vision:=yolo`) | **parcial**: estéreo OK, YOLO no reconoce los limones sintéticos sobre la copa |
 | 4 | Agarre + `mision` completa con "visión" simulada (`limones_sim`) | **hecha** |
-| 5 | Ultrasonidos, bumpers y `/base/estado` imitando el firmware de la base | — |
+| 5 | Ultrasonidos, bumpers y `/base/estado` imitando el firmware de la base (`base_sim`) | **hecha** |
 
 ## Mundo (`worlds/hilera.sdf`)
 
@@ -40,11 +40,32 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
 
 | Tópico | Tipo | Como el firmware |
 |---|---|---|
-| `/cmd_vel` | `geometry_msgs/Twist` | sí |
+| `/cmd_vel` | `geometry_msgs/Twist`, pasa por `base_sim` (seguridad) | sí: solo ARMADA, watchdog 300 ms |
 | `/odom` | `nav_msgs/Odometry`, 25 Hz, `odom → base_link` | sí (+ `/tf`) |
 | `/imu/data_raw` | `sensor_msgs/Imu`, 50 Hz, `imu_link` | sí (Gazebo además da orientación) |
 | `/gps/fix` | `sensor_msgs/NavSatFix`, 1 Hz, `gps_link` | sí |
-| `/joint_states` | ruedas | — |
+| `/range/frente`, `/range/izq`, `/range/der` | `sensor_msgs/Range`, 10 Hz, `us_*` | sí (+Inf = nada; NaN = sin eco) |
+| `/bumpers` | `std_msgs/UInt8`, 10 Hz, bits frente, izq, der | sí |
+| `/battery` | `sensor_msgs/BatteryState`, 1 Hz | 38 V fijos |
+| `/base/estado`, `/base/respuesta`, `/base/comando` | `std_msgs/String` | mismo texto; `seta` / `soltar_seta` solo acá |
+| `/joint_states` | ruedas, brazo y planchas de los bumpers | — |
+
+### Sensores y seguridad de la base (etapa 5)
+
+- **`base_sim`** reemplaza al firmware de la S3 entre `/cmd_vel` y el DiffDrive (`/sim/cmd_vel`), con la seguridad
+  de `SeguridadBase.cpp` portada tal cual (mismas reglas y umbrales, pruebas en `test/test_base_sim.py`): seta y
+  vuelco (> 25°) enclavados hasta `r`; sin IMU no se mueve; watchdog de comandos de 300 ms (`wd 50..1000`);
+  obstáculo al frente < 0,20 m no avanza y entre 0,20 y 0,50 m tope de velocidad lineal; sin eco al frente no avanza;
+  bumper del frente no avanza ni gira, lateral no gira. **Arranca DESARMADA**, como cada sesión de micro-ROS.
+- **3 HC-SR04** (frente y costados de la parte ancha, a 14 cm del piso; MEDIR): `gpu_lidar` de 5 rayos en un
+  abanico horizontal de ~15°, y `base_sim` toma el eco más cercano. Sin rayos hacia abajo: el de -7,5° veía el piso a
+  1,07 m. Un obstáculo más bajo que el sensor (≤ 14 cm) no se ve: para eso están los bumpers.
+- **3 bumpers** de madera de 10 × 5 cm (frente y costados, a 6 cm del piso, sobresalen 1 cm): plancha con resorte en
+  una articulación prismática de 1 cm; apretado = hundida más de 3 mm (el final de carrera). El sensor de contacto de
+  Gazebo no informaba nada en links unidos por articulación fija.
+- Medido: frena a 0,20 m de la caja; contra un escalón de 8 cm (invisible para el ultrasonido) el bumper del frente
+  frena y bloquea el giro, deja retroceder y se suelta solo; el watchdog frena a los 300 ms (11-13 cm con la rampa
+  desde 0,2 m/s, lo mismo que se espera en la base real); la seta frena y queda enclavada hasta `r`.
 
 ## Brazo y pinza (etapa 2)
 
@@ -144,7 +165,9 @@ terminal que hable con la simulación** (teleop, `ros2 topic`) necesita lo mismo
 cd ros2_ws && source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select simulacion && source install/setup.bash
 ros2 launch simulacion sim.launch.py                 # gui:=false: solo el servidor (más liviano); mision:=true
-ros2 run teleop_twist_keyboard teleop_twist_keyboard  # otra terminal: i/j/l/, para mover
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: armar}"   # la base arranca DESARMADA
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0  # i/j/l/, para mover
+# repeat_rate: sin él, el teleop publica solo al tocar una tecla y el watchdog de 300 ms frena la base
 
 # brazo (otra terminal): armar y mandar un punto en brazo_base
 ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: armar}"
@@ -154,13 +177,15 @@ ros2 topic pub --once /pinza/cierre std_msgs/msg/Float32 "{data: 100}"
 ```
 
 Si Gazebo o algún nodo queda colgado después de cortar (pasa al matar solo el proceso del launch, no con Ctrl+C en la
-terminal): `pkill -9 -f "[g]z sim"` y `pkill -9 -f "[b]razo_sim|[l]imones_sim|[p]arameter_bridge"`. Un `brazo_sim`
+terminal): `pkill -9 -f "[g]z sim"` y `pkill -9 -f "[b]razo_sim|[b]ase_sim|[l]imones_sim|[p]arameter_bridge"`. Un `brazo_sim`
 viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mismos tópicos: todo se vuelve errático.
 
 ## Resultados
 
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-09-29 | Etapa 5 (`base_sim`, 3 HC-SR04, 3 bumpers con resorte): frena a 0,20 m de la caja; bumper contra un escalón de 8 cm (el ultrasonido no lo ve): no avanza ni gira, retrocede y se suelta; watchdog 300 ms (11,5 cm con la rampa); seta enclavada hasta `r`. Misión en las 4 marcas: **12 de 12**. Tiempo real 0,3-0,75 (antes 0,8-0,95: los 3 `gpu_lidar` y `base_sim`). 36 pruebas `colcon test` | OK |
+| 2026-09-29 | Reposo girado a la izquierda (75°, 110°, -30°): el de la derecha atravesaba el mástil (2 mm del eje). 12 de 12 | OK |
 | 2026-09-29 | Brazo atrás sobre el eje, mástil adelante a la derecha (dibujado), marcas y reposo nuevos; control por velocidad (`JointController`) y `/joint_states` a 50 Hz. Notebook, sin ventana, robot puesto en cada marca con `set_pose`: **12 de 12 limones cosechados**, TCP a 0,0-0,1 cm; 0 inversiones de velocidad en J1-J3 y el nivelador (antes 84 en J1 en una parada: el temblor); tiempo real 0,8-0,95 (antes 0,17-0,75). 30 pruebas `colcon test` | OK |
 | 2026-09-29 | Usuario con teleop: en la parada 2 el brazo quedó quieto. El robot había frenado 27 cm a la derecha del centro del pasillo (tras esquivar la caja): veía el limón 4 pero fuera de alcance, `mision` en ESPERAR. No es falla | — |
 | 2026-09-29 | Base real de la R2 E3 (T de 40 cm, ruedas de 150 mm, trocha 0,40, brazo adelante a la izquierda a 6 cm de los bordes, mástil atrás a la izquierda) y marcas recalculadas: **12 de 12 limones cosechados** en las 4 paradas, TCP a 0,0-0,1 cm, base quieta. 30 pruebas `colcon test` | OK |

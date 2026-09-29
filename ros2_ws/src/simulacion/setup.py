@@ -28,6 +28,7 @@ setup(
     entry_points={
         'console_scripts': [
             'brazo_sim = simulacion.brazo_sim:main',
+            'base_sim = simulacion.base_sim:main',
             'limones_sim = simulacion.limones_sim:main',
             'camara_info_sim = simulacion.camara_info_sim:main',
         ],

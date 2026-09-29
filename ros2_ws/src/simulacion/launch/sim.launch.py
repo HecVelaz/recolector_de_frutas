@@ -8,7 +8,9 @@ Con vision:=yolo, /limon/posicion sale de la cadena real: cámaras de Gazebo -> 
     ros2 launch simulacion sim.launch.py gui:=false   # solo el servidor (notebook lenta)
     ros2 launch simulacion sim.launch.py mision:=true # con la misión: arrimar el robot a un limón con el teleop
     ros2 launch simulacion sim.launch.py mision:=true vision:=yolo   # con cámaras y YOLO
-    ros2 run teleop_twist_keyboard teleop_twist_keyboard   # mover la base (en otra terminal)
+    ros2 topic pub --once /base/comando std_msgs/msg/String "{data: armar}"   # base_sim arranca DESARMADA
+    ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0   # mover la base
+    (repeat_rate: base_sim frena si /cmd_vel no llega en 300 ms, como la S3 con micro-ROS)
 En cada terminal que hable con la simulación: export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST (si no, no la ve y, peor,
 puede hablar con los ESP32 reales de la Pi por la red).
 """
@@ -62,6 +64,9 @@ def generate_launch_description():
         Node(package='ros_gz_bridge', executable='parameter_bridge', output='screen',
              parameters=[{'config_file': str(share / 'config' / 'puente.yaml'), 'use_sim_time': True}]),
         Node(package='simulacion', executable='brazo_sim', output='screen', parameters=[{'use_sim_time': True}]),
+        # Seguridad de la base como la S3: arranca DESARMADA ('armar' por /base/comando) y frena si /cmd_vel no
+        # llega en 300 ms (teleop con repeat_rate)
+        Node(package='simulacion', executable='base_sim', output='screen', parameters=[{'use_sim_time': True}]),
         # Herramienta horizontal (uArm): /brazo/objetivo es el punto de agarre, a 0,075 m de la muñeca (urdf: largo_tcp)
         Node(package='brazo_ik', executable='nodo_ik', output='screen',
              parameters=[{'use_sim_time': True, 'largo_herramienta': 0.075}]),
