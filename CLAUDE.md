@@ -41,12 +41,13 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   sin Arduino con pruebas `pio test -e native`. Verificar `pio test` y `pio run` sin warnings antes de un commit.
   **Apagar los 12 V antes de flashear o resetear.** ROS 2: unidades SI y `frame_id` explícito; `colcon test`.
 - Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
-- Plugins: **codex** (revisor en solo lectura; en esta PC su sandbox no lee archivos: pegar el código en el prompt,
+- Plugins: **codex** (revisor con `-s read-only`; sandbox arreglado el 28/09 con el perfil AppArmor `/etc/apparmor.d/bwrap`;
   lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
   sesión); **graphify** (grafo del repo); **ponytail**
   (instalado, sin usar todavía). `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
-  usuario lo pide, Codex puede editar con estas reglas; al volver, revisar `git log` antes de seguir.
+  usuario lo pide, Codex puede editar con estas reglas
+  (`codex --sandbox workspace-write` en el repo; lee este archivo por `AGENTS.md`); al volver, revisar `git log` antes de seguir.
 
 ## 5. Estado actual (2026-09-29)
 - `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK.
