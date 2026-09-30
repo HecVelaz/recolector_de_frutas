@@ -177,6 +177,13 @@
           <path class="w gpio" d="M750 101 H860"></path>
           <g class="lbl gpio"><text class="t-pin" x="805" y="94" text-anchor="middle">GPIO 17 · 27</text></g>
 
+          <!-- GPS (UART de la Pi) -->
+          <rect class="box" x="860" y="136" width="230" height="46" rx="4"></rect>
+          <text class="t-title" x="876" y="156">GPS Fastrax UP501</text>
+          <text class="t-sub" x="876" y="173">UART0 9600 · 3V3 · arriba del mástil</text>
+          <path class="w data" d="M750 116 H770 V159 H860"></path>
+          <g class="lbl data"><text class="t-pin" x="776" y="176">GPIO 14·15</text></g>
+
           <!-- USB a los ESP32 -->
           <path class="w data" d="M540 124 V160 H455 V196"></path>
           <path class="w data" d="M660 124 V160 H745 V196"></path>
@@ -190,8 +197,8 @@
           <rect class="board" x="380" y="196" width="150" height="532" rx="6"></rect>
           <text class="t-big" x="455" y="224" text-anchor="middle">ESP32-S3</text>
           <text class="t-sub" x="455" y="243" text-anchor="middle">base · N16R8</text>
-          <text class="t-sub" x="455" y="700" text-anchor="middle">19 de 19 GPIO</text>
-          <text class="t-sub" x="455" y="716" text-anchor="middle">en uso</text>
+          <text class="t-sub" x="455" y="700" text-anchor="middle">22 GPIO en uso</text>
+          <text class="t-sub" x="455" y="716" text-anchor="middle">libre: 40</text>
 
           <!-- Periféricos de la base: filas cada 66 px, cable a y+26 -->
           <g>
@@ -217,17 +224,17 @@
           </g>
           <g>
             <rect class="box" x="16" y="406" width="210" height="52" rx="4"></rect>
-            <text class="t-title" x="28" y="427">GPS Fastrax UP501</text>
-            <text class="t-sub" x="28" y="446">UART1 9600 · 3V3</text>
-            <path class="w data" d="M226 432 H380"></path>
-            <g class="lbl data"><text class="t-pin" x="303" y="425" text-anchor="middle">RX 41 · TX 42</text></g>
+            <text class="t-title" x="28" y="427">HC-SR04 × 3 · TRIG</text>
+            <text class="t-sub" x="28" y="446">uno por sensor · de a uno, 40 ms</text>
+            <path class="w gpio" d="M226 432 H380"></path>
+            <g class="lbl gpio"><text class="t-pin" x="303" y="425" text-anchor="middle">TRIG 10 · 41 · 42</text></g>
           </g>
           <g>
             <rect class="box" x="16" y="472" width="210" height="52" rx="4"></rect>
-            <text class="t-title" x="28" y="493">HC-SR04 × 3</text>
+            <text class="t-title" x="28" y="493">HC-SR04 × 3 · ECHO</text>
             <text class="t-sub" x="28" y="512">los 3 al frente (0°, ±15°) · 5 V</text>
             <path class="w gpio" d="M226 498 H380"></path>
-            <g class="lbl gpio"><text class="t-pin" x="303" y="491" text-anchor="middle">TRIG 10 (común)</text><text class="t-pin" x="303" y="513" text-anchor="middle">ECHO 11/12/13 ÷</text></g>
+            <g class="lbl gpio"><text class="t-pin" x="303" y="491" text-anchor="middle">ECHO 11/12/13 ÷</text></g>
           </g>
           <g>
             <rect class="box" x="16" y="538" width="210" height="52" rx="4"></rect>
@@ -302,7 +309,7 @@
           <text class="t-sub" x="670" y="692">La potencia de 12 V de los drivers está en el esquema de alimentación</text>
         </svg>
       </div>
-      <figcaption>La Pi no toca ningún motor: manda consignas por USB y cada ESP32 cierra sus lazos y reacciona solo ante un bumper, la seta o la pérdida de comandos. Las dos placas usan todos sus GPIO de uso general; no queda ninguno de reserva.</figcaption>
+      <figcaption>La Pi no toca ningún motor: manda consignas por USB y cada ESP32 cierra sus lazos y reacciona solo ante un bumper, la seta o la pérdida de comandos. La S3 tiene libre solo el GPIO 40 y la WROOM ninguno; la reserva está en la Pi (el GPS pasó ahí para liberar dos TRIG).</figcaption>
     </figure>
   </section>
 
@@ -439,8 +446,7 @@
             <tr><td class="gpio"><span class="tag gpio"></span>15 · 16</td><td>Encoder izq. A · B</td><td>como en la prueba 06</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>17 · 18</td><td>Encoder der. A · B</td><td></td></tr>
             <tr><td class="gpio"><span class="tag data"></span>8 · 9</td><td>IMU SDA · SCL</td><td>400 kHz, 0x68</td></tr>
-            <tr><td class="gpio"><span class="tag data"></span>41 · 42</td><td>GPS TX → RX1 · RX ← TX1</td><td>9600 8N1</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>10</td><td>TRIG de los 3 HC-SR04</td><td>disparo común</td></tr>
+                        <tr><td class="gpio"><span class="tag gpio"></span>10 · 41 · 42</td><td>TRIG centro · esquina izq. · esquina der.</td><td>de a uno, cada 40 ms</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO centro · esquina izq. · esquina der.</td><td>divisor 1 k / 2 k</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39</td><td>Bumpers frente · izq. · der.</td><td>NA a GND</td></tr>
             <tr><td class="gpio"><span class="tag safety"></span>47</td><td>Contacto auxiliar NC de la seta</td><td>HIGH = apretada</td></tr>
@@ -471,7 +477,7 @@
 
       <article class="boardcard">
         <h3>Raspberry Pi 5</h3>
-        <div class="meta">Ubuntu 24.04 · ROS 2 Jazzy · propuesta</div>
+        <div class="meta">Ubuntu 24.04 · ROS 2 Jazzy · GPIO por un HAT pasivo de borneras · propuesta</div>
         <div class="tablewrap"><table>
           <thead><tr><th>Puerto</th><th>Conecta a</th><th>Nota</th></tr></thead>
           <tbody>
@@ -479,6 +485,7 @@
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>ESP32-S3 (base)</td><td>micro-ROS</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>ESP32-WROOM (brazo)</td><td>micro-ROS</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>LiDAR</td><td>fuera del mínimo</td></tr>
+            <tr><td class="gpio"><span class="tag data"></span>GPIO 14 · 15</td><td>GPS UP501 (RX · TX del GPS)</td><td>UART0 <span class="mono">/dev/ttyAMA0</span> 9600</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>GPIO 17 (pin 11)</td><td>Luz de estado</td><td>vía transistor</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>GPIO 27 (pin 13)</td><td>Buzzer</td><td>vía transistor</td></tr>
             <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Buck 2 (12 → 5,1 V)</td><td><span class="mono">usb_max_current_enable=1</span></td></tr>
@@ -501,7 +508,8 @@
       <li><span><b>Encoder de J1 a 3V3.</b> Si la placa SCX-555 se alimenta a 5 V, sus salidas pueden quedar a 5 V.</span></li>
       <li><span><b>Servos con su propio buck</b> (buck 3, CC en 5 A) y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
       <li><span><b>Cables de cámara</b> de 15 a 22 pines: la Pi 5 usa el conector chico en CSI0 y CSI1.</span></li>
-      <li><span><b>Sin GPIO de reserva</b> en ninguna ESP32. Si hace falta uno más, un INA219 por I²C en el bus de 12 V de motores mide su corriente (en el de 36 V no: llega a 26 V).</span></li>
+      <li><span><b>GPS a 3,3 V</b> en el UART de la Pi (<span class="mono">dtparam=uart0=on</span>): TX del GPS al GPIO 15, RX al 14.</span></li>
+      <li><span><b>Casi sin GPIO de reserva</b> en las ESP32 (solo el 40 de la S3). Si hace falta uno más, un INA219 por I²C en el bus de 12 V de motores mide su corriente (en el de 36 V no: llega a 26 V).</span></li>
       <li><span><b>LiDAR por USB en la Pi.</b> Los pines que la prueba de la S3 reservaba para su UART (14 y 21) ahora son bumpers.</span></li>
     </ul>
   </section>

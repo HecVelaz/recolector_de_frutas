@@ -58,7 +58,7 @@ constexpr ConfigSeguridad CFG_SEG = {
 
 // Periodos (en pasos de 10 ms)
 constexpr int IMU_CADA = 2;  // 50 Hz
-constexpr int US_CADA = 7;   // 70 ms entre disparos de los HC-SR04
+constexpr int US_CADA = 4;   // 40 ms entre disparos, de a un HC-SR04: cada uno mide cada 120 ms (~8 Hz)
 constexpr float IMU_FILTRO = 0.1f;  // pasa bajos de roll y pitch (a 50 Hz: ~0,2 s)
 constexpr uint32_t IMU_VALIDA_MS = 200;  // sin muestras de la IMU por más de esto, la base no se mueve
 

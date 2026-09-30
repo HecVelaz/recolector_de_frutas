@@ -8,17 +8,14 @@
 #include <nav_msgs/msg/odometry.h>
 #include <sensor_msgs/msg/battery_state.h>
 #include <sensor_msgs/msg/imu.h>
-#include <sensor_msgs/msg/nav_sat_fix.h>
 #include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/string.h>
 #include <std_msgs/msg/u_int8.h>
 
 #include "EnlaceMicroRos.h"
-#include "UP501.h"
 
 // Definidos en main.cpp
 extern Print *out;
-extern UP501 gps;
 void ejecutar(char *linea);
 
 namespace {
@@ -39,7 +36,7 @@ constexpr float GRAVEDAD = 9.80665f;
 EnlaceMicroRos enlace;
 BufferTexto salida;
 
-rcl_publisher_t pubOdom, pubImu, pubRango[3], pubBumpers, pubGps, pubBateria, pubEstado, pubResp;
+rcl_publisher_t pubOdom, pubImu, pubRango[3], pubBumpers, pubBateria, pubEstado, pubResp;
 rcl_subscription_t subCmdVel, subComando;
 rcl_timer_t timer;
 
@@ -47,12 +44,11 @@ nav_msgs__msg__Odometry odomMsg;
 sensor_msgs__msg__Imu imuMsg;
 sensor_msgs__msg__Range rangoMsg[3];
 std_msgs__msg__UInt8 bumpersMsg;
-sensor_msgs__msg__NavSatFix gpsMsg;
 sensor_msgs__msg__BatteryState bateriaMsg;
 std_msgs__msg__String estadoMsg, respMsg, comandoIn;
 geometry_msgs__msg__Twist cmdVelIn;
 
-char marcoOdom[] = "odom", marcoBase[] = "base_link", marcoImu[] = "imu_link", marcoGps[] = "gps_link";
+char marcoOdom[] = "odom", marcoBase[] = "base_link", marcoImu[] = "imu_link";
 char marcoRango[3][12] = {"us_frente", "us_izq", "us_der"};
 const char *TOPICO_RANGO[3] = {"range/frente", "range/izq", "range/der"};
 char comandoBuf[80];
@@ -108,9 +104,6 @@ void prepararMensajes() {
     rangoMsg[k].max_range = 4.0f;
   }
 
-  gpsMsg = {};
-  gpsMsg.header.frame_id = texto(marcoGps);
-  gpsMsg.status.service = sensor_msgs__msg__NavSatStatus__SERVICE_GPS;
 
   bateriaMsg = {};
   bateriaMsg.present = true;
@@ -152,31 +145,6 @@ void alRecibirComando(const void *m) {
   }
   if (mueve(primera) && !armadoOAvisar()) return;
   ejecutar(linea);
-}
-
-void publicarGps() {
-  // Vaciar la cola pero publicar solo la época más reciente: si se juntaron varias, publicarlas todas alarga
-  // la vuelta del loop sin aportar nada (revisión de Codex)
-  UP501::Fix f, ultima;
-  bool hay = false;
-  while (gps.pollEpoch(ultima)) {
-    f = ultima;
-    hay = true;
-  }
-  if (!hay || !enlace.hora(gpsMsg.header.stamp)) return;
-  gpsMsg.status.status = f.fix ? (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_FIX
-                               : (int8_t)sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
-  gpsMsg.latitude = f.fix ? f.latDeg : NAN;
-  gpsMsg.longitude = f.fix ? f.lonDeg : NAN;
-  // NavSatFix pide altura sobre el elipsoide: MSL + separación del geoide. Sin la separación no se puede
-  // calcular (usar MSL como si fuera elipsoidal sería un error de decenas de metros): NaN
-  gpsMsg.altitude = f.fix && isfinite(f.altMslM) && isfinite(f.geoidSepM) ? f.altMslM + f.geoidSepM : NAN;
-  // Covarianza aproximada a partir del HDOP (UERE ~5 m); vertical el doble
-  const double h = isfinite(f.hdop) ? f.hdop * 5.0 : 50.0;
-  gpsMsg.position_covariance[0] = gpsMsg.position_covariance[4] = h * h;
-  gpsMsg.position_covariance[8] = 4 * h * h;
-  gpsMsg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
-  ignorar(rcl_publish(&pubGps, &gpsMsg, nullptr));
 }
 
 void alTimer(rcl_timer_t *t, int64_t) {
@@ -239,11 +207,10 @@ void alTimer(rcl_timer_t *t, int64_t) {
     ignorar(rcl_publish(&pubEstado, &estadoMsg, nullptr));
   }
 
-  publicarGps();
 }
 
 bool crear(rcl_node_t *node, rclc_support_t *support, rclc_executor_t *ex) {
-  for (rcl_publisher_t *p : {&pubOdom, &pubImu, &pubRango[0], &pubRango[1], &pubRango[2], &pubBumpers, &pubGps,
+  for (rcl_publisher_t *p : {&pubOdom, &pubImu, &pubRango[0], &pubRango[1], &pubRango[2], &pubBumpers,
                              &pubBateria, &pubEstado, &pubResp})
     *p = rcl_get_zero_initialized_publisher();
   subCmdVel = rcl_get_zero_initialized_subscription();
@@ -258,11 +225,10 @@ bool crear(rcl_node_t *node, rclc_support_t *support, rclc_executor_t *ex) {
     if (rclc_publisher_init_best_effort(&pubRango[k], node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Range), TOPICO_RANGO[k]) != RCL_RET_OK) return false;
   if (rclc_publisher_init_default(&pubOdom, node, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom") != RCL_RET_OK) return false;
   if (rclc_publisher_init_default(&pubBumpers, node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, UInt8), "bumpers") != RCL_RET_OK) return false;
-  if (rclc_publisher_init_default(&pubGps, node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "gps/fix") != RCL_RET_OK) return false;
   if (rclc_publisher_init_default(&pubBateria, node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, BatteryState), "battery") != RCL_RET_OK) return false;
   if (rclc_publisher_init_default(&pubEstado, node, tStr, "base/estado") != RCL_RET_OK) return false;
   if (rclc_publisher_init_default(&pubResp, node, tStr, "base/respuesta") != RCL_RET_OK) return false;
-  for (rcl_publisher_t *p : {&pubOdom, &pubBumpers, &pubGps, &pubBateria, &pubEstado, &pubResp})
+  for (rcl_publisher_t *p : {&pubOdom, &pubBumpers, &pubBateria, &pubEstado, &pubResp})
     if (!EnlaceMicroRos::timeoutPublicador(p, PUB_TIMEOUT_MS)) return false;
 
   if (rclc_subscription_init_default(&subCmdVel, node, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "cmd_vel") != RCL_RET_OK) return false;
@@ -279,7 +245,7 @@ void destruir(rcl_node_t *node) {
   ignorar(rcl_timer_fini(&timer));
   ignorar(rcl_subscription_fini(&subCmdVel, node));
   ignorar(rcl_subscription_fini(&subComando, node));
-  for (rcl_publisher_t *p : {&pubOdom, &pubImu, &pubRango[0], &pubRango[1], &pubRango[2], &pubBumpers, &pubGps,
+  for (rcl_publisher_t *p : {&pubOdom, &pubImu, &pubRango[0], &pubRango[1], &pubRango[2], &pubBumpers,
                              &pubBateria, &pubEstado, &pubResp})
     ignorar(rcl_publisher_fini(p, node));
 }

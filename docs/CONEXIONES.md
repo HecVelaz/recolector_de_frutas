@@ -1,6 +1,6 @@
 # Conexiones del robot
 
-Versión 0.2 — 29/09/2026 (alimentación con los buck disponibles). Diagrama interactivo: `docs/conexiones.html` (abrir en el navegador).
+Versión 0.3 — 30/09/2026 (GPS en la Pi, un TRIG por HC-SR04; v0.2: alimentación con los buck disponibles). Diagrama interactivo: `docs/conexiones.html` (abrir en el navegador).
 Los pines salen de `firmware/brazo/include/pins.h` y `firmware/base/include/pins.h` (fuente de verdad). La
 conexión de la Pi es una propuesta. Nada de esto está probado en placa todavía.
 
@@ -10,9 +10,10 @@ flowchart LR
   PI -- USB · micro-ROS --> S3[ESP32-S3<br/>base]
   PI -- USB · micro-ROS --> WR[ESP32-WROOM<br/>brazo]
   PI -- GPIO 17 · 27 --> IND[Luz + buzzer]
+  PI -- UART GPIO 14 · 15 --> GPS[GPS UP501]
   PI -. USB .-> LID[LiDAR]
   S3 --> TR[2 × IBT-2 + DC 895 planetario 53 rpm]
-  S3 --> SEN[IMU · GPS · 3 × HC-SR04 · 3 bumpers]
+  S3 --> SEN[IMU · 3 × HC-SR04 · 3 bumpers]
   S3 --> SEG[Seta · batería]
   WR --> J1[J1: IBT-2 + 36GP-555 160 rpm]
   WR --> J23[J2, J3: L298N + 5840-31ZY]
@@ -21,7 +22,8 @@ flowchart LR
 
 ## ESP32-S3 · base
 
-Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa los 19 GPIO de uso general: no queda reserva.
+Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa 22 GPIO; queda libre el 40 (reservado por si la
+cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRIG.
 
 | GPIO | Conecta a | Nota |
 |---|---|---|
@@ -31,8 +33,7 @@ Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa los 19 GPIO de uso general: no qu
 | 15 · 16 | Encoder izquierdo A · B | amarillo · blanco; ver "Antes de conectar" |
 | 17 · 18 | Encoder derecho A · B | amarillo · blanco |
 | 8 · 9 | IMU SDA · SCL | 400 kHz, 0x68 |
-| 41 · 42 | GPS: TX del GPS → RX1 · RX del GPS ← TX1 | 9600 8N1 |
-| 10 | TRIG de los 3 HC-SR04 | disparo común |
+| 10 · 41 · 42 | TRIG del HC-SR04 central · esquina izq. · esquina der. | de a uno, cada 40 ms |
 | 11 · 12 · 13 | ECHO frente · izquierda · derecha | divisor 1 k / 2 k |
 | 14 · 21 · 39 | Bumpers frente · izquierda · derecha | NA a GND, pull-up interno (GPIO 40 queda libre) |
 | 47 | Contacto auxiliar **NC** de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
@@ -66,12 +67,16 @@ queja de tensión baja): por el mástil sube el bus de 12 V de lógica (buck 1-B
 Alternativa si la Pi tiene que ir abajo: cables CSI de 22 a 15 pines de 300-500 mm (existen hasta 1 m, pero a más
 largo más riesgo de errores de imagen); los adaptadores CSI→HDMI no están garantizados con la Pi 5.
 
+Los GPIO se atornillan en un **HAT pasivo de borneras** (40 pines a tornillo; `docs/fotos/HAT_pi_5/`): no agrega
+pines ni protección. Usar punteras en los cables y ver que no choque con el disipador ni tape los CSI.
+
 | Puerto | Conecta a | Nota |
 |---|---|---|
 | CSI0 · CSI1 | Cámaras NoIR izquierda · derecha | cable de 15 a 22 pines |
 | USB | ESP32-S3 (base) | micro-ROS |
 | USB | ESP32-WROOM (brazo) | micro-ROS |
 | USB | LiDAR | fuera del mínimo |
+| GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V |
 | GPIO 17 (pin 11) | Luz de estado | vía transistor |
 | GPIO 27 (pin 13) | Buzzer | vía transistor |
 | USB-C | Buck 2 (12 → 5,1 V, 8 A) | `usb_max_current_enable=1` |
@@ -151,8 +156,11 @@ GND común en un solo punto.
 
 ## Decisiones de esta propuesta
 
-- Un solo TRIG para los 3 HC-SR04: apuntan a lados distintos, así que casi no se interfieren.
+- Un TRIG por HC-SR04, disparados de a uno: los 3 miran al frente (0°, ±15°) y con el TRIG común uno podía tomar
+  el eco de otro. Cada sensor mide cada 120 ms (~8 Hz; a 0,25 m/s, 3 cm).
+- GPS en la Pi (UART del header, vía el HAT de borneras): no es de seguridad, queda arriba del mástil con cielo
+  despejado y liberó 41/42 de la S3. Driver: `nmea_navsat_driver` (ver `firmware/base/README.md`).
 - Un solo EN para los dos IBT-2 de tracción: la tracción se habilita y deshabilita completa.
 - Luz y buzzer en la Pi: son indicadores del supervisor. La seta y los bumpers quedan en la S3 para que la base
   reaccione sola.
-- Se respetan los pines ya probados en `~/pruebas-esp32`: IMU 8/9, GPS 41/42, motor 4/5, encoder 15/16.
+- Se respetan los pines ya probados en `~/pruebas-esp32`: IMU 8/9, motor 4/5, encoder 15/16.

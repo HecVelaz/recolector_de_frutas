@@ -19,9 +19,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   colgados de 12 V. Falta un segundo buck 1 (motores y lógica separados). Divisor de batería 120 k / 8,2 k (el viejo
   de 12 V quemaría el GPIO). Ver `docs/CONEXIONES.md` (v0.2) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
-  Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32.
-- **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro), GPS UP501,
-  3 HC-SR04, **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
+  Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
+  Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; sin probar) por un HAT pasivo de borneras.
+- **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
+  3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
   J2/J3 5840-31ZY (sin fin) + un L298N, 2 servos. En total 4 drivers.
 - Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
@@ -128,7 +129,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Cualquier nodo de ROS 2 en la misma LAN que la Pi ve y comanda los ESP32 reales (dominio 0): la simulación va
   aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`; con el robot real, no dejar agentes corriendo con el brazo
   armado si no se usa.
-- TRIG común de HC-SR04, EN común de tracción y luz/buzzer en la Pi: la S3 no tiene más GPIO libres.
+- EN común de tracción, luz/buzzer y GPS en la Pi: la S3 solo tiene libre el GPIO 40 (reservado para un 4.º bumper).
+  GPS a la Pi (30/09) para dar un TRIG a cada HC-SR04: los 3 miran al frente y con TRIG común se pisaban los ecos.
 - Videos (~500 MB) y artículos de terceros fuera de git.
 - Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo solo localiza con u >= 271 px en la
   imagen izquierda (ventana 0,40-0,95 m: el 42 % izquierdo queda ciego) y el brazo en reposo no puede quedar entre

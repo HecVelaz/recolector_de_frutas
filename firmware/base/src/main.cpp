@@ -1,4 +1,4 @@
-// Firmware de la base (ESP32-S3): tracción diferencial en lazo cerrado, odometría, sensores (IMU, GPS,
+// Firmware de la base (ESP32-S3): tracción diferencial en lazo cerrado, odometría, sensores (IMU,
 // 3 HC-SR04, 3 bumpers, batería) y seguridad local (seta, vuelco, contacto, distancia al frente, watchdog).
 //
 // Esqueleto, primera versión: comandos por el monitor serial (115200). Más adelante la misma lógica se
@@ -8,7 +8,7 @@
 // Estructura:
 //   - tareaControl (núcleo 0, cada 10 ms): encoders, bumpers, seta, IMU, HC-SR04, seguridad, control de las
 //     ruedas, odometría. No usa Serial. La seguridad se decide acá, sin esperar a nadie.
-//   - loop (núcleo 1): comandos, GPS, batería, mensajes y CSV.
+//   - loop (núcleo 1): comandos, batería, mensajes y CSV. El GPS está en la Pi (nmea_navsat_driver).
 // El estado compartido se toca dentro de la sección crítica; las marcas de tiempo se toman adentro.
 #include <Arduino.h>
 #include <Wire.h>
@@ -20,7 +20,6 @@
 #include "HCSR04.h"
 #include "MPU9250.h"
 #include "SeguridadBase.h"
-#include "UP501.h"
 #include "base_config.h"
 #include "esp_task_wdt.h"
 #include "pins.h"
@@ -41,7 +40,6 @@ EncoderPCNT enc[2];
 ControlArticulacion rueda[2];
 HCSR04 ultrasonido;
 MPU9250 imu(Wire);
-UP501 gps(Serial1);
 SemaphoreHandle_t i2c;  // la tarea lee la IMU y el loop la calibra: no a la vez
 bool hwOk = false, imuOk = false;
 // Toda la salida de texto pasa por acá: en modo serial es el monitor; con micro-ROS, un búfer que se publica
@@ -251,7 +249,7 @@ void ayuda() {
   out->println();
   out->println("Comandos (v en m/s, w en rad/s; + = adelante / giro a la izquierda):");
   out->println("  e                estado: modo, seguridad, odometría y ruedas");
-  out->println("  sens             sensores: IMU, GPS, distancias, bumpers, seta, batería");
+  out->println("  sens             sensores: IMU, distancias, bumpers, seta, batería");
   out->printf("  v <v> <w> [s]    mover con rampa por s segundos (def %.0f, máx %.0f). Ej: v 0.1 0\n", CMD_S_DEF, CMD_S_MAX);
   out->println("  w <izq> <der> [s] rpm de cada rueda (lazo de velocidad solo). Ej: w 20 20");
   out->printf("  d <izq> <der>    lazo abierto en %% (máx %.0f); se corta a los %lu ms si no se repite\n", JOG_DUTY_MAX,
@@ -322,11 +320,6 @@ void sensores() {
                   s.acc.z, s.gyro.x, s.gyro.y, s.gyro.z, s.roll, s.pitch);
   else
     out->println("IMU: sin responder (revisar SDA 8 / SCL 9)");
-  UP501::Fix f;
-  if (gps.readFix(f))
-    out->printf("GPS: fix lat=%.6f lon=%.6f sats=%u hdop=%.1f\n", f.latDeg, f.lonDeg, f.satsUsed, f.hdop);
-  else
-    out->printf("GPS: %s | sats en vista: %d\n", UP501::stateName(gps.state()), gps.satellitesInView());
   out->print("Distancias [m]:");
   const char *nom[3] = {"frente", "izq", "der"};
   for (int k = 0; k < 3; k++) {
@@ -573,8 +566,9 @@ void setup() {
 
   for (int k = 0; k < 3; k++) pinMode(PIN_BUMPER[k], INPUT_PULLUP);
   pinMode(PIN_SETA, INPUT_PULLUP);
+  const int trigs[3] = {PIN_US_TRIG_FRENTE, PIN_US_TRIG_IZQ, PIN_US_TRIG_DER};
   const int ecos[3] = {PIN_US_ECHO_FRENTE, PIN_US_ECHO_IZQ, PIN_US_ECHO_DER};
-  const bool okUs = ultrasonido.begin(PIN_US_TRIG, ecos, 3);
+  const bool okUs = ultrasonido.begin(trigs, ecos, 3);
 
   for (int i = 0; i < 2; i++) rueda[i].configurar(CFG_RUEDA);
 
@@ -588,7 +582,6 @@ void setup() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);
   const MPU9250::Status stImu = imu.begin(MPU9250::Dlpf::Hz20);
   imuOk = stImu == MPU9250::Status::Ok;
-  Serial1.begin(UP501::DEFAULT_BAUD, SERIAL_8N1, PIN_GPS_RX, PIN_GPS_TX);
   analogSetPinAttenuation(PIN_BATERIA, ADC_11db);
 
   i2c = xSemaphoreCreateMutex();
@@ -596,7 +589,7 @@ void setup() {
   hwOk = okPwm && okEnc && okUs && i2c && colaLog;
 
   out->println();
-  out->println("== firmware/base: tracción diferencial (2 × IBT-2 + 36GP-555), IMU, GPS, HC-SR04, bumpers, seta ==");
+  out->println("== firmware/base: tracción diferencial (2 × IBT-2 + 42GM-895H), IMU, HC-SR04, bumpers, seta ==");
   out->printf("Control a %.0f Hz en el núcleo 0. Base LIBERADA (puentes deshabilitados).\n", 1.0f / TS);
   if (!okPwm) out->println("ERROR: no se pudo configurar el PWM de los IBT-2.");
   if (!okEnc) out->println("ERROR: no se pudo configurar el PCNT de los encoders.");
@@ -619,7 +612,6 @@ void loop() {
 #else
   leerSerial();
 #endif
-  gps.update();
 
   static uint32_t batMs = 0;
   if (millis() - batMs >= BATERIA_CADA_MS) {

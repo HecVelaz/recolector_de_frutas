@@ -5,7 +5,7 @@ El control corre a 100 Hz en una tarea del núcleo 0; los comandos llegan por el
 capa de comandos se cambia por micro-ROS (`/cmd_vel` → `/odom`, `/imu/data_raw`, `/range/*`, `/bumpers`,
 `/battery`, ver `docs/ARQUITECTURA.md`), sin tocar la lógica.
 
-**Estado:** compila sin warnings y las 19 pruebas de la lógica pasan en la PC (`pio test -e native`). Revisado
+**Estado:** compila sin warnings y las 20 pruebas de la lógica pasan en la PC (`pio test -e native`). Revisado
 por Codex (9 hallazgos, aplicados). **No probado en placa.** Los valores marcados `MEDIR` en `include/base_config.h` son estimaciones.
 
 ## Estructura
@@ -15,11 +15,11 @@ por Codex (9 hallazgos, aplicados). **No probado en placa.** Los valores marcado
 | `lib/BaseLogica/Diferencial` | Cinemática diferencial (v, w ↔ rpm de cada rueda, saturación que conserva la curvatura), rampa y odometría. **Sin Arduino** |
 | `lib/BaseLogica/SeguridadBase` | Seta, vuelco, bumpers, distancia al frente, watchdog y batería baja. **Sin Arduino** |
 | `../lib/ControlArticulacion` | PI de velocidad + feedforward de cada rueda (el mismo control del brazo, en modo velocidad) |
-| `../lib/HCSR04` | Los 3 HC-SR04 con TRIG común y ECHO por interrupción (no bloquea) |
-| `../lib/MPU9250`, `../lib/UP501` | IMU y GPS (copiados de `~/pruebas-esp32`, probados en placa) |
+| `../lib/HCSR04` | Los 3 HC-SR04, un TRIG por sensor y disparados de a uno (miran todos al frente); ECHO por interrupción (no bloquea) |
+| `../lib/MPU9250` | IMU (copiada de `~/pruebas-esp32`, probada en placa). El GPS pasó a la Pi: ver abajo |
 | `include/pins.h` | Pines, según `docs/CONEXIONES.md` |
 | `include/base_config.h` | Motor, geometría, seguridad y límites de puesta en marcha |
-| `test/test_base/` | 19 pruebas: cinemática, odometría (recta, giro, círculo), cada regla de seguridad, tope por cercanía con la rampa, lazo de una rueda |
+| `test/test_base/` | 20 pruebas: cinemática, odometría (recta, giro, círculo), cada regla de seguridad, tope por cercanía con la rampa, lazo de una rueda |
 
 ## Seguridad (se decide en la S3, sin esperar a la Pi)
 
@@ -56,9 +56,8 @@ micro-ROS (usar `ros2 bag record`).
 |---|---|---|---|
 | `/odom` | `nav_msgs/Odometry` | sale, 25 Hz | `odom` → `base_link` |
 | `/imu/data_raw` | `sensor_msgs/Imu` | sale, 50 Hz | m/s² y rad/s, sin orientación (para `imu_filter_madgwick`) |
-| `/range/frente`, `/range/izq`, `/range/der` | `sensor_msgs/Range` | sale, 10 Hz | +Inf = nada al alcance; NaN = sin eco (REP-117) |
+| `/range/frente`, `/range/izq`, `/range/der` | `sensor_msgs/Range` | sale, 10 Hz | cada sensor mide cada 120 ms; +Inf = nada al alcance; NaN = sin eco (REP-117) |
 | `/bumpers` | `std_msgs/UInt8` | sale, 10 Hz | bits 0..2: frente, izquierda, derecha (3 bumpers, R2 E3) |
-| `/gps/fix` | `sensor_msgs/NavSatFix` | sale, ~1 Hz | un mensaje por epoch; covarianza aproximada por HDOP; altitud elipsoidal o NaN |
 | `/battery` | `sensor_msgs/BatteryState` | sale, 1 Hz | tensión |
 | `/base/estado` | `std_msgs/String` | sale, 2 Hz | modo, seguridad, bloqueos, IMU y fallas |
 | `/base/respuesta` | `std_msgs/String` | sale | lo que mostraría el monitor serial |
@@ -85,9 +84,25 @@ $PIO test -e native               # pruebas de la lógica en la PC
 $PIO run -t upload -t monitor     # flashear (12 V de los motores APAGADOS) y abrir el monitor
 ```
 
+### GPS en la Pi (30/09)
+
+El UP501 va al UART del header de la Pi 5 (HAT de borneras): TX del GPS → GPIO 15 (RXD, pin 10), RX del GPS ←
+GPIO 14 (TXD, pin 8), 3,3 V y GND. Liberó los GPIO 41/42 de la S3, que ahora son TRIG de los HC-SR04. Publica en el
+mismo `/gps/fix` que antes publicaba la S3:
+
+```bash
+# Una vez: UART0 en los GPIO 14/15 (en la Pi 5 queda /dev/ttyAMA0) y el driver
+echo 'dtparam=uart0=on' | sudo tee -a /boot/firmware/config.txt   # y reiniciar
+sudo apt install ros-jazzy-nmea-navsat-driver                      # el usuario tiene que estar en dialout
+ros2 run nmea_navsat_driver nmea_serial_driver --ros-args \
+  -p port:=/dev/ttyAMA0 -p baud:=9600 -p frame_id:=gps_link -r fix:=/gps/fix
+```
+
+Sin probar: la Pi estaba apagada cuando se hizo el cambio. Verificar con `cat /dev/ttyAMA0` que llegan frases `$GP…`.
+
 Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 
-1. `sens`: ver que respondan IMU, GPS, distancias, bumpers, seta y batería.
+1. `sens`: ver que respondan IMU, distancias, bumpers, seta y batería.
 2. `d 25 0` repetido, después `d 0 25`: cada rueda debe girar **hacia adelante** y `e` mostrar rpm positivas. Si
    gira al revés, cambiar `MOTOR_INVERTIDO`; si gira bien pero las rpm salen negativas, `ENC_INVERTIDO`.
 3. `log 20` y `w 20 20 3`: lazo de velocidad de las ruedas (CSV para graficar la respuesta).
@@ -119,6 +134,7 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 | 2026-09-28 | Placa sola, serial: seta al aire → EMERGENCIA; `d`/`v` recortados a 0 %; `r` rechazado | OK |
 | 2026-09-28 | Placa sola, micro-ROS: `/odom` 25,0 Hz, `/range/*` y `/bumpers` 10,0 Hz, `/base/estado` 2,0 Hz, `/battery` 1,0 Hz; armado y reconexión DESARMADA; en simultáneo con el brazo sin pérdidas | OK |
 | 2026-09-28 | Revisión de Codex de la reconexión: ping de 20 a 100 ms, executor antes de sincronizar la hora (y sin sincronizar con pings perdidos), GPS publica solo la última época, contadores `enlace: pings_fallidos cortes` en `/<parte>/estado`. En la Pi con los 4 núcleos al 100 %, 6 `topic hz` y 3 reinicios del agente del brazo: base con 7 pings tardíos y 0 cortes (una sola sesión); brazo, 3 cortes = los 3 reinicios | OK |
+| 2026-09-30 | GPS a la Pi; HC-SR04 con un TRIG cada uno (10, 41, 42) disparados de a uno cada 40 ms. `pio run` (esp32s3 y ros) sin warnings y 20 pruebas nativas. Sin probar en placa | compila |
 | | Sentido de ruedas y encoders | — |
 | | Lazo de velocidad de las ruedas en placa | — |
 | | Odometría contra cinta métrica | — |

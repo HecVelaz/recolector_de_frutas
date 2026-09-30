@@ -1,7 +1,7 @@
 #pragma once
 
 // Placa: Freenove ESP32-S3-WROOM N16R8 (USB nativo /dev/ttyACM0). Controla la base, sus sensores y la seta.
-// Pines según docs/CONEXIONES.md. Usa los 19 GPIO de uso general: no queda ninguno libre.
+// Pines según docs/CONEXIONES.md. Solo queda libre el GPIO 40 (reservado para un 4.º bumper). El GPS va en la Pi.
 // Prohibidos: 19/20 (USB), 26-37 (flash y PSRAM octal). Evitar: 0/3/45/46 (strapping), 43/44 (UART0), 2/48 (LED).
 // Los GPIO son de 3,3 V: el ECHO de los HC-SR04 (5 V) va con divisor.
 
@@ -22,12 +22,11 @@ constexpr int PIN_DER_ENC_B = 18;
 constexpr int PIN_I2C_SDA = 8;
 constexpr int PIN_I2C_SCL = 9;
 
-// GPS Fastrax UP501 por UART1 (9600 8N1)
-constexpr int PIN_GPS_RX = 41;  // <- TXD del GPS
-constexpr int PIN_GPS_TX = 42;  // -> RXD del GPS
-
-// HC-SR04: TRIG común, un ECHO por sensor (divisor 1 kΩ / 2 kΩ en cada uno)
-constexpr int PIN_US_TRIG = 10;
+// HC-SR04: un TRIG y un ECHO por sensor (divisor 1 kΩ / 2 kΩ en cada ECHO). Los 3 miran al frente: se disparan
+// de a uno para que no se pisen los ecos. 41/42 eran del GPS, que pasó a la Pi (UART del header).
+constexpr int PIN_US_TRIG_FRENTE = 10;
+constexpr int PIN_US_TRIG_IZQ = 41;
+constexpr int PIN_US_TRIG_DER = 42;
 constexpr int PIN_US_ECHO_FRENTE = 11;
 constexpr int PIN_US_ECHO_IZQ = 12;
 constexpr int PIN_US_ECHO_DER = 13;

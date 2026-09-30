@@ -4,9 +4,8 @@
 //
 // Publica   /odom                nav_msgs/Odometry        odom -> base_link, pose y velocidad              25 Hz
 //           /imu/data_raw        sensor_msgs/Imu          acelerómetro [m/s²] y giroscopio [rad/s], sin orientación  50 Hz
-//           /range/frente, /range/izq, /range/der  sensor_msgs/Range  +Inf = nada al alcance, NaN = sin eco  10 Hz
+//           /range/frente, /range/izq, /range/der  sensor_msgs/Range  +Inf = nada al alcance, NaN = sin eco  10 Hz (cada sensor mide a ~8 Hz)
 //           /bumpers             std_msgs/UInt8           bits 0..3 = frente-izq, frente-der, atrás-izq, atrás-der  10 Hz
-//           /gps/fix             sensor_msgs/NavSatFix    un mensaje por epoch del GPS (~1 Hz)
 //           /battery             sensor_msgs/BatteryState tensión [V]                                        1 Hz
 //           /base/estado         std_msgs/String          modo, seguridad, bloqueos y fallas                 2 Hz
 //           /base/respuesta      std_msgs/String          lo que el monitor serial mostraría (respuestas, avisos)
