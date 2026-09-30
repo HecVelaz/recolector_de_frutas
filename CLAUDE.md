@@ -20,7 +20,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   de 12 V quemaría el GPIO). Ver `docs/CONEXIONES.md` (v0.2) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
-  Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; sin probar) por un HAT pasivo de borneras.
+  Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
   3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
   J2/J3 5840-31ZY (sin fin) + un L298N, 2 servos. En total 4 drivers.

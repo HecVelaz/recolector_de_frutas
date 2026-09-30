@@ -98,7 +98,9 @@ ros2 run nmea_navsat_driver nmea_serial_driver --ros-args \
   -p port:=/dev/ttyAMA0 -p baud:=9600 -p frame_id:=gps_link -r fix:=/gps/fix
 ```
 
-Sin probar: la Pi estaba apagada cuando se hizo el cambio. Verificar con `cat /dev/ttyAMA0` que llegan frases `$GP…`.
+30/09: hecho en la Pi (UART0 y driver instalados; el driver abre `/dev/ttyAMA0`). Falta conectar el GPS al HAT y
+verificar con `cat /dev/ttyAMA0` que llegan frases `$GP…`. Sin GPS, el driver avisa "invalid checksum" con la frase
+vacía cada 2 s: es normal.
 
 Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
 
