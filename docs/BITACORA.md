@@ -151,3 +151,22 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 ### Lecciones
 - El vigilante de Codex no puede buscar "tokens used" con `grep -q`: aparece en CLAUDE.md si Codex lo lee. Usar `grep -qx`.
 - Los comandos para la Pi el usuario los corre en la propia Pi: no anteponer `ssh`.
+
+## 2026-09-30 (tarde): cámaras en el soporte nuevo, cinta CSI dañada
+
+### Cambios
+- Cámaras pasadas a otro soporte: después, una sola se detectaba o transmitía. Pruebas, cada una con la Pi apagada y
+  reiniciada: al intercambiar las cintas la falla pasó al otro puerto; con la cinta mala y una cámara sola, falló
+  igual; con la buena, la misma cámara y el mismo puerto andan. **Una cinta está dañada**: cámaras y puertos, bien.
+- Síntomas de la cinta mala: sin detección, `Failed to write reg 0x0100` + `stream on failed`, o arranca y a los
+  segundos `Camera frontend has timed out`.
+- Vista web de las dos cámaras en crudo (página en el 8081, `web_video_server` en el 8080) y `~/probar_camaras.sh`
+  en la Pi (detección + 10 s de transmisión por cámara; la parte de transmitir sin probar).
+- `estereo.launch.py` (disparidad 0-128) solo mide desde 0,84 m con la v1: para objetos cercanos, `limon.launch.py`.
+- `docs/RESUMEN_PROYECTO.md`: resumen del proceso completo, en 35 puntos.
+
+### Lecciones
+- Las cámaras se detectan solo al arrancar: reconectar en caliente no sirve (y puede dañarlas).
+- `pkill -f "[p]atrón"` por ssh igual se mata a sí mismo si el patrón aparece más adelante en la misma línea de
+  comando (cortó la sesión dos veces): limpiar en un ssh aparte.
+- `sudo reboot` de la Pi lo bloquea el modo automático: pedírselo al usuario.
