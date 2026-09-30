@@ -15,8 +15,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
   a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
 - **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria/`). Los motores son de
-  12 V: van por un buck 36 → 12 V de alta corriente; todos los buck con entrada ≥ 45 V; divisor de batería
-  120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). Ver `docs/CONEXIONES.md`.
+  12 V. Buck (`docs/fotos/bucks/`): solo el **buck 1** (10,5-60 V, 12 A) aguanta la batería; los 2, 3 y 4 van
+  colgados de 12 V. Falta un segundo buck 1 (motores y lógica separados). Divisor de batería 120 k / 8,2 k (el viejo
+  de 12 V quemaría el GPIO). Ver `docs/CONEXIONES.md` (v0.2) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32.
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro), GPS UP501,
@@ -149,8 +150,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
 5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
 6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
-7. Conseguir los buck de entrada ≥ 45 V (36 → 12 V ≥ 25 A para motores, 5 V 5 A para la Pi, 6 V ≥ 5 A servos),
-   el relé de la seta para 36 V DC y armar el divisor 120 k / 8,2 k antes de conectar la batería.
+7. Comprar un segundo buck 1 (lógica), Schottky ≥ 30 A, 2200 µF 25 V, TVS de 15 V y relé automotriz 12 V 40 A
+   para la seta (corta del lado de 12 V); armar el divisor 120 k / 8,2 k antes de conectar la batería.
 8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).

@@ -154,7 +154,7 @@
           <text class="t-big" x="600" y="48" text-anchor="middle">Raspberry Pi 5</text>
           <text class="t-sub" x="600" y="68" text-anchor="middle">Ubuntu 24.04 · ROS 2 Jazzy · YOLO + estéreo</text>
           <text class="t-sub" x="600" y="86" text-anchor="middle">Wi-Fi → app móvil (rosbridge)</text>
-          <text class="t-sub" x="600" y="104" text-anchor="middle">5 V 5 A por USB-C</text>
+          <text class="t-sub" x="600" y="104" text-anchor="middle">5,1 V por USB-C (buck 2)</text>
 
           <!-- Cámaras -->
           <rect class="box" x="100" y="36" width="230" height="64" rx="4"></rect>
@@ -197,14 +197,14 @@
           <g>
             <rect class="box" x="16" y="208" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="229">Tracción izquierda</text>
-            <text class="t-sub" x="28" y="248">IBT-2 · 36GP-555 53 rpm</text>
+            <text class="t-sub" x="28" y="248">IBT-2 · 42GM-895H 53 rpm</text>
             <path class="w gpio" d="M226 234 H380"></path>
             <g class="lbl gpio"><text class="t-pin" x="303" y="227" text-anchor="middle">PWM 4/5 · EN 38</text><text class="t-pin" x="303" y="249" text-anchor="middle">enc 15/16</text></g>
           </g>
           <g>
             <rect class="box" x="16" y="274" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="295">Tracción derecha</text>
-            <text class="t-sub" x="28" y="314">IBT-2 · 36GP-555 53 rpm</text>
+            <text class="t-sub" x="28" y="314">IBT-2 · 42GM-895H 53 rpm</text>
             <path class="w gpio" d="M226 300 H380"></path>
             <g class="lbl gpio"><text class="t-pin" x="303" y="293" text-anchor="middle">PWM 6/7 · EN 38</text><text class="t-pin" x="303" y="315" text-anchor="middle">enc 17/18</text></g>
           </g>
@@ -225,16 +225,16 @@
           <g>
             <rect class="box" x="16" y="472" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="493">HC-SR04 × 3</text>
-            <text class="t-sub" x="28" y="512">frente · izq. · der. · 5 V</text>
+            <text class="t-sub" x="28" y="512">los 3 al frente (0°, ±15°) · 5 V</text>
             <path class="w gpio" d="M226 498 H380"></path>
             <g class="lbl gpio"><text class="t-pin" x="303" y="491" text-anchor="middle">TRIG 10 (común)</text><text class="t-pin" x="303" y="513" text-anchor="middle">ECHO 11/12/13 ÷</text></g>
           </g>
           <g>
             <rect class="box" x="16" y="538" width="210" height="52" rx="4"></rect>
-            <text class="t-title" x="28" y="559">Bumpers × 4</text>
-            <text class="t-sub" x="28" y="578">NA a GND · pull-up interno</text>
+            <text class="t-title" x="28" y="559">Bumpers × 3</text>
+            <text class="t-sub" x="28" y="578">frente · laterales · NA a GND</text>
             <path class="w gpio" d="M226 564 H380"></path>
-            <g class="lbl gpio"><text class="t-pin" x="303" y="557" text-anchor="middle">14 · 21 · 39 · 40</text></g>
+            <g class="lbl gpio"><text class="t-pin" x="303" y="557" text-anchor="middle">14 · 21 · 39</text></g>
           </g>
           <g>
             <rect class="box safety" x="16" y="604" width="210" height="52" rx="4"></rect>
@@ -246,7 +246,7 @@
           <g>
             <rect class="box" x="16" y="670" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="691">Tensión de batería</text>
-            <text class="t-sub" x="28" y="710">divisor 100 k / 27 k</text>
+            <text class="t-sub" x="28" y="710">divisor 120 k / 8,2 k · 10S</text>
             <path class="w analog" d="M226 696 H380"></path>
             <g class="lbl analog"><text class="t-pin" x="303" y="689" text-anchor="middle">ADC 1</text></g>
           </g>
@@ -310,87 +310,118 @@
     <h2 id="h-alim">Alimentación</h2>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 372" role="img" aria-label="Árbol de alimentación: la batería de 12 V pasa por el interruptor general y un fusible a un bus; de ahí salen el Buck de 5 V para la Pi, el Buck de 6 V para los servos, la rama de potencia cortada por la seta y el divisor que mide la batería.">
-          <!-- Cadena de entrada -->
-          <rect class="box" x="16" y="158" width="150" height="48" rx="4"></rect>
-          <text class="t-title" x="28" y="178">Batería 12 V</text>
-          <text class="t-sub" x="28" y="196">química por definir</text>
-          <path class="w power" d="M166 182 H200"></path>
-          <rect class="box" x="200" y="158" width="140" height="48" rx="4"></rect>
-          <text class="t-title" x="212" y="178">Interruptor</text>
-          <text class="t-sub" x="212" y="196">ON/OFF general (H8)</text>
-          <path class="w power" d="M340 182 H374"></path>
-          <rect class="box" x="374" y="158" width="96" height="48" rx="4"></rect>
-          <text class="t-title" x="386" y="178">Fusible</text>
-          <text class="t-sub" x="386" y="196">15 A</text>
-          <path class="w power" d="M470 182 H510"></path>
+        <svg viewBox="0 0 1200 500" role="img" aria-label="Árbol de alimentación: la batería 10S de 36 V pasa por un fusible y el interruptor general a un bus de 36 V. De ahí salen el buck 1-B a un bus de 12 V de lógica con el buck 2 para la Pi, el buck 1-A con diodo y relé de la seta hacia el bus de 12 V de motores, y el divisor que mide la batería.">
+          <!-- Cadena de entrada, apilada -->
+          <rect class="box" x="16" y="24" width="190" height="62" rx="4"></rect>
+          <text class="t-title" x="28" y="44">Batería 10S2P · 36 V</text>
+          <text class="t-sub" x="28" y="61">30–42 V · 4400 mAh · 158 Wh</text>
+          <text class="t-sub" x="28" y="77">XT60 · BMS de hoverboard</text>
+          <path class="w power" d="M111 86 V116"></path>
+          <rect class="box" x="16" y="116" width="190" height="44" rx="4"></rect>
+          <text class="t-title" x="28" y="136">Fusible 15 A</text>
+          <text class="t-sub" x="28" y="152">junto al borne positivo</text>
+          <path class="w power" d="M111 160 V190"></path>
+          <rect class="box" x="16" y="190" width="190" height="44" rx="4"></rect>
+          <text class="t-title" x="28" y="210">Interruptor general</text>
+          <text class="t-sub" x="28" y="226">apto para DC · H8</text>
+          <path class="w power" d="M206 212 H250"></path>
 
-          <!-- Bus 12 V -->
-          <path class="w power" d="M510 40 V330"></path>
-          <circle class="dot" cx="510" cy="182" r="4.5"></circle>
-          <g class="lbl power"><text class="t-pin" x="498" y="30" text-anchor="end">bus 12 V</text></g>
+          <!-- Bus 36 V -->
+          <path class="w power" d="M250 50 V440"></path>
+          <circle class="dot" cx="250" cy="212" r="4.5"></circle>
+          <g class="lbl power"><text class="t-pin" x="244" y="476" text-anchor="middle">bus 36 V</text></g>
 
-          <!-- Rama lógica: Pi -->
-          <path class="w power" d="M510 40 H560"></path>
-          <rect class="box" x="560" y="18" width="150" height="44" rx="4"></rect>
-          <text class="t-title" x="572" y="38">Buck 5 V · 5 A</text>
-          <text class="t-sub" x="572" y="54">solo la Pi</text>
-          <path class="w supply" d="M710 40 H750"></path>
-          <rect class="box" x="750" y="18" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="762" y="38">Raspberry Pi 5</text>
-          <text class="t-sub" x="762" y="54">USB-C, 27 W</text>
-          <path class="w data" d="M940 40 H974"></path>
-          <rect class="box" x="974" y="18" width="210" height="44" rx="4"></rect>
-          <text class="t-title" x="986" y="38">ESP32-S3 y WROOM</text>
-          <text class="t-sub" x="986" y="54">por el mismo USB de datos</text>
+          <!-- Rama lógica -->
+          <path class="w power" d="M250 50 H290"></path>
+          <rect class="box later" x="290" y="28" width="160" height="44" rx="4"></rect>
+          <text class="t-title" x="302" y="48">Buck 1-B · 36 → 12 V</text>
+          <text class="t-sub" x="302" y="64">CC 3 A · fusible 3 A · falta</text>
+          <path class="w supply" d="M450 50 H520"></path>
+          <g class="lbl supply"><text class="t-pin" x="485" y="42" text-anchor="middle">12 V</text></g>
+          <rect class="box" x="520" y="28" width="160" height="44" rx="4"></rect>
+          <text class="t-title" x="532" y="48">Buck 2 · 12 → 5,1 V</text>
+          <text class="t-sub" x="532" y="64">XL4016 8 A · arriba</text>
+          <path class="w supply" d="M680 50 H720"></path>
+          <rect class="box" x="720" y="28" width="160" height="44" rx="4"></rect>
+          <text class="t-title" x="732" y="48">Raspberry Pi 5</text>
+          <text class="t-sub" x="732" y="64">USB-C, sin USB-PD</text>
+          <path class="w data" d="M880 50 H920"></path>
+          <rect class="box" x="920" y="28" width="264" height="44" rx="4"></rect>
+          <text class="t-title" x="932" y="48">ESP32-S3 y WROOM</text>
+          <text class="t-sub" x="932" y="64">por el mismo USB de datos</text>
+          <text class="t-sub" x="302" y="96">El bus de 12 V de lógica sube por el mástil (~1,5 A). También alimenta el ventilador del buck 1-A, la luz y el buzzer.</text>
 
-          <!-- Rama servos -->
-          <path class="w power" d="M510 110 H560"></path>
-          <rect class="box" x="560" y="88" width="150" height="44" rx="4"></rect>
-          <text class="t-title" x="572" y="108">Buck 6 V · 3 A</text>
-          <text class="t-sub" x="572" y="124">separado de la lógica</text>
-          <path class="w supply" d="M710 110 H750"></path>
-          <rect class="box" x="750" y="88" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="762" y="108">Servos de la pinza</text>
-          <text class="t-sub" x="762" y="124">GND común con la WROOM</text>
+          <!-- Rama de motores -->
+          <path class="w power" d="M250 200 H290"></path>
+          <rect class="box" x="290" y="178" width="160" height="44" rx="4"></rect>
+          <text class="t-title" x="302" y="198">Buck 1-A · 36 → 12,5 V</text>
+          <text class="t-sub" x="302" y="214">CC 14 A · con ventilador</text>
+          <path class="w supply" d="M450 200 H480"></path>
+          <rect class="box" x="480" y="178" width="130" height="44" rx="4"></rect>
+          <text class="t-title" x="492" y="198">Schottky ≥ 30 A</text>
+          <text class="t-sub" x="492" y="214">el frenado no vuelve</text>
+          <path class="w supply" d="M610 200 H640"></path>
+          <rect class="box safety" x="640" y="178" width="150" height="44" rx="4"></rect>
+          <text class="t-title" x="652" y="198">Relé 12 V · 40 A</text>
+          <text class="t-sub" x="652" y="214">automotriz · NA</text>
+          <path class="w supply" d="M790 200 H830"></path>
 
-          <!-- Rama de potencia con seta -->
-          <path class="w power" d="M510 182 H560"></path>
-          <rect class="box safety" x="560" y="160" width="150" height="44" rx="4"></rect>
-          <text class="t-title" x="572" y="180">Seta (NC)</text>
-          <text class="t-sub" x="572" y="196">con enclavamiento</text>
-          <path class="w power" d="M710 182 H750"></path>
-          <rect class="box" x="750" y="160" width="140" height="44" rx="4"></rect>
-          <text class="t-title" x="762" y="180">Relé de potencia</text>
-          <text class="t-sub" x="762" y="196">rearme manual</text>
-          <path class="w power" d="M890 182 H920 M920 182 V252 M920 182 H974 M920 252 H974"></path>
-          <circle class="dot" cx="920" cy="182" r="4"></circle>
-          <rect class="box" x="974" y="160" width="210" height="44" rx="4"></rect>
-          <text class="t-title" x="986" y="180">Tracción · fusible 10 A</text>
-          <text class="t-sub" x="986" y="196">IBT-2 izquierda y derecha</text>
-          <rect class="box" x="974" y="230" width="210" height="44" rx="4"></rect>
-          <text class="t-title" x="986" y="250">Llave del brazo (H8)</text>
-          <text class="t-sub" x="986" y="266">fusible 5 A · IBT-2 J1 + L298N</text>
+          <!-- Bus 12 V de motores -->
+          <path class="w supply" d="M830 150 V370"></path>
+          <circle class="dot" cx="830" cy="200" r="4"></circle>
+          <g class="lbl supply"><text class="t-pin" x="830" y="126" text-anchor="middle">bus 12 V de motores</text></g>
+          <path class="w supply" d="M830 160 H870 M830 230 H870 M830 300 H870 M830 370 H870"></path>
+          <rect class="box" x="870" y="138" width="314" height="44" rx="4"></rect>
+          <text class="t-title" x="882" y="158">Tracción · fusible 15 A</text>
+          <text class="t-sub" x="882" y="174">2 × IBT-2 · 42GM-895H</text>
+          <rect class="box" x="870" y="208" width="314" height="44" rx="4"></rect>
+          <text class="t-title" x="882" y="228">Llave del brazo (H8) · fusible 5 A</text>
+          <text class="t-sub" x="882" y="244">IBT-2 J1 + L298N J2/J3</text>
+          <rect class="box" x="870" y="278" width="314" height="44" rx="4"></rect>
+          <text class="t-title" x="882" y="298">Buck 3 · 12 → 6 V · CC 5 A · fusible 3 A</text>
+          <text class="t-sub" x="882" y="314">2 servos RDS3218 · GND común con la WROOM</text>
+          <rect class="box" x="870" y="348" width="314" height="44" rx="4"></rect>
+          <text class="t-title" x="882" y="368">2200 µF 25 V + TVS 15 V</text>
+          <text class="t-sub" x="882" y="384">toman la energía del frenado</text>
 
-          <!-- Contacto auxiliar de la seta -->
-          <path class="w safety" d="M635 204 V252 H760"></path>
-          <g class="lbl safety"><text class="t-pin" x="648" y="245">contacto aux. → S3 GPIO 47</text></g>
+          <!-- Seta -->
+          <rect class="box safety" x="630" y="276" width="170" height="44" rx="4"></rect>
+          <text class="t-title" x="642" y="296">Seta (NC)</text>
+          <text class="t-sub" x="642" y="312">enclava · se rearma girándola</text>
+          <path class="w safety" d="M715 276 V222"></path>
+          <g class="lbl safety"><text class="t-pin" x="722" y="254">bobina</text></g>
+          <path class="w safety" d="M715 320 V350"></path>
+          <g class="lbl safety"><text class="t-pin" x="715" y="366" text-anchor="middle">contacto aux. → S3 GPIO 47</text></g>
 
           <!-- Medición de batería -->
-          <path class="w power" d="M510 318 H560"></path>
-          <rect class="box" x="560" y="296" width="150" height="44" rx="4"></rect>
-          <text class="t-title" x="572" y="316">Divisor 100 k / 27 k</text>
-          <text class="t-sub" x="572" y="332">12,6 V → 2,68 V</text>
-          <path class="w analog" d="M710 318 H750"></path>
-          <rect class="box" x="750" y="296" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="762" y="316">ESP32-S3 · ADC GPIO 1</text>
-          <text class="t-sub" x="762" y="332">nivel de batería (H7)</text>
-          <text class="t-sub" x="974" y="316">GND común en un solo punto</text>
-          <text class="t-sub" x="974" y="334">Pi, ESP32, drivers y servos</text>
+          <path class="w power" d="M250 440 H290"></path>
+          <rect class="box" x="290" y="418" width="160" height="44" rx="4"></rect>
+          <text class="t-title" x="302" y="438">Divisor 120 k / 8,2 k</text>
+          <text class="t-sub" x="302" y="454">42 V → 2,69 V</text>
+          <path class="w analog" d="M450 440 H490"></path>
+          <rect class="box" x="490" y="418" width="190" height="44" rx="4"></rect>
+          <text class="t-title" x="502" y="438">ESP32-S3 · ADC GPIO 1</text>
+          <text class="t-sub" x="502" y="454">aviso a 32 V (H7)</text>
+
+          <text class="t-sub" x="870" y="432">GND común en un solo punto</text>
+          <text class="t-sub" x="870" y="450">Trazo cortado: falta comprar (2.º buck 1)</text>
+          <text class="t-sub" x="870" y="468">Solo el buck 1 aguanta los 42 V de la batería</text>
         </svg>
       </div>
-      <figcaption>La seta corta solo la potencia de los motores: la Pi y los ESP32 siguen encendidos y la S3 lee el estado de la seta por un contacto auxiliar. Con la potencia cortada, J2 y J3 quedan sostenidos por el sin fin. El brazo tiene su propia llave, como pide H8. Para el objetivo mínimo el bus de 12 V puede salir de una fuente de laboratorio en lugar de la batería.</figcaption>
+      <figcaption>Solo el buck 1 acepta la batería (10,5–60 V); los buck 2, 3 y 4 llegan a 32–40 V y cuelgan de un bus de 12 V. La seta corta el bus de motores del lado de 12 V (motores, brazo y servos): la Pi y los ESP32 siguen encendidos y la S3 lee la seta por el contacto auxiliar. El CC de 14 A del buck 1-A limita los motores; por eso la lógica va por otro buck 1, así un motor trabado no reinicia la Pi. Mientras falte ese buck, la lógica sale del buck 1-A antes del relé (solo para pruebas). En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
     </figure>
+    <div class="tablewrap boardcard">
+      <h3>Buck disponibles</h3>
+      <table>
+        <thead><tr><th>Buck</th><th>Entrada</th><th>Salida · corriente</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td class="gpio"><span class="tag supply"></span>1 (×1)</td><td><b>10,5–60 V</b></td><td>0–45 V · 12 A cont. (15 A con ventilador)</td><td>36 → 12,5 V motores; falta otro para la lógica</td></tr>
+          <tr><td class="gpio"><span class="tag supply"></span>2 (×1)</td><td>7–32 V</td><td>0,8–28 V · 8 A</td><td>12 → 5,1 V Pi 5</td></tr>
+          <tr><td class="gpio"><span class="tag supply"></span>3 (×2)</td><td>4–38 V</td><td>1,25–36 V · 5 A cont.</td><td>12 → 6 V servos; el otro de repuesto</td></tr>
+          <tr><td class="gpio"><span class="tag supply"></span>4 (×1)</td><td>6–40 V</td><td>1,2–36 V · 15 A cont.</td><td>repuesto (no aguanta 42 V)</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section aria-labelledby="h-pines">
@@ -410,10 +441,10 @@
             <tr><td class="gpio"><span class="tag data"></span>8 · 9</td><td>IMU SDA · SCL</td><td>400 kHz, 0x68</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>41 · 42</td><td>GPS TX → RX1 · RX ← TX1</td><td>9600 8N1</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>10</td><td>TRIG de los 3 HC-SR04</td><td>disparo común</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO frente · izq. · der.</td><td>divisor 1 k / 2 k</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39 · 40</td><td>Bumpers</td><td>NA a GND</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO centro · esquina izq. · esquina der.</td><td>divisor 1 k / 2 k</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39</td><td>Bumpers frente · izq. · der.</td><td>NA a GND</td></tr>
             <tr><td class="gpio"><span class="tag safety"></span>47</td><td>Contacto auxiliar NC de la seta</td><td>HIGH = apretada</td></tr>
-            <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería</td><td>ADC1 canal 0</td></tr>
+            <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería 120 k / 8,2 k</td><td>42 V → 2,69 V</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -450,7 +481,7 @@
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>LiDAR</td><td>fuera del mínimo</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>GPIO 17 (pin 11)</td><td>Luz de estado</td><td>vía transistor</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>GPIO 27 (pin 13)</td><td>Buzzer</td><td>vía transistor</td></tr>
-            <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Buck 5 V · 5 A</td><td>27 W</td></tr>
+            <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Buck 2 (12 → 5,1 V)</td><td><span class="mono">usb_max_current_enable=1</span></td></tr>
           </tbody>
         </table></div>
       </article>
@@ -460,13 +491,17 @@
   <section aria-labelledby="h-check">
     <h2 id="h-check">Antes de conectar</h2>
     <ul class="checks">
+      <li><span><b>A la batería, solo el buck 1.</b> Los buck 2, 3 y 4 se queman con 42 V. Ajustar cada buck sin carga y con el multímetro (tensión y CC) antes de conectarle nada.</span></li>
+      <li><span><b>XT60 con el interruptor abierto</b> (el interruptor, apto para DC, se lleva la chispa de los capacitores) y polaridad verificada: la salida al revés rompe el buck.</span></li>
+      <li><span><b>Schottky ≥ 30 A, 2200 µF y TVS de 15 V</b> en el bus de motores: el buck 1 no protege su salida de la corriente que vuelve al frenar.</span></li>
+      <li><span><b>Pi 5 por buck</b>: <span class="mono">usb_max_current_enable=1</span> en <span class="mono">config.txt</span>, o limita los USB a 600 mA.</span></li>
       <li><span><b>Pull-down de 10 kΩ</b> en cada EN: S3 GPIO 38; WROOM 23, 25 y 13. Sin ellos los puentes flotan al arrancar o flashear.</span></li>
       <li><span><b>Divisor en cada ECHO</b> del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V y los GPIO son de 3,3 V.</span></li>
       <li><span><b>Pull-ups externos de 10 kΩ</b> en WROOM 34, 35, 36 y 39: esos pines no tienen pull-up interno.</span></li>
       <li><span><b>Encoder de J1 a 3V3.</b> Si la placa SCX-555 se alimenta a 5 V, sus salidas pueden quedar a 5 V.</span></li>
-      <li><span><b>Servos con su propio Buck</b> y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
+      <li><span><b>Servos con su propio buck</b> (buck 3, CC en 5 A) y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
       <li><span><b>Cables de cámara</b> de 15 a 22 pines: la Pi 5 usa el conector chico en CSI0 y CSI1.</span></li>
-      <li><span><b>Sin GPIO de reserva</b> en ninguna ESP32. Si hace falta uno más, un INA219 por I²C libera el ADC de la S3 y además mide corriente.</span></li>
+      <li><span><b>Sin GPIO de reserva</b> en ninguna ESP32. Si hace falta uno más, un INA219 por I²C en el bus de 12 V de motores mide su corriente (en el de 36 V no: llega a 26 V).</span></li>
       <li><span><b>LiDAR por USB en la Pi.</b> Los pines que la prueba de la S3 reservaba para su UART (14 y 21) ahora son bumpers.</span></li>
     </ul>
   </section>

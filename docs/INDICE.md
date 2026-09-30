@@ -11,12 +11,12 @@ terceros quedan fuera de git (`.gitignore`).
 **Contexto**
 - `elementos robot recogedor.md` — Hardware real (Pi 5 + ROS 2 Jazzy, 2 ESP32, 2 cámaras NoIR, motores 36GP-555 (J1), DC 895 planetario 53 rpm (tracción) y 5840-31ZY, 4 drivers (2 IBT-2 tracción, IBT-2 J1, L298N J2+J3), GPS UP501, IMU MPU-6500 (sin magnetómetro), LiDAR, HC-SR04).
 - `Componentes_inventario.md` — Inventario con precios y correcciones.
-- `fotos/` — Hojas del vendedor y fotos: `motor_traccion/` (42GM-895H, 189:1, encoder 11 PPR), `pinza/` (servo RDS3218), `rueda/` (inflable 150 mm, 45 mm de ancho, 650 g), `bateria/` (YONGZHI 10S2P 36 V 4400 mAh, 135×90×60 mm, XT60). **Decisión:** opción 6 de la tabla R1 (RRR-Limón), con pinza con tracción+rotación en vez de succión. Al 27/09: solo pruebas preliminares; estéreo sin validar (falta soporte de cámaras).
+- `fotos/` — Hojas del vendedor y fotos: `motor_traccion/` (42GM-895H, 189:1, encoder 11 PPR), `pinza/` (servo RDS3218), `rueda/` (inflable 150 mm, 45 mm de ancho, 650 g), `bateria/` (YONGZHI 10S2P 36 V 4400 mAh, 135×90×60 mm, XT60), `bucks/` (los 4 buck disponibles; el 3, ×2). **Decisión:** opción 6 de la tabla R1 (RRR-Limón), con pinza con tracción+rotación en vez de succión. Al 27/09: solo pruebas preliminares; estéreo sin validar (falta soporte de cámaras).
 
 **Diseño**
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
-- `CONEXIONES.md` — Diagrama de conexiones: pines de la S3 (base, propuesta), la WROOM (brazo) y la Pi, árbol de alimentación con la batería de 36 V y la seta, ubicación de la Pi y las cámaras, y lista de verificación antes de conectar. (`conexiones.html` es una versión vieja: 12 V y 4 bumpers.)
+- `CONEXIONES.md` — Diagrama de conexiones: pines de la S3 (base, propuesta), la WROOM (brazo) y la Pi, árbol de alimentación con la batería de 36 V, los buck disponibles y la seta, ubicación de la Pi y las cámaras, y lista de verificación antes de conectar. `conexiones.html`: el mismo contenido como diagrama (al día al 29/09).
 
 **R2 (robot móvil "Arturito R2D2")**
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.
