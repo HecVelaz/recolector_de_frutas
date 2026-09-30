@@ -132,3 +132,22 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   se sacó del mundo a pedido del usuario.
 - Error propio: dejé viva una simulación de prueba y la siguiente se mezcló en la misma partición (15 min perdidos):
   cerrar siempre las de `GZ_PARTITION=prueba_claude` al terminar.
+
+## 2026-09-29/30 (noche): batería, buck, GPS en la Pi y TRIG separados
+
+### Cambios
+- **Batería 10S (36 V)**: opinión propia y de Codex. Sirve (158 Wh sobran para 45 min); lo difícil es bajar a 12 V
+  con corriente. Codex encontró: servos fuera de la seta, INA219 no aguanta 42 V, corriente del BMS sin documentar.
+- **Buck disponibles** (`docs/fotos/bucks/`): solo el buck 1 (10,5-60 V, 12 A) aguanta la batería; los 2, 3 (×2) y
+  4 llegan a 32-40 V. Esquema: buck 1-A → motores (Schottky, 2200 µF, TVS, relé automotriz de la seta del lado de
+  12 V, servos adentro); otro buck 1 (falta comprar) → lógica, buck 2 → Pi, buck 3 → servos. `CONEXIONES.md` v0.3 y
+  `conexiones.html` al día (el HTML seguía con 12 V, 4 bumpers y 36GP-555 en la tracción).
+- **¿Alcanza Pi 5 + 2 ESP32?** Sí (Claude y Codex). La reserva de GPIO está en la Pi. HAT de la Pi: borneras pasivas.
+- **GPS a la Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`): libera 41/42 de la S3 para un TRIG por
+  HC-SR04 (los 3 miran al frente y con TRIG común se pisaban). Disparo de a uno cada 40 ms (~8 Hz por sensor).
+  Firmware compila sin warnings, 20 pruebas; revisado por Codex sin hallazgos. En la Pi: UART0 y driver instalados.
+- `pins.h` de la base decía divisor 100 k / 27 k en un comentario (el valor del firmware ya era 120 k / 8,2 k).
+
+### Lecciones
+- El vigilante de Codex no puede buscar "tokens used" con `grep -q`: aparece en CLAUDE.md si Codex lo lee. Usar `grep -qx`.
+- Los comandos para la Pi el usuario los corre en la propia Pi: no anteponer `ssh`.
