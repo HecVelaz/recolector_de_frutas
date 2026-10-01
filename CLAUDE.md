@@ -79,7 +79,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   La base se había cortado 2 veces (ping de 20 ms, cortes falsos por latencia): ping a 100 ms y contadores
   `enlace: pings_fallidos cortes` en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
   la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).
-- Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`; en GitHub al día). Cadena
+- Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`; en la notebook, `~/Documentos/vision_estereo`;
+  en GitHub al día). `datos/` (calibración, foco, pruebas; fuera de git) solo se genera en la Pi: respaldo en la
+  notebook (01/10, 213 archivos, 105 MB) con `rsync -a r2d2@192.168.2.219:vision_estereo/datos/ ~/Documentos/vision_estereo/datos/`
+  (repetir tras cada calibración o prueba). Cadena
   `scripts/start_limon.sh` = `launch/limon.launch.py` (cámaras, rectificación, disparidad BM) + `detector_node`
   (`/yolo/detecciones`) + `localizador_node` (`/limon/posicion`, PointStamped en el marco óptico RECTIFICADO de
   la cámara izquierda: tenerlo en cuenta en la TF al brazo). Con NCNN y OpenMP pasivo: detección ~7-9 FPS,
