@@ -66,7 +66,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   está `largo_herramienta` más adentro en horizontal (parámetro; 0 por defecto, MEDIR en el real).
 - Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
   en `~/recolector_de_frutas` (por rsync, sin `.git`), esptool en `~/venvs/esptool`. Binarios para flashear en
-  `~/firmware/<base|brazo|hola>`, scripts en `~/scripts` y logs en `~/logs` (ordenado el 01/10). Las dos placas conectadas a la
+  `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en `~/logs` y workspaces de ROS en `~/ros/` (ordenado
+  el 01/10; `~/microros_ws`, `~/camera_ws` y `~/yolo_ws` quedan como symlinks: las rutas viejas siguen valiendo). Las dos placas conectadas a la
   Pi con sus agentes: todas las tasas nominales. Brazo a 115200 (a 921600 el CH340 pierde datos en la Pi).
   **Todo lo del 28/09 fue con las placas solas: sin motores, drivers, encoders, IMU, GPS, HC-SR04, bumpers ni
   seta.** Las tasas son de mensajes sin datos reales (distancias NaN, IMU y GPS no publican). Los drivers y
