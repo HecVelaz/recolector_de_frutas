@@ -193,7 +193,8 @@ float ControlArticulacion::pasoPosicion(float dt) {
     return 0.0f;
   }
   // P con saturación de velocidad y rampa de aceleración: perfil aproximadamente trapezoidal
-  const float wDes = limitar(cfg_.kpPos * e, cfg_.velMax);
+  float wDes = limitar(cfg_.kpPos * e, cfg_.velMax);
+  if (fabsf(wDes) < cfg_.velMin) wDes = signo(e) * cfg_.velMin;
   wRefGps_ += limitar(wDes - wRefGps_, cfg_.accMax * dt);
   wRefRpm_ = rpmDeGradosPorSeg(wRefGps_);
   // Cerca del objetivo la velocidad pedida es chica: la zona muerta se compensa igual, en el sentido del
@@ -204,7 +205,7 @@ float ControlArticulacion::pasoPosicion(float dt) {
 float ControlArticulacion::pasoVelocidad(float wRef, float dt, float sentidoFf) {
   const float ew = wRef - w_;
   if (sentidoFf == 0.0f && fabsf(wRef) > W_MIN_FF) sentidoFf = signo(wRef);
-  const float ff = sentidoFf * cfg_.u0 + wRef / cfg_.K;
+  const float ff = sentidoFf * cfg_.u0 + (cfg_.ffSoloZonaMuerta ? 0.0f : wRef / cfg_.K);
   const float uSinI = ff + cfg_.kpVel * ew;
   // Anti-windup condicional: no integrar si ya satura en el mismo sentido del error
   const float uPrueba = uSinI + integ_;

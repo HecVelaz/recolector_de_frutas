@@ -83,7 +83,7 @@ int64_t cuentas(int i) {
 }
 
 void aplicar(int i, float pct, bool libre) {
-  const float d = pct / 100.0f;
+  const float d = (MOTOR_INVERTIDO[i] ? -pct : pct) / 100.0f;
   switch (i) {
     case 0: libre ? motorJ1.coast() : (void)motorJ1.setDuty(d); break;
     case 1: libre ? motorJ2.coast() : (void)motorJ2.setDuty(d); break;

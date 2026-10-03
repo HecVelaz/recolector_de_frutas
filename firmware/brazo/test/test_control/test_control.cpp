@@ -75,9 +75,10 @@ void test_velocidad_sigue_consigna() {
   ControlArticulacion k;
   k.configurar(CFG_ART[0]);
   MotorSim m = simDe(0);
-  TEST_ASSERT_TRUE(k.velocidad(60.0f));
+  // 20 rpm = 24 °/s de la base: dentro de lo que J1 usa (velMax 30 °/s) con su duty máximo de 40 %
+  TEST_ASSERT_TRUE(k.velocidad(20.0f));
   correr(k, m, 1.0f);
-  TEST_ASSERT_FLOAT_WITHIN(3.0f, 60.0f, k.w());
+  TEST_ASSERT_FLOAT_WITHIN(2.0f, 20.0f, k.w());
 }
 
 void test_atasco() {

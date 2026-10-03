@@ -38,6 +38,13 @@ struct ConfigArticulacion {
   float atascoRpm;   // rpm mínimas en el sentido pedido
   float atascoS;     // s sostenido para declarar atasco
   float margenLim;   // grados fuera de [qMin, qMax] que se toleran antes de declarar falla
+  // Velocidad mínima mientras no llegó [grados/s de la articulación]. Cerca del objetivo el P pide muy poca
+  // velocidad y la fricción puede trabar el eje antes de entrar en tolPos (J1 en pruebas-esp32/10: se clavó a
+  // 0,8° con 1,6 °/s). 0 = sin mínimo. Va al final: las configuraciones que no lo nombran quedan en 0.
+  float velMin;
+  // true: el feedforward del lazo de velocidad es solo la zona muerta (u0), sin el término del modelo wRef/K. Es como
+  // se ajustó J1 en pruebas-esp32/10 (sus Kp y Ki dependen de eso). false (por defecto): u0 + wRef/K.
+  bool ffSoloZonaMuerta;
 };
 
 class ControlArticulacion {

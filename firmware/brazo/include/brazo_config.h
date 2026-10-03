@@ -11,18 +11,26 @@ constexpr float TS = 0.01f;  // periodo del control: 10 ms (100 Hz)
 // Límites articulares de la Entrega 4 (q1: base, q2: hombro, q3: balancín de entrada del cuatro barras).
 constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
+        // J1 medido en pruebas-esp32/10-control-lazo-cerrado (2026-10-02), montado en el brazo. Ese firmware
+        // controla en °/s de la base; acá el lazo de velocidad va en rpm de la salida de la reductora:
+        // 1 rpm = 6 °/s de la salida = 6/5 = 1,2 °/s de la base, así que kpVel y kiVel van x1,2.
         "J1",
         3200.0f,  // 16 PPR x4 x reductora 50:1 (medido en pruebas-esp32/06)
-        1.0f,     // MEDIR: vueltas del motor por vuelta de la base (poleas/correa)
+        5.0f,     // correa GT2, polea de 18 dientes en el motor y 90 en la base (verificado: 44,44 cuentas/°)
         160.0f,
-        -75.0f, 75.0f,
-        1.58f, 0.065f, 8.0f,  // E5: K rpm/%, tau s, zona muerta girando %
-        0.41f, 6.3f,          // E5: PI de velocidad
-        2.0f, 30.0f, 60.0f,   // kpPos 1/s, velMax °/s, accMax °/s²
-        0.5f,                 // tolerancia de llegada °
-        80.0f,                // duty máx % (arriba de ~85 % el IBT-2 deja de ser lineal)
-        40.0f, 5.0f, 1.0f,    // atasco: duty %, rpm, s
-        5.0f,                 // margen fuera de límites °
+        -75.0f, 75.0f,   // E4, marco de la cinemática (q1 = 0 en +X del brazo). PENDIENTE: en el banco de pruebas
+                         // el cero quedó con el brazo al costado y el rango -45/+135 desde ahí; falta decidir cómo
+                         // se traduce al marco de brazo_ik (POSE_CERO de J1 y Q1_LIM de cinematica.py)
+        1.58f, 0.065f, 17.0f,  // E5: K rpm/%, tau s; zona muerta girando 17 % (medida con el brazo)
+        0.659f, 4.8f,          // PI: 0,549 %/(°/s) y 4 %/° de las pruebas (Ki de diseño 8,44 daba 18 % de
+                               // sobrepico por el juego de la correa)
+        2.0f, 30.0f, 60.0f,    // kpPos 1/s (sin sobrepico con <= 2,78), velMax °/s, accMax °/s²
+        0.3f,                  // tolerancia de llegada ° (se despierta al doble: 0,6°)
+        40.0f,                 // duty máx %: el de las pruebas (30 °/s piden ~33 %)
+        35.0f, 1.7f, 0.3f,     // atasco: 35 %, menos de 1,7 rpm (2 °/s de la base) durante 0,3 s
+        5.0f,                  // margen fuera de límites °
+        3.0f,                  // velMin °/s: sin esto se trababa a 0,8° del objetivo
+        true,                  // feedforward solo con la zona muerta, como en las pruebas
     },
     {
         "J2",
@@ -54,8 +62,13 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
     },
 };
 
-// Signo de cada encoder: si con duty positivo la velocidad sale negativa, poner true.
-constexpr bool ENC_INVERTIDO[N_ART] = {false, true, false};  // J2 medido en pruebas-esp32/08; J1/J3: MEDIR
+// Signos. ENC_INVERTIDO: si con duty positivo la velocidad sale negativa. MOTOR_INVERTIDO: si con duty positivo la
+// articulación gira al revés de su sentido positivo (q1 positivo = antihorario visto desde arriba); invierte el
+// duty, así que el encoder también hay que invertirlo para que sigan de acuerdo.
+// J1 (pruebas-esp32/10): el encoder sube con duty + (normal), pero la base giraba horario -> motor invertido y,
+// con él, el encoder. J2 medido en pruebas-esp32/08 (sin verificar el sentido de q2). J3: MEDIR.
+constexpr bool ENC_INVERTIDO[N_ART] = {true, true, false};
+constexpr bool MOTOR_INVERTIDO[N_ART] = {true, false, false};
 
 // Pose de referencia para el cero manual (comando z) [°]. MEDIR/definir con la mecánica:
 // una pose fácil de reproducir a ojo o con una plantilla (por ejemplo, base al frente y brazo vertical).
@@ -65,7 +78,8 @@ constexpr float POSE_CERO[N_ART] = {0.0f, 90.0f, 0.0f};
 // ángulo que vale la articulación al tocarlo y tiempo máximo.
 constexpr float HOME_RPM[N_ART] = {-10.0f, -10.0f, -10.0f};
 constexpr float HOME_Q[N_ART] = {-75.0f, -25.0f, -50.0f};  // MEDIR con la mecánica
-constexpr float HOME_TIMEOUT_S = 15.0f;
+// J1 con la correa 5:1: -10 rpm = 12 °/s de la base, 180° de recorrido son 15 s (más arranque y confirmación)
+constexpr float HOME_TIMEOUT_S = 25.0f;
 // Recorrido máximo del homing: el rango de la articulación más este margen [°]. Corta aunque no venza el tiempo.
 constexpr float HOME_MARGEN_DEG = 10.0f;
 // El final de carrera cuenta como tocado recién con esta cantidad de lecturas seguidas en bajo (10 ms c/u)
@@ -89,7 +103,8 @@ constexpr float GIRO_MAX_DEG = 90.0f;
 // Seguridad. Valores de PUESTA EN MARCHA: subirlos recién con la relación de transmisión medida.
 constexpr uint32_t JOG_MS = 300;  // el comando d (lazo abierto) se corta solo si no se repite
 // % máximo en lazo abierto manual. J1: ~25 rpm del motor; J2/J3: apenas por encima de la zona muerta del sin fin
-constexpr float JOG_DUTY_MAX[N_ART] = {25.0f, 45.0f, 45.0f};
+// (J1 arranca desde quieta con ~25-30 % por la fricción: medido en pruebas-esp32/10)
+constexpr float JOG_DUTY_MAX[N_ART] = {30.0f, 45.0f, 45.0f};
 constexpr float VEL_CMD_MAX_RPM = 30.0f;  // |rpm| máximo del comando v (el control admite hasta rpmMax)
 constexpr float VEL_CMD_S_DEF = 2.0f;     // duración por defecto del comando v
 constexpr float VEL_CMD_S_MAX = 5.0f;

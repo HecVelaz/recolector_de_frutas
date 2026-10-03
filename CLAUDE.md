@@ -52,7 +52,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   (`codex --sandbox workspace-write` en el repo; lee este archivo por `AGENTS.md`); al volver, revisar `git log` antes de seguir.
 
 ## 5. Estado actual (2026-09-30)
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK.
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK. **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s (nuevo en `ControlArticulacion`), feedforward solo con la zona muerta (`ffSoloZonaMuerta`, nuevo), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` (nuevo) en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Pendiente decidir:** en el banco el cero de J1 quedó con el brazo al costado y rango −45/+135 desde ahí; acá sigue −75/+75 en el marco de `brazo_ik` (q1 = 0 en +X del brazo); hay que traducirlo (POSE_CERO de J1, `Q1_LIM` de `cinematica.py`, `REPOSO` de `brazo_sim`).
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
