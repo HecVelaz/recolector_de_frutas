@@ -5,10 +5,11 @@ import math
 from mision.fsm import (AGARRAR, APROXIMAR, centro_desde_superficie, ESPERAR, FALLA, leer_estado_brazo, Mision,
                         Parametros, RETIRAR, SOLTAR)
 
-LIMON = (0.45, 0.05, 0.25)  # m, alcanzable
-LEJOS = (2.0, 0.0, 0.25)
-Q_REPOSO = [0.0, 0.785, 0.0]  # rad, donde está el brazo al empezar
-Q_LIMON = [0.11, 0.9, -0.5]   # lo que "calcula" brazo_ik para LIMON
+# Al costado izquierdo, del lado de la fila: J1 va de 45° a 225° (q1 = 0 al frente quedó fuera de rango)
+LIMON = (0.05, 0.45, 0.25)  # m, alcanzable
+LEJOS = (0.0, 2.0, 0.25)
+Q_REPOSO = [1.571, 0.785, 0.0]  # rad, donde está el brazo al empezar
+Q_LIMON = [1.46, 0.9, -0.5]     # lo que "calcula" brazo_ik para LIMON
 QUIETO = [0.0, 0.0, 0.0]
 
 

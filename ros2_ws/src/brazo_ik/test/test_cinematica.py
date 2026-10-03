@@ -10,11 +10,12 @@ from brazo_ik.nodo_ik import resolver
 
 
 def test_ejemplo_numerico_de_la_e4():
-    # E4 §9: P_d = (368.32, 0, 91.03) mm -> q = (0°, 45°, 0°), q3O = -113.516°
-    sols, _ = cinematica_inversa(368.32, 0.0, 91.03)
+    # E4 §9: P_d = (368.32, 0, 91.03) mm -> q = (0°, 45°, 0°), q3O = -113.516°. Con el rango nuevo de J1 (45..225°) el
+    # frente queda afuera: el mismo punto girado 90° (al costado izquierdo) da q1 = 90° y el resto igual
+    sols, _ = cinematica_inversa(0.0, 368.32, 91.03)
     assert sols
     s = sols[0]
-    assert math.degrees(s.q1) == 0.0
+    assert abs(math.degrees(s.q1) - 90.0) < 1e-9
     assert abs(math.degrees(s.q2) - 45.0) < 0.01
     assert abs(math.degrees(s.q3) - 0.0) < 0.01
     assert abs(math.degrees(s.q30) - (-113.516)) < 0.01
@@ -43,16 +44,25 @@ def test_demasiado_lejos():
 
 
 def test_q1_fuera_de_rango():
-    sols, motivos = cinematica_inversa(-100.0, 300.0, 150.0)  # ~108° de la base
+    sols, motivos = cinematica_inversa(300.0, -100.0, 150.0)  # ~-18°: adelante a la derecha (el mástil)
     assert not sols
     assert any('q1' in m for m in motivos)
 
 
+def test_q1_pasa_por_atras():
+    # Atrás a la derecha: atan2 da -160°, que en el rango de J1 (45..225°) es 200°
+    x, y = 400.0 * math.cos(math.radians(200.0)), 400.0 * math.sin(math.radians(200.0))
+    sols, motivos = cinematica_inversa(x, y, 150.0)
+    assert sols, motivos
+    assert all(abs(math.degrees(s.q1) - 200.0) < 1e-6 for s in sols)
+
+
 def test_resolver_en_metros():
-    q, texto = resolver(0.36832, 0.0, 0.09103)
+    # Puntos al costado izquierdo (q1 = 90°): el frente quedó fuera del rango de J1 (45..225°)
+    q, texto = resolver(0.0, 0.36832, 0.09103)
     assert q is not None and texto.startswith('ok')
     assert abs(math.degrees(q[1]) - 45.0) < 0.01
-    q, texto = resolver(0.9, 0.0, 0.15)
+    q, texto = resolver(0.0, 0.9, 0.15)
     assert q is None and texto.startswith('inalcanzable')
 
 
@@ -63,7 +73,8 @@ def test_herramienta_horizontal():
     assert all(abs(a - b) < 1e-12 for a, b in zip(m, (0.255, 0.34, 0.1)))
     assert muneca_desde_herramienta(0.05, 0.0, 0.1, 0.075) is None
     # con resolver: la muñeca que resulta queda 75 mm antes del TCP, a la misma altura y en la misma dirección
-    q, texto = resolver(0.36832 + 0.075, 0.0, 0.09103, 0.075)
+    # (al costado izquierdo, q1 = 90°: el frente quedó fuera del rango de J1)
+    q, texto = resolver(0.0, 0.36832 + 0.075, 0.09103, 0.075)
     assert q is not None and abs(math.degrees(q[1]) - 45.0) < 0.01, texto
     p = directa(q[0], q[1], q[2])[0]
-    assert abs(p[0] - 368.32) < 1e-6 and abs(p[2] - 91.03) < 1e-6
+    assert abs(p[0]) < 1e-6 and abs(p[1] - 368.32) < 1e-6 and abs(p[2] - 91.03) < 1e-6

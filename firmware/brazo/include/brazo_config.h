@@ -18,9 +18,10 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
         3200.0f,  // 16 PPR x4 x reductora 50:1 (medido en pruebas-esp32/06)
         5.0f,     // correa GT2, polea de 18 dientes en el motor y 90 en la base (verificado: 44,44 cuentas/°)
         160.0f,
-        -75.0f, 75.0f,   // E4, marco de la cinemática (q1 = 0 en +X del brazo). PENDIENTE: en el banco de pruebas
-                         // el cero quedó con el brazo al costado y el rango -45/+135 desde ahí; falta decidir cómo
-                         // se traduce al marco de brazo_ik (POSE_CERO de J1 y Q1_LIM de cinematica.py)
+        45.0f, 225.0f,   // marco de brazo_ik (q1 = 0 al frente, +X; antihorario visto desde arriba). Es el rango
+                         // -45/+135 del banco de pruebas medido desde el costado IZQUIERDO (q1 = 90°): de
+                         // adelante-izquierda, por atrás, hasta atrás-derecha; nunca cruza el mástil (adelante-derecha).
+                         // Igual que Q1_LIM de cinematica.py y el urdf
         1.58f, 0.065f, 17.0f,  // E5: K rpm/%, tau s; zona muerta girando 17 % (medida con el brazo)
         0.659f, 4.8f,          // PI: 0,549 %/(°/s) y 4 %/° de las pruebas (Ki de diseño 8,44 daba 18 % de
                                // sobrepico por el juego de la correa)
@@ -72,12 +73,13 @@ constexpr bool MOTOR_INVERTIDO[N_ART] = {true, false, false};
 
 // Pose de referencia para el cero manual (comando z) [°]. MEDIR/definir con la mecánica:
 // una pose fácil de reproducir a ojo o con una plantilla (por ejemplo, base al frente y brazo vertical).
-constexpr float POSE_CERO[N_ART] = {0.0f, 90.0f, 0.0f};
+// J1: la marca del banco de pruebas (brazo hacia el costado izquierdo del robot) = 90° en el marco de brazo_ik.
+constexpr float POSE_CERO[N_ART] = {90.0f, 90.0f, 0.0f};
 
 // Homing con final de carrera: velocidad (rpm del motor, con signo hacia el final de carrera),
 // ángulo que vale la articulación al tocarlo y tiempo máximo.
 constexpr float HOME_RPM[N_ART] = {-10.0f, -10.0f, -10.0f};
-constexpr float HOME_Q[N_ART] = {-75.0f, -25.0f, -50.0f};  // MEDIR con la mecánica
+constexpr float HOME_Q[N_ART] = {45.0f, -25.0f, -50.0f};  // MEDIR con la mecánica (J1: sin final de carrera todavía)
 // J1 con la correa 5:1: -10 rpm = 12 °/s de la base, 180° de recorrido son 15 s (más arranque y confirmación)
 constexpr float HOME_TIMEOUT_S = 25.0f;
 // Recorrido máximo del homing: el rango de la articulación más este margen [°]. Corta aunque no venza el tiempo.

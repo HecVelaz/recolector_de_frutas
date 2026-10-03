@@ -252,7 +252,7 @@
   </link>
   <joint name="j1" type="revolute">
     <parent link="brazo_base"/><child link="torreta"/><axis xyz="0 0 1"/>
-    <limit lower="${radians(-75)}" upper="${radians(75)}" effort="50" velocity="1.0"/>
+    <limit lower="${radians(45)}" upper="${radians(225)}" effort="50" velocity="1.0"/>
   </joint>
 
   <material name="verde"><color rgba="0.1 0.6 0.2 1"/></material>

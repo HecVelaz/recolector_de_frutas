@@ -2,7 +2,8 @@
 
 Mismo algoritmo y convenciones que el notebook de la E4 (Entrega4.md), sin numpy ni gráficos:
 
-    q1 : giro de la base alrededor de Z (0 = eje +X del brazo)
+    q1 : giro de la base alrededor de Z (0 = eje +X del brazo = frente del robot; antihorario visto desde arriba).
+         Su rango (Q1_LIM) pasa de 180° (atrás): los q1 se expresan dentro de Q1_LIM, no en (-180°, 180°]
     q2 : barra verde l2 medida desde la horizontal, del lado de la muñeca
     q3 : actuador de la barra roja l3,0; su ángulo absoluto es 90° - q3
     gamma4 = q2 + q3 - 90°        (ángulo del cuatro barras en la base)
@@ -27,7 +28,9 @@ L30 = 40.00   # balancín de entrada (rojo)
 L31 = 40.00   # balancín de salida (tramo corto del azul)
 
 # Límites [°]
-Q1_LIM = (-75.0, 75.0)
+# J1: -45/+135 desde el costado izquierdo (q1 = 90°, el cero del banco de pruebas-esp32/10, 2026-10-02). Igual que
+# brazo_config.h y el urdf
+Q1_LIM = (45.0, 225.0)
 Q2_LIM = (-25.0, 135.0)
 Q3_LIM = (-50.0, 50.0)
 GAMMA4_LIM = (-180.0, 0.0)  # rama física: la roja no cruza la verde
@@ -63,6 +66,17 @@ def muneca_desde_herramienta(x, y, z, largo):
 
 def norm_ang(a):
     return math.atan2(math.sin(a), math.cos(a))
+
+
+def q1_en_rango(q1):
+    """Lleva un ángulo de la base al intervalo que empieza en Q1_LIM[0] (+-360°): atan2 da (-180°, 180°] y el rango de
+    J1 pasa por 180°."""
+    a = q1
+    while math.degrees(a) < Q1_LIM[0] - 1e-9:
+        a += 2 * math.pi
+    while math.degrees(a) >= Q1_LIM[0] + 360.0 - 1e-9:
+        a -= 2 * math.pi
+    return a
 
 
 def en_rango(q_rad, lim):
@@ -127,7 +141,7 @@ def cinematica_inversa(x, y, z):
     dist = math.hypot(r, zp)
 
     # Paso 1: q1
-    q1 = math.atan2(y, x) if r > 1e-10 else 0.0
+    q1 = q1_en_rango(math.atan2(y, x)) if r > 1e-10 else math.radians(90.0)
     if not en_rango(q1, Q1_LIM):
         motivos.append(f'q1 = {math.degrees(q1):.1f}° fuera de [{Q1_LIM[0]:.0f}°, {Q1_LIM[1]:.0f}°]')
 
