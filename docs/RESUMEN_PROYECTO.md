@@ -27,7 +27,10 @@ Cinemática directa por geometría y por DH, cierre del cuatro barras y simulaci
 
 ### 5. R1 E4: cinemática inversa (23/09)
 Cinemática inversa con filtros. Sus **medidas son las vigentes**: 150 / 350,22 / 329,51 mm, l4 = 338 mm y
-balancines de 40 mm. El mecanismo no es Grashof.
+balancines de 40 mm. Con 40 mm el mecanismo no era Grashof: **el balancín rojo se cambió a 60 mm** (verificado
+en el brazo armado, 2026-10-03) y ahora sí lo es (40 + 350,22 < 338 + 60). La roja se mueve unos 82° respecto de
+la verde (γ₄ entre −112° y −30°, con μ entre 15° y 165°); J2 y J3 son de sin fin, así que con uno quieto el otro
+cambia γ₄ grado por grado (`pruebas-esp32/10-control-lazo-cerrado/tools/cuatro_barras.py`).
 
 ### 6. R1 E5: identificación en lazo abierto (27/09)
 Modelos de primer orden de velocidad: base G = 1,58/(0,065s+1) y articulación G = 1,33/(0,059s+1). Zona muerta del

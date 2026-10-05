@@ -208,5 +208,5 @@ Después del mínimo, en este orden: 2 cajones por tamaño → seguimiento de hi
 2. ~~**Herramienta:** confirmar que se acepta **pinza + tracción + giro** en lugar de succión.~~ **Aprobado por el profesor** (28/09/2026): agarre y tracción con giro de la pinza, 2 servos RDS3218 de 20 kg·cm.
 3. **GDL en R2:** B1 pide ≥4 GDL sin contar apertura (3R + J4 = 4 ✔), pero H6 dice "4 GDL + rotación". Confirmar que 3R + J4 alcanza.
 4. **Cajones por tamaño:** ¿son obligatorios para el mínimo?
-5. **Mecanismo no Grashof** (E4): verificar recorrido real y singularidades con el brazo armado antes de cambiar el balancín a 60 mm.
+5. ~~**Mecanismo no Grashof** (E4)~~: el balancín rojo ya es de **60 mm** (2026-10-03) y el mecanismo es Grashof. Queda limitar γ₄ = q2 + q3 − 90° a −112°…−30° (μ entre 15° y 165°) en `brazo_ik` y en los límites de J2/J3.
 6. **Cámaras NoIR:** ver §6.

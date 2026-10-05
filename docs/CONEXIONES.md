@@ -1,8 +1,10 @@
 # Conexiones del robot
 
-Versión 0.3 — 30/09/2026 (GPS en la Pi, un TRIG por HC-SR04; v0.2: alimentación con los buck disponibles). Diagrama interactivo: `docs/conexiones.html` (abrir en el navegador).
-Los pines salen de `firmware/brazo/include/pins.h` y `firmware/base/include/pins.h` (fuente de verdad). La
-conexión de la Pi es una propuesta. Nada de esto está probado en placa todavía.
+Versión 0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 98 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
+y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
+`docs/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
+WROOM son una **propuesta v0.4** que todavía no está en `firmware/brazo/include/pins.h` (se pasa cuando lleguen los
+motores), igual que la conexión de la Pi. Probado en placa: J1 y, con los motores viejos, J2/J3 (`pruebas-esp32/10`).
 
 ```mermaid
 flowchart LR
@@ -16,7 +18,7 @@ flowchart LR
   S3 --> SEN[IMU · 3 × HC-SR04 · 3 bumpers]
   S3 --> SEG[Seta · batería]
   WR --> J1[J1: IBT-2 + 36GP-555 160 rpm]
-  WR --> J23[J2, J3: L298N + 5840-31ZY]
+  WR --> J23[J2, J3: IBT-2 + 36GP-555 98 rpm, correa]
   WR --> PZ[Pinza: 2 servos]
 ```
 
@@ -39,22 +41,29 @@ cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRI
 | 47 | Contacto auxiliar **NC** de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
 | 1 | Divisor de batería 120 k / 8,2 k | ADC1 canal 0 (42 V → 2,69 V) |
 
-## ESP32-WROOM-32D · brazo
+## ESP32-WROOM-32D · brazo (propuesta v0.4)
 
-DevKit con CH340, `/dev/ttyUSB0`. Fuente: `firmware/brazo/include/pins.h`.
+DevKit con CH340, `/dev/ttyUSB0`. Tres IBT-2 con un solo EN; queda libre el GPIO 13.
 
 | GPIO | Conecta a | Nota |
 |---|---|---|
-| 21 · 22 | J1 IBT-2 RPWM · LPWM | 20 kHz |
-| 23 | J1 R_EN + L_EN | pull-down 10 kΩ |
-| 34 · 35 | J1 encoder Hall A · B | pull-up externo 10 kΩ, encoder a 3V3 |
-| 25 · 26 · 27 | J2 L298N ENA · IN1 · IN2 | 1 kHz, modo freno |
-| 32 · 33 | J2 encoder A · B | 1000 PPR |
-| 13 · 16 · 17 | J3 L298N ENB · IN3 · IN4 | 1 kHz, modo freno |
-| 18 · 19 | J3 encoder A · B | 1000 PPR |
+| 21 · 22 | J1 IBT-2 RPWM · LPWM | 20 kHz (probado) |
+| 25 · 26 | J2 IBT-2 RPWM · LPWM | empezar como J1; probar 1 kHz (con el 5840 rendía más) |
+| 16 · 17 | J3 IBT-2 RPWM · LPWM | igual que J2 |
+| 23 | R_EN + L_EN de los 3 IBT-2 | pull-down 10 kΩ; quietos = frenados (EN alto, PWM 0) |
+| 34 · 35 | J1 encoder A · B | pull-up externo 10 kΩ |
+| 32 · 33 | J2 encoder A · B | pull-up interno |
+| 18 · 19 | J3 encoder A · B | pull-up interno |
 | 4 | Servo de apertura de la pinza | 50 Hz |
 | 14 | Servo de giro J4 | pulsa durante el arranque |
-| 36 · 39 | Finales de carrera J1 · J2 | pull-up externo 10 kΩ |
+| 36 · 39 · 27 | Finales de carrera (cero) J1 · J2 · J3 | 36/39 pull-up externo 10 kΩ; 27 interno |
+| 13 | libre | reserva |
+
+Motores 36GP-555 (J1, J2, J3), encoder SCX-555 de 16 PPR (64 cuentas por vuelta del motor), salida de colector abierto
+(pull-ups de 5,1 kΩ en la placa), 3,3-5 V, alimentado aparte del motor: blanco = motor +,
+amarillo = motor −, verde = encoder + (**3V3**), azul = GND, negro = A, rojo = B. J1 160 rpm (50:1) con correa
+18 → 90; J2 y J3 98 rpm (82:1) con correa (relación a definir). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
+trabado. **No se autobloquean** (planetarios): sin corriente el brazo cae.
 
 ## Raspberry Pi 5 (propuesta)
 
@@ -81,57 +90,87 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | GPIO 27 (pin 13) | Buzzer | vía transistor |
 | USB-C | Buck 2 (12 → 5,1 V, 8 A) | `usb_max_current_enable=1` |
 
-## Alimentación
+## Alimentación (v0.4: dos baterías)
 
-Batería real: **YONGZHI 10S2P de 18650, 36 V nominales, 4400 mAh (158 Wh), 135 × 90 × 60 mm, XT60**, de
-hoverboard (con BMS de corriente sin documentar). Tensión real: **~42 V cargada**, 36 V nominal, ~30-32 V descargada.
-Los motores son de 12 V, el IBT-2 aguanta 27 V como máximo y el L298N 46 V: los motores van por un buck 36 → 12 V.
+- **Motores: YONGZHI 10S2P de 18650**, 36 V nominales (30-42 V), 4400 mAh (158 Wh), 135 × 90 × 60 mm, XT60, BMS de
+  hoverboard sin documentar.
+- **Lógica: LiPo Zeee 3S** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, conector Deans (T), **sin BMS**.
+
+Separadas, un motor trabado no puede hacer caer la tensión de la Pi, y ya no hace falta el segundo buck 1. Los motores
+son de 12 V y el IBT-2 aguanta 27 V como máximo: van por el buck 1 (36 → 12,5 V).
 
 ### Buck disponibles (29/09, `docs/fotos/bucks/`)
 
 | | Módulo | Entrada | Salida | Corriente | ¿Aguanta 42 V? | Uso |
 |---|---|---|---|---|---|---|
-| **1** (×1) | 400 W CC/CV, fusible de entrada 15 A | **10,5-60 V** | 0-45 V (≤ 0,8·Vin) | 12 A continuos (280 W) ventilado; 15 A con ventilador | **sí** | 36 → 12,5 V, bus de motores |
-| **2** (×1) | XL4016 300 W (Realpoy) | 7-32 V | 0,8-28 V | 8 A (ventilador arriba de 65 °C) | no | 12 → 5,1 V, Pi 5 |
+| **1** (×1) | 400 W CC/CV, fusible de entrada 15 A | **10,5-60 V** | 0-45 V (≤ 0,8·Vin) | 12 A continuos (280 W) ventilado; 15 A con ventilador | **sí** | 10S → 12,5 V, bus de motores |
+| **2** (×1) | XL4016 300 W (Realpoy) | 7-32 V | 0,8-28 V | 8 A (ventilador arriba de 65 °C) | no | LiPo → 5,1 V, Pi 5 |
 | **3** (×2) | XL4016 200 W (LIZAO) | 4-38 V | 1,25-36 V | 5 A continuos, 8 A pico | no | 12 → 6 V servos; el otro de repuesto |
-| **4** (×1) | 300 W 20 A CC/CV | 6-40 V | 1,2-36 V | 15 A continuos, 20 A pico | no | repuesto (o bancos con fuente ≤ 36 V) |
+| **4** (×1) | 300 W 20 A CC/CV | 6-40 V | 1,2-36 V | 15 A continuos, 20 A pico | no | repuesto |
 
-**Solo el buck 1 se puede conectar a la batería.** Los otros tres se queman con la batería cargada (42 V): van
-colgados de un bus de 12 V. Falta **un segundo buck 1** (Gs. ~106 000) para separar la lógica de los motores.
-El buck 1 no tiene protección contra corriente que vuelve por la salida (lo dice el vendedor: con motores, diodo).
+El buck 1 no tiene protección contra la corriente que vuelve por la salida (lo dice el vendedor: con motores, diodo).
 
 ```
-Batería 10S 36 V (30-42 V) → fusible 15 A junto al borne → interruptor general DC (H8) → bus 36 V
-  ├─ Buck 1-A (36 → 12,5 V, CC 14 A, ventilador) → diodo Schottky ≥ 30 A → relé 12 V 40 A (bobina por la seta NC)
-  │     └─ bus 12 V de motores (capacitor 2200 µF 25 V + TVS 15 V, p. ej. 5KP15A)
+Batería 10S 36 V (30-42 V) → fusible 15 A junto al borne → interruptor de motores (DC, H8) → bus 36 V
+  ├─ Buck 1 (36 → 12,5 V, CC 14 A, ventilador) → Schottky ≥ 30 A → relé 12 V 40 A (bobina por la seta NC)
+  │     └─ bus 12 V de motores (2200 µF 25 V + TVS 15 V, p. ej. 5KP15A)
   │           ├─ fusible 15 A → IBT-2 de tracción ×2
-  │           ├─ llave del brazo (H8) → fusible 5 A → IBT-2 J1 + L298N (J2, J3)
+  │           ├─ llave del brazo (H8) → fusible 10 A → IBT-2 J1 + IBT-2 J2 + IBT-2 J3
   │           └─ fusible 3 A → Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
-  ├─ fusible 3 A → Buck 1-B (36 → 12 V, CC 3 A) → bus 12 V de lógica, sube por el mástil
-  │     ├─ Buck 2 (12 → 5,1 V), arriba al lado de la Pi → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
-  │     └─ ventilador del Buck 1-A · luz y buzzer (vía transistor)
-  │   contacto auxiliar NC de la seta → S3 GPIO 47
-  └─ divisor 120 k / 8,2 k → S3 GPIO 1 (42 V → 2,69 V; con 11 dB mide hasta ~46 V)
-GND común en un solo punto.
+  └─ divisor 120 k / 8,2 k → S3 GPIO 1 (42 V → 2,69 V)
+
+LiPo 3S (9,9-12,6 V) → fusible 5 A junto al conector → interruptor de lógica → bus 12 V de lógica (sube por el mástil)
+  ├─ Buck 2 (→ 5,1 V), arriba al lado de la Pi → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
+  ├─ ventilador del buck 1 · luz y buzzer (vía transistor) · bobina del relé a través de la seta NC
+  ├─ INA219 en el I²C de la S3 (0x40): tensión y corriente de la LiPo (a comprar)
+  └─ alarma de LiPo en el conector de balanceo (a comprar)
+  contacto auxiliar NC de la seta → S3 GPIO 47
+GND: los negativos de las dos baterías unidos en un solo punto (los positivos nunca).
 ```
 
-- **Seta:** corta el bus de motores del lado de 12 V con un relé automotriz común de 12 V 40 A (a 12 V DC sí
-  cortan bien; a 42 V DC haría falta un contactor especial). La seta enclava sola: se rearma girándola, y las dos
-  placas arrancan desarmadas igual. **Los servos quedan dentro de la seta**: la pinza se afloja al apretarla.
+- **Seta:** corta el bus de motores del lado de 12 V con un relé automotriz de 12 V 40 A (a 42 V DC haría falta
+  un contactor especial). La bobina se alimenta de la LiPo a través de la seta: los motores, el brazo y los servos se
+  apagan y la Pi y los ESP32 siguen encendidos. La seta enclava y se rearma girándola; las dos placas arrancan
+  desarmadas igual. **Con la seta, J2 y J3 sueltan el brazo** (no se autobloquean).
 - **Diodo, capacitor y TVS:** el Schottky no deja que la corriente de frenado vuelva al buck; esa energía la toma el
   capacitor, y el TVS recorta si el bus sube (el IBT-2 aguanta 27 V). El diodo cae ~0,5 V: por eso el buck va a 12,5 V.
-- **Corriente:** el CC del buck 1-A (14 A) es el límite de los motores. Consumo a 12 V: tracción 2 × 2,6 A en vacío
-  y 2 × 5,5 A nominal (10 A bloqueado cada uno), J1 y J2/J3 unos pocos A, servos ~1-3 A a 6 V. Si un motor se traba,
-  el buck limita y baja la tensión. Por eso la lógica va por el buck 1-B. Desde la batería: ≤ 14 A × 12,5 V / 0,93
-  / 30 V ≈ 6,3 A para motores + ~1,5 A de lógica, cómodo para el BMS.
-- **Pi 5 por buck (sin USB-PD):** poner `usb_max_current_enable=1` en `/boot/firmware/config.txt`; si no, la Pi
-  limita los USB a 600 mA entre todos.
-- **Mientras no esté el segundo buck 1:** la lógica sale del mismo 12 V del buck 1 **antes del relé** (con un
-  diodo y 2200 µF de respaldo antes del buck 2). Un motor trabado lleva el buck a CC y puede reiniciar la Pi:
-  solo para pruebas. Para el banco, el bus de motores puede salir de una fuente de laboratorio sin la batería.
+- **Corriente:** el CC del buck 1 (14 A) es el límite de los motores. Tracción (42GM-895H a 12 V): 2,6 A en vacío,
+  5,5 A nominal y 10 A trabado cada uno; brazo (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Desde
+  la 10S: ≤ 14 A × 12,5 V / 0,93 / 30 V ≈ 6,3 A, cómodo para el BMS. La LiPo da ~1,5 A (pico ~2 A).
+- **LiPo sin BMS:** la Pi la descarga sin parar y el buck 2 no corta por tensión baja. No bajar de 3,5 V por celda
+  (10,5 V): alarma en el balanceo y el INA219 para que la Pi se apague sola. Cargar solo con un cargador balanceador.
+- **Pi 5 por buck (sin USB-PD):** `usb_max_current_enable=1` en `/boot/firmware/config.txt`; si no, la Pi limita
+  los USB a 600 mA entre todos.
+
+### Consumo y autonomía (estimados; medir con el INA219 o una pinza)
+
+| Carga | Potencia |
+|---|---|
+| Tracción avanzando a 0,25 m/s (2 × 60 % × 12 V × 3 A) | ~43 W |
+| Tracción girando o en terreno malo | ~70 W |
+| Brazo moviéndose (J1-J3 + servos) | ~26 W |
+| Brazo quieto sosteniendo (J2/J3 contra el peso + pinza) | ~6 W |
+| Lógica: Pi 5 con YOLO (~9 W), ESP32 (0,8 W), sensores (0,6 W), buck 2 (1,2 W), relé + ventilador + luz (3,5 W) | ~15 W |
+
+Ciclo de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s con el brazo quieto
+→ 32 W en el bus de motores, 37 W desde la 10S. Energía útil: 80 % de la nominal.
+
+| Batería | Útil | Consumo | Autonomía |
+|---|---|---|---|
+| 10S, ciclo de cosecha | 126 Wh | 37 W | **~3,4 h** |
+| 10S, avanzando sin parar | 126 Wh | ~55 W | ~2,3 h |
+| 10S, terreno malo sin parar | 126 Wh | ~80 W | ~1,6 h |
+| LiPo, lógica | 71 Wh | 15 W | **~4,7 h** |
+
+El robot dura lo que dura la 10S, **~3,4 h de cosecha**. Con todo desde la 10S serían ~2,4 h, y con los motores en la LiPo ~2,1 h.
+La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: medirla con un ciclo completo.
 
 ## Antes de conectar
 
+- [ ] **Dos baterías, un solo GND:** negativos de la 10S y la LiPo unidos en un punto, positivos nunca.
+- [ ] **LiPo:** fusible de 5 A pegado al conector (100C: un cortocircuito son cientos de amperes), alarma en el
+      balanceo, no bajar de 10,5 V, cargador balanceador.
+- [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Batería de 36 V (42 V cargada):** a la batería solo el buck 1 (los buck 2, 3 y 4 llegan a 32-40 V: se
       queman). **Ajustar cada buck sin carga y con el multímetro antes de conectarle nada** (tensión y CC). Divisor
       de batería **120 k / 8,2 k** (el viejo de 100 k / 27 k pondría ~8,9 V en el GPIO 1 y lo quema). Cargar solo
@@ -139,10 +178,11 @@ GND común en un solo punto.
 - [ ] Conectar el XT60 con el interruptor general abierto (el interruptor, apto para DC, se lleva la chispa de los
       capacitores de entrada). Respetar la polaridad: el buck 1 tiene fusible, pero la salida al revés lo rompe.
 - [ ] Schottky ≥ 30 A con disipador, 2200 µF 25 V y TVS de 15 V en el bus de motores; ventilador sobre el buck 1-A.
-- [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38; WROOM 23, 25 y 13.
+- [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo).
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
 - [ ] Pull-ups externos de 10 kΩ en WROOM 34, 35, 36 y 39 (no tienen pull-up interno).
-- [ ] Encoder de J1 alimentado a 3V3 (a 5 V sus salidas pueden quedar a 5 V).
+- [ ] Encoders de J1, J2 y J3 a 3V3 (la SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: a 5 V las salidas quedan a 5 V).
+- [ ] Finales de carrera NA a GND, con 100 nF a GND en el pin si el cable es largo.
 - [ ] Encoders de tracción (42GM-895H): azul = Vcc 5-24 V, verde = GND, amarillo = A, blanco = B; motor en negro y
       rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
       tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,
@@ -150,8 +190,7 @@ GND común en un solo punto.
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
-- [ ] Sin GPIO de reserva: si hace falta uno, un INA219 por I²C en el bus de **12 V de motores** mide su corriente
-      (en el de 36 V no: el INA219 llega a 26 V; ahí haría falta un INA228).
+- [ ] GPIO de reserva: S3 40 (sin ADC) y WROOM 13. El INA219 de la LiPo comparte el I²C de la IMU (0x40).
 - [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son bumpers.
 
 ## Decisiones de esta propuesta
