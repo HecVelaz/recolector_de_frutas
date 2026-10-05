@@ -94,7 +94,8 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 
 - **Motores: YONGZHI 10S2P de 18650**, 36 V nominales (30-42 V), 4400 mAh (158 Wh), 135 × 90 × 60 mm, XT60, BMS de
   hoverboard sin documentar.
-- **Lógica: LiPo Zeee 3S** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, conector Deans (T), **sin BMS**.
+- **Lógica: LiPo Zeee 3S1P** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, Deans (T), balanceo JST-XH, 493 g,
+  **sin BMS**. Voltímetro LED de 2 hilos (4,5-30 V) en el bus de lógica: solo para mirar (no sirve en la 10S: 42 V).
 
 Separadas, un motor trabado no puede hacer caer la tensión de la Pi, y ya no hace falta el segundo buck 1. Los motores
 son de 12 V y el IBT-2 aguanta 27 V como máximo: van por el buck 1 (36 → 12,5 V).
@@ -182,7 +183,8 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
 - [ ] Pull-ups externos de 10 kΩ en WROOM 34, 35, 36 y 39 (no tienen pull-up interno).
 - [ ] Encoders de J1, J2 y J3 a 3V3 (la SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: a 5 V las salidas quedan a 5 V).
-- [ ] Finales de carrera NA a GND, con 100 nF a GND en el pin si el cable es largo.
+- [ ] Bumpers y finales de carrera: microinterruptores V-152-1C25 (SPDT, rodillo). Común a GND y NA al GPIO, sin
+      alimentación; con cables largos, 100 nF a GND en el pin.
 - [ ] Encoders de tracción (42GM-895H): azul = Vcc 5-24 V, verde = GND, amarillo = A, blanco = B; motor en negro y
       rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
       tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,

@@ -32,5 +32,5 @@ se cuenta con una notebook dell 5458 inspiron de 8 gb ram con ubuntu 24.04.5.1 n
 
 
 - x1 batería YONGZHI 10S2P de 18650: 36 V nominales (42 V cargada), 4400 mAh, 158 Wh, 135 x 90 x 60 mm, XT60
-  (foto en `docs/fotos/bateria/`). Motores de 12 V por un buck 36 -> 12 V de alta corriente (ver CONEXIONES.md).
+  (foto en `docs/fotos/bateria 1/`). Motores de 12 V por un buck 36 -> 12 V de alta corriente (ver CONEXIONES.md).
 - x2 ruedas inflables de 150 mm, 45 mm de ancho, 650 g, acople de 8 mm (foto en `docs/fotos/rueda/`).

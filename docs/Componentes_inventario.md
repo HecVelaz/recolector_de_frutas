@@ -22,5 +22,10 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 
 > **Corrección (27/09/2026):** el motor DC 895 de 2700 rpm se compró por error. El motor que se usa en la base del brazo es el **36GP-555 de 160 rpm** (el caracterizado en la R1 E5).
 
-> **Agregado (29/09/2026):** batería YONGZHI 10S2P (18650) 36 V 4400 mAh 158 Wh, XT60 (`docs/fotos/bateria/`), y 2 ruedas
+> **Agregado (29/09/2026):** batería YONGZHI 10S2P (18650) 36 V 4400 mAh 158 Wh, XT60 (`docs/fotos/bateria 1/`), y 2 ruedas
 > inflables de 150 mm × 45 mm, 650 g, acople de 8 mm (`docs/fotos/rueda/`).
+
+> **Agregado (05/10/2026):** LiPo Zeee 3S1P 11,1 V 8000 mAh 88,8 Wh 100C, Deans (T), balanceo JST-XH, 138 × 47 × 36 mm,
+> 493 g, para la lógica (`docs/fotos/bateria 2/`); voltímetro LED de 2 hilos 4,5-30 V (`docs/fotos/Medidor de Voltaje/`);
+> microinterruptores V-152-1C25 con rodillo, SPDT (1 NA + 1 NC), para bumpers y finales de carrera (`docs/fotos/bumpers/`);
+> 2 motores 36-555 de 98 rpm (82:1) para J2 y J3 (`docs/fotos/motor_j2/`).

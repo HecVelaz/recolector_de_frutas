@@ -14,10 +14,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Ruedas inflables de **150 mm** × 45 mm (`docs/fotos/rueda/`), trocha ~0,40 m (MEDIR).
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
   a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
-- **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria/`). Los motores son de
+- **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria 1/`); lógica: LiPo Zeee 3S 8000 mAh (`docs/fotos/bateria 2/`). Los motores son de
   12 V. Buck (`docs/fotos/bucks/`): solo el **buck 1** (10,5-60 V, 12 A) aguanta la batería; los 2, 3 y 4 van
-  colgados de 12 V. Falta un segundo buck 1 (motores y lógica separados). Divisor de batería 120 k / 8,2 k (el viejo
-  de 12 V quemaría el GPIO). Ver `docs/CONEXIONES.md` (v0.2) y `docs/conexiones.html`.
+  colgados de 12 V o de la LiPo. Desde la v0.4 (05/10): 10S → buck 1 → motores; LiPo → buck 2 → Pi y ESP32 (ya no hace
+  falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). Ver
+  `docs/CONEXIONES.md` (v0.4: pines, potencia, autonomía ~3,4 h) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
