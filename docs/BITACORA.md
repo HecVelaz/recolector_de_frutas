@@ -200,3 +200,20 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - El voltímetro LED de 2 hilos no reemplaza al salvalipo: no avisa, mide el total y no cada celda, y consume siempre.
 - En la DevKitC-1 v1.1 el LED RGB está en el GPIO 38 (en la base es el EN de la tracción): verificar en la placa.
 - Firefox de snap no lee `/tmp`: para capturas sin ventana, usar una carpeta temporal en el home y borrarla.
+
+## 2026-10-05 (noche): pines v0.4 en el firmware del brazo
+- `firmware/brazo/include/pins.h`: J1 21/22, J2 25/26, J3 16/17, EN común 23, encoders 34/35, 32/33 y 18/19
+  (SCX-555 a 3V3), servos 4 y 14, finales de carrera 36, 39 y 27; libre el 13.
+- `main.cpp`: J2 y J3 pasan del L298N al BTS7960 (sin L298N en `platformio.ini`). Con el EN compartido, la rueda
+  libre es de las tres a la vez: si una se mueve, las que están libres reciben duty 0 (frenadas); así los tres
+  drivers coinciden siempre en habilitado o no. FC de J3 en el 27 con pull-up interno (36/39 siguen con externo).
+- `brazo_config.h`: J2/J3 con 5248 cuentas (16 × 4 × 82) y los parámetros de J1 llevados a 98 rpm (K × 98/160,
+  Kp y Ki × 160/98), duty máx 40 %, jog 30 %; `relacion` 1 y signos sin medir (todo MEDIR).
+- Prueba `test_manual_no_empuja_afuera_del_limite`: con 45 % y la relación provisoria de 1, J3 pasaba de largo el
+  margen de 5° (el motor nuevo gira más rápido que el 5840); ahora usa `JOG_DUTY_MAX`. 17 pruebas OK; compila
+  `esp32dev` y `ros` sin warnings. Sin probar en la placa.
+- README del brazo, `CONEXIONES.md`, `conexiones.html`, `placa_wroom.html` y CLAUDE.md al día.
+
+### Lecciones
+- Un EN compartido entre varios BTS7960 obliga a decidir la rueda libre en conjunto: si un driver hace `coast()`
+  mientras otro sigue activo, el segundo cree que sigue habilitado y no vuelve a subir el EN.
