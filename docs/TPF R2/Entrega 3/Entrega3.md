@@ -125,7 +125,7 @@ Cada uno de los tres bumpers lleva además un final de carrera, que permite al s
 
 
 
-El robot emplea un driver por motor —es decir, 2 drivers en total—, lo que permite controlar cada rueda de forma independiente y distribuir mejor la carga entre ambos. Esto además posibilita realizar un giro diferencial: variando la velocidad de cada motor por separado, el robot avanza en línea recta o gira sobre su propio eje. El robot dispone de 4 drivers, pero solo dos son para la traccion de las ruedas.
+El robot emplea un driver por motor —es decir, 2 drivers en total—, lo que permite controlar cada rueda de forma independiente y distribuir mejor la carga entre ambos. Esto además posibilita realizar un giro diferencial: variando la velocidad de cada motor por separado, el robot avanza en línea recta o gira sobre su propio eje. El robot dispone de 5 drivers IBT-2: dos para la tracción de las ruedas y tres para el brazo, uno por articulación (J1, J2 y J3).
 
 <div align="center">
   <a href="https://lh3.googleusercontent.com/d/1iqb4MU-GAXMCoNLq0LYKrPpkdXIrV3lr" target="_blank">
@@ -162,7 +162,7 @@ En la cara interna del robot se encuentran los drivers de los motores encargados
 | 2 | Motores DC | — |
 | 2 | Ruedas | Diámetro 15 cm, ancho 6 cm |
 | 2 | Drivers de motor | Uno por motor |
-| 3 | Drivers del brazo robótico | — |
+| 3 | Drivers del brazo robótico | IBT-2, uno por articulación (J1, J2, J3) |
 | 2 | Bisagras de tapa | — |
 | 3 | Buck DC DC | — |
 | — | Tornillería | Tornillos tirafondo |

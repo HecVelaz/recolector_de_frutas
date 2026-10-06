@@ -63,7 +63,7 @@ La Fig. 1 muestra el modelo preliminar. El brazo dibujado representa la disposic
 
 ### 2.3 Diagrama de bloques
 
-La Fig. 2 separa la comunicación usada en los ensayos de banco de la integración prevista en el robot. En los ensayos, el ESP32 adquiere señales y el micro-ROS Agent comunica sus publicaciones a ROS 2 Humble en el PC [2, 3]. La Raspberry Pi 5 figura en el esquema como controlador de alto nivel propuesto para la plataforma. Su prueba de banco con dos cámaras se documenta por separado en la sección 4.5
+La Fig. 2 separa la comunicación usada en los ensayos de banco de la integración prevista en el robot. En los ensayos, el ESP32 adquiere señales y el micro-ROS Agent comunica sus publicaciones a ROS 2 Jazzy en el PC [2, 3]. La Raspberry Pi 5 figura en el esquema como controlador de alto nivel propuesto para la plataforma. Su prueba de banco con dos cámaras se documenta por separado en la sección 4.5
 
 
 ```python
@@ -127,7 +127,7 @@ La tabla explica la función y el criterio de cada elección.
 | Motores DC y soportes | 2 | Tracción; la selección definitiva requiere masa total, pendiente, velocidad, relación de transmisión y par de arranque. | Soportes/motores fotografiados; desempeño sin medir |
 | Raspberry Pi 5 y dos cámaras | 1 + 2 | Procesamiento de visión estéreo; separación y orientación deben mantenerse fijas al calibrar. | Dos cámaras conectadas a la Pi en soporte provisional de cartón; sin montaje en chasis |
 | ESP32 | 2 previstos | Adquisición y control de bajo nivel; uno se usó para pruebas separadas de banco con micro-ROS. | Sin instalación definitiva en chasis |
-| IMU MPU-6050 | 1 | Movimiento/orientación; interfaz I²C y fijación rígida próxima al centro. | Ensayo de banco; montaje pendiente |
+| IMU MPU-6500 | 1 | Movimiento/orientación; interfaz I²C y fijación rígida próxima al centro. | Ensayo de banco; montaje pendiente |
 | HC-SR04 | 3 previstos | Distancias próximas; orientar hacia zonas de aproximación y evitar interferencias entre disparos. | Un canal probado en banco; tres sin integración conjunta |
 | GPS Fastrax UP501A03 | 1 | Posición exterior; interfaz serial NMEA y visibilidad del cielo. | Tramas recibidas sin posición válida; montaje pendiente |
 | Bumpers | 4 previstos | Contacto físico; situar en zonas de posible choque. | Prueba aislada reportada; conjunto sin montar |
@@ -204,11 +204,11 @@ En el [video de la prueba de visión estéreo en RViz](https://drive.google.com/
 ---
 ## 5. Lecturas preliminares de sensores con ROS 2
 
-Las lecturas anteriores se obtuvieron fuera de la plataforma con ESP32, micro-ROS y ROS 2 Humble en Ubuntu 22.04.5. Una publicación ROS 2 demuestra comunicación; no demuestra calibración, prueba de las cantidades previstas ni operación integrada [2, 3].
+Las lecturas anteriores se obtuvieron fuera de la plataforma con ESP32, micro-ROS y ROS 2 Jazzy en Ubuntu 24.04.5. Una publicación ROS 2 demuestra comunicación; no demuestra calibración, prueba de las cantidades previstas ni operación integrada [2, 3].
 
 | Sensor pedido | Evidencia técnica disponible en el trabajo previo
 |---|---|
-| IMU ×1 | MPU-6050; publicación de IMU reportada a ≈ 20 Hz. El [video de banco](https://drive.google.com/file/d/1SUYm2XXXjJeQdNDJxjzFTL86Y-jd5rVf/view) muestra el ESP32 y RViz durante la demostración.
+| IMU ×1 | MPU-6500; publicación de IMU reportada a ≈ 20 Hz. El [video de banco](https://drive.google.com/file/d/1SUYm2XXXjJeQdNDJxjzFTL86Y-jd5rVf/view) muestra el ESP32 y RViz durante la demostración.
 | Ultrasonidos ×3 | Una unidad HC-SR04 publicó en `/ultrasonic/range` durante una prueba de banco.
 | GPS ×1 | El Fastrax emitió tramas NMEA por UART. RMC en estado `V` y GGA sin fix durante la prueba.
 | Bumpers ×3 | Se planteó un estado lógico 0 libre / 1 pulsado en la prueba aislada.
@@ -247,5 +247,5 @@ Las Figs. 1 y 3–7 conservan los enlaces de la carpeta compartida de imágenes 
 
 [2] micro-ROS, [Micro-ROS Agent: paquete oficial](https://github.com/micro-ROS/micro-ROS-Agent). Citado en la arquitectura y en las pruebas de banco.
 
-[3] ROS 2 Humble, [Understanding topics](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Topics/Understanding-ROS2-Topics.html). Citado para observación y frecuencia de tópicos.
+[3] ROS 2 Jazzy, [Understanding topics](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Topics/Understanding-ROS2-Topics.html). Citado para observación y frecuencia de tópicos.
 

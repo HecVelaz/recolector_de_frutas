@@ -22,7 +22,7 @@ terceros quedan fuera de git (`.gitignore`).
 
 **R2 (robot móvil "Arturito R2D2")**
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.
-- `R2/Entrega 2/Entrega2.md` — E2 (27/09, v2.1): diseño y primeros montajes: base de madera 400×400 mm, 2 ruedas motrices de ~150 mm + 2 locas, batería 36 V 4400 mAh, ubicación propuesta de sensores, estéreo de banco en cartón. ⚠ Dice MPU-6050 (es MPU-6500) y ROS 2 Humble/Ubuntu 22.04 en la sección 5 (fue Jazzy/24.04.5): corregir en el informe.
+- `R2/Entrega 2/Entrega2.md` — E2 (27/09, v2.1): diseño y primeros montajes: base de madera 400×400 mm, 2 ruedas motrices de ~150 mm + 2 locas, batería 36 V 4400 mAh, ubicación propuesta de sensores, estéreo de banco en cartón. MPU-6500 y ROS 2 Jazzy/Ubuntu 24.04.5 (corregido el 05/10).
 - `R2/Entrega 3/Entrega3.md` — E3 (27/09): **dimensiones de la base**: caja en T de 40 cm de largo; adelante la parte ancha 40×23 cm (brazo, sobre base impresa en 3D), atrás la angosta 34×17 cm con las ruedas de tracción en rebajes de 3 cm; paredes de 18 cm, madera de 1 cm, 3 bumpers (frente y laterales) con final de carrera, ruedas de 15 cm × 6 cm. Figuras en Drive (enlaces del cuaderno).
 
 **R1 (brazo)**
@@ -40,5 +40,5 @@ terceros quedan fuera de git (`.gitignore`).
 
 **Pendientes / inconsistencias**
 1. La lista de componentes de R2 E1 no coincide con el hardware real (2 ESP32, L298N).
-2. R2 E2: MPU-6050 → MPU-6500; ROS 2 Humble/Ubuntu 22.04.5 → Jazzy/24.04.5 (sección 5).
-3. R2 E3: la tabla dice "3 drivers del brazo"; son 2 (IBT-2 de J1 y L298N de J2+J3), 4 en total con los de tracción.
+2. ~~R2 E2: MPU-6050 → MPU-6500; Humble/22.04.5 → Jazzy/24.04.5~~ y ~~R2 E3: drivers~~: corregidos el 05/10 (.md y .ipynb;
+   E3 con el diseño v0.4: 5 IBT-2, 3 del brazo).

@@ -196,4 +196,3 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 10. Simulación: validar la cadena real con un detector "perfecto" sobre las imágenes de Gazebo (`vision:=yolo`, en la
    PC de escritorio); el recorrido autónomo ya cosecha 12 de 12 con `limones_sim`; cargar las medidas reales que faltan
    (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
-11. Corregir los informes: R2 E2 (MPU-6050 → MPU-6500; Humble/22.04 → Jazzy/24.04.5), R2 E3 (drivers del brazo: 2).
