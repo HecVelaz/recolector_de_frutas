@@ -217,3 +217,15 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 ### Lecciones
 - Un EN compartido entre varios BTS7960 obliga a decidir la rueda libre en conjunto: si un driver hace `coast()`
   mientras otro sigue activo, el segundo cree que sigue habilitado y no vuelve a subir el EN.
+
+## 2026-10-05 (noche): informes de R2 corregidos
+- E2 (`Entrega2.md` y `.ipynb`): MPU-6050 → MPU-6500, ROS 2 Humble → Jazzy, Ubuntu 22.04.5 → 24.04.5 y la
+  referencia [3] a la documentación de Jazzy.
+- E3 (`Entrega3.md` y `.ipynb`): "4 drivers" → 5 IBT-2 (2 de tracción y 3 del brazo, uno por articulación), según
+  el conexionado v0.4. La tabla ya decía 3 drivers del brazo: el pendiente anotado (2) era de antes del cambio de
+  J2/J3. Las fotos de la E3 siguen mostrando el montaje de ese momento.
+- Pendiente quitado de CLAUDE.md y marcado en `INDICE.md`.
+
+### Lecciones
+- En los `.ipynb`, reemplazar las frases sobre el texto del archivo (probando también la forma con escapes
+  `\uXXXX`) en vez de cargar y volver a guardar el JSON: así el diff es de una línea y no reformatea todo.
