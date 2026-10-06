@@ -229,3 +229,23 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 ### Lecciones
 - En los `.ipynb`, reemplazar las frases sobre el texto del archivo (probando también la forma con escapes
   `\uXXXX`) en vez de cargar y volver a guardar el JSON: así el diff es de una línea y no reformatea todo.
+
+## 2026-10-06: revisión de conexiones de Codex (S3, WROOM y Pi) y arreglos sin costo
+- Codex (solo lectura) revisó `CONEXIONES.md`, `placa_s3.html`, `placa_wroom.html` y los dos `pins.h`: sin pines de
+  arranque, flash ni USB mal usados; divisores bien (42 V → 2,69 V; 5 V → 3,33 V). Hallazgos en seta, protecciones
+  y supuestos sin medir.
+- **Sin presupuesto para compras** (dicho por el usuario): se aplicó solo lo que no cuesta.
+- `mision`: `al_estado_base()` en `fsm.py`; con `SETA` en `/base/estado` manda `desarmar` al brazo y pasa a FALLA
+  (antes la WROOM seguía armada y al soltar la seta el brazo arrancaba con el error acumulado). `nodo_mision`
+  suscribe `/base/estado` siempre (antes solo con `autonomo`). 3 pruebas nuevas: 30 OK.
+- `CONEXIONES.md`: bus de lógica = LiPo directa (no "buck 1-B"); buck 2 desde la LiPo; 1N4007 en la bobina del relé,
+  fusible ≥ 58 V DC e interruptor ≥ 60 V DC en el esquema; seta y brazo a mano (mandar `desarmar`); margen del TVS
+  y del capacitor de 25 V; pull-ups de 34/35 (los da la SCX-555) contra 36/39 (obligatorios); en "Antes de
+  conectar": salida real de los encoders de tracción, entrada de los IBT-2 a 3,3 V (74HC244), LED RGB en el 38,
+  servo del GPIO 14, LEDs de la Freenove sobre GPIO 1/encoders/I²C y el divisor con la lógica apagada.
+- Quedan sin resolver por costo: freno de J2/J3 (contrapeso o resorte con lo que haya), corte por subtensión de la
+  LiPo (INA219 y alarma siguen "a comprar"), protección de corriente por motor.
+
+### Lecciones
+- Vigilante de Codex: buscar `tokens used` como línea exacta (`grep -qx`); CLAUDE.md contiene ese texto y Codex lo
+  imprime al leerlo, así que el `grep -q` lo cortó a mitad de camino.

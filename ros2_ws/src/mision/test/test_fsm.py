@@ -204,3 +204,28 @@ def test_ik_inalcanzable_detiene():
     ver_limon(m, LIMON, 2.0)
     m.al_ik('inalcanzable: marco "camera" distinto de "brazo_base"', 3.3)
     assert m.estado == FALLA
+
+
+def test_seta_desarma_el_brazo_y_no_lo_rearma():
+    m, r = lista()
+    ver_limon(m, LIMON, 2.0)
+    m.al_estado_base('ARMADA modo=vel seguridad=PARADA SETA imu=ok', 3.5)
+    assert m.estado == FALLA and r.de('comando')[-1] == 'desarmar'
+    m.al_estado_brazo(estado_brazo(armado=False), 4.0)
+    m.paso(5.0)
+    assert 'armar' not in r.de('comando')[1:]  # el único 'armar' es el del arranque
+
+
+def test_seta_en_inicio_no_deja_armar():
+    r = Registro()
+    m = Mision(r, None)
+    m.al_estado_brazo(estado_brazo(armado=False), 0.0)
+    m.al_estado_base('DESARMADA modo=vel seguridad=PARADA SETA imu=ok', 0.5)
+    m.paso(1.0)
+    assert m.estado == FALLA and 'armar' not in r.de('comando')
+
+
+def test_estado_de_base_sin_seta_no_hace_nada():
+    m, r = lista()
+    m.al_estado_base('ARMADA modo=vel seguridad=OK imu=ok', 1.5)
+    assert m.estado == ESPERAR and r.de('comando') == ['armar']

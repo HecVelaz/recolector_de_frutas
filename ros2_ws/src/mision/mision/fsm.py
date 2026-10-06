@@ -97,6 +97,15 @@ class Mision:
         if self.estado in (APROXIMAR, AGARRAR, RETIRAR, SOLTAR) and (fallas or not armado):
             self._fallar(t, 'brazo ' + (', '.join(fallas) if fallas else 'desarmado'))
 
+    def al_estado_base(self, texto, t):
+        # La seta corta los 12 V pero la WROOM sigue encendida y armada: al soltarla, el brazo arrancaría con el error
+        # acumulado mientras J2/J3 caían. Desarmar y quedar en FALLA (no se rearma sola: hay que relanzar la misión).
+        if 'SETA' not in texto.split():
+            return
+        self.enviar('comando', 'desarmar')
+        if self.estado != FALLA:
+            self._ir(FALLA, t, 'seta apretada: brazo desarmado')
+
     def al_joint_cmd(self, q, t):
         if self.estado in (APROXIMAR, RETIRAR) and self.q_obj is None:
             self.q_obj = list(q)

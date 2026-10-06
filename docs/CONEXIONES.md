@@ -72,7 +72,7 @@ lado de la Pi 5), que es corto y sensible a interferencias; los ESP32 van por US
 Así: soporte rígido en el mástil (adelante a la derecha, con el brazo atrás sobre el eje, como en la simulación) con las dos cámaras
 y la Pi 5 con su disipador activo; bajan por el mástil los 2 cables USB a los ESP32 (con ferrite) y la alimentación.
 El buck de 5 V (buck 2) va **arriba, al lado de la Pi** (con 5 A, un cable de 5 V largo cae demasiado y la Pi se
-queja de tensión baja): por el mástil sube el bus de 12 V de lógica (buck 1-B), que lleva poca corriente (~1,5 A).
+queja de tensión baja): por el mástil sube el bus de lógica, la LiPo 3S directa (9,9-12,6 V), que lleva poca corriente (~1,5 A).
 Alternativa si la Pi tiene que ir abajo: cables CSI de 22 a 15 pines de 300-500 mm (existen hasta 1 m, pero a más
 largo más riesgo de errores de imagen); los adaptadores CSI→HDMI no están garantizados con la Pi 5.
 
@@ -88,7 +88,7 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V |
 | GPIO 17 (pin 11) | Luz de estado | vía transistor |
 | GPIO 27 (pin 13) | Buzzer | vía transistor |
-| USB-C | Buck 2 (12 → 5,1 V, 8 A) | `usb_max_current_enable=1` |
+| USB-C | Buck 2 (LiPo 9,9-12,6 → 5,1 V, 8 A) | `usb_max_current_enable=1` |
 
 ## Alimentación (v0.4: dos baterías)
 
@@ -112,9 +112,10 @@ son de 12 V y el IBT-2 aguanta 27 V como máximo: van por el buck 1 (36 → 12,5
 El buck 1 no tiene protección contra la corriente que vuelve por la salida (lo dice el vendedor: con motores, diodo).
 
 ```
-Batería 10S 36 V (30-42 V) → fusible 15 A junto al borne → interruptor de motores (DC, H8) → bus 36 V
+Batería 10S 36 V (30-42 V) → fusible 15 A ≥ 58 V DC junto al borne → interruptor de motores (≥ 20 A, ≥ 60 V DC) → bus 36 V
   ├─ Buck 1 (36 → 12,5 V, CC 14 A, ventilador) → Schottky ≥ 30 A → relé 12 V 40 A (bobina por la seta NC)
-  │     └─ bus 12 V de motores (2200 µF 25 V + TVS 15 V, p. ej. 5KP15A)
+  │     │  (1N4007 en paralelo con la bobina: cátodo al +)
+│     └─ bus 12 V de motores (2200 µF 25 V + TVS 15 V, p. ej. 5KP15A)
   │           ├─ fusible 15 A → IBT-2 de tracción ×2
   │           ├─ llave del brazo (H8) → fusible 10 A → IBT-2 J1 + IBT-2 J2 + IBT-2 J3
   │           └─ fusible 3 A → Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
@@ -131,8 +132,14 @@ GND: los negativos de las dos baterías unidos en un solo punto (los positivos n
 
 - **Seta:** corta el bus de motores del lado de 12 V con un relé automotriz de 12 V 40 A (a 42 V DC haría falta
   un contactor especial). La bobina se alimenta de la LiPo a través de la seta: los motores, el brazo y los servos se
-  apagan y la Pi y los ESP32 siguen encendidos. La seta enclava y se rearma girándola; las dos placas arrancan
-  desarmadas igual. **Con la seta, J2 y J3 sueltan el brazo** (no se autobloquean).
+  apagan y la Pi y los ESP32 siguen encendidos. La seta enclava y se rearma girándola. La S3 se desarma sola
+  (rearme con `r`); la WROOM no ve la seta y seguiría armada, así que `mision` la desarma al ver `SETA` en
+  `/base/estado` y queda en FALLA (relanzarla para seguir). **Sin `mision` corriendo (brazo a mano), mandar
+  `desarmar` antes de soltar la seta.** **Con la seta, J2 y J3 sueltan el brazo** (no se autobloquean): mientras
+  no haya freno, un contrapeso o un resorte hecho con lo que haya que lo lleve al reposo.
+- **Margen del bus de 12 V:** el TVS 5KP15A empieza a conducir a ~16,7 V pero puede llegar a 24,4 V en un pico, y
+  el capacitor es de 25 V: justo. No frenar la tracción de golpe ni mover tracción y brazo a la vez (el buck 1 queda
+  al límite: 11 A de tracción + 3,9 A del brazo en nominal). Si en el inventario hay un capacitor de 35 V, usar ese.
 - **Diodo, capacitor y TVS:** el Schottky no deja que la corriente de frenado vuelva al buck; esa energía la toma el
   capacitor, y el TVS recorta si el bus sube (el IBT-2 aguanta 27 V). El diodo cae ~0,5 V: por eso el buck va a 12,5 V.
 - **Corriente:** el CC del buck 1 (14 A) es el límite de los motores. Tracción (42GM-895H a 12 V): 2,6 A en vacío,
@@ -181,14 +188,28 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
 - [ ] Schottky ≥ 30 A con disipador, 2200 µF 25 V y TVS de 15 V en el bus de motores; ventilador sobre el buck 1-A.
 - [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo).
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
-- [ ] Pull-ups externos de 10 kΩ en WROOM 34, 35, 36 y 39 (no tienen pull-up interno).
+- [ ] Pull-ups externos de 10 kΩ en WROOM 36 y 39 (finales de carrera; no tienen pull-up interno). En 34/35
+      (encoder de J1) alcanza el de 5,1 kΩ de la SCX-555: medir que esté; si no, 10 kΩ a 3V3.
 - [ ] Encoders de J1, J2 y J3 a 3V3 (la SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: a 5 V las salidas quedan a 5 V).
 - [ ] Bumpers y finales de carrera: microinterruptores V-152-1C25 (SPDT, rodillo). Común a GND y NA al GPIO, sin
       alimentación; con cables largos, 100 nF a GND en el pin.
 - [ ] Encoders de tracción (42GM-895H): azul = Vcc 5-24 V, verde = GND, amarillo = A, blanco = B; motor en negro y
       rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
       tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,
-      girando despacio, que el alto no pase de 3,3 V antes de conectar a la S3.
+      girando despacio, que el alto no pase de 3,3 V antes de conectar a la S3. Antes, medir sin alimentar la
+      resistencia de cada salida a Vcc (≈ 10 kΩ = colector abierto con pull-up: el divisor vale; si es push-pull,
+      el divisor tiene que ser 10 k / 20 k en serie y no solo 20 k a GND).
+- [ ] **IBT-2 a 3,3 V:** leer el integrado de entrada de los 5 módulos. Con 74HC244 a 5 V el alto mínimo es
+      3,5 V y los 3,3 V del ESP32 quedan fuera de hoja (suele andar, sin margen): probar cada uno a 20 kHz y, si
+      falla, alimentar su VCC a 4,5 V o menos o usar un 74HCT si aparece en el inventario.
+- [ ] **LED RGB de la S3:** ver la revisión de la DevKitC-1. En la v1.1 el RGB está en el GPIO 38 (EN de la
+      tracción): nunca usar el RGB en el firmware (`pins.h` lo supone en el 48) o pasar el EN a otro pin.
+- [ ] **Servo de giro (WROOM 14):** el GPIO 14 saca pulsos al arrancar; conectar los 6 V de los servos después de
+      que la WROOM arrancó, o pasar la señal al GPIO 13 (libre).
+- [ ] **LEDs de la Freenove:** además de bumpers y seta, medir si cargan el GPIO 1 (divisor de 7,7 kΩ: un LED
+      cambia mucho la lectura de batería), los encoders (15-18) y el I²C (8/9). Si cargan, sacar ese LED.
+- [ ] **Divisor de batería con la lógica apagada:** la 10S sigue empujando ~2,7 V al GPIO 1 por 120 kΩ (≤ 0,3 mA).
+      Encender primero la lógica y apagarla última; no dejar la 10S conectada con la S3 apagada mucho tiempo.
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.

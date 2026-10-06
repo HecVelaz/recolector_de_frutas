@@ -5,13 +5,14 @@ Suscribe  /limon/posicion  geometry_msgs/PointStamped  superficie del limón [m]
           /brazo/ik_estado std_msgs/String             "ok ..." o "inalcanzable: ..." (brazo_ik)
           /brazo/joint_cmd sensor_msgs/JointState      ángulos que calculó brazo_ik para el objetivo [rad]
           /brazo/joint_states sensor_msgs/JointState   ángulos y velocidades medidos (firmware, 20 Hz)
+          /base/estado     std_msgs/String             con " SETA": desarma el brazo y pasa a FALLA (firmware, 2 Hz)
 Publica   /brazo/objetivo  geometry_msgs/PointStamped  centro del limón [m], marco `marco_brazo` (-> brazo_ik)
-          /brazo/comando   std_msgs/String             armar, s
+          /brazo/comando   std_msgs/String             armar, s, desarmar
           /pinza/cierre    std_msgs/Float32            0 = abierta, 100 = cerrada
           /mision/estado   std_msgs/String             estado y motivo de cada cambio
 Con autonomo:=true además recorre la hilera solo (recorrido.py):
 Suscribe  /odom nav_msgs/Odometry (avance), /imu/data_raw sensor_msgs/Imu (rumbo), /range/frente|izq|der sensor_msgs/Range, /bumpers std_msgs/UInt8,
-          /base/estado std_msgs/String, /yolo/detecciones vision_msgs/Detection2DArray (clase `clase_limon`)
+          /yolo/detecciones vision_msgs/Detection2DArray (clase `clase_limon`)
 Publica   /cmd_vel geometry_msgs/Twist (10 Hz, siempre: el watchdog de la base es de 300 ms), /base/comando (armar),
           /recorrido/estado std_msgs/String
 Al cerrarse (Ctrl+C o ros2 launch) manda `s` al brazo y a la base: si no, seguirían hacia el último objetivo.
@@ -83,10 +84,9 @@ class NodoMision(Node):
             for k, n in enumerate(('frente', 'izq', 'der')):
                 self.create_subscription(Range, f'/range/{n}', lambda m, k=k: self.al_rango(k, m), 10)
             self.create_subscription(UInt8, '/bumpers', lambda m: self.recorrido.al_bumpers(m.data, self.t()), 10)
-            self.create_subscription(String, '/base/estado',
-                                     lambda m: self.recorrido.al_estado_base(m.data, self.t()), 10)
             self.clase_limon = self.declare_parameter('clase_limon', 'limon').value
             self.create_subscription(Detection2DArray, '/yolo/detecciones', self.al_detecciones, 10)
+        self.create_subscription(String, '/base/estado', self.al_estado_base, 10)
         self.create_timer(0.1, self.paso)
         self.get_logger().info(f'mision lista (marco {self.marco}{", recorrido autónomo" if self.recorrido else ""})'
                                ': esperando /brazo/estado')
@@ -98,6 +98,11 @@ class NodoMision(Node):
             self.recorrido.paso(t)
             self.mision.base_quieta = self.recorrido.base_quieta(t)
         self.mision.paso(t)
+
+    def al_estado_base(self, m):
+        self.mision.al_estado_base(m.data, self.t())  # seta: desarma el brazo
+        if self.recorrido:
+            self.recorrido.al_estado_base(m.data, self.t())
 
     def al_odom(self, m):
         p, q = m.pose.pose.position, m.pose.pose.orientation

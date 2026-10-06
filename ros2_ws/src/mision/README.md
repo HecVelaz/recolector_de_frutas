@@ -28,6 +28,8 @@ INICIO ──(ARMADO)──> ESPERAR ──(brazo quieto + 5 posiciones seguidas
 Cualquier estado con el brazo moviéndose -> FALLA si: falla del brazo, desarmado, sin /brazo/estado 2 s,
 /brazo/ik_estado "inalcanzable" o no llega en 20 s. FALLA manda `s` (detiene J1-J3, la pinza queda como está)
 y se queda ahí: reiniciar el nodo. Al cerrar el nodo (Ctrl+C, fin del launch) también manda `s`.
+En cualquier estado, `SETA` en /base/estado -> manda `desarmar` y FALLA (la WROOM no ve la seta: si quedara
+armada, al soltarla el brazo arrancaría con el error acumulado mientras J2/J3 caían).
 ```
 
 - "Llegó" = `/brazo/joint_states` a menos de 1° de los ángulos que calculó `brazo_ik` para **este** objetivo
