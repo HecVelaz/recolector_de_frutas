@@ -16,7 +16,8 @@ terceros quedan fuera de git (`.gitignore`).
 **Diseño**
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
-- `CONEXIONES.md` — Diagrama de conexiones: pines de la S3 (base, propuesta), la WROOM (brazo) y la Pi, árbol de alimentación con la batería de 36 V, los buck disponibles y la seta, ubicación de la Pi y las cámaras, y lista de verificación antes de conectar. `conexiones.html`: el mismo contenido como diagrama (al día al 29/09).
+- `CONEXIONES.md` — Conexionado v0.4 (05/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, circuito de potencia con dos baterías (10S para motores, LiPo 3S para la lógica), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `conexiones.html`: lo mismo como diagrama.
+- `COMPRAS.md` — Lista de compras con casillas, del conexionado v0.4.
 
 **R2 (robot móvil "Arturito R2D2")**
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.

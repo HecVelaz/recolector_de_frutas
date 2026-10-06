@@ -91,9 +91,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   112-271 px). Revisado por Codex. Calibración en uso: v1 (`config/calibracion/`); la v2 (RMS 0,32 px, baseline
   99,3 mm, f ~680) es de un montaje de cartón: recalibrar con el soporte rígido (el usuario avisa) y apuntar
   `CARPETA_CALIBRACION`. Exposiciones izq/der sin sincronizar: localizar con el robot quieto.
-- **Cinta CSI dañada (30/09)**, al pasar al soporte nuevo: con ella la cámara no se detecta, o se detecta y falla al
+- **Cinta CSI reemplazada (05/10; falta verificar las dos cámaras con `~/scripts/probar_camaras.sh`).** Antes: cinta dañada (30/09), al pasar al soporte nuevo: con ella la cámara no se detecta, o se detecta y falla al
   transmitir (`Failed to write reg`, `stream on failed`, `Camera frontend has timed out`). Aislada intercambiando
-  cintas: las 2 cámaras y los 2 puertos andan. **Hoy funciona una sola cámara**: falta una cinta nueva (Pi 5, 22 a
+  cintas: las 2 cámaras y los 2 puertos andan (cinta de Pi 5, 22 a
   15 pines). Detección: `journalctl -k -b | grep "found subdevice"` (solo al arrancar: cambiar cintas con la Pi apagada).
   Transmisión: `start_cameras_full.sh`; `~/scripts/probar_camaras.sh` en la Pi prueba las dos cosas (la parte de transmitir sin
   probar). Vista de las dos en crudo: `/tmp/vista/index.html` servido en el puerto 8081 + `web_video_server` en el 8080
@@ -161,7 +161,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 1. Verificar `cuentasPorVuelta` = 8316 de la tracción girando la rueda a mano (`vueltas` en `e`, README de la base).
 2. Probar el detector con limones verdes reales frente a las NoIR (con luz, a 40-90 cm): si falla, esas fotos van
    al entrenamiento (fotos propias, subirlas a Roboflow y sumarlas en la celda 3 del cuaderno).
-3. Cinta CSI nueva para la segunda cámara (§5). Soporte rígido de las cámaras (con los hallazgos de §6: que el limón caiga en la parte derecha de la imagen
+3. Verificar las dos cámaras con la cinta nueva (§5). Soporte rígido de las cámaras (con los hallazgos de §6: que el limón caiga en la parte derecha de la imagen
    izquierda y el brazo en reposo no las tape), recalibrar y medir la precisión de `/limon/posicion` contra cinta.
 4. Cablear según la lista "Antes de conectar" de `docs/CONEXIONES.md` (pull-down 10 kΩ en los EN, divisores de
    ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
