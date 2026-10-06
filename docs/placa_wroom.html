@@ -1,0 +1,405 @@
+<title>Placa de la ESP32-WROOM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Plano de taller: la perforada a escala (1 agujero = 2,54 mm) con la HW-394 en el centro, conectores en el
+     borde y etiquetas afuera como serigrafía; debajo, tabla pin por pin. Misma paleta que conexiones.html. */
+  :root {
+    --paper: #f2f5f3; --card: #ffffff; --ink: #17231f; --muted: #56655f; --rule: #c3cfca; --soft: #e4ebe7;
+    --w-supply: #cf7a12; --w-v33: #0f7f86; --w-v6: #b0457a; --w-gpio: #237a4f; --w-gnd: #3b4843;
+    --pcb: #e6dcc3; --pcb-edge: #b9a77c; --hole: #b3a27a; --kit: #22302b; --kit-ink: #e9efe9; --res: #d8c9a0;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #101614; --card: #18201d; --ink: #e2ebe7; --muted: #9aaaa4; --rule: #34423d; --soft: #1f2a26;
+      --w-supply: #f0a24a; --w-v33: #4cc3c9; --w-v6: #e07aa8; --w-gpio: #4fc48a; --w-gnd: #b9c6c1;
+      --pcb: #2b281e; --pcb-edge: #4f4834; --hole: #5a5340; --kit: #0b0f0d; --kit-ink: #dfe8e3; --res: #6b5f40;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #101614; --card: #18201d; --ink: #e2ebe7; --muted: #9aaaa4; --rule: #34423d; --soft: #1f2a26;
+    --w-supply: #f0a24a; --w-v33: #4cc3c9; --w-v6: #e07aa8; --w-gpio: #4fc48a; --w-gnd: #b9c6c1;
+    --pcb: #2b281e; --pcb-edge: #4f4834; --hole: #5a5340; --kit: #0b0f0d; --kit-ink: #dfe8e3; --res: #6b5f40;
+  }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .page { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 40px; }
+  header { display: grid; gap: 10px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--cond); font-weight: 600; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--cond); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+  p { margin: 0; max-width: 72ch; }
+  .lede { color: var(--muted); }
+  code, .mono { font-family: var(--mono); font-size: .9em; }
+  b { font-weight: 600; }
+  section { display: grid; gap: 14px; }
+  figure { margin: 0; display: grid; gap: 10px; }
+  .scroll { overflow-x: auto; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; }
+  .scroll svg { display: block; min-width: 680px; width: 100%; max-width: 860px; height: auto; margin: 0 auto; }
+  figcaption { color: var(--muted); font-size: 13.5px; max-width: 90ch; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  #placa text { font-family: var(--sans); fill: var(--ink); }
+  #placa .pl { font-family: var(--mono); font-size: 10px; }
+  #placa .nm { font-family: var(--cond); font-weight: 600; font-size: 12px; }
+  #placa .tiny { font-family: var(--mono); font-size: 8.5px; fill: var(--muted); }
+  #placa .kp { font-family: var(--mono); font-size: 9px; fill: var(--kit-ink); }
+  #placa .kt { font-family: var(--cond); font-weight: 600; font-size: 14px; fill: var(--kit-ink); }
+  #placa .ks { font-size: 10.5px; fill: var(--kit-ink); opacity: .75; }
+  .w { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .w.grueso { stroke-width: 4.5; }
+  .c-gnd { stroke: var(--w-gnd); } .c-v5 { stroke: var(--w-supply); } .c-v33 { stroke: var(--w-v33); }
+  .c-v6 { stroke: var(--w-v6); } .c-gpio { stroke: var(--w-gpio); }
+  .f-gnd { fill: var(--w-gnd); } .f-v5 { fill: var(--w-supply); } .f-v33 { fill: var(--w-v33); }
+  .f-v6 { fill: var(--w-v6); } .f-gpio { fill: var(--w-gpio); } .f-res { fill: var(--muted); }
+  .conn { cursor: pointer; transition: opacity .15s; }
+  .conn .box { fill: var(--card); fill-opacity: .55; stroke-width: 1.6; }
+  .conn.opt .box { stroke-dasharray: 4 3; }
+  .conn:focus { outline: none; }
+  .conn:focus-visible .box { stroke-width: 3; }
+  .kpin { transition: opacity .15s; }
+  svg.focus .conn:not(.on), svg.focus .kpin.used:not(.on) { opacity: .22; }
+  .kpin.on circle { stroke: var(--kit-ink); stroke-width: 2.5; }
+  .conn.on .box { stroke-width: 3; }
+  @media (prefers-reduced-motion: reduce) { .conn, .kpin { transition: none; } }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 20px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--soft); vertical-align: top; }
+  th { font: 600 11.5px var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--rule); }
+  td.m { font-family: var(--mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tbody.grp th { text-transform: none; letter-spacing: 0; font: 600 14px var(--cond); color: var(--ink); padding-top: 14px; cursor: pointer; }
+  tbody.grp th .tipo { font: 400 12.5px var(--sans); color: var(--muted); margin-left: 8px; }
+  tbody.grp th .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; }
+  tbody.grp.on { background: var(--soft); }
+  ul.lista { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+  ol.pasos { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; max-width: 80ch; }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--rule); padding-top: 14px; }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.4 · brazo</div>
+    <h1>Placa de la ESP32-WROOM-32D (brazo)</h1>
+    <p class="lede">Perforada de 7 × 9 cm con la HW-394 (30 pines, USB-C, CH340) enchufada en dos tiras hembra. En el borde van los conectores de los 3 IBT-2, los 3 encoders, los 3 finales de carrera y los 2 servos, con sus componentes al lado. Los cables de cada conector a su GPIO van por debajo y no están dibujados: el plano dice dónde va cada cosa y la tabla, qué pin va con qué. <b>Tocá un conector</b> para ver a qué pines de la WROOM va. Los pines son la <b>propuesta v0.4</b> de <code>CONEXIONES.md</code>: todavía no están en <code>firmware/brazo/include/pins.h</code>.</p>
+  </header>
+
+  <section aria-labelledby="h-plano">
+    <h2 id="h-plano">Plano de la placa</h2>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:var(--w-gnd)"></i>GND</span>
+      <span><i style="background:var(--w-supply)"></i>5 V (VIN, del USB)</span>
+      <span><i style="background:var(--w-v33)"></i>3,3 V</span>
+      <span><i style="background:var(--w-v6)"></i>6 V de los servos (buck 3)</span>
+      <span><i style="background:var(--w-gpio)"></i>GPIO</span>
+    </div>
+    <figure>
+      <div class="scroll"><svg id="placa" role="img" aria-label="Plano de la perforada de la WROOM: la HW-394 en el centro con el USB arriba; a la izquierda los tres IBT-2; a la derecha los tres encoders, los tres finales de carrera y la reserva; abajo los dos servos y la bornera de 6 V."></svg></div>
+      <figcaption>Vista desde arriba, a escala: cada punto es un agujero (2,54 mm). El marco es GND; el riel de 5 V baja por la izquierda (para los IBT-2) y el de 3,3 V por la derecha (encoders y pull-up). Donde un cable salta sobre otro, no se tocan. El riel de 6 V y el GND de abajo llevan la corriente de los servos: van con alambre grueso.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="h-tabla">
+    <h2 id="h-tabla">Pin por pin</h2>
+    <p class="lede">Los conectores de los IBT-2 siguen el orden de pines del módulo, así el cable Dupont va derecho, 1 a 1. Tocá el nombre de un conector para resaltarlo en el plano.</p>
+    <div class="card"><div class="tablewrap"><table id="tabla">
+      <thead><tr><th>Pin</th><th>Va a</th><th>En la placa</th><th>Cable</th></tr></thead>
+    </table></div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Materiales</h2>
+      <ul class="lista">
+        <li>Placa perforada de 7 × 9 cm, doble faz</li>
+        <li>2 tiras de pines hembra de 1 × 15 (zócalo de la HW-394)</li>
+        <li>3 tiras macho de 1 × 8 (IBT-2) + 3 cables Dupont hembra-hembra de 8 hilos</li>
+        <li>3 conectores JST-XH de 4 vías (encoders) y 4 de 2 vías (finales de carrera y reserva), macho en la placa y cable armado</li>
+        <li>2 tiras macho de 1 × 3 para los servos (enchufe estándar: marrón GND, rojo V+, naranja señal)</li>
+        <li>1 bornera de 2 vías, paso 5,08 mm (6 V del buck 3)</li>
+        <li>Resistencias de 10 k: 3 obligatorias (pull-up de 36 y 39, pull-down del 23) y 3 opcionales (34, 35 y 27)</li>
+        <li>3 capacitores cerámicos de 100 nF (finales de carrera)</li>
+        <li>Alambre de 18 AWG para el riel de 6 V y el GND de los servos; unifilar fino para las señales</li>
+        <li>4 separadores M3</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Antes de soldar</h2>
+      <ul class="lista">
+        <li><b>El orden de pines sale de la foto de tu HW-394</b> (<code>docs/fotos/esp32 wroom 32D/</code>), con el USB arriba. Medí la separación entre las dos tiras presentando la placa, y soldá las tiras hembra con la HW-394 enchufada.</li>
+        <li><b>Servos:</b> la corriente (2-3 A cada uno si se traban) entra por la bornera de 6 V y vuelve por el GND de abajo. Usá alambre grueso en esos dos tramos, no pistas finas. La WROOM solo da la señal.</li>
+        <li><b>Encoders a 3,3 V</b>: verde a 3V3, azul a GND. La SCX-555 trae pull-up de 5,1 k a su Vcc: a 5 V, A y B saldrían a 5 V.</li>
+        <li>34, 35, 36 y 39 (VP/VN) son solo entrada y no tienen pull-up interno. En los finales de carrera de 36 y 39 los 10 k son obligatorios; en el encoder de J1, opcionales (la SCX-555 ya trae los suyos).</li>
+        <li>El GPIO 14 pulsa durante el arranque: el servo de giro puede moverse un poco al encender.</li>
+        <li>No conectar 0, 2, 5, 12 y 15 (arranque) ni TX0/RX0 (consola). El 13 queda de reserva.</li>
+        <li>La placa no lleva los 12 V de los motores: al IBT-2 solo van PWM, EN, 5 V y GND por este conector. La potencia va de la barra de borneras a B+/B−.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-pasos">
+    <h2 id="h-pasos">Armado y prueba, en este orden</h2>
+    <ol class="pasos">
+      <li><b>Tiras hembra</b> de la HW-394, después el <b>marco de GND</b>, los rieles de 5 V y 3,3 V, y el de 6 V con alambre grueso.</li>
+      <li><b>Conectores, resistencias y capacitores</b>, como en el plano.</li>
+      <li><b>Cables de señal</b>, de a uno, tachando cada fila de la tabla.</li>
+      <li><b>Sin la HW-394, con el tester:</b> que no haya corto entre 5 V, 3,3 V, 6 V y GND, y que cada pin de conector llegue al agujero correcto del zócalo.</li>
+      <li><b>Pasar los pines v0.4 a <code>pins.h</code> y <code>brazo_config.h</code></b> cuando lo decidas. Hasta entonces el firmware usa los pines viejos y no coincide con esta placa.</li>
+      <li><b>La HW-394 sola por USB</b> (sin periféricos): el GPIO 23 en 0 V al arrancar y al flashear.</li>
+      <li><b>Finales de carrera:</b> apretar cada uno y ver que su pin pase de 3,3 V a 0 V. <b>Encoders:</b> girar cada motor a mano y ver que cuente, primero J1 (como en <code>pruebas-esp32/10</code>).</li>
+      <li><b>Servos</b> con el buck 3 ya ajustado a 6 V sin carga. <b>Motores de a uno</b>, con el brazo apoyado: J2 y J3 no se sostienen solos.</li>
+    </ol>
+  </section>
+
+  <footer>Fuente de verdad: <span class="mono">docs/CONEXIONES.md</span> (v0.4, propuesta para la WROOM). La ubicación de cada cosa en la placa es una propuesta: si al presentar las piezas algo no entra, se corre; lo que no cambia es qué va con qué.</footer>
+</div>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var P = 14, ML = 130, MT = 44, NI = 27, NJ = 35, MR = 150, MB = 110;
+  var BW = NI * P, BH = NJ * P, W = ML + BW + MR, H = MT + BH + MB;
+  function X(i) { return ML + P / 2 + i * P; }
+  function Y(j) { return MT + P / 2 + j * P; }
+  function el(tag, attrs, parent, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  var svg = document.getElementById('placa');
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  // side: left (columna 1), right (columna 25), bottom (fila 33). pins: [nombre, va a, en la placa, cable, etiqueta de afuera]
+  var IBT = function (j, a, b) {
+    return [['RPWM', 'GPIO ' + a, '', '', 'RPWM → ' + a], ['LPWM', 'GPIO ' + b, '', '', 'LPWM → ' + b],
+            ['R_EN', 'GPIO 23', 'puente con L_EN', '', 'R_EN → 23'], ['L_EN', 'GPIO 23', 'puente con R_EN', '', 'L_EN → 23'],
+            ['R_IS', 'sin conectar', '', '', 'R_IS  ·'], ['L_IS', 'sin conectar', '', '', 'L_IS  ·'],
+            ['VCC', '5 V', 'riel de 5 V', '', 'VCC  5V'], ['GND', 'GND', 'marco de GND', '', 'GND']];
+  };
+  var ENC = function (a, b, pu) {
+    return [['Vcc', '3,3 V', 'riel de 3,3 V', 'verde', '3V3'], ['GND', 'GND', 'marco de GND', 'azul', 'GND'],
+            ['A', 'GPIO ' + a, pu ? '10 k a 3,3 V (opcional)' : '', 'negro', 'A → ' + a],
+            ['B', 'GPIO ' + b, pu ? '10 k a 3,3 V (opcional)' : '', 'rojo', 'B → ' + b]];
+  };
+  var FC = function (g, extra) {
+    return [['NA', 'GPIO ' + g, '100 nF a GND · ' + extra, '', 'NA → ' + g], ['C (común)', 'GND', 'marco de GND', '', 'GND']];
+  };
+  var CONN = [
+    { id: 'j1', name: 'IBT-2 de J1', side: 'left', at: 3, tipo: 'tira macho 1 × 8 · Dupont 1 a 1', pins: IBT(1, 21, 22) },
+    { id: 'j2', name: 'IBT-2 de J2', side: 'left', at: 13, tipo: 'tira macho 1 × 8 · Dupont 1 a 1', pins: IBT(2, 25, 26) },
+    { id: 'j3', name: 'IBT-2 de J3', side: 'left', at: 23, tipo: 'tira macho 1 × 8 · Dupont 1 a 1', pins: IBT(3, 16, 17) },
+    { id: 'enc-j1', name: 'Encoder J1', side: 'right', at: 3, tipo: 'JST-XH 4 vías', pins: ENC(34, 35, true) },
+    { id: 'enc-j2', name: 'Encoder J2', side: 'right', at: 9, tipo: 'JST-XH 4 vías', pins: ENC(32, 33) },
+    { id: 'enc-j3', name: 'Encoder J3', side: 'right', at: 15, tipo: 'JST-XH 4 vías', pins: ENC(18, 19) },
+    { id: 'fc-j1', name: 'Final de carrera J1', side: 'right', at: 21, tipo: 'JST-XH 2 vías', pins: FC('36 (VP)', '10 k a 3,3 V') },
+    { id: 'fc-j2', name: 'Final de carrera J2', side: 'right', at: 24, tipo: 'JST-XH 2 vías', pins: FC('39 (VN)', '10 k a 3,3 V') },
+    { id: 'fc-j3', name: 'Final de carrera J3', side: 'right', at: 27, tipo: 'JST-XH 2 vías', pins: FC('27', 'pull-up interno (10 k opcional)') },
+    { id: 'res13', name: 'Reserva', side: 'right', at: 30, opt: true, tipo: 'JST-XH 2 vías · opcional',
+      pins: [['señal', 'GPIO 13', '', '', '→ 13'], ['GND', 'GND', 'marco de GND', '', 'GND']] },
+    { id: 'servo-ap', name: ['Servo', 'apertura'], side: 'bottom', at: 4, tipo: 'tira macho 1 × 3 (enchufe del servo)',
+      pins: [['GND', 'GND', 'marco de GND (alambre grueso)', 'marrón', 'GND'], ['V+', '6 V', 'riel de 6 V', 'rojo', 'V+ 6V'],
+             ['señal', 'GPIO 4', '', 'naranja', 'S → 4']] },
+    { id: 'servo-giro', name: ['Servo', 'giro J4'], side: 'bottom', at: 9, tipo: 'tira macho 1 × 3 (enchufe del servo)',
+      pins: [['GND', 'GND', 'marco de GND (alambre grueso)', 'marrón', 'GND'], ['V+', '6 V', 'riel de 6 V', 'rojo', 'V+ 6V'],
+             ['señal', 'GPIO 14', 'pulsa al arrancar', 'naranja', 'S → 14']] },
+    { id: 'v6', name: ['6 V', 'buck 3'], side: 'bottom', at: 14, step: 2, tipo: 'bornera 2 vías, 5,08 mm',
+      pins: [['+6 V', 'riel de 6 V', 'alambre grueso hasta los dos V+', 'rojo', '+6V'], ['GND', 'GND', 'marco de GND, común con el buck 3', 'negro', 'GND']] }
+  ];
+
+  var USO = {
+    '21': ['gpio', 'j1'], '22': ['gpio', 'j1'], '25': ['gpio', 'j2'], '26': ['gpio', 'j2'], '16': ['gpio', 'j3'], '17': ['gpio', 'j3'],
+    '23': ['gpio', 'j1 j2 j3 pd'], '34': ['gpio', 'enc-j1'], '35': ['gpio', 'enc-j1'], '32': ['gpio', 'enc-j2'], '33': ['gpio', 'enc-j2'],
+    '18': ['gpio', 'enc-j3'], '19': ['gpio', 'enc-j3'], 'VP': ['gpio', 'fc-j1'], 'VN': ['gpio', 'fc-j2'], '27': ['gpio', 'fc-j3'],
+    '4': ['gpio', 'servo-ap'], '14': ['gpio', 'servo-giro'], '13': ['res', 'res13'],
+    'VIN': ['v5', ''], '3V3': ['v33', ''], 'GND': ['gnd', '']
+  };
+  var IZQ = ['3V3', 'GND', '15', '2', '4', '16', '17', '5', '18', '19', '21', 'RX0', 'TX0', '22', '23'];
+  var DER = ['VIN', 'GND', '13', '12', '14', '27', '26', '25', '33', '32', '35', '34', 'VN', 'VP', 'EN'];
+  var KI = 8, KD = 18, K0 = 8;   // columnas de las tiras hembra y fila del primer pin
+
+  // ---------- Placa ----------
+  var pat = el('pattern', { id: 'agujeros', x: ML, y: MT, width: P, height: P, patternUnits: 'userSpaceOnUse' }, el('defs', {}, svg));
+  el('circle', { cx: P / 2, cy: P / 2, r: 2.1, fill: 'var(--hole)' }, pat);
+  el('rect', { x: ML, y: MT, width: BW, height: BH, rx: 6, fill: 'var(--pcb)', stroke: 'var(--pcb-edge)', 'stroke-width': 1.5 }, svg);
+  el('rect', { x: ML, y: MT, width: BW, height: BH, rx: 6, fill: 'url(#agujeros)' }, svg);
+  var gW = el('g', {}, svg), gC = el('g', {}, svg), gK = el('g', {}, svg), gS = el('g', {}, svg);
+
+  function wire(pts, cat, hops, grueso) {
+    hops = hops || [];
+    var d = 'M' + X(pts[0][0]) + ',' + Y(pts[0][1]);
+    for (var k = 1; k < pts.length; k++) {
+      var a = pts[k - 1], b = pts[k];
+      if (a[0] === b[0]) {
+        var dir = Math.sign(b[1] - a[1]);
+        hops.filter(function (h) { return h[0] === a[0] && (h[1] - a[1]) * dir > 0 && (b[1] - h[1]) * dir > 0; })
+          .forEach(function (h) { d += ' L' + X(h[0]) + ',' + (Y(h[1]) - dir * 4) + ' A4,4 0 0 1 ' + X(h[0]) + ',' + (Y(h[1]) + dir * 4); });
+      } else {
+        var dx = Math.sign(b[0] - a[0]);
+        hops.filter(function (h) { return h[1] === a[1] && (h[0] - a[0]) * dx > 0 && (b[0] - h[0]) * dx > 0; })
+          .forEach(function (h) { d += ' L' + (X(h[0]) - dx * 4) + ',' + Y(h[1]) + ' A4,4 0 0 ' + (dx > 0 ? 1 : 0) + ' ' + (X(h[0]) + dx * 4) + ',' + Y(h[1]); });
+      }
+      d += ' L' + X(b[0]) + ',' + Y(b[1]);
+    }
+    return el('path', { d: d, class: 'w c-' + cat + (grueso ? ' grueso' : '') }, gW);
+  }
+  function dot(i, j, cat) { el('circle', { cx: X(i), cy: Y(j), r: 3.4, class: 'f-' + cat }, gW); }
+  function label(x, y, t, anchor) { return el('text', { x: x, y: y, 'text-anchor': anchor || 'middle', class: 'tiny' }, gC, t); }
+  function resistor(a, b, opt) {
+    var x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]);
+    el('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: 'var(--muted)', 'stroke-width': 1.3 }, gC);
+    var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2, ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    var r = el('rect', { x: cx - 5, y: cy - 3.3, width: 10, height: 6.6, rx: 2, fill: opt ? 'var(--card)' : 'var(--res)', stroke: 'var(--ink)',
+                         'stroke-width': 1, transform: 'rotate(' + ang + ' ' + cx + ' ' + cy + ')' }, gC);
+    if (opt) r.setAttribute('stroke-dasharray', '2 2');
+  }
+  function cap(a, b) {
+    var x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]);
+    el('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: 'var(--muted)', 'stroke-width': 1.3 }, gC);
+    var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2, ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    var g = el('g', { transform: 'rotate(' + ang + ' ' + cx + ' ' + cy + ')' }, gC);
+    el('rect', { x: cx - 2.5, y: cy - 6, width: 5, height: 12, fill: 'var(--pcb)' }, g);
+    [-2, 2].forEach(function (d) { el('line', { x1: cx + d, y1: cy - 6, x2: cx + d, y2: cy + 6, stroke: 'var(--ink)', 'stroke-width': 1.8 }, g); });
+  }
+
+  // Rieles: marco de GND, 5 V (VIN) por la izquierda, 3,3 V por la derecha, GND de la WROOM al marco
+  wire([[0, 34], [0, 0], [26, 0], [26, 34], [0, 34]], 'gnd');
+  wire([[KD, K0], [KD, 1], [2, 1], [2, 30]], 'v5', [[KD, 2]]);
+  wire([[KI, K0], [KI, 2], [24, 2], [24, 27]], 'v33');
+  wire([[KD, K0 + 1], [26, K0 + 1]], 'gnd', [[24, K0 + 1]]); dot(26, K0 + 1, 'gnd');
+
+  // IBT-2: VCC al 5 V, GND al marco, puente R_EN–L_EN
+  [3, 13, 23].forEach(function (r) {
+    wire([[1, r + 6], [2, r + 6]], 'v5'); dot(2, r + 6, 'v5');
+    wire([[1, r + 7], [0, r + 7]], 'gnd'); dot(0, r + 7, 'gnd');
+    wire([[1, r + 2], [1, r + 3]], 'gpio', [], true);
+  });
+  resistor([1, 5], [0, 5]); dot(0, 5, 'gnd');
+  label(X(2.4), Y(5) + 3, '10 k a GND', 'start');
+
+  // Encoders: Vcc al 3,3 V, GND al marco; pull-up opcionales en J1
+  [3, 9, 15].forEach(function (r) {
+    wire([[25, r], [24, r]], 'v33'); dot(24, r, 'v33');
+    wire([[25, r + 1], [26, r + 1]], 'gnd'); dot(26, r + 1, 'gnd');
+  });
+  resistor([25, 5], [24, 5], true); resistor([25, 6], [24, 6], true);
+  label(X(23.4), Y(5.6), '10 k opc.', 'end');
+
+  // Finales de carrera: 100 nF al marco, 10 k al 3,3 V
+  [[21, false], [24, false], [27, true]].forEach(function (f) {
+    var r = f[0];
+    cap([25, r], [26, r]); dot(26, r, 'gnd');
+    wire([[25, r + 1], [26, r + 1]], 'gnd'); dot(26, r + 1, 'gnd');
+    resistor([25, r], [24, r], f[1]); dot(24, r, 'v33');
+    label(X(23.4), Y(r) + 3, f[1] ? '10 k opc.' : '10 k', 'end');
+  });
+  wire([[25, 31], [26, 31]], 'gnd'); dot(26, 31, 'gnd');
+
+  // Servos y 6 V (alambre grueso)
+  wire([[14, 33], [14, 31], [5, 31], [5, 33]], 'v6', [], true);
+  wire([[10, 31], [10, 33]], 'v6', [], true); dot(10, 31, 'v6');
+  [4, 9, 16].forEach(function (c) { wire([[c, 33], [c, 34]], 'gnd', [], true); dot(c, 34, 'gnd'); });
+  wire([[4, 34], [16, 34]], 'gnd', [], true);
+  label(X(9.5), Y(30.2), 'riel de 6 V · alambre grueso');
+
+  // ---------- HW-394 ----------
+  var kx1 = X(KI - 1.2), kx2 = X(KD + 1.2), ky1 = Y(K0 - 3.6), ky2 = Y(K0 + 17.6);
+  el('rect', { x: X(12) - 8, y: ky1 - 16, width: X(14) - X(12) + 16, height: 20, rx: 3, fill: 'var(--muted)' }, gS);
+  el('rect', { x: kx1, y: ky1, width: kx2 - kx1, height: ky2 - ky1, rx: 5, fill: 'var(--kit)', 'fill-opacity': .95 }, gS);
+  el('text', { x: X(13), y: MT - 14, 'text-anchor': 'middle', class: 'pl' }, svg, 'USB-C → Pi (/dev/ttyUSB0)');
+  el('text', { x: X(13), y: Y(K0 + 15.6), 'text-anchor': 'middle', class: 'kt' }, gS, 'ESP32-WROOM-32D');
+  el('text', { x: X(13), y: Y(K0 + 16.7), 'text-anchor': 'middle', class: 'ks' }, gS, 'HW-394 · 2 tiras hembra 1 × 15');
+  function kitCol(list, col, izq) {
+    list.forEach(function (t, k) {
+      var j = K0 + k, u = USO[t], g = el('g', { class: 'kpin' + (u && u[1] ? ' used' : ''), 'data-c': u ? u[1] : '' }, gS);
+      if (u) el('circle', { cx: X(col), cy: Y(j), r: 4.4, class: 'f-' + u[0] }, g);
+      else el('circle', { cx: X(col), cy: Y(j), r: 3.8, fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.2 }, g);
+      el('text', { x: X(col) + (izq ? 9 : -9), y: Y(j) + 3.2, 'text-anchor': izq ? 'start' : 'end', class: 'kp', opacity: u ? 1 : .55 }, g, t);
+    });
+  }
+  kitCol(IZQ, KI, true);
+  kitCol(DER, KD, false);
+
+  // ---------- Conectores ----------
+  var CATCOL = { gpio: 'var(--w-gpio)', res: 'var(--muted)', v6: 'var(--w-v6)' };
+  CONN.forEach(function (c) {
+    var step = c.step || 1;
+    var pos = c.pins.map(function (_, k) {
+      return c.side === 'left' ? [1, c.at + k] : c.side === 'right' ? [25, c.at + k] : [c.at + k * step, 33];
+    });
+    var cat = c.id === 'v6' ? 'v6' : c.opt ? 'res' : 'gpio';
+    var g = el('g', { class: 'conn' + (c.opt ? ' opt' : ''), 'data-id': c.id, tabindex: 0, role: 'button',
+                      'aria-label': [].concat(c.name).join(' ') + ': resaltar sus pines' }, gK);
+    var xs = pos.map(function (p) { return X(p[0]); }), ys = pos.map(function (p) { return Y(p[1]); });
+    var pad = c.id === 'v6' ? 7 : 5;
+    el('rect', { class: 'box', x: Math.min.apply(0, xs) - pad, y: Math.min.apply(0, ys) - pad,
+                 width: Math.max.apply(0, xs) - Math.min.apply(0, xs) + 2 * pad, height: Math.max.apply(0, ys) - Math.min.apply(0, ys) + 2 * pad,
+                 rx: 2, stroke: CATCOL[cat] }, g);
+    pos.forEach(function (p, k) {
+      var pin = c.pins[k], fn = pin[0];
+      var cl = /GND|C \(/.test(fn) ? 'f-gnd' : /VCC/.test(fn) ? 'f-v5' : fn === 'Vcc' ? 'f-v33' : /V\+|\+6/.test(fn) ? 'f-v6' : /_IS/.test(fn) ? 'f-res' : 'f-' + cat;
+      if (k === 0) el('rect', { x: X(p[0]) - 3.8, y: Y(p[1]) - 3.8, width: 7.6, height: 7.6, class: cl }, g);
+      else el('circle', { cx: X(p[0]), cy: Y(p[1]), r: 3.9, class: cl }, g);
+      var t = pin[4] + (pin[3] && c.side === 'right' ? '  ' + pin[3] : '');
+      if (c.side === 'left') el('text', { x: ML - 8, y: Y(p[1]) + 3.4, 'text-anchor': 'end', class: 'pl' }, g, t);
+      else if (c.side === 'right') el('text', { x: ML + BW + 8, y: Y(p[1]) + 3.4, class: 'pl' }, g, t);
+      else {
+        var ty = MT + BH + 7, tx = X(p[0]) + 3.4;
+        el('text', { x: tx, y: ty, 'text-anchor': 'end', class: 'pl', transform: 'rotate(-90 ' + tx + ' ' + ty + ')' }, g, t);
+      }
+    });
+    if (c.side === 'left') el('text', { x: ML - 8, y: Y(c.at - 1) + 3.5, 'text-anchor': 'end', class: 'nm' }, g, c.name);
+    else if (c.side === 'right') el('text', { x: ML + BW + 8, y: Y(c.at - 1) + 3.5, class: 'nm' }, g, c.name);
+    else {
+      var cx = (Math.min.apply(0, xs) + Math.max.apply(0, xs)) / 2;
+      c.name.forEach(function (line, k) { el('text', { x: cx, y: MT + BH + 72 + k * 13, 'text-anchor': 'middle', class: 'nm' }, g, line); });
+    }
+  });
+
+  // ---------- Resaltado ----------
+  var activo = null;
+  function enfocar(id) {
+    activo = activo === id ? null : id;
+    svg.classList.toggle('focus', !!activo);
+    svg.querySelectorAll('.conn').forEach(function (g) { g.classList.toggle('on', g.getAttribute('data-id') === activo); });
+    svg.querySelectorAll('.kpin').forEach(function (g) {
+      g.classList.toggle('on', !!activo && (g.getAttribute('data-c') || '').split(' ').indexOf(activo) >= 0);
+    });
+    document.querySelectorAll('tbody.grp').forEach(function (tb) { tb.classList.toggle('on', tb.getAttribute('data-id') === activo); });
+  }
+  svg.querySelectorAll('.conn').forEach(function (g) {
+    g.addEventListener('click', function () { enfocar(g.getAttribute('data-id')); });
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enfocar(g.getAttribute('data-id')); } });
+  });
+
+  // ---------- Tabla ----------
+  var tabla = document.getElementById('tabla');
+  var lista = CONN.slice();
+  lista.splice(3, 0, { id: 'pd', name: 'Pull-down del EN', tipo: 'resistencia en el conector de J1',
+                       pins: [['10 k', 'GPIO 23 ↔ GND', 'mantiene los 3 IBT-2 apagados mientras la WROOM arranca o se flashea', '']] });
+  lista.forEach(function (c) {
+    var tb = document.createElement('tbody'); tb.className = 'grp'; tb.setAttribute('data-id', c.id); tabla.appendChild(tb);
+    var trh = document.createElement('tr'); tb.appendChild(trh);
+    var th = document.createElement('th'); th.colSpan = 4; trh.appendChild(th);
+    var col = c.id === 'v6' ? 'var(--w-v6)' : c.opt ? 'var(--muted)' : 'var(--w-gpio)';
+    th.innerHTML = '<span class="dot" style="background:' + col + '"></span>' + [].concat(c.name).join(' ') + '<span class="tipo">' + c.tipo + '</span>';
+    th.addEventListener('click', function () { enfocar(c.id); svg.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    c.pins.forEach(function (p) {
+      var tr = document.createElement('tr'); tb.appendChild(tr);
+      [p[0], p[1], p[2], p[3]].forEach(function (v, k) {
+        var td = document.createElement('td'); td.textContent = v || ''; if (k < 2) td.className = 'm'; tr.appendChild(td);
+      });
+    });
+  });
+})();
+</script>
