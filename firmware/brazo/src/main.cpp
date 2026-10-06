@@ -14,7 +14,6 @@
 #include "BTS7960.h"
 #include "ControlArticulacion.h"
 #include "EncoderPCNT.h"
-#include "L298N.h"
 #include "brazo_config.h"
 #include "esp_task_wdt.h"
 #include "pins.h"
@@ -30,12 +29,11 @@
 
 // Canales LEDC: de a pares comparten timer (misma frecuencia)
 constexpr uint8_t CH_J1_R = 0, CH_J1_L = 1;    // 20 kHz
-constexpr uint8_t CH_J2_A = 2, CH_J2_B = 3;    // 1 kHz
-constexpr uint8_t CH_J3_A = 4, CH_J3_B = 5;    // 1 kHz
+constexpr uint8_t CH_J2_R = 2, CH_J2_L = 3;    // 20 kHz
+constexpr uint8_t CH_J3_R = 4, CH_J3_L = 5;    // 20 kHz
 constexpr uint8_t CH_PINZA = 6, CH_GIRO = 7;   // 50 Hz
 
-BTS7960 motorJ1;
-L298N motorJ2, motorJ3;
+BTS7960 motor[N_ART];  // J1, J2, J3: los tres IBT-2 comparten el EN (PIN_BRAZO_EN)
 EncoderPCNT enc[N_ART];
 ControlArticulacion ctl[N_ART];
 const int PIN_FC[N_ART] = {PIN_FC_J1, PIN_FC_J2, PIN_FC_J3};
@@ -82,12 +80,18 @@ int64_t cuentas(int i) {
   return ENC_INVERTIDO[i] ? -c : c;
 }
 
-void aplicar(int i, float pct, bool libre) {
-  const float d = (MOTOR_INVERTIDO[i] ? -pct : pct) / 100.0f;
-  switch (i) {
-    case 0: libre ? motorJ1.coast() : (void)motorJ1.setDuty(d); break;
-    case 1: libre ? motorJ2.coast() : (void)motorJ2.setDuty(d); break;
-    case 2: libre ? motorJ3.coast() : (void)motorJ3.setDuty(d); break;
+// Con el EN compartido, la rueda libre es de las tres a la vez: si alguna se mueve, el puente queda habilitado y
+// las que están libres reciben duty 0 (frenadas). Así los tres BTS7960 siempre coinciden en habilitado o no.
+void aplicar(const float pct[N_ART], const bool libre[N_ART]) {
+  bool todasLibres = true;
+  for (int i = 0; i < N_ART; i++) todasLibres &= libre[i];
+  for (int i = 0; i < N_ART; i++) {
+    if (todasLibres) {
+      motor[i].coast();
+      continue;
+    }
+    const float p = libre[i] ? 0.0f : pct[i];
+    motor[i].setDuty((MOTOR_INVERTIDO[i] ? -p : p) / 100.0f);
   }
 }
 
@@ -214,7 +218,7 @@ void tareaControl(void *) {
     }
     portEXIT_CRITICAL(&mux);
 
-    for (int i = 0; i < N_ART; i++) aplicar(i, u[i], libre[i]);
+    aplicar(u, libre);
     for (int k = 0; k < nMsgs; k++) xQueueSend(colaMsg, &msgs[k], 0);
     if (hayMuestra) xQueueSend(colaLog, &m, 0);  // si la cola está llena se pierde la muestra
   }
@@ -534,12 +538,10 @@ void leerSerial() {
 
 void setup() {
   // Drivers primero y deshabilitados: hasta acá los EN flotan (pull-down de 10 kΩ recomendado)
-  bool ok = motorJ1.begin(PIN_J1_RPWM, PIN_J1_LPWM, PIN_J1_EN, PIN_J1_EN, CH_J1_R, CH_J1_L, PWM_BTS_HZ, PWM_BITS);
-  ok &= motorJ2.begin(PIN_J2_ENA, PIN_J2_IN1, PIN_J2_IN2, CH_J2_A, CH_J2_B, L298N::Modo::Freno, PWM_L298_HZ, PWM_BITS);
-  ok &= motorJ3.begin(PIN_J3_ENB, PIN_J3_IN3, PIN_J3_IN4, CH_J3_A, CH_J3_B, L298N::Modo::Freno, PWM_L298_HZ, PWM_BITS);
-  motorJ1.coast();
-  motorJ2.coast();
-  motorJ3.coast();
+  bool ok = motor[0].begin(PIN_J1_RPWM, PIN_J1_LPWM, PIN_BRAZO_EN, PIN_BRAZO_EN, CH_J1_R, CH_J1_L, PWM_BTS_HZ, PWM_BITS);
+  ok &= motor[1].begin(PIN_J2_RPWM, PIN_J2_LPWM, PIN_BRAZO_EN, PIN_BRAZO_EN, CH_J2_R, CH_J2_L, PWM_BTS_HZ, PWM_BITS);
+  ok &= motor[2].begin(PIN_J3_RPWM, PIN_J3_LPWM, PIN_BRAZO_EN, PIN_BRAZO_EN, CH_J3_R, CH_J3_L, PWM_BTS_HZ, PWM_BITS);
+  for (int i = 0; i < N_ART; i++) motor[i].coast();
   const bool okPwm = ok;
 
   const bool okEnc = enc[0].begin(PIN_J1_ENC_A, PIN_J1_ENC_B, PCNT_UNIT_0) &&
@@ -551,7 +553,8 @@ void setup() {
 
   for (int i = 0; i < N_ART; i++) {
     ctl[i].configurar(CFG_ART[i]);
-    if (PIN_FC[i] >= 0) pinMode(PIN_FC[i], INPUT);  // 34-39: sin pull-up interno, va uno externo
+    // 34-39: sin pull-up interno, va uno externo; los demás usan el interno
+    if (PIN_FC[i] >= 0) pinMode(PIN_FC[i], PIN_FC[i] >= 34 ? INPUT : INPUT_PULLUP);
   }
 
   colaLog = xQueueCreate(64, sizeof(Muestra));
@@ -566,7 +569,7 @@ void setup() {
   delay(1500);  // dar tiempo a que abra el monitor
 #endif
   out->println();
-  out->println("== firmware/brazo: J1 (36GP-555 + IBT-2), J2/J3 (5840-31ZY + L298N), pinza (2 servos) ==");
+  out->println("== firmware/brazo: J1 (36GP-555 + IBT-2), J2/J3 (36-555 + IBT-2), pinza (2 servos) ==");
   out->printf("Control en cascada a %.0f Hz en el núcleo 0. Brazo en rueda libre y SIN CERO.\n", 1.0f / TS);
   if (!okPwm) out->println("ERROR: no se pudo configurar el PWM de algún driver.");
   if (!okEnc) out->println("ERROR: no se pudo configurar el PCNT de algún encoder.");

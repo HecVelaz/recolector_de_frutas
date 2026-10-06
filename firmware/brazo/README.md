@@ -15,11 +15,11 @@ Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valor
 |---|---|
 | `../lib/ControlArticulacion/` | Control de una articulación (compartido con la base), **sin Arduino**: cascada, anti-windup, zona muerta, límites, atasco, descarte de saltos del encoder |
 | `include/brazo_config.h` | Parámetros por articulación (encoder, transmisión, límites de la E4, modelo y PI de la E5), pose de cero, servos |
-| `include/pins.h` | Pines (usa los 15 GPIO de uso general de la placa) |
+| `include/pins.h` | Pines del conexionado v0.4 (queda libre el GPIO 13) |
 | `src/main.cpp` | Drivers, tarea de control, comandos serie, homing, watchdog, CSV |
-| `test/test_control/` | 16 pruebas con el modelo de la E5 simulado |
+| `test/test_control/` | 17 pruebas con el modelo de la E5 simulado |
 
-Drivers compartidos en `firmware/lib/` (enlazados por `symlink://`): `BTS7960`, `EncoderPCNT` y `L298N`. Vienen del
+Drivers compartidos en `firmware/lib/` (enlazados por `symlink://`): `BTS7960` y `EncoderPCNT`. Vienen del
 repo de pruebas `~/pruebas-esp32` (proyectos 06 y 08, donde se caracterizaron los motores); este proyecto empezó
 ahí como `09-brazo-control` (commits `cd8b420` y `f408f4e`).
 
@@ -27,20 +27,23 @@ ahí como `09-brazo-control` (commits `cd8b420` y `f408f4e`).
 
 | Articulación | Motor / driver | Driver | Encoder |
 |---|---|---|---|
-| J1 base | 36GP-555 160 rpm + IBT-2 | RPWM 21, LPWM 22, R_EN+L_EN 23 | Hall A 34, B 35 (**pull-up externo 10 kΩ a 3V3**, encoder a 3V3) |
-| J2 hombro | 5840-31ZY + L298N canal A | ENA 25, IN1 26, IN2 27 | A 32, B 33 (pull-up interno) |
-| J3 codo | 5840-31ZY + L298N canal B | ENB 13, IN3 16, IN4 17 | A 18, B 19 (pull-up interno) |
+| J1 base | 36GP-555 160 rpm (50:1) + IBT-2 | RPWM 21, LPWM 22 | A 34, B 35 (SCX-555 a 3V3; 10 kΩ externos opcionales) |
+| J2 hombro | 36-555 98 rpm (82:1) + IBT-2 + correa | RPWM 25, LPWM 26 | A 32, B 33 (SCX-555 a 3V3) |
+| J3 codo | 36-555 98 rpm (82:1) + IBT-2 + correa | RPWM 16, LPWM 17 | A 18, B 19 (SCX-555 a 3V3) |
+
+Los tres IBT-2 comparten el EN (R_EN + L_EN de los tres al GPIO 23, pull-down de 10 kΩ). Por eso la rueda libre es
+de las tres a la vez: si una se mueve, las demás quedan frenadas (duty 0 con el puente habilitado).
 
 | Otro | GPIO |
 |---|---|
 | Servo pinza (apertura) | 4 |
 | Servo giro J4 | 14 (pulsa durante el arranque: el servo puede moverse un instante) |
-| Final de carrera J1 / J2 | 36 / 39 (NA a GND, pull-up externo 10 kΩ); J3 sin pin |
+| Final de carrera J1 / J2 / J3 | 36 / 39 (NA a GND, pull-up externo 10 kΩ) / 27 (pull-up interno); 100 nF a GND en cada uno |
 
-- Servos alimentados con 5–6 V **aparte** (no del ESP32), GND común.
-- Pull-down de 10 kΩ en EN del IBT-2 y en ENA/ENB del L298N (sin ellos: **apagar los 12 V antes de flashear o
-  pulsar EN**).
-- Canales LEDC: 0-1 IBT-2 (20 kHz), 2-3 y 4-5 L298N (1 kHz), 6-7 servos (50 Hz). PCNT: unidades 0, 1 y 2.
+- Servos alimentados con 6 V **aparte** (buck 3, no del ESP32), GND común.
+- Pull-down de 10 kΩ en el EN común (sin él: **apagar los 12 V antes de flashear o pulsar EN**).
+- Canales LEDC: 0-1 J1, 2-3 J2, 4-5 J3 (IBT-2, 20 kHz), 6-7 servos (50 Hz). PCNT: unidades 0, 1 y 2.
+- Placa y cableado: `docs/placa_wroom.html`.
 
 ## Uso
 
@@ -114,13 +117,14 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 - Watchdog de comandos opcional (`wd <ms>`, solo lo alimentan comandos aceptados). Para cuando mande la Pi.
 - Watchdog de tareas del ESP32 (1 s): si la tarea de control se cuelga, la placa se reinicia.
 - Los servos no reciben pulsos hasta el primer `pinza`/`giro`.
-- J2 y J3 son de sin fin: con duty 0 (freno) el brazo queda sostenido sin corriente.
+- J2 y J3 (planetarios) **no se autobloquean**: en rueda libre el brazo cae; con duty 0 (freno) solo lo frena.
 
 ## Pendiente (MEDIR / hacer)
 
-- [ ] Relación de transmisión de cada articulación (`relacion`, hoy 1).
-- [ ] Signo de los encoders de J1 y J3 (`ENC_INVERTIDO`).
-- [ ] Zona muerta real del 5840-31ZY (`u0`, hoy 30 %; arranca entre 20 y 40 %).
+- [ ] Relación de la correa de J2 y J3 (`relacion`, hoy 1).
+- [ ] J2 y J3 con los motores nuevos (llegan entre el 19 y el 29/10): signos (`ENC_INVERTIDO`, `MOTOR_INVERTIDO`),
+      modelo y PI con los pasos 0-3 de `pruebas-esp32/10` (hoy, los de J1 llevados a 98 rpm).
+- [ ] Sostener J2/J3 contra la gravedad (no se autobloquean): compensación o freno.
 - [ ] Pose de referencia (`POSE_CERO`) y ángulos de los finales de carrera (`HOME_Q`).
 - [ ] Pulsos de los servos (`PINZA_US_*`, `GIRO_US_*`).
 - [ ] Ajustar `kpPos`, `velMax`, `accMax` con el brazo armado y con carga.

@@ -128,7 +128,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Robot recolector de limones · 2026S2</div>
     <h1>Cableado de Arturito R2D2</h1>
-    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 con IBT-2 y correa, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM son una <b>propuesta</b> que todavía no está en <code>firmware/brazo/include/pins.h</code> (se pasa cuando lleguen los motores), igual que la conexión de la Pi.</p>
+    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 con IBT-2 y correa, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
   </header>
 
   <section aria-labelledby="h-general">
@@ -535,7 +535,7 @@
 
       <article class="boardcard">
         <h3>ESP32-WROOM-32D · brazo</h3>
-        <div class="meta">DevKit CH340 · <span class="mono">/dev/ttyUSB0</span> · <b>propuesta v0.4</b>, todavía no está en <span class="mono">firmware/brazo/include/pins.h</span></div>
+        <div class="meta">HW-394 (CH340) · <span class="mono">/dev/ttyUSB0</span> · de <span class="mono">firmware/brazo/include/pins.h</span></div>
         <div class="tablewrap"><table>
           <thead><tr><th>GPIO</th><th>Conecta a</th><th>Nota</th></tr></thead>
           <tbody>
@@ -633,7 +633,7 @@
     </ul>
   </section>
 
-  <footer>Fuente de verdad: <span class="mono">firmware/base/include/pins.h</span> y, cuando se actualice, <span class="mono">firmware/brazo/include/pins.h</span>. La WROOM v0.4 y la Pi son propuestas. Probados en placa: J1, y J2/J3 con los motores viejos (en <span class="mono">pruebas-esp32/10</span>); lo demás todavía no. Tablas en <span class="mono">docs/CONEXIONES.md</span>.</footer>
+  <footer>Fuente de verdad: <span class="mono">firmware/base/include/pins.h</span> y <span class="mono">firmware/brazo/include/pins.h</span>. La Pi es una propuesta. Probados en placa: J1, y J2/J3 con los motores viejos (en <span class="mono">pruebas-esp32/10</span>); lo demás todavía no. Tablas en <span class="mono">docs/CONEXIONES.md</span>.</footer>
 </div>
 
 <script>

@@ -178,12 +178,12 @@ void test_manual_no_empuja_afuera_del_limite() {
   k.configurar(CFG_ART[2]);
   MotorSim m = simDe(2);
   k.fijarCero(m.leer(), 45.0f);
-  TEST_ASSERT_TRUE(k.duty(45.0f));
+  TEST_ASSERT_TRUE(k.duty(JOG_DUTY_MAX[2]));  // el máximo del lazo abierto manual
   correr(k, m, 3.0f);
   TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Ninguna, k.falla());
   TEST_ASSERT_EQUAL_FLOAT(0.0f, k.u());
   TEST_ASSERT_TRUE(k.q() < CFG_ART[2].qMax + CFG_ART[2].margenLim);
-  TEST_ASSERT_TRUE(k.duty(-45.0f));  // hacia adentro sí
+  TEST_ASSERT_TRUE(k.duty(-JOG_DUTY_MAX[2]));  // hacia adentro sí
   correr(k, m, 0.5f);
   TEST_ASSERT_TRUE(k.q() < CFG_ART[2].qMax);
 }

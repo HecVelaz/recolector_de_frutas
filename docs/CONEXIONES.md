@@ -3,8 +3,8 @@
 Versión 0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 98 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
 `docs/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
-WROOM son una **propuesta v0.4** que todavía no está en `firmware/brazo/include/pins.h` (se pasa cuando lleguen los
-motores), igual que la conexión de la Pi. Probado en placa: J1 y, con los motores viejos, J2/J3 (`pruebas-esp32/10`).
+WROOM (v0.4) están en `firmware/brazo/include/pins.h` desde el 05/10 (J2/J3 sin probar hasta que lleguen los
+motores); la conexión de la Pi sigue siendo una propuesta. Probado en placa: J1 y, con los motores viejos, J2/J3 (`pruebas-esp32/10`).
 
 ```mermaid
 flowchart LR
@@ -41,7 +41,7 @@ cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRI
 | 47 | Contacto auxiliar **NC** de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
 | 1 | Divisor de batería 120 k / 8,2 k | ADC1 canal 0 (42 V → 2,69 V) |
 
-## ESP32-WROOM-32D · brazo (propuesta v0.4)
+## ESP32-WROOM-32D · brazo (v0.4)
 
 DevKit con CH340, `/dev/ttyUSB0`. Tres IBT-2 con un solo EN; queda libre el GPIO 13.
 

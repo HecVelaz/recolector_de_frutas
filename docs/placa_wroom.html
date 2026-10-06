@@ -104,7 +104,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.4 · brazo</div>
     <h1>Placa de la ESP32-WROOM-32D (brazo)</h1>
-    <p class="lede">Perforada de 7 × 9 cm con la HW-394 (30 pines, USB-C, CH340) enchufada en dos tiras hembra. En el borde van los conectores de los 3 IBT-2, los 3 encoders, los 3 finales de carrera y los 2 servos, con sus componentes al lado. Los cables de cada conector a su GPIO van por debajo y no están dibujados: el plano dice dónde va cada cosa y la tabla, qué pin va con qué. <b>Tocá un conector</b> para ver a qué pines de la WROOM va. Los pines son la <b>propuesta v0.4</b> de <code>CONEXIONES.md</code>: todavía no están en <code>firmware/brazo/include/pins.h</code>.</p>
+    <p class="lede">Perforada de 7 × 9 cm con la HW-394 (30 pines, USB-C, CH340) enchufada en dos tiras hembra. En el borde van los conectores de los 3 IBT-2, los 3 encoders, los 3 finales de carrera y los 2 servos, con sus componentes al lado. Los cables de cada conector a su GPIO van por debajo y no están dibujados: el plano dice dónde va cada cosa y la tabla, qué pin va con qué. <b>Tocá un conector</b> para ver a qué pines de la WROOM va. Los pines son los de <code>firmware/brazo/include/pins.h</code> (conexionado v0.4).</p>
   </header>
 
   <section aria-labelledby="h-cb">
@@ -179,14 +179,14 @@
       <li><b>Conectores, resistencias y capacitores</b>, como en el plano.</li>
       <li><b>Cables de señal</b>, de a uno, tachando cada fila de la tabla.</li>
       <li><b>Sin la HW-394, con el tester:</b> que no haya corto entre 5 V, 3,3 V, 6 V y GND, y que cada pin de conector llegue al agujero correcto del zócalo.</li>
-      <li><b>Pasar los pines v0.4 a <code>pins.h</code> y <code>brazo_config.h</code></b> cuando lo decidas. Hasta entonces el firmware usa los pines viejos y no coincide con esta placa.</li>
+      <li><b>Flashear</b> el firmware del brazo (ya tiene los pines de esta placa), con los 12 V apagados.</li>
       <li><b>La HW-394 sola por USB</b> (sin periféricos): el GPIO 23 en 0 V al arrancar y al flashear.</li>
       <li><b>Finales de carrera:</b> apretar cada uno y ver que su pin pase de 3,3 V a 0 V. <b>Encoders:</b> girar cada motor a mano y ver que cuente, primero J1 (como en <code>pruebas-esp32/10</code>).</li>
       <li><b>Servos</b> con el buck 3 ya ajustado a 6 V sin carga. <b>Motores de a uno</b>, con el brazo apoyado: J2 y J3 no se sostienen solos.</li>
     </ol>
   </section>
 
-  <footer>Fuente de verdad: <span class="mono">docs/CONEXIONES.md</span> (v0.4, propuesta para la WROOM). La ubicación de cada cosa en la placa es una propuesta: si al presentar las piezas algo no entra, se corre; lo que no cambia es qué va con qué.</footer>
+  <footer>Fuente de verdad: <span class="mono">firmware/brazo/include/pins.h</span> y <span class="mono">docs/CONEXIONES.md</span> (v0.4). La ubicación de cada cosa en la placa es una propuesta: si al presentar las piezas algo no entra, se corre; lo que no cambia es qué va con qué.</footer>
 </div>
 
 <script>
