@@ -28,11 +28,10 @@ el segundo buck 1**.
 
 ## Lógica (LiPo 3S)
 
-- [ ] Salvalipo (alarma de 1 a 8 celdas) para el conector de balanceo JST-XH
+Sin INA219 ni salvalipo (06/10): solo pruebas vigiladas de ≤ 30 min; alcanza el indicador de barras.
+
 - [ ] Conector Deans (T) hembra + portafusible y fusible de 5 A pegado al conector
 - [ ] Interruptor de lógica de 12 V y 5 A
-- [ ] Módulo INA219 (recomendado): tensión y corriente de la LiPo por el I²C de la S3 (0x40), para que la Pi se
-      apague sola
 - [x] Cinta CSI de 22 a 15 pines para la Pi 5 (reemplazada el 05/10)
 
 ## Placas de las ESP32 (`placa_s3.html`, `placa_wroom.html`)

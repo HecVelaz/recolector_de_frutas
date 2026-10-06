@@ -175,7 +175,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 7. Próximos pasos
 1. Comprar en el mercado local lo de `docs/COMPRAS.md` (potencia: Schottky, 2200 µF, TVS, relé, seta con 2 NC,
-   fusibles, el de la batería apto ≥ 58 V DC; salvalipo). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
+   fusibles, el de la batería apto ≥ 58 V DC). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
 2. Cablear según `docs/CONEXIONES.md` v0.4 (10S → buck 1 → motores; LiPo → buck 2 → Pi; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).

@@ -218,7 +218,7 @@
           <g>
             <rect class="box" x="16" y="340" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="361">IMU MPU-6500</text>
-            <text class="t-sub" x="28" y="380">I²C 0x68 · 3V3 (+ INA219 0x40)</text>
+            <text class="t-sub" x="28" y="380">I²C 0x68 · 3V3</text>
             <path class="w data" d="M226 366 H380"></path>
             <g class="lbl data"><text class="t-pin" x="303" y="359" text-anchor="middle">SDA 8 · SCL 9</text></g>
           </g>
@@ -318,7 +318,7 @@
     <p class="lede">Dos baterías separadas: la 10S de 36 V mueve los motores y la LiPo 3S alimenta la lógica. Un motor trabado no puede hacer caer la tensión de la Pi, y ya no hace falta comprar el segundo buck 1.</p>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 580" role="img" aria-label="Circuito de potencia con dos baterías. Arriba, la batería 10S de 36 V pasa por un fusible de 15 A y el interruptor de motores a un bus de 36 V; de ahí el buck 1 baja a 12,5 V, pasa por un diodo Schottky y por el relé de la seta al bus de 12 V de motores, que alimenta la tracción, los tres IBT-2 del brazo, el buck de los servos y el capacitor con TVS. El divisor de 36 V va a la S3. Abajo, la LiPo 3S pasa por un fusible de 5 A y el interruptor de lógica a un bus de 12 V de lógica, que alimenta el buck 2 para la Pi y los ESP32, el ventilador, la luz, el buzzer, la bobina del relé a través de la seta y el medidor INA219.">
+        <svg viewBox="0 0 1200 580" role="img" aria-label="Circuito de potencia con dos baterías. Arriba, la batería 10S de 36 V pasa por un fusible de 15 A y el interruptor de motores a un bus de 36 V; de ahí el buck 1 baja a 12,5 V, pasa por un diodo Schottky y por el relé de la seta al bus de 12 V de motores, que alimenta la tracción, los tres IBT-2 del brazo, el buck de los servos y el capacitor con TVS. El divisor de 36 V va a la S3. Abajo, la LiPo 3S pasa por un fusible de 5 A y el interruptor de lógica a un bus de 12 V de lógica, que alimenta el buck 2 para la Pi y los ESP32, el ventilador, la luz, el buzzer y la bobina del relé a través de la seta. En el balanceo de la LiPo, un indicador de barras.">
           <text class="t-big" x="16" y="18">Motores · batería 10S</text>
 
           <!-- Cadena de entrada 10S -->
@@ -411,16 +411,16 @@
           <text class="t-title" x="382" y="424">Interruptor lógica</text>
           <text class="t-sub" x="382" y="440">se enciende primero</text>
           <path class="w supply" d="M500 426 H530"></path>
-          <path class="w supply later" d="M111 466 V500"></path>
-          <rect class="box later" x="16" y="500" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="28" y="520">Alarma de LiPo</text>
-          <text class="t-sub" x="28" y="536">en el balanceo · pita a 3,5 V/celda</text>
+          <path class="w supply" d="M111 466 V500"></path>
+          <rect class="box" x="16" y="500" width="190" height="44" rx="4"></rect>
+          <text class="t-title" x="28" y="520">Indicador de barras</text>
+          <text class="t-sub" x="28" y="536">en el balanceo · no bajar de 10,5 V</text>
 
           <!-- Bus 12 V de lógica -->
-          <path class="w supply" d="M530 412 V540"></path>
+          <path class="w supply" d="M530 412 V476"></path>
           <circle class="dot" cx="530" cy="426" r="4"></circle>
-          <g class="lbl supply"><text class="t-pin" x="520" y="500" text-anchor="end">bus 12 V de lógica</text><text class="t-pin" x="520" y="516" text-anchor="end">sube por el mástil</text></g>
-          <path class="w supply" d="M530 412 H570 M530 476 H570 M530 540 H570"></path>
+          <g class="lbl supply"><text class="t-pin" x="520" y="472" text-anchor="end">bus 12 V de lógica</text><text class="t-pin" x="520" y="488" text-anchor="end">sube por el mástil</text></g>
+          <path class="w supply" d="M530 412 H570 M530 476 H570"></path>
           <rect class="box" x="570" y="390" width="150" height="44" rx="4"></rect>
           <text class="t-title" x="582" y="410">Buck 2 · → 5,1 V</text>
           <text class="t-sub" x="582" y="426">XL4016 8 A · arriba</text>
@@ -435,9 +435,6 @@
           <rect class="box" x="570" y="454" width="310" height="44" rx="4"></rect>
           <text class="t-title" x="582" y="474">Ventilador · luz · buzzer · voltímetro</text>
           <text class="t-sub" x="582" y="490">y la bobina del relé, a través de la seta</text>
-          <rect class="box later" x="570" y="518" width="310" height="44" rx="4"></rect>
-          <text class="t-title" x="582" y="538">INA219 · I²C de la S3 (0x40)</text>
-          <text class="t-sub" x="582" y="554">tensión y corriente de la LiPo</text>
 
           <text class="t-sub" x="910" y="476">GND: los negativos de las dos baterías</text>
           <text class="t-sub" x="910" y="492">unidos en un solo punto (nunca los positivos)</text>
@@ -445,7 +442,7 @@
           <text class="t-sub" x="910" y="538">Solo el buck 1 aguanta los 42 V de la 10S</text>
         </svg>
       </div>
-      <figcaption>La seta corta el bus de motores del lado de 12 V (tracción, brazo y servos): la Pi y los ESP32 siguen encendidos con la LiPo y la S3 lee la seta por el contacto auxiliar. El CC de 14 A del buck 1 limita los motores. <b>La LiPo no tiene BMS</b> y la Pi la descarga sin parar: no bajar de 3,5 V por celda (10,5 V), con la alarma ("salvalipo") en el conector de balanceo y el INA219 para que la Pi se apague sola. El voltímetro de 4,5–30 V del bus de lógica sirve para mirar, pero no avisa. Cargarla solo con un cargador balanceador. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
+      <figcaption>La seta corta el bus de motores del lado de 12 V (tracción, brazo y servos): la Pi y los ESP32 siguen encendidos con la LiPo y la S3 lee la seta por el contacto auxiliar. El CC de 14 A del buck 1 limita los motores. <b>La LiPo no tiene BMS</b> y la Pi la descarga sin parar: no bajar de 3,5 V por celda (10,5 V), mirando el indicador de barras del conector de balanceo (sin INA219 ni alarma: solo pruebas vigiladas de ≤ 30 min). El voltímetro de 4,5–30 V del bus de lógica sirve para mirar, pero no avisa. Cargarla solo con un cargador balanceador. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
     </figure>
     <div class="tablewrap boardcard">
       <h3>Buck disponibles</h3>
@@ -463,7 +460,7 @@
 
   <section aria-labelledby="h-auto">
     <h2 id="h-auto">Consumo y autonomía</h2>
-    <p class="lede">Son estimaciones a partir de las hojas de los motores (42GM-895H: 2,6 A en vacío, 5,5 A nominal y 10 A trabado; 36GP-555: 0,5 / 1,3 / 10 A, a 12 V) y de consumos típicos de la Pi 5. Hay que confirmarlas midiendo con el INA219 o con una pinza amperométrica.</p>
+    <p class="lede">Son estimaciones a partir de las hojas de los motores (42GM-895H: 2,6 A en vacío, 5,5 A nominal y 10 A trabado; 36GP-555: 0,5 / 1,3 / 10 A, a 12 V) y de consumos típicos de la Pi 5. Hay que confirmarlas midiendo con una pinza amperométrica.</p>
     <div class="boards">
       <article class="boardcard">
         <h3>Motores · desde la 10S</h3>
@@ -523,7 +520,7 @@
             <tr><td class="gpio"><span class="tag gpio"></span>38</td><td>R_EN + L_EN de los dos IBT-2</td><td>pull-down 10 k</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>15 · 16</td><td>Encoder izq. A · B</td><td>como en la prueba 06</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>17 · 18</td><td>Encoder der. A · B</td><td></td></tr>
-            <tr><td class="gpio"><span class="tag data"></span>8 · 9</td><td>IMU SDA · SCL (+ INA219 de la LiPo)</td><td>400 kHz, 0x68 (INA219 0x40)</td></tr>
+            <tr><td class="gpio"><span class="tag data"></span>8 · 9</td><td>IMU SDA · SCL</td><td>400 kHz, 0x68</td></tr>
                         <tr><td class="gpio"><span class="tag gpio"></span>10 · 41 · 42</td><td>TRIG centro · esquina izq. · esquina der.</td><td>de a uno, cada 40 ms</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO centro · esquina izq. · esquina der.</td><td>divisor 1 k / 2 k</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39</td><td>Bumpers frente · izq. · der.</td><td>NA a GND</td></tr>
@@ -614,7 +611,7 @@
     <h2 id="h-check">Antes de conectar</h2>
     <ul class="checks">
       <li><span><b>Dos baterías, un solo GND.</b> Los negativos de la 10S y de la LiPo se unen en un punto; los positivos nunca. Sin GND común, los PWM de los ESP32 no tienen referencia en los IBT-2.</span></li>
-      <li><span><b>LiPo sin BMS:</b> fusible de 5 A pegado al conector (100C es un cortocircuito de cientos de amperes), alarma en el balanceo, no bajar de 10,5 V y cargar solo con un balanceador, sobre una superficie no inflamable.</span></li>
+      <li><span><b>LiPo sin BMS:</b> fusible de 5 A pegado al conector (100C es un cortocircuito de cientos de amperes), indicador de barras a la vista, no bajar de 10,5 V y cargar solo con un balanceador, sobre una superficie no inflamable.</span></li>
       <li><span><b>J2 y J3 no se sostienen solos.</b> El 36GP-555 es planetario, no sin fin: sin corriente el brazo cae. Al desarmar o con la seta, que quede apoyado en un tope o en el reposo; el resorte del hombro sigue sirviendo.</span></li>
       <li><span><b>A la 10S, solo el buck 1.</b> Los buck 2, 3 y 4 se queman con 42 V. Ajustar cada buck sin carga y con el multímetro (tensión y CC) antes de conectarle nada.</span></li>
       <li><span><b>XT60 con el interruptor abierto</b> (el interruptor, apto para DC, se lleva la chispa de los capacitores) y polaridad verificada: la salida al revés rompe el buck.</span></li>
@@ -628,7 +625,7 @@
       <li><span><b>Servos con su propio buck</b> (buck 3, CC en 5 A) y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
       <li><span><b>Cables de cámara</b> de 15 a 22 pines: la Pi 5 usa el conector chico en CSI0 y CSI1.</span></li>
       <li><span><b>GPS a 3,3 V</b> en el UART de la Pi (<span class="mono">dtparam=uart0=on</span>): TX del GPS al GPIO 15, RX al 14.</span></li>
-      <li><span><b>Pocos GPIO de reserva:</b> el 40 de la S3 (sin ADC) y el 13 de la WROOM. El INA219 de la LiPo va al I²C de la IMU y no usa pines (en la 10S no sirve: llega a 26 V).</span></li>
+      <li><span><b>Pocos GPIO de reserva:</b> el 40 de la S3 (sin ADC) y el 13 de la WROOM.</span></li>
       <li><span><b>LiDAR por USB en la Pi.</b> Los pines que la prueba de la S3 reservaba para su UART (14 y 21) ahora son bumpers.</span></li>
     </ul>
   </section>

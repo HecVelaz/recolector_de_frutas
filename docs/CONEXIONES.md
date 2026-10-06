@@ -124,8 +124,7 @@ Batería 10S 36 V (30-42 V) → fusible 15 A ≥ 58 V DC junto al borne → inte
 LiPo 3S (9,9-12,6 V) → fusible 5 A junto al conector → interruptor de lógica → bus 12 V de lógica (sube por el mástil)
   ├─ Buck 2 (→ 5,1 V), arriba al lado de la Pi → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
   ├─ ventilador del buck 1 · luz y buzzer (vía transistor) · bobina del relé a través de la seta NC
-  ├─ INA219 en el I²C de la S3 (0x40): tensión y corriente de la LiPo (a comprar)
-  └─ alarma de LiPo en el conector de balanceo (a comprar)
+  └─ indicador de barras (1S-8S) en el conector de balanceo
   contacto auxiliar NC de la seta → S3 GPIO 47
 GND: los negativos de las dos baterías unidos en un solo punto (los positivos nunca).
 ```
@@ -146,11 +145,12 @@ GND: los negativos de las dos baterías unidos en un solo punto (los positivos n
   5,5 A nominal y 10 A trabado cada uno; brazo (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Desde
   la 10S: ≤ 14 A × 12,5 V / 0,93 / 30 V ≈ 6,3 A, cómodo para el BMS. La LiPo da ~1,5 A (pico ~2 A).
 - **LiPo sin BMS:** la Pi la descarga sin parar y el buck 2 no corta por tensión baja. No bajar de 3,5 V por celda
-  (10,5 V): alarma en el balanceo y el INA219 para que la Pi se apague sola. Cargar solo con un cargador balanceador.
+  (10,5 V): mirar el indicador de barras (solo pruebas vigiladas de ≤ 30 min; sin INA219 ni alarma, 06/10).
+  Cargar solo con un cargador balanceador; guardada varios días, a ~11,4 V.
 - **Pi 5 por buck (sin USB-PD):** `usb_max_current_enable=1` en `/boot/firmware/config.txt`; si no, la Pi limita
   los USB a 600 mA entre todos.
 
-### Consumo y autonomía (estimados; medir con el INA219 o una pinza)
+### Consumo y autonomía (estimados; medir con una pinza)
 
 | Carga | Potencia |
 |---|---|
@@ -176,8 +176,8 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
 ## Antes de conectar
 
 - [ ] **Dos baterías, un solo GND:** negativos de la 10S y la LiPo unidos en un punto, positivos nunca.
-- [ ] **LiPo:** fusible de 5 A pegado al conector (100C: un cortocircuito son cientos de amperes), alarma en el
-      balanceo, no bajar de 10,5 V, cargador balanceador.
+- [ ] **LiPo:** fusible de 5 A pegado al conector (100C: un cortocircuito son cientos de amperes), indicador de
+      barras a la vista, no bajar de 10,5 V, cargador balanceador.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Batería de 36 V (42 V cargada):** a la batería solo el buck 1 (los buck 2, 3 y 4 llegan a 32-40 V: se
       queman). **Ajustar cada buck sin carga y con el multímetro antes de conectarle nada** (tensión y CC). Divisor
@@ -213,7 +213,7 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
-- [ ] GPIO de reserva: S3 40 (sin ADC) y WROOM 13. El INA219 de la LiPo comparte el I²C de la IMU (0x40).
+- [ ] GPIO de reserva: S3 40 (sin ADC) y WROOM 13.
 - [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son bumpers.
 
 ## Decisiones de esta propuesta
