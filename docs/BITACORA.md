@@ -170,3 +170,14 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - `pkill -f "[p]atrón"` por ssh igual se mata a sí mismo si el patrón aparece más adelante en la misma línea de
   comando (cortó la sesión dos veces): limpiar en un ssh aparte.
 - `sudo reboot` de la Pi lo bloquea el modo automático: pedírselo al usuario.
+
+## 2026-10-05: docs unificados, conexionado v0.4, compras y plan al 9/11
+- `pruebas-esp32/docs` era una copia vieja de `docs/`: se pasó lo que faltaba (sin pisar nada), la copia quedó como
+  `pruebas-esp32/docs_viejo` y `pruebas-esp32/docs` ahora es un enlace a `recolector_de_frutas/docs`.
+- J2/J3 cambian a 36-555 de 98 rpm con IBT-2 y correa (J2 no levantaba el brazo con el 5840; J3 tambaleaba).
+  Llegan entre el 19 y el 29/10.
+- Conexionado v0.4 (`CONEXIONES.md`, `conexiones.html`): WROOM con 3 IBT-2 (J2 25/26, J3 16/17, EN común 23, FC J3
+  en 27, libre 13); dos baterías (10S → motores; LiPo Zeee 3S 8000 mAh → lógica, sin segundo buck 1); cables de cada
+  motor; autonomía estimada ~3,4 h de cosecha (10S) y ~4,7 h de lógica (LiPo). `COMPRAS.md` con casillas.
+- `L298N.cpp`: el duty se escribe después de `ledcAttachPin()` (en el core 2.0.x lo pisaba). 17 pruebas OK.
+- Cinta CSI reemplazada (falta verificar las dos cámaras). Avance estimado ~45 %; plan por semanas en CLAUDE.md §5.

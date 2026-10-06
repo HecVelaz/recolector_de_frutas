@@ -24,13 +24,16 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
   3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
-  J2/J3 5840-31ZY (sin fin) + un L298N, 2 servos. En total 4 drivers.
+  2 servos. **J2/J3 (05/10): pasan del 5840-31ZY (sin fin, J2 no levantaba el brazo y J3 tambaleaba) a 36-555 de
+  98 rpm (82:1, mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y correa (relación a definir).
+  Llegan entre el 19 y el 29/10**; pines propuestos en `docs/CONEXIONES.md` v0.4, todavía no en `pins.h`. Total: 5 IBT-2.
 - Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
   20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
 
 ## 3. Estructura
-- `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (motor, pinza, rueda, batería),
+- `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
+  `bateria 1` = 10S, `bateria 2` = LiPo, bumpers), `COMPRAS.md` (lista de compras con casillas),
   `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
@@ -52,7 +55,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   usuario lo pide, Codex puede editar con estas reglas
   (`codex --sandbox workspace-write` en el repo; lee este archivo por `AGENTS.md`); al volver, revisar `git log` antes de seguir.
 
-## 5. Estado actual (2026-09-30)
+## 5. Estado actual (2026-10-05)
+- **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
+  conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
+  soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
+  (partiendo de J1) y `mision` real; 3-9/11 integración, 30 frutos, informes.
 - `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK. **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s (nuevo en `ControlArticulacion`), feedforward solo con la zona muerta (`ffSoloZonaMuerta`, nuevo), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` (nuevo) en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Cambiados: `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]), urdf, reposo por defecto de `fsm.py` (antes al frente, ahora el de la simulación, q = 75°/110°/−30°) y las pruebas que usaban puntos al frente. Pruebas OK: firmware 17, brazo_ik 7, mision 27, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
@@ -158,17 +165,20 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
-1. Verificar `cuentasPorVuelta` = 8316 de la tracción girando la rueda a mano (`vueltas` en `e`, README de la base).
-2. Probar el detector con limones verdes reales frente a las NoIR (con luz, a 40-90 cm): si falla, esas fotos van
-   al entrenamiento (fotos propias, subirlas a Roboflow y sumarlas en la celda 3 del cuaderno).
-3. Verificar las dos cámaras con la cinta nueva (§5). Soporte rígido de las cámaras (con los hallazgos de §6: que el limón caiga en la parte derecha de la imagen
-   izquierda y el brazo en reposo no las tape), recalibrar y medir la precisión de `/limon/posicion` contra cinta.
-4. Cablear según la lista "Antes de conectar" de `docs/CONEXIONES.md` (pull-down 10 kΩ en los EN, divisores de
-   ECHO, pull-ups externos) y probar drivers y sensores (hoy nada probado con periféricos).
-5. Primera prueba del brazo con motores (secuencia de su README; `v` sirve para la demo de la E6) y medir lo `MEDIR`.
-6. Primera prueba de la base con ruedas en el aire (README): sentidos, radio, trocha y la parada real por watchdog.
-7. Comprar un segundo buck 1 (lógica), Schottky ≥ 30 A, 2200 µF 25 V, TVS de 15 V y relé automotriz 12 V 40 A
-   para la seta (corta del lado de 12 V); armar el divisor 120 k / 8,2 k antes de conectar la batería.
+1. Comprar en el mercado local lo de `docs/COMPRAS.md` (potencia: Schottky, 2200 µF, TVS, relé, seta con 2 NC,
+   fusibles, el de la batería apto ≥ 58 V DC; salvalipo). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
+2. Cablear según `docs/CONEXIONES.md` v0.4 (10S → buck 1 → motores; LiPo → buck 2 → Pi; GND común) y su lista
+   "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
+   radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
+3. Verificar las dos cámaras con la cinta nueva (§5). Probar el detector con limones verdes reales frente a las NoIR
+   (con luz, a 40-90 cm; si falla, esas fotos van al entrenamiento). Soporte rígido (hallazgos de §6), recalibrar y
+   medir `/limon/posicion` contra cinta (la guía pide ≤ 35 mm).
+4. Brazo: pasar los pines v0.4 a `firmware/brazo/include/pins.h` y `brazo_config.h` (J2/J3 con IBT-2, EN común 23,
+   FC J3 en 27) cuando el usuario lo pida; probar ese firmware con el motor de J1 en el lugar de J2; con los motores
+   nuevos, pasos 0-3 de `pruebas-esp32/10` partiendo de los parámetros de J1. Medir lo `MEDIR`.
+5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~3,4 h de cosecha).
+6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
+7. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
 8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).
