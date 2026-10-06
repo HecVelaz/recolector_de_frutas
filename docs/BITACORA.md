@@ -255,3 +255,5 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   nominal y 75 trabado (contra 12 y 46). `brazo_config.h`: 8896 cuentas (16 × 4 × 139), parámetros de J1 llevados a
   58 rpm (K 0,57; PI 1,82 y 13,2; atasco 0,6 rpm), todo MEDIR. 17 pruebas OK; compilan `esp32dev` y `ros` sin warnings.
 - Sin INA219 ni salvalipo: solo pruebas vigiladas de ≤ 30 min con el indicador de barras de la LiPo.
+- Correa de J2 y J3: GT2 5:1 (`relacion` 5) con poleas 20 → 100 y correa cerrada de 240 mm: ~54 mm entre centros
+  (18 → 90 pediría ~62 mm). Velocidad máxima de la articulación: 58 / 5 ≈ 11,6 rpm (70 °/s).

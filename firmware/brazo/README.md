@@ -121,7 +121,6 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 
 ## Pendiente (MEDIR / hacer)
 
-- [ ] Relación de la correa de J2 y J3 (`relacion`, hoy 1).
 - [ ] J2 y J3 con los motores nuevos (llegan entre el 19 y el 29/10): signos (`ENC_INVERTIDO`, `MOTOR_INVERTIDO`),
       modelo y PI con los pasos 0-3 de `pruebas-esp32/10` (hoy, los de J1 llevados a 58 rpm).
 - [ ] Sostener J2/J3 contra la gravedad (no se autobloquean): compensación o freno.

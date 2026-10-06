@@ -62,7 +62,7 @@ DevKit con CH340, `/dev/ttyUSB0`. Tres IBT-2 con un solo EN; queda libre el GPIO
 Motores 36GP-555 (J1, J2, J3), encoder SCX-555 de 16 PPR (64 cuentas por vuelta del motor), salida de colector abierto
 (pull-ups de 5,1 kΩ en la placa), 3,3-5 V, alimentado aparte del motor: blanco = motor +,
 amarillo = motor −, verde = encoder + (**3V3**), azul = GND, negro = A, rojo = B. J1 160 rpm (50:1) con correa
-18 → 90; J2 y J3 58 rpm (139:1; 22 kgf·cm nominal, 75 trabado) con correa (relación a definir). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
+18 → 90; J2 y J3 58 rpm (139:1; 22 kgf·cm nominal, 75 trabado) con correa GT2 5:1 (poleas 20 → 100, correa cerrada de 240 mm, ~54 mm entre centros). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
 trabado. **No se autobloquean** (planetarios): sin corriente el brazo cae.
 
 ## Raspberry Pi 5 (propuesta)

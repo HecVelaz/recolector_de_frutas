@@ -39,7 +39,7 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
         "J2",
         8896.0f,  // 16 PPR x4 x reductora 139:1
-        1.0f,     // MEDIR: correa motor -> hombro (relación a definir)
+        5.0f,     // correa GT2 motor -> hombro: poleas 20 -> 100, 240 mm
         58.0f,
         -25.0f, 135.0f,
         0.57f, 0.065f, 17.0f,  // MEDIR: K, tau y zona muerta (de J1)
@@ -55,7 +55,7 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
         "J3",
         8896.0f,
-        1.0f,  // MEDIR: correa motor -> codo
+        5.0f,  // correa GT2 motor -> codo: poleas 20 -> 100, 240 mm
         58.0f,
         -50.0f, 50.0f,
         0.57f, 0.065f, 17.0f,  // MEDIR (mismo motor que J2)
