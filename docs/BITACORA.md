@@ -181,3 +181,22 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   motor; autonomía estimada ~3,4 h de cosecha (10S) y ~4,7 h de lógica (LiPo). `COMPRAS.md` con casillas.
 - `L298N.cpp`: el duty se escribe después de `ledcAttachPin()` (en el core 2.0.x lo pisaba). 17 pruebas OK.
 - Cinta CSI reemplazada (falta verificar las dos cámaras). Avance estimado ~45 %; plan por semanas en CLAUDE.md §5.
+
+## 2026-10-05 (noche): placas de las ESP32
+- Placa de la S3: va sobre la expansión Freenove (Breakout Board for ESP32/ESP32-S3), que trae bornera y tira G-V-S
+  por pin, LEDs por GPIO y entrada de 7-12 V. Los componentes van en dos perforadas chicas, una sobre cada fila de
+  borneras: arriba los ECHO (1 k en serie, 2 k a GND), el bumper del frente y las salidas de los encoders (20 k a
+  GND); abajo bumpers, seta, reserva 40, EN 38 (10 k a GND) y la batería (120 k / 8,2 k / 100 nF, zona de 36 V).
+  El resto (IBT-2, IMU, TRIG, 5V, 3V3) va directo a las borneras.
+- Placa de la WROOM: es una HW-394 de 30 pines (USB-C, CH340). No se compra expansión: perforada de 7 × 9 cm con
+  zócalo de 2 × 15, 3 IBT-2 (conector de 8 en el orden del módulo), 3 encoders a 3V3, 3 finales de carrera (100 nF
+  y 10 k a 3V3) y 2 servos con riel de 6 V del buck 3 en alambre grueso. Pines v0.4, todavía no en `pins.h`.
+- `docs/placa_s3.html` y `docs/placa_wroom.html` (publicadas, privadas): vista de cableado (ESP32 al centro, un cable
+  de color por pin, componentes sobre el cable, filtros por grupo), montaje físico, tabla y orden de armado y prueba.
+- Pinouts de las dos placas en `docs/fotos/` (coinciden con los planos); el de la S3 venía en AVIF con extensión
+  `.png` y se pasó a PNG. `COMPRAS.md` con los materiales de las placas (~12 × 10 k, ~10 × 100 nF).
+
+### Lecciones
+- El voltímetro LED de 2 hilos no reemplaza al salvalipo: no avisa, mide el total y no cada celda, y consume siempre.
+- En la DevKitC-1 v1.1 el LED RGB está en el GPIO 38 (en la base es el EN de la tracción): verificar en la placa.
+- Firefox de snap no lee `/tmp`: para capturas sin ventana, usar una carpeta temporal en el home y borrarla.

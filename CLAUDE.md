@@ -27,14 +27,22 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   2 servos. **J2/J3 (05/10): pasan del 5840-31ZY (sin fin, J2 no levantaba el brazo y J3 tambaleaba) a 36-555 de
   98 rpm (82:1, mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y correa (relación a definir).
   Llegan entre el 19 y el 29/10**; pines propuestos en `docs/CONEXIONES.md` v0.4, todavía no en `pins.h`. Total: 5 IBT-2.
+- Placas (05/10, `docs/placa_s3.html` y `docs/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
+  expansión Freenove** (bornera por pin) y sus componentes (divisores de ECHO, 20 k de encoders, filtros, pull-down
+  del EN, divisor de batería) en dos perforadas chicas, una sobre cada fila de borneras. La **WROOM es una HW-394 de
+  30 pines** (USB-C, CH340): **no se compra expansión**, va en una perforada de 7 × 9 cm con zócalo y conectores
+  (3 IBT-2, 3 encoders, 3 finales de carrera, 2 servos con riel de 6 V). Pinouts en `docs/fotos/esp32 s3 wroom/` y
+  `docs/fotos/esp32 wroom 32D/`. **Verificar en qué pin está el LED RGB de la S3**: en la DevKitC-1 v1.1 es el 38 (EN
+  de la tracción); `pins.h` supone el 48.
 - Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
   20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
 
 ## 3. Estructura
 - `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
-  `bateria 1` = 10S, `bateria 2` = LiPo, bumpers), `COMPRAS.md` (lista de compras con casillas),
-  `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, inventario, bitácora.
+  `bateria 1` = 10S, `bateria 2` = LiPo, bumpers, `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
+  compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `placa_s3.html`, `placa_wroom.html`,
+  inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
 - `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
@@ -170,6 +178,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 2. Cablear según `docs/CONEXIONES.md` v0.4 (10S → buck 1 → motores; LiPo → buck 2 → Pi; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
+   Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
+   antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 3. Verificar las dos cámaras con la cinta nueva (§5). Probar el detector con limones verdes reales frente a las NoIR
    (con luz, a 40-90 cm; si falla, esas fotos van al entrenamiento). Soporte rígido (hallazgos de §6), recalibrar y
    medir `/limon/posicion` contra cinta (la guía pide ≤ 35 mm).
