@@ -249,3 +249,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 ### Lecciones
 - Vigilante de Codex: buscar `tokens used` como línea exacta (`grep -qx`); CLAUDE.md contiene ese texto y Codex lo
   imprime al leerlo, así que el `grep -q` lo cortó a mitad de camino.
+
+## 2026-10-06: J2/J3 pasan a 58 rpm; sin INA219 ni salvalipo
+- J2/J3: 36-555 de 58 rpm (139:1) en vez del de 98 rpm (82:1). Tabla del vendedor (`fotos/motor_j2/`): 22 kgf·cm
+  nominal y 75 trabado (contra 12 y 46). `brazo_config.h`: 8896 cuentas (16 × 4 × 139), parámetros de J1 llevados a
+  58 rpm (K 0,57; PI 1,82 y 13,2; atasco 0,6 rpm), todo MEDIR. 17 pruebas OK; compilan `esp32dev` y `ros` sin warnings.
+- Sin INA219 ni salvalipo: solo pruebas vigiladas de ≤ 30 min con el indicador de barras de la LiPo.

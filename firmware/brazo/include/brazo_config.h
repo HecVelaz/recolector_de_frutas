@@ -33,37 +33,37 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
         3.0f,                  // velMin °/s: sin esto se trababa a 0,8° del objetivo
         true,                  // feedforward solo con la zona muerta, como en las pruebas
     },
-    // J2 y J3: 36-555 de 98 rpm (82:1) con IBT-2 y correa, el mismo encoder SCX-555 que J1. Sin caracterizar: arrancan
-    // con los parámetros de J1 llevados a 98 rpm (K x 98/160; Kp y Ki x 160/98 para el mismo lazo en %). MEDIR con
+    // J2 y J3: 36-555 de 58 rpm (139:1) con IBT-2 y correa, el mismo encoder SCX-555 que J1. Sin caracterizar: arrancan
+    // con los parámetros de J1 llevados a 58 rpm (K x 58/160; Kp y Ki x 160/58 para el mismo lazo en %). MEDIR con
     // los pasos 0-3 de pruebas-esp32/10. NO se autobloquean (planetarios): con el puente en rueda libre el brazo cae.
     {
         "J2",
-        5248.0f,  // 16 PPR x4 x reductora 82:1
+        8896.0f,  // 16 PPR x4 x reductora 139:1
         1.0f,     // MEDIR: correa motor -> hombro (relación a definir)
-        98.0f,
+        58.0f,
         -25.0f, 135.0f,
-        0.97f, 0.065f, 17.0f,  // MEDIR: K, tau y zona muerta (de J1)
-        1.07f, 7.8f,           // MEDIR
+        0.57f, 0.065f, 17.0f,  // MEDIR: K, tau y zona muerta (de J1)
+        1.82f, 13.2f,           // MEDIR
         2.0f, 20.0f, 40.0f,
         0.5f,
         40.0f,                 // duty máx de puesta en marcha, como J1
-        35.0f, 1.0f, 0.3f,     // atasco como J1 (1,7 rpm x 98/160)
+        35.0f, 0.6f, 0.3f,     // atasco como J1 (1,7 rpm x 58/160)
         5.0f,
         3.0f,                  // velMin °/s, como J1
         true,                  // feedforward solo con la zona muerta, como J1
     },
     {
         "J3",
-        5248.0f,
+        8896.0f,
         1.0f,  // MEDIR: correa motor -> codo
-        98.0f,
+        58.0f,
         -50.0f, 50.0f,
-        0.97f, 0.065f, 17.0f,  // MEDIR (mismo motor que J2)
-        1.07f, 7.8f,
+        0.57f, 0.065f, 17.0f,  // MEDIR (mismo motor que J2)
+        1.82f, 13.2f,
         2.0f, 20.0f, 40.0f,
         0.5f,
         40.0f,
-        35.0f, 1.0f, 0.3f,
+        35.0f, 0.6f, 0.3f,
         5.0f,
         3.0f,
         true,

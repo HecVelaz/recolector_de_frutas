@@ -19,13 +19,13 @@ constexpr int PIN_J1_LPWM = 22;
 constexpr int PIN_J1_ENC_A = 34;  // negro = Signal A
 constexpr int PIN_J1_ENC_B = 35;  // rojo = Signal B
 
-// J2 (hombro): motor 36-555 98 rpm (82:1) + IBT-2 + correa
+// J2 (hombro): motor 36-555 58 rpm (139:1) + IBT-2 + correa
 constexpr int PIN_J2_RPWM = 25;
 constexpr int PIN_J2_LPWM = 26;
 constexpr int PIN_J2_ENC_A = 32;  // negro (SCX-555 a 3V3, como J1)
 constexpr int PIN_J2_ENC_B = 33;  // rojo
 
-// J3 (codo, balancín del cuatro barras): motor 36-555 98 rpm (82:1) + IBT-2 + correa
+// J3 (codo, balancín del cuatro barras): motor 36-555 58 rpm (139:1) + IBT-2 + correa
 constexpr int PIN_J3_RPWM = 16;
 constexpr int PIN_J3_LPWM = 17;
 constexpr int PIN_J3_ENC_A = 18;  // negro

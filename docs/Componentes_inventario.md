@@ -28,4 +28,4 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 > **Agregado (05/10/2026):** LiPo Zeee 3S1P 11,1 V 8000 mAh 88,8 Wh 100C, Deans (T), balanceo JST-XH, 138 × 47 × 36 mm,
 > 493 g, para la lógica (`docs/fotos/bateria 2/`); voltímetro LED de 2 hilos 4,5-30 V (`docs/fotos/Medidor de Voltaje/`);
 > microinterruptores V-152-1C25 con rodillo, SPDT (1 NA + 1 NC), para bumpers y finales de carrera (`docs/fotos/bumpers/`);
-> 2 motores 36-555 de 98 rpm (82:1) para J2 y J3 (`docs/fotos/motor_j2/`).
+> 2 motores 36-555 de 58 rpm (139:1) para J2 y J3 (`docs/fotos/motor_j2/`).

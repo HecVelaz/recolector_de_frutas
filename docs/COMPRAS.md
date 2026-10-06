@@ -6,7 +6,7 @@ el segundo buck 1**.
 
 ## Brazo
 
-- [ ] 2 × motor 36-555 de 98 rpm (82:1), 12 V, eje de 8 mm, con encoder: J2 y J3 (`fotos/motor_j2/`)
+- [ ] 2 × motor 36-555 de 58 rpm (139:1), 12 V, eje de 8 mm, con encoder: J2 y J3 (`fotos/motor_j2/`)
 - [ ] 2 × driver IBT-2 (BTS7960): J2 y J3 (hay 3: dos de tracción y J1)
 - [ ] 2 juegos de transmisión: polea GT2 de 18 dientes con agujero de 8 mm + polea grande + correa cerrada GT2 de
       6 mm (relación a definir; J1 usa 18 → 90)
