@@ -52,7 +52,7 @@ constexpr ConfigSeguridad CFG_SEG = {
     0.50f,  // desde acá el avance tiene un tope que baja linealmente hasta 0 [m]
     25.0f,  // roll o pitch de vuelco [°]
     0,      // watchdog de comandos [ms]: 0 al arrancar (comandos a mano); con la Pi, wd 300
-    32.0f,  // batería baja [V]: 10S Li-ion (YONGZHI 36 V, 4400 mAh) a 3,2 V por celda; el BMS corta ~30 V
+    10.5f,  // batería baja [V]: LiPo 3S (Zeee 8000 mAh) a 3,5 V por celda; SIN BMS: no bajar de acá
     0.25f,  // tope de avance lejos de obstáculos [m/s] (= vMax de CFG_DIF)
 };
 
@@ -62,9 +62,9 @@ constexpr int US_CADA = 4;   // 40 ms entre disparos, de a un HC-SR04: cada uno 
 constexpr float IMU_FILTRO = 0.1f;  // pasa bajos de roll y pitch (a 50 Hz: ~0,2 s)
 constexpr uint32_t IMU_VALIDA_MS = 200;  // sin muestras de la IMU por más de esto, la base no se mueve
 
-// Batería 10S (30-42 V): divisor 120 k / 8,2 k -> 42 V da 2,69 V en el ADC (con 11 dB mide hasta ~3,1 V: ~46 V).
-// El de 100 k / 27 k era para 12 V: con 42 V pondría ~8,9 V en el GPIO y lo quema
-constexpr float BATERIA_DIVISOR = (120.0f + 8.2f) / 8.2f;
+// Batería LiPo 3S (9,9-12,6 V, desde el 08/10; antes la 10S): divisor 100 k / 27 k -> 12,6 V da 2,68 V en el ADC
+// (con 11 dB mide hasta ~3,1 V: ~14,6 V). Si vuelve la 10S (42 V), volver a 120 k / 8,2 k: este divisor la quemaría
+constexpr float BATERIA_DIVISOR = (100.0f + 27.0f) / 27.0f;
 constexpr uint32_t BATERIA_CADA_MS = 200;
 
 // PWM de los IBT-2 (como en pruebas-esp32/06)

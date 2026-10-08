@@ -14,13 +14,14 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Ruedas inflables de **150 mm** × 45 mm (`docs/fotos/rueda/`), trocha ~0,40 m (MEDIR).
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
   a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
-- **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria 1/`); lógica: power bank Xiaomi PB2030MI 20000 mAh, 5 V 3 A (`docs/fotos/bateria 3/`; la LiPo Zeee 3S de `bateria 2` queda de respaldo). Los motores son de
-  12 V. Buck (`docs/fotos/bucks/`): solo el **buck 1** (10,5-60 V, 12 A) aguanta la batería; los 2, 3 y 4 van
-  colgados de 12 V o de la LiPo. Desde la v0.4 (05/10): 10S → buck 1 → motores; LiPo → buck 2 → Pi y ESP32 (ya no hace
-  falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). **Potencia v0.5
-  (08/10, solo con lo que hay):** térmica CHINT C10 en la 10S (ON/OFF de motores), Pi y ESP32 desde el power bank (15 W; piden ~11 W: verificar `vcgencmd get_throttled` = 0x0), seta (se consigue; todavía no está)
-  cortando el EN de la tracción + aviso al GPIO 47; sin relé, TVS, Schottky ni fusibles. Ver
-  `docs/CONEXIONES.md` (pines, potencia, autonomía ~3,4 h) y `docs/conexiones.html`.
+- **Potencia v0.6 (08/10, solo con lo que hay):** motores con la **LiPo Zeee 3S** 11,1 V 8000 mAh, sin BMS
+  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**, por la térmica CHINT C10 pegada al conector (ON/OFF de
+  motores y protección contra cortos); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2030MI**
+  5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W: verificar `vcgencmd get_throttled` = 0x0). Divisor de batería
+  **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (se consigue) cortando el EN de la tracción + aviso
+  al GPIO 47; sin relé, TVS, Schottky ni fusibles. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
+  (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
+  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,2 h) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
@@ -80,7 +81,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
-  10S (aviso a 32 V, divisor 120 k / 8,2 k).
+  LiPo 3S (aviso a 10,5 V, divisor 100 k / 27 k; 08/10).
   Probado en la placa sola (sin motores ni sensores).
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
@@ -182,9 +183,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
-1. Potencia v0.5 con lo que hay (`docs/CONEXIONES.md`): conseguir la seta (2 NC) y un Schottky ≥ 15 A; buscar los
-   capacitores (≥ 25 V). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
-2. Cablear según `docs/CONEXIONES.md` v0.5 (10S → térmica → buck 1 → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
+1. Potencia v0.6 (`docs/CONEXIONES.md`): conseguir la seta (2 NC); buscar los capacitores (≥ 25 V). Armar el divisor
+   100 k / 27 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
+2. Cablear según `docs/CONEXIONES.md` v0.5 (LiPo → térmica → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,

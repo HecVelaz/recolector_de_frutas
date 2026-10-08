@@ -194,7 +194,7 @@ class BaseSim(Node):
                 self.pub_rango[k].publish(r)
             self.pub_bumpers.publish(UInt8(data=sum(1 << k for k, b in enumerate(self.bumper) if b)))
         if self.tick % 50 == 0:  # 1 Hz
-            b = BatteryState(voltage=38.0, present=True)
+            b = BatteryState(voltage=11.8, present=True)  # LiPo 3S
             b.header.stamp = stamp
             self.pub_bateria.publish(b)
         if self.tick % 25 == 0:  # 2 Hz

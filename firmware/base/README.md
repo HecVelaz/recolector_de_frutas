@@ -120,7 +120,8 @@ Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:
       valor nuevo = 8316 × 10 / vueltas leídas. Después identificar `K`, `tau` y la zona muerta (`log` + `d`).
 - [ ] Sentido de motores y encoders (`MOTOR_INVERTIDO`, `ENC_INVERTIDO`).
 - [ ] Radio de rueda y trocha (`CFG_DIF`): hoy 0,075 m (rueda de 150 mm) y 0,40 m (estimada), medir con cinta.
-- [x] Umbral de batería: batería 10S de 36 V (30-42 V): aviso a 32 V; divisor 120 k / 8,2 k (29/09).
+- [x] Umbral de batería: LiPo 3S (9,9-12,6 V, desde el 08/10): aviso a 10,5 V; divisor 100 k / 27 k. Con la 10S
+      era aviso a 32 V y divisor 120 k / 8,2 k (29/09).
 - [ ] Detección de "plataforma levantada" (H9): la IMU sola no la distingue bien.
 - [ ] Probar la capa micro-ROS con sensores y motores (en la placa sola ya anda; ver Resultados).
 - [ ] Rearmar (`r`) exige IMU con datos: sin la IMU conectada no se puede probar el movimiento.

@@ -16,7 +16,7 @@ terceros quedan fuera de git (`.gitignore`).
 **Diseño**
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
-- `CONEXIONES.md` — Conexionado v0.4 (05/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, circuito de potencia con dos baterías (10S para motores, LiPo 3S para la lógica), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `conexiones.html`: lo mismo como diagrama.
+- `CONEXIONES.md` — Conexionado v0.6 (08/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, prueba integrada mínima, circuito de potencia solo con lo que hay (LiPo 3S directa para motores, power bank para la Pi y los ESP32; la 10S guardada), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `conexiones.html`: lo mismo como diagrama.
 - `COMPRAS.md` — Lista de compras con casillas, del conexionado v0.4.
 - `placa_s3.html` / `placa_wroom.html` — Placas de las ESP32 (05/10): cableado de cada periférico a su pin, montaje (S3 sobre la Freenove + dos perforadas; WROOM HW-394 en perforada de 7 × 9 cm), tabla pin por pin y orden de armado y prueba.
 

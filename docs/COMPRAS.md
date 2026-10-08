@@ -1,8 +1,8 @@
 # Lista de compras
 
 Versión del 05/10/2026, armada a partir del conexionado v0.4 (`CONEXIONES.md` y `conexiones.html`) y del inventario
-(`Componentes_inventario.md`). Marcar con `[x]` lo que ya se compró. Con la LiPo para la lógica **ya no hace falta
-el segundo buck 1**.
+(`Componentes_inventario.md`). Marcar con `[x]` lo que ya se compró. Desde la v0.6 (08/10) los motores van con la LiPo
+directa y la Pi con el power bank: no hace falta ningún buck nuevo.
 
 ## Brazo
 
@@ -13,16 +13,15 @@ el segundo buck 1**.
 
 ## Potencia (v0.5, 08/10: solo con lo que hay)
 
-Ya está: térmica CHINT C10 (en la 10S), conector XT60, power bank Xiaomi PB2030MI (Pi y ESP32), cable grueso, borneras, capacitores,
-resistencias. La LiPo queda de respaldo. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
+Ya está: LiPo 3S y su cargador balanceador (motores), térmica CHINT C10, Deans, power bank Xiaomi PB2030MI (Pi y
+ESP32), cable grueso, borneras, capacitores, resistencias. La 10S queda guardada. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
 TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
 
-- [x] Conector XT60 hembra (10S)
-- [x] Térmica CHINT NXB-63 C10: ON/OFF de los motores, en la 10S (`llave.jpeg`)
+- [x] Conector Deans (T) hembra (LiPo)
+- [x] Térmica CHINT NXB-63 C10: ON/OFF de los motores, pegada a la LiPo (`llave.jpeg`)
 - [x] Power bank Xiaomi PB2030MI 20000 mAh, 5 V 3 A: alimenta la Pi (`fotos/bateria 3/`)
 - [ ] Seta (08/10: todavía no está, se consigue): mejor con 2 contactos NC (EN de la tracción + aviso al GPIO 47)
 - [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores
-- [ ] Diodo Schottky de ≥ 15 A (08/10: se consigue): salida del buck 1; sin él, solo rampas y capacitores
 - [x] Cinta CSI de 22 a 15 pines para la Pi 5 (reemplazada el 05/10)
 
 ## Placas de las ESP32 (`placa_s3.html`, `placa_wroom.html`)
@@ -44,7 +43,7 @@ TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
       (WROOM 36, 39); opcionales: pull-ups de WROOM 34, 35 y 27, y 4 en la S3 si los LEDs de la Freenove cargan
       los pines de los bumpers y la seta
 - [ ] 3 resistencias de 1 kΩ y 3 de 2 kΩ: divisores de los ECHO de los HC-SR04
-- [ ] 1 resistencia de 120 kΩ y 1 de 8,2 kΩ: divisor de la 10S (S3 GPIO 1)
+- [ ] 1 resistencia de 100 kΩ y 1 de 27 kΩ: divisor de la LiPo 3S (S3 GPIO 1)
 - [ ] 4 resistencias de 20 kΩ: bajar a 3,3 V las salidas de los encoders de tracción
 - [ ] ~10 capacitores cerámicos de 100 nF: S3 6 (3 bumpers, seta, reserva y divisor de la batería) y WROOM 3
       (finales de carrera)

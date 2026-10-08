@@ -41,5 +41,5 @@ constexpr int PIN_BUMPER_DER = 39;
 // cortado = HIGH (falla segura).
 constexpr int PIN_SETA = 47;
 
-// Tensión de batería 10S: divisor 120 kΩ (arriba) / 8,2 kΩ (abajo), ADC1 canal 0 (NO el viejo 100 k / 27 k)
+// Tensión de batería LiPo 3S: divisor 100 kΩ (arriba) / 27 kΩ (abajo), ADC1 canal 0 (con la 10S era 120 k / 8,2 k)
 constexpr int PIN_BATERIA = 1;

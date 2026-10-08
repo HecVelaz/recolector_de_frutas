@@ -179,8 +179,8 @@ J2 y J3 son de tornillo sin fin (irreversibles): al cortar potencia el brazo no 
 - Rama **lógica**: Buck 5 V/5 A dedicado a la Pi 5 (fuente oficial o equivalente), Buck 5–6 V separado para los servos.
 - Masa común en un único punto. Medir corriente pico con todos los motores arrancando.
 - Para el mínimo se puede usar **fuente de laboratorio** (la guía permite no depender de batería).
-- Batería real: 10S Li-ion de 36 V (30-42 V), 4400 mAh: motores por un buck 36 → 12 V de alta corriente y todos
-  los buck con entrada ≥ 45 V (ver `CONEXIONES.md`).
+- Batería (v0.6, 08/10): LiPo 3S directa para los motores y power bank de 5 V para la Pi y los ESP32; la 10S de
+  36 V queda guardada (ver `CONEXIONES.md`).
 
 ⚠ **L298N:** cae ~2,4–3 V (en E5, 9,6 V efectivos, ~140 rpm máx.). Medir corriente y temperatura con el brazo cargado; si calienta o no alcanza par, reemplazar por un segundo IBT-2 o un puente MOSFET pequeño.
 

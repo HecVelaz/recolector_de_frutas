@@ -84,7 +84,7 @@ void test_odometria_circulo_completo_vuelve() {
 // ---------------------------------------------------------------- seguridad
 
 // Todo en orden: nada al frente (INFINITY = eco largo), IMU con datos, batería cargada
-static EntradasSeguridad tranquilo() { return {{false, false, false}, INFINITY, false, 0, 0, 0, 40.0f, true}; }  // 10S cargada
+static EntradasSeguridad tranquilo() { return {{false, false, false}, INFINITY, false, 0, 0, 0, 12.4f, true}; }  // LiPo 3S cargada
 
 void test_seta_enclava_hasta_rearmar() {
   SeguridadBase s(CFG_SEG);
@@ -229,7 +229,7 @@ void test_watchdog_de_comandos() {
 void test_bateria_baja_avisa_sin_frenar() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
-  in.bateria = 31.0f;  // 10S: 3,1 V por celda
+  in.bateria = 10.2f;  // LiPo 3S: 3,4 V por celda
   float v = 0.1f, w = 0;
   TEST_ASSERT_TRUE(s.filtrar(in, v, w));
   TEST_ASSERT_TRUE(s.bateriaBaja());

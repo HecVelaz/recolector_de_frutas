@@ -128,7 +128,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Robot recolector de limones · 2026S2</div>
     <h1>Cableado de Arturito R2D2</h1>
-    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.5 (08/10/2026): potencia solo con lo que hay y la Pi con un power bank. v0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
+    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.6 (08/10/2026): motores con la LiPo 3S directa (sin buck) y la Pi con un power bank. v0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
   </header>
 
   <section aria-labelledby="h-general">
@@ -246,7 +246,7 @@
           <g>
             <rect class="box" x="16" y="670" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="691">Tensión de batería</text>
-            <text class="t-sub" x="28" y="710">divisor 120 k / 8,2 k · 10S</text>
+            <text class="t-sub" x="28" y="710">divisor 100 k / 27 k · LiPo 3S</text>
             <path class="w analog" d="M226 696 H380"></path>
             <g class="lbl analog"><text class="t-pin" x="303" y="689" text-anchor="middle">ADC 1</text></g>
           </g>
@@ -308,52 +308,38 @@
 
   <section aria-labelledby="h-alim">
     <h2 id="h-alim">Circuito de potencia</h2>
-    <p class="lede">Dos fuentes separadas: la 10S de 36 V mueve los motores y un power bank de 5 V alimenta la Pi y los ESP32. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.5 (08/10/2026): <b>solo con lo que hay</b>, sin relé, TVS ni fusibles. En trazo cortado, lo que todavía no está pero se consigue.</p>
+    <p class="lede">Dos fuentes separadas: la LiPo 3S mueve los motores (directa, sin buck) y un power bank de 5 V alimenta la Pi y los ESP32. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.6 (08/10/2026): <b>solo con lo que hay</b>, sin relé, TVS ni fusibles; la 10S y el buck 1 quedan guardados. En trazo cortado, lo que todavía no está pero se consigue.</p>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.5. Arriba, la batería 10S de 36 V con su BMS pasa por el XT60 y la térmica CHINT C10, que es el ON/OFF de motores, a un bus de 36 V; de ahí el buck 1, con su fusible de entrada, baja a 12 V y, por un Schottky que se consigue, alimenta el bus de 12 V de motores: brazo, buck de los servos, capacitores y tracción. El divisor de 36 V va a la S3. La seta, que se consigue, corta con su contacto NC 1 la señal EN de la tracción y avisa a la S3 con el NC 2. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
-          <text class="t-big" x="16" y="18">Motores · batería 10S</text>
+        <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.6. Arriba, la LiPo 3S, con su indicador de barras en el balanceo, pasa por la térmica CHINT C10, que es el ON/OFF de motores y su protección, directo al bus de 12 V de motores, sin buck: brazo, buck de los servos, capacitores y tracción. Un divisor de 100 k y 27 k lleva la tensión de la LiPo a la S3. La seta, que se consigue, corta con su contacto NC 1 la señal EN de la tracción y avisa a la S3 con el NC 2. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
+          <text class="t-big" x="16" y="18">Motores · LiPo 3S directa</text>
 
-          <!-- Cadena de entrada 10S -->
-          <rect class="box" x="16" y="30" width="190" height="62" rx="4"></rect>
-          <text class="t-title" x="28" y="50">Batería 10S2P · 36 V</text>
-          <text class="t-sub" x="28" y="67">30–42 V · 4400 mAh · 158 Wh</text>
-          <text class="t-sub" x="28" y="83">BMS de hoverboard (corta cortos)</text>
-          <path class="w power" d="M111 92 V102"></path>
-          <rect class="box" x="16" y="102" width="190" height="38" rx="4"></rect>
-          <text class="t-title" x="28" y="119">XT60</text>
-          <text class="t-sub" x="28" y="133">enchufar con la térmica abierta</text>
-          <path class="w power" d="M111 140 V152"></path>
-          <rect class="box safety" x="16" y="152" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="28" y="172">Térmica CHINT C10 (H8)</text>
-          <text class="t-sub" x="28" y="188">ON/OFF de los motores</text>
-          <path class="w power" d="M206 174 H250"></path>
+          <!-- LiPo → térmica → bus 12 V, sin buck -->
+          <rect class="box" x="16" y="30" width="220" height="62" rx="4"></rect>
+          <text class="t-title" x="28" y="50">LiPo 3S · Zeee 8000 mAh</text>
+          <text class="t-sub" x="28" y="67">9,9–12,6 V · 88,8 Wh · 100C</text>
+          <text class="t-sub" x="28" y="83">Deans (T) · sin BMS</text>
+          <path class="w analog" d="M236 52 H270"></path>
+          <rect class="box" x="270" y="30" width="210" height="44" rx="4"></rect>
+          <text class="t-title" x="282" y="50">Indicador de barras</text>
+          <text class="t-sub" x="282" y="66">en el balanceo · parar a 10,5 V</text>
+          <path class="w power" d="M126 92 V138"></path>
+          <rect class="box safety" x="16" y="138" width="220" height="44" rx="4"></rect>
+          <text class="t-title" x="28" y="158">Térmica CHINT C10 (H8)</text>
+          <text class="t-sub" x="28" y="174">ON/OFF · protege la LiPo</text>
+          <path class="w power" d="M236 160 H830"></path>
+          <g class="lbl power"><text class="t-pin" x="540" y="152" text-anchor="middle">12 V directo, sin buck</text></g>
 
-          <!-- Bus 36 V -->
-          <path class="w power" d="M250 160 V280"></path>
-          <circle class="dot" cx="250" cy="174" r="4.5"></circle>
-          <g class="lbl power"><text class="t-pin" x="250" y="300" text-anchor="middle">bus 36 V</text></g>
-
-          <!-- Buck 1 → Schottky -->
-          <path class="w power" d="M250 160 H290"></path>
-          <rect class="box" x="290" y="138" width="186" height="44" rx="4"></rect>
-          <text class="t-title" x="302" y="158">Buck 1 · 36 → 12 V</text>
-          <text class="t-sub" x="302" y="174">fusible de entrada 15 A · CC 12 A</text>
-          <path class="w supply" d="M476 160 H500"></path>
-          <rect class="box later" x="500" y="138" width="166" height="44" rx="4"></rect>
-          <text class="t-title" x="512" y="158">Schottky ≥ 15 A</text>
-          <text class="t-sub" x="512" y="174">se consigue · buck a 12,5 V</text>
-          <path class="w supply" d="M666 160 H830"></path>
-
-          <!-- Medición 36 V -->
-          <path class="w power" d="M250 280 H290"></path>
+          <!-- Medición de la batería -->
+          <circle class="dot" cx="260" cy="160" r="4.5"></circle>
+          <path class="w power" d="M260 160 V280 H290"></path>
           <rect class="box" x="290" y="258" width="160" height="44" rx="4"></rect>
-          <text class="t-title" x="302" y="278">Divisor 120 k / 8,2 k</text>
-          <text class="t-sub" x="302" y="294">42 V → 2,69 V</text>
+          <text class="t-title" x="302" y="278">Divisor 100 k / 27 k</text>
+          <text class="t-sub" x="302" y="294">12,6 V → 2,68 V</text>
           <path class="w analog" d="M450 280 H480"></path>
           <rect class="box" x="480" y="258" width="140" height="44" rx="4"></rect>
           <text class="t-title" x="492" y="278">S3 · ADC GPIO 1</text>
-          <text class="t-sub" x="492" y="294">aviso a 32 V</text>
+          <text class="t-sub" x="492" y="294">aviso a 10,5 V</text>
 
           <!-- Seta: NC 1 corta el EN de la tracción, NC 2 avisa a la S3 -->
           <rect class="box safety later" x="636" y="304" width="180" height="56" rx="4"></rect>
@@ -401,17 +387,17 @@
           <text class="t-sub" x="820" y="420">GND común: GND de la S3 y de la WROOM</text>
           <text class="t-sub" x="820" y="436">a la bornera de GND del bus de motores</text>
           <text class="t-sub" x="820" y="470">Trazo cortado: se consigue, todavía no está</text>
-          <text class="t-sub" x="820" y="488">Solo el buck 1 aguanta los 42 V de la 10S</text>
+          <text class="t-sub" x="820" y="488">La 10S queda guardada (con ella: buck 1)</text>
         </svg>
       </div>
-      <figcaption><b>La térmica es el ON/OFF de los motores</b> (H8): abierta, no hay 12 V. Es de alterna: moverla con los motores quietos. Los cortocircuitos los cortan el BMS de la 10S y el fusible de entrada del buck 1. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): frena por hardware aunque se cuelgue el firmware. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>Sin Schottky</b>, el frenado vuelve al buck 1: lo contienen las rampas del firmware y los capacitores; medir que el bus no pase de ~15 V al frenar. El CC de 12 A del buck 1 (sin ventilador) limita los motores. <b>La Pi va con el power bank</b> (5 V 3 A = 15 W; la Pi con YOLO y los ESP32 piden ~11 W): sin los 5 A de la fuente oficial, limita los USB a 600 mA, que alcanzan para los dos ESP32. Verificar con <span class="mono">vcgencmd get_throttled</span> = 0x0 con la visión corriendo. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
+      <figcaption><b>La térmica, pegada al conector, es el ON/OFF de los motores</b> (H8) y la única protección de la LiPo (100C, sin BMS) contra un cortocircuito; a 12 V DC corta bien. Dispara también si dos motores quedan trabados unos segundos. <b>Sin buck</b>: el frenado vuelve a la LiPo, que lo absorbe. <b>La LiPo no corta sola por descarga</b>: <code>BATERIA_BAJA</code> avisa a 10,5 V pero no frena; parar a mano y cargar solo con el balanceador. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): frena por hardware aunque se cuelgue el firmware. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>La Pi va con el power bank</b> (5 V 3 A = 15 W; la Pi con YOLO y los ESP32 piden ~11 W): limita los USB a 600 mA, que alcanzan para los dos ESP32. Verificar con <span class="mono">vcgencmd get_throttled</span> = 0x0 con la visión corriendo. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
     </figure>
     <div class="tablewrap boardcard">
       <h3>Buck disponibles</h3>
       <table>
         <thead><tr><th>Buck</th><th>Entrada</th><th>Salida · corriente</th><th>Uso</th></tr></thead>
         <tbody>
-          <tr><td class="gpio"><span class="tag supply"></span>1 (×1)</td><td><b>10,5–60 V</b></td><td>0–45 V · 12 A cont. (15 A con ventilador)</td><td>10S 36 → 12 V (12,5 V con Schottky), bus de motores</td></tr>
+          <tr><td class="gpio"><span class="tag supply"></span>1 (×1)</td><td><b>10,5–60 V</b></td><td>0–45 V · 12 A cont. (15 A con ventilador)</td><td>repuesto (con la 10S: 36 → 12 V)</td></tr>
           <tr><td class="gpio"><span class="tag supply"></span>2 (×1)</td><td>7–32 V</td><td>0,8–28 V · 8 A</td><td>repuesto (respaldo: LiPo → 5,1 V, Pi)</td></tr>
           <tr><td class="gpio"><span class="tag supply"></span>3 (×2)</td><td>4–38 V</td><td>1,25–36 V · 5 A cont.</td><td>12 → 6 V servos; el otro de repuesto</td></tr>
           <tr><td class="gpio"><span class="tag supply"></span>4 (×1)</td><td>6–40 V</td><td>1,2–36 V · 15 A cont.</td><td>repuesto (no aguanta 42 V)</td></tr>
@@ -425,7 +411,7 @@
     <p class="lede">Son estimaciones a partir de las hojas de los motores (42GM-895H: 2,6 A en vacío, 5,5 A nominal y 10 A trabado; 36GP-555: 0,5 / 1,3 / 10 A, a 12 V) y de consumos típicos de la Pi 5. Hay que confirmarlas midiendo con una pinza amperométrica.</p>
     <div class="boards">
       <article class="boardcard">
-        <h3>Motores · desde la 10S</h3>
+        <h3>Motores · desde la LiPo</h3>
         <div class="tablewrap"><table>
           <thead><tr><th>Estado</th><th>Potencia</th><th>Por qué</th></tr></thead>
           <tbody>
@@ -433,7 +419,7 @@
             <tr><td>Girar o terreno malo</td><td class="gpio">~70 W</td><td>más corriente en las dos ruedas</td></tr>
             <tr><td>Brazo moviéndose</td><td class="gpio">~26 W</td><td>J1, J2 y J3 a ~1,3 A en parte del recorrido, más los servos</td></tr>
             <tr><td>Brazo quieto sosteniendo</td><td class="gpio">~6 W</td><td>J2 y J3 hacen fuerza contra el peso (I²R), y la pinza aprieta</td></tr>
-            <tr><td>Pico</td><td class="gpio">175 W</td><td>lo limita el CC de 14 A del buck 1 (≈ 6,3 A desde la batería)</td></tr>
+            <tr><td>Pico</td><td class="gpio">175 W</td><td>sin buck no hay límite: la térmica (10 A) dispara si dura</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -452,17 +438,17 @@
     </div>
     <div class="tablewrap boardcard">
       <h3>Autonomía</h3>
-      <p class="lede">Ciclo típico de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s detectando con el brazo quieto. Promedio en el bus de motores: (20·43 + 5·70 + 25·26 + 10·6) / 60 ≈ 32 W, y 37 W desde la batería (buck 1 y Schottky, ~88 %; sin Schottky, un poco menos). Energía útil: 80 % de la nominal (10S hasta 32 V; power bank: ~75 % de 74 Wh llega a 5 V).</p>
+      <p class="lede">Ciclo típico de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s detectando con el brazo quieto. Promedio en el bus de motores: (20·43 + 5·70 + 25·26 + 10·6) / 60 ≈ 32 W, directo de la LiPo (sin buck). Energía útil: 80 % de la nominal (LiPo hasta 3,5 V por celda; power bank: ~75 % de 74 Wh llega a 5 V).</p>
       <table>
         <thead><tr><th>Batería</th><th>Energía útil</th><th>Consumo</th><th>Autonomía</th></tr></thead>
         <tbody>
-          <tr><td>10S · motores · ciclo de cosecha</td><td class="gpio">126 Wh</td><td class="gpio">37 W</td><td class="gpio"><b>~3,4 h</b></td></tr>
-          <tr><td>10S · motores · avanzando sin parar</td><td class="gpio">126 Wh</td><td class="gpio">~55 W</td><td class="gpio">~2,3 h</td></tr>
-          <tr><td>10S · motores · terreno malo sin parar</td><td class="gpio">126 Wh</td><td class="gpio">~80 W</td><td class="gpio">~1,6 h</td></tr>
+          <tr><td>LiPo · motores · ciclo de cosecha</td><td class="gpio">71 Wh</td><td class="gpio">32 W</td><td class="gpio"><b>~2,2 h</b></td></tr>
+          <tr><td>LiPo · motores · avanzando sin parar</td><td class="gpio">71 Wh</td><td class="gpio">~48 W</td><td class="gpio">~1,5 h</td></tr>
+          <tr><td>LiPo · motores · terreno malo sin parar</td><td class="gpio">71 Wh</td><td class="gpio">~73 W</td><td class="gpio">~1 h</td></tr>
           <tr><td>Power bank · lógica</td><td class="gpio">~55 Wh</td><td class="gpio">11 W</td><td class="gpio"><b>~5 h</b></td></tr>
         </tbody>
       </table>
-      <p class="lede">El robot dura lo que la batería que se agote primero: <b>~3,4 h de cosecha</b>, y el power bank todavía tiene margen. Comparación: con todo desde la 10S (y un segundo buck 1), 126 Wh / 53 W ≈ 2,4 h. La batería de hoverboard es barata y puede tener 20–30 % menos de lo que dice la etiqueta: medirla con un ciclo completo.</p>
+      <p class="lede">El robot dura lo que la batería que se agote primero: <b>~2,2 h de cosecha</b> con la LiPo (la guía pide ≥ 45 min), y el power bank todavía tiene margen. Con la 10S (y el buck 1) serían ~3,4 h: queda guardada por si hace falta.</p>
     </div>
   </section>
 
@@ -485,7 +471,7 @@
             <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO centro · esquina izq. · esquina der.</td><td>divisor 1 k / 2 k</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39</td><td>Bumpers frente · izq. · der.</td><td>NA a GND</td></tr>
             <tr><td class="gpio"><span class="tag safety"></span>47</td><td>Contacto auxiliar NC de la seta</td><td>HIGH = apretada</td></tr>
-            <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería 120 k / 8,2 k</td><td>42 V → 2,69 V</td></tr>
+            <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería 100 k / 27 k (LiPo 3S)</td><td>12,6 V → 2,68 V</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -568,12 +554,12 @@
   <section aria-labelledby="h-check">
     <h2 id="h-check">Antes de conectar</h2>
     <ul class="checks">
-      <li><span><b>GND común.</b> Un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores; los positivos de la 10S y del power bank nunca se tocan. Sin GND común, los PWM de los ESP32 no tienen referencia en los IBT-2.</span></li>
+      <li><span><b>GND común.</b> Un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores; los positivos de la LiPo y del power bank nunca se tocan. Sin GND común, los PWM de los ESP32 no tienen referencia en los IBT-2.</span></li>
       <li><span><b>Power bank:</b> su cable incorporado (corto), una sola salida y sin cargarlo mientras alimenta la Pi. Con la visión corriendo 10 min, <span class="mono">vcgencmd get_throttled</span> tiene que dar 0x0.</span></li>
       <li><span><b>J2 y J3 no se sostienen solos.</b> El 36GP-555 es planetario, no sin fin: sin corriente el brazo cae. Al desarmar o con la seta, que quede apoyado en un tope o en el reposo; el resorte del hombro sigue sirviendo.</span></li>
-      <li><span><b>A la 10S, solo el buck 1.</b> Los buck 2, 3 y 4 se queman con 42 V. Ajustar cada buck sin carga y con el multímetro (tensión y CC) antes de conectarle nada.</span></li>
-      <li><span><b>XT60 con la térmica abierta</b> (salta una chispa por los capacitores del buck 1: normal), polaridad verificada (la salida al revés rompe el buck) y desenchufarlo al terminar.</span></li>
-      <li><span><b>Capacitores de ≥ 25 V en el bus de motores</b> y, cuando se consiga, Schottky ≥ 15 A a la salida del buck 1: el buck no protege su salida de la corriente que vuelve al frenar. Medir el bus al frenar (≤ ~15 V).</span></li>
+      <li><span><b>LiPo sin BMS:</b> térmica pegada al conector, indicador de barras a la vista, parar a 10,5 V (<span class="mono">BATERIA_BAJA</span> no frena) y cargar solo con el balanceador, fuera del robot. Enchufar el Deans con la térmica abierta y con la polaridad verificada.</span></li>
+      <li><span><b>Divisor 100 k / 27 k</b> en el GPIO 1. <b>Si vuelve la 10S, cambiarlo a 120 k / 8,2 k antes</b>: con 42 V, este pondría ~9 V en el GPIO y lo quema.</span></li>
+      <li><span><b>Buck 3 ajustado sin carga</b> con el multímetro (6 V, CC 5 A) antes de conectar los servos. <b>Capacitores de ≥ 25 V</b> en el bus de motores, cerca de los IBT-2.</span></li>
       <li><span><b>Seta:</b> verificar con el multímetro cuáles contactos son NC. NC 1 entre el GPIO 38 y el EN de la tracción (10 kΩ a GND del lado de los IBT-2); NC 2 al GPIO 47. Con la seta apretada, <span class="mono">armar</span> tiene que fallar. Sin seta, en el banco: GPIO 47 a GND con un cable.</span></li>
       <li><span><b>Pi 5 por buck</b>: <span class="mono">usb_max_current_enable=1</span> en <span class="mono">config.txt</span>, o limita los USB a 600 mA.</span></li>
       <li><span><b>Pull-down de 10 kΩ</b> en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo). Sin ellos los puentes flotan al arrancar o flashear.</span></li>

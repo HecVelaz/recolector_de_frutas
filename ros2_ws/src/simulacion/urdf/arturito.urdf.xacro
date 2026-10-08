@@ -47,7 +47,7 @@
       <origin xyz="${frente - largo_ancho/2} 0 ${abajo + alto_caja/2}"/>
       <geometry><box size="${largo_ancho} ${ancho_ancho} ${alto_caja}"/></geometry>
     </collision>
-    <!-- 20 kg (MEDIR): madera, batería de 36 V, 2 motores de ~1 kg, drivers -->
+    <!-- 20 kg (MEDIR): madera, LiPo 3S, 2 motores de ~1 kg, drivers -->
     <inertial><origin xyz="0.10 0 ${abajo + alto_caja/2}"/><mass value="20.0"/>
       <inertia ixx="0.29" iyy="0.33" izz="0.53" ixy="0" ixz="0" iyz="0"/></inertial>
   </link>
