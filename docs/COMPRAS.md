@@ -13,12 +13,13 @@ el segundo buck 1**.
 
 ## Potencia (v0.5, 08/10: solo con lo que hay)
 
-Ya está: térmica CHINT C10 (en la LiPo), conectores XT60 y Deans hembra, cable grueso, borneras, capacitores,
-diodos y resistencias. Seta: prestada del laboratorio. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
+Ya está: térmica CHINT C10 (en la 10S), conector XT60, power bank Xiaomi PB2030MI (Pi y ESP32), cable grueso, borneras, capacitores,
+resistencias. La LiPo queda de respaldo. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
 TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
 
-- [x] Conector XT60 hembra (10S) y Deans (T) hembra (LiPo)
-- [x] Térmica CHINT NXB-63 C10: protección de la LiPo y ON/OFF general (`llave.jpeg`)
+- [x] Conector XT60 hembra (10S)
+- [x] Térmica CHINT NXB-63 C10: ON/OFF de los motores, en la 10S (`llave.jpeg`)
+- [x] Power bank Xiaomi PB2030MI 20000 mAh, 5 V 3 A: alimenta la Pi (`fotos/bateria 3/`)
 - [ ] Seta (08/10: todavía no está, se consigue): mejor con 2 contactos NC (EN de la tracción + aviso al GPIO 47)
 - [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores
 - [ ] Diodo Schottky de ≥ 15 A (08/10: se consigue): salida del buck 1; sin él, solo rampas y capacitores

@@ -14,11 +14,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Ruedas inflables de **150 mm** × 45 mm (`docs/fotos/rueda/`), trocha ~0,40 m (MEDIR).
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
   a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
-- **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria 1/`); lógica: LiPo Zeee 3S 8000 mAh (`docs/fotos/bateria 2/`). Los motores son de
+- **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria 1/`); lógica: power bank Xiaomi PB2030MI 20000 mAh, 5 V 3 A (`docs/fotos/bateria 3/`; la LiPo Zeee 3S de `bateria 2` queda de respaldo). Los motores son de
   12 V. Buck (`docs/fotos/bucks/`): solo el **buck 1** (10,5-60 V, 12 A) aguanta la batería; los 2, 3 y 4 van
   colgados de 12 V o de la LiPo. Desde la v0.4 (05/10): 10S → buck 1 → motores; LiPo → buck 2 → Pi y ESP32 (ya no hace
   falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). **Potencia v0.5
-  (08/10, solo con lo que hay):** térmica CHINT C10 en la LiPo (protección y ON/OFF general), seta (se consigue; todavía no está)
+  (08/10, solo con lo que hay):** térmica CHINT C10 en la 10S (ON/OFF de motores), Pi y ESP32 desde el power bank (15 W; piden ~11 W: verificar `vcgencmd get_throttled` = 0x0), seta (se consigue; todavía no está)
   cortando el EN de la tracción + aviso al GPIO 47; sin relé, TVS, Schottky ni fusibles. Ver
   `docs/CONEXIONES.md` (pines, potencia, autonomía ~3,4 h) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
@@ -157,7 +157,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 ## 6. Decisiones
 - Limón aunque no figura en la guía R2: aprobado por el profesor.
 - Base: frente = parte ancha (brazo), atrás = parte angosta (ruedas de tracción). 3 bumpers, sin trasero.
-- Pi 5 arriba con las cámaras (no hay cable CSI largo): bajan USB a los ESP32 y sube 12 V con el buck de 5 V arriba.
+- Pi 5 arriba con las cámaras (no hay cable CSI largo): bajan USB a los ESP32 y el power bank va arriba, al lado de la Pi.
 - Configuración RRR (opción 6 de la tabla R1); pinza con agarre + tracción + giro en vez de succión (aprobado por
   el profesor, 28/09).
 - Medidas del brazo vigentes: las de la E4; motor de J1 = 36GP-555 160 rpm (el DC 895 de 2700 rpm fue un error de compra).
@@ -184,7 +184,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 ## 7. Próximos pasos
 1. Potencia v0.5 con lo que hay (`docs/CONEXIONES.md`): conseguir la seta (2 NC) y un Schottky ≥ 15 A; buscar los
    capacitores (≥ 25 V). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
-2. Cablear según `docs/CONEXIONES.md` v0.5 (10S → buck 1 → motores; LiPo → térmica → buck 2 → Pi; GND común) y su lista
+2. Cablear según `docs/CONEXIONES.md` v0.5 (10S → térmica → buck 1 → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,

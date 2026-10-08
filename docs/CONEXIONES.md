@@ -1,8 +1,8 @@
 # Conexiones del robot
 
-Versión 0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, Deans, cable, borneras,
-capacitores (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
-fusibles. `conexiones.html` y `placa_s3.html` ya están en la v0.5.
+Versión 0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
+(hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
+fusibles. **La Pi 5 se alimenta del power bank Xiaomi PB2030MI** (5 V 3 A): salen la LiPo, el buck 2 y el indicador de barras. `conexiones.html` y `placa_s3.html` ya están en la v0.5.
 v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
 `docs/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
@@ -74,8 +74,8 @@ trabado. **No se autobloquean** (planetarios): sin corriente el brazo cae.
 lado de la Pi 5), que es corto y sensible a interferencias; los ESP32 van por USB, que aguanta 1-2 m sin problema.
 Así: soporte rígido en el mástil (adelante a la derecha, con el brazo atrás sobre el eje, como en la simulación) con las dos cámaras
 y la Pi 5 con su disipador activo; bajan por el mástil los 2 cables USB a los ESP32 (con ferrite) y la alimentación.
-El buck de 5 V (buck 2) va **arriba, al lado de la Pi** (con 5 A, un cable de 5 V largo cae demasiado y la Pi se
-queja de tensión baja): por el mástil sube el bus de lógica, la LiPo 3S directa (9,9-12,6 V), que lleva poca corriente (~1,5 A).
+El power bank va **arriba, al lado de la Pi**, con su cable USB-C incorporado (corto): con 3 A, un cable de 5 V largo
+cae demasiado y la Pi se queja de tensión baja.
 Alternativa si la Pi tiene que ir abajo: cables CSI de 22 a 15 pines de 300-500 mm (existen hasta 1 m, pero a más
 largo más riesgo de errores de imagen); los adaptadores CSI→HDMI no están garantizados con la Pi 5.
 
@@ -91,14 +91,15 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V |
 | GPIO 17 (pin 11) | Luz de estado | vía transistor |
 | GPIO 27 (pin 13) | Buzzer | vía transistor |
-| USB-C | Buck 2 (LiPo 9,9-12,6 → 5,1 V, 8 A) | `usb_max_current_enable=1` |
+| USB-C | Power bank Xiaomi PB2030MI (5 V 3 A) | sin `usb_max_current_enable`: USB limitados a 600 mA (alcanza) |
 
-## Alimentación (v0.4: dos baterías)
+## Alimentación (v0.5: 10S + power bank)
 
 - **Motores: YONGZHI 10S2P de 18650**, 36 V nominales (30-42 V), 4400 mAh (158 Wh), 135 × 90 × 60 mm, XT60, BMS de
   hoverboard sin documentar.
-- **Lógica: LiPo Zeee 3S1P** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, Deans (T), balanceo JST-XH, 493 g,
-  **sin BMS**. Voltímetro LED de 2 hilos (4,5-30 V) en el bus de lógica: solo para mirar (no sirve en la 10S: 42 V).
+- **Lógica: power bank Xiaomi PB2030MI** 20000 mAh (~74 Wh), 33 W, salida 5 V 3 A por cable USB-C incorporado,
+  12,7 × 7,5 × 3 cm (`docs/fotos/bateria 3/`). Trae protección de cortocircuito, sobrecorriente, sobredescarga y
+  temperatura. Alimenta la Pi y, por sus USB, los dos ESP32. La LiPo 3S (`bateria 2`) queda de respaldo.
 
 Separadas, un motor trabado no puede hacer caer la tensión de la Pi, y ya no hace falta el segundo buck 1. Los motores
 son de 12 V y el IBT-2 aguanta 27 V como máximo: van por el buck 1 (36 → 12,5 V).
@@ -108,7 +109,7 @@ son de 12 V y el IBT-2 aguanta 27 V como máximo: van por el buck 1 (36 → 12,5
 | | Módulo | Entrada | Salida | Corriente | ¿Aguanta 42 V? | Uso |
 |---|---|---|---|---|---|---|
 | **1** (×1) | 400 W CC/CV, fusible de entrada 15 A | **10,5-60 V** | 0-45 V (≤ 0,8·Vin) | 12 A continuos (280 W) ventilado; 15 A con ventilador | **sí** | 10S → 12,5 V, bus de motores |
-| **2** (×1) | XL4016 300 W (Realpoy) | 7-32 V | 0,8-28 V | 8 A (ventilador arriba de 65 °C) | no | LiPo → 5,1 V, Pi 5 |
+| **2** (×1) | XL4016 300 W (Realpoy) | 7-32 V | 0,8-28 V | 8 A (ventilador arriba de 65 °C) | no | repuesto (respaldo LiPo → Pi) |
 | **3** (×2) | XL4016 200 W (LIZAO) | 4-38 V | 1,25-36 V | 5 A continuos, 8 A pico | no | 12 → 6 V servos; el otro de repuesto |
 | **4** (×1) | 300 W 20 A CC/CV | 6-40 V | 1,2-36 V | 15 A continuos, 20 A pico | no | repuesto |
 
@@ -117,27 +118,30 @@ El buck 1 no tiene protección contra la corriente que vuelve por la salida (lo 
 ### Circuito v0.5 (con lo que hay)
 
 ```
-Batería 10S 36 V (30-42 V; su BMS corta cortocircuitos) → XT60 → bus 36 V
+Batería 10S 36 V (30-42 V; su BMS corta cortocircuitos) → XT60 → térmica CHINT C10 (ON/OFF de motores, H8) → bus 36 V
   ├─ Buck 1 (fusible de entrada 15 A; 36 → 12 V, CC 12 A) → bus 12 V de motores (capacitores del inventario, ≥ 25 V)
   │     ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → seta NC 1 → R_EN + L_EN (10 kΩ a GND del lado de los IBT-2)
   │     ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
   │     └─ Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
   └─ divisor 120 k / 8,2 k → S3 GPIO 1 (42 V → 2,69 V)
 
-LiPo 3S (9,9-12,6 V) → Deans → térmica CHINT C10 pegada al conector (ON/OFF general, H8) → bus de lógica
-  ├─ Buck 2 (→ 5,1 V), arriba al lado de la Pi → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
-  ├─ luz y buzzer (vía transistor)
-  └─ indicador de barras (1S-8S) en el conector de balanceo
+Power bank Xiaomi PB2030MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
+  └─ USB → ESP32-S3 y WROOM (y de sus pines de 5 V/3V3: encoders, IMU, HC-SR04, lógica de los IBT-2)
 seta NC 2 → S3 GPIO 47 (el otro lado a GND)
-GND: los negativos de las dos baterías unidos en un solo punto (barra de borneras); los positivos nunca.
+GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
 ```
 
-- **Térmica CHINT NXB-63 C10 en la LiPo, no en la 10S:** la LiPo (100C, sin BMS) es lo único sin ninguna
-  protección contra un cortocircuito; la 10S ya tiene BMS y el buck 1 su fusible de entrada. La térmica es de
-  230 V AC: a 12 V DC corta bien (curva C: ~10 A térmico, instantáneo con un cortocircuito). Es también el ON/OFF
-  general: sin lógica, los EN de los 5 IBT-2 quedan en 0 por sus pull-down y ningún motor se mueve.
-- **Motores sin interruptor:** el XT60 es la desconexión de la 10S. Enchufarlo con la térmica abierta (salta una
-  chispa por los capacitores de entrada del buck 1: normal) y desenchufarlo al terminar.
+- **Térmica CHINT NXB-63 C10 en la 10S:** es el ON/OFF de los motores (H8): abierta, no hay 12 V y nada se mueve.
+  Es de 230 V AC: usarla como interruptor **con los motores quietos** (en continua no conviene cortar con carga). La
+  protección contra cortocircuitos la dan el BMS de la 10S y el fusible de entrada del buck 1. La Pi y los ESP32
+  siguen encendidos con el power bank: se apagan desenchufándolo.
+- **XT60:** enchufarlo con la térmica abierta (así no salta chispa) y desenchufarlo al terminar.
+- **Power bank para la Pi:** 5 V 3 A son 15 W; la Pi con YOLO y las cámaras pide ~9 W (picos de ~11 W) y los
+  ESP32 con sus sensores ~2 W (~400 mA). Entra. Sin los 5 A de la fuente oficial, la Pi limita los USB a 600 mA
+  entre todos: no poner `usb_max_current_enable=1`, y un LiDAR no entraría. Usar **una sola salida** del power bank
+  (con varias reparte la potencia) y no cargarlo mientras alimenta la Pi (puede cortar un instante). Verificar con
+  la cadena de visión corriendo 10 min: `vcgencmd get_throttled` tiene que dar `0x0` y
+  `vcgencmd pmic_read_adc EXT5V_V` ≥ 4,9 V. Si falla, respaldo: LiPo → buck 2 a 5,1 V (ajustado sin carga).
 - **Seta (prestada del laboratorio), con 2 contactos NC:** el NC 1 corta la señal EN de la tracción (corte por
   hardware, aunque se cuelgue el firmware; los motores quedan en rueda libre) y el NC 2 avisa a la S3 por el GPIO 47
   (HIGH = apretada o cable cortado). El contacto de una seta no aguanta la corriente de los motores: por eso corta el
@@ -151,12 +155,7 @@ GND: los negativos de las dos baterías unidos en un solo punto (barra de borner
   Schottky de ≥ 15 A, va en la salida del buck 1 (ánodo al buck) y el buck sube a 12,5 V.
 - **Corriente:** el CC del buck 1 en 12 A (sin ventilador) es el límite de los motores. Tracción (42GM-895H a 12 V):
   2,6 A en vacío, 5,5 A nominal y 10 A trabado cada uno; brazo (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A
-  a 6 V. Desde la 10S: ≤ 12 A × 12 V / 0,93 / 30 V ≈ 5,2 A. La LiPo da ~1,5 A (pico ~2 A).
-- **LiPo sin BMS:** la Pi la descarga sin parar y el buck 2 no corta por tensión baja. No bajar de 3,5 V por celda
-  (10,5 V): mirar el indicador de barras (solo pruebas vigiladas de ≤ 30 min; sin INA219 ni alarma, 06/10).
-  Cargar solo con un cargador balanceador; guardada varios días, a ~11,4 V.
-- **Pi 5 por buck (sin USB-PD):** `usb_max_current_enable=1` en `/boot/firmware/config.txt`; si no, la Pi limita
-  los USB a 600 mA entre todos.
+  a 6 V. Desde la 10S: ≤ 12 A × 12 V / 0,93 / 30 V ≈ 5,2 A. El power bank da ~2,2 A (pico ~2,6 A).
 
 ### Consumo y autonomía (estimados; medir con una pinza)
 
@@ -166,7 +165,7 @@ GND: los negativos de las dos baterías unidos en un solo punto (barra de borner
 | Tracción girando o en terreno malo | ~70 W |
 | Brazo moviéndose (J1-J3 + servos) | ~26 W |
 | Brazo quieto sosteniendo (J2/J3 contra el peso + pinza) | ~6 W |
-| Lógica: Pi 5 con YOLO (~9 W), ESP32 (0,8 W), sensores (0,6 W), buck 2 (1,2 W), luz + buzzer (~1 W) | ~13 W |
+| Lógica: Pi 5 con YOLO (~9 W), ESP32 (0,8 W), sensores (0,6 W) | ~11 W |
 
 Ciclo de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s con el brazo quieto
 → 32 W en el bus de motores, 37 W desde la 10S. Energía útil: 80 % de la nominal.
@@ -176,22 +175,23 @@ Ciclo de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el
 | 10S, ciclo de cosecha | 126 Wh | 37 W | **~3,4 h** |
 | 10S, avanzando sin parar | 126 Wh | ~55 W | ~2,3 h |
 | 10S, terreno malo sin parar | 126 Wh | ~80 W | ~1,6 h |
-| LiPo, lógica | 71 Wh | 13 W | **~5,5 h** |
+| Power bank, lógica | ~55 Wh (74 Wh × ~75 % a 5 V) | 11 W | **~5 h** |
 
-El robot dura lo que dura la 10S, **~3,4 h de cosecha**. Con todo desde la 10S serían ~2,4 h, y con los motores en la LiPo ~2,1 h.
+El robot dura lo que dura la 10S, **~3,4 h de cosecha**. Con todo desde la 10S serían ~2,4 h.
 La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: medirla con un ciclo completo.
 
 ## Antes de conectar
 
-- [ ] **Dos baterías, un solo GND:** negativos de la 10S y la LiPo unidos en un punto, positivos nunca.
-- [ ] **LiPo:** térmica C10 pegada al conector (100C: un cortocircuito son cientos de amperes), indicador de
-      barras a la vista, no bajar de 10,5 V, cargador balanceador.
+- [ ] **GND común:** GND de la S3 y de la WROOM a la bornera de GND del bus de motores (sin él, los PWM no tienen
+      referencia en los IBT-2). Los positivos de la 10S y del power bank nunca se tocan.
+- [ ] **Power bank:** cable incorporado (corto), una sola salida, sin cargarlo mientras alimenta la Pi; verificar
+      `vcgencmd get_throttled` = `0x0` con la visión corriendo.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Batería de 36 V (42 V cargada):** a la batería solo el buck 1 (los buck 2, 3 y 4 llegan a 32-40 V: se
       queman). **Ajustar cada buck sin carga y con el multímetro antes de conectarle nada** (tensión y CC). Divisor
       de batería **120 k / 8,2 k** (el viejo de 100 k / 27 k pondría ~8,9 V en el GPIO 1 y lo quema). Cargar solo
       con su cargador de 42 V, con el robot apagado.
-- [ ] Conectar el XT60 con la térmica de la LiPo abierta y desenchufarlo al terminar. Respetar la polaridad: el buck 1
+- [ ] Conectar el XT60 con la térmica abierta y desenchufarlo al terminar. Respetar la polaridad: el buck 1
       tiene fusible, pero la salida al revés lo rompe.
 - [ ] Capacitores de ≥ 25 V en el bus de 12 V de motores; medir el bus al frenar (≤ ~15 V). CC del buck 1 en 12 A.
 - [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; NC 1 en el EN de la tracción y
@@ -218,8 +218,8 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
       que la WROOM arrancó, o pasar la señal al GPIO 13 (libre).
 - [ ] **LEDs de la Freenove:** además de bumpers y seta, medir si cargan el GPIO 1 (divisor de 7,7 kΩ: un LED
       cambia mucho la lectura de batería), los encoders (15-18) y el I²C (8/9). Si cargan, sacar ese LED.
-- [ ] **Divisor de batería con la lógica apagada:** la 10S sigue empujando ~2,7 V al GPIO 1 por 120 kΩ (≤ 0,3 mA).
-      Encender primero la lógica y apagarla última; no dejar la 10S conectada con la S3 apagada mucho tiempo.
+- [ ] **Divisor de batería después de la térmica:** con la térmica cerrada y la S3 apagada, la 10S empuja ~2,7 V al
+      GPIO 1 por 120 kΩ (≤ 0,3 mA). Enchufar primero el power bank y abrir la térmica antes de desenchufarlo.
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.

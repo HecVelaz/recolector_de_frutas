@@ -29,3 +29,6 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 > 493 g, para la lógica (`docs/fotos/bateria 2/`); voltímetro LED de 2 hilos 4,5-30 V (`docs/fotos/Medidor de Voltaje/`);
 > microinterruptores V-152-1C25 con rodillo, SPDT (1 NA + 1 NC), para bumpers y finales de carrera (`docs/fotos/bumpers/`);
 > 2 motores 36-555 de 58 rpm (139:1) para J2 y J3 (`docs/fotos/motor_j2/`).
+
+> **Agregado (08/10/2026):** power bank Xiaomi PB2030MI 20000 mAh, 33 W, 5 V 3 A, cable USB-C incorporado, para la Pi 5
+> (`docs/fotos/bateria 3/`); térmica CHINT NXB-63 C10 (`docs/llave.jpeg`).
