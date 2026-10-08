@@ -105,28 +105,30 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
   la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).
 - Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`; en la notebook, `~/Documentos/vision_estereo`;
-  en GitHub al día). `datos/` (calibración, foco, pruebas; fuera de git) solo se genera en la Pi: respaldo en la
-  notebook (01/10, 213 archivos, 105 MB) con `rsync -a r2d2@192.168.2.219:vision_estereo/datos/ ~/Documentos/vision_estereo/datos/`
+  en GitHub al día; su `CLAUDE.md` §5-6 tiene el detalle). `datos/` (calibración, foco, pruebas; fuera de git) solo se genera en la Pi: respaldo en la
+  notebook (01/10, con los logs de las pruebas) con `rsync -a r2d2@192.168.2.219:vision_estereo/datos/ ~/Documentos/vision_estereo/datos/`
   (repetir tras cada calibración o prueba). Cadena
-  `scripts/start_limon.sh` = `launch/limon.launch.py` (cámaras, rectificación, disparidad BM) + `detector_node`
-  (`/yolo/detecciones`) + `localizador_node` (`/limon/posicion`, PointStamped en el marco óptico RECTIFICADO de
-  la cámara izquierda: tenerlo en cuenta en la TF al brazo). Con NCNN y OpenMP pasivo: detección ~7-9 FPS,
-  posición ~2-4 Hz. La ventana de disparidad sale de la calibración para 0,40-0,95 m (v1: f = 1076,5 px ->
-  112-271 px). Revisado por Codex. Calibración en uso: v1 (`config/calibracion/`); la v2 (RMS 0,32 px, baseline
-  99,3 mm, f ~680) es de un montaje de cartón: recalibrar con el soporte rígido (el usuario avisa) y apuntar
-  `CARPETA_CALIBRACION`. Exposiciones izq/der sin sincronizar: localizar con el robot quieto.
-- **Cámaras: falta verificar las dos con la cinta CSI nueva (22 a 15 pines) usando `~/scripts/probar_camaras.sh`.**
-  Síntomas de una cinta dañada: la cámara no se detecta, o se detecta y falla al transmitir (`Failed to write reg`,
-  `stream on failed`, `Camera frontend has timed out`); se aísla intercambiando cintas. Detección: `journalctl -k -b | grep "found subdevice"` (solo al arrancar: cambiar cintas con la Pi apagada).
-  Transmisión: `start_cameras_full.sh`; `~/scripts/probar_camaras.sh` en la Pi prueba las dos cosas (la parte de transmitir sin
-  probar). Vista de las dos en crudo: `/tmp/vista/index.html` servido en el puerto 8081 + `web_video_server` en el 8080
-  (`/tmp` se borra al reiniciar). `limon.launch.py` no usa el modo de sensor, el foco ni los índices de
-  `start_cameras_full.sh` (izquierda = 1 contra 0): igualarlos antes de recalibrar.
+  `scripts/start_limon.sh` = `launch/limon.launch.py` (cámaras, rectificación, disparidad **SGBM** por defecto, BM con
+  `ALGORITMO=0`) + `detector_node` (`/yolo/detecciones`) + `localizador_node` (`/limon/posicion`, PointStamped en el
+  marco óptico RECTIFICADO de la cámara izquierda: tenerlo en cuenta en la TF al brazo). Disparidad SGBM ~2,5 Hz
+  (BM ~10). Revisado por Codex. Cámaras y calibración en `config/camaras.yaml` (cámara 0 de libcamera = izquierda).
+  **Calibración en uso: `config/calibracion_soporte_2/`** (soporte rígido, 01/10): RMS 0,36 px, baseline 89,5 mm
+  (regla: 90 mm), f 654,3 px, ventana 0,38-0,96 m. Zona ciega: el cuarto izquierdo de la imagen izquierda (u < ~163 px)
+  se detecta pero no se localiza. Exposiciones izq/der sin sincronizar: localizar con el robot quieto.
+- **Cámaras (01/10): las dos transmiten a 30 FPS con la cinta CSI nueva.** Si una falla: síntomas de cinta dañada
+  `Failed to write reg`, `stream on failed`, `Camera frontend has timed out`; se aísla intercambiando cintas (con la
+  Pi apagada). `~/scripts/probar_camaras.sh` en la Pi. Vista en crudo: `web_video_server` en el 8080.
+- **Ensayos con un limón real (01/10, SGBM, logs en `vision_estereo/datos/pruebas/`):** YOLO lo detecta (confianza
+  mediana 0,80); `/limon/posicion` contra cinta en el eje a 40/55/70/90 cm: error +4 a +15 mm; a los costados (6 puntos
+  con regla): error 3D máximo **17 mm** (B5 pide ≤ 35 mm: cumple en laboratorio). Queda ~+1 cm de desfase en Z
+  (origen de la cinta en el frente de la lente + ~1 % de escala). **Pendiente: prueba de campo** (limón en un arbusto
+  a 40-90 cm, `guia_limon.py --campo`; lanzada y cancelada sin mediciones) y las NoIR al sol (colores rosados).
 - Detector de limones (28/09): entrenado en Colab con `vision/entrenamiento_limon/` (datasets de Roboflow, una
   clase `limon`). Test: P 0,953, R 0,977, mAP50 0,978, mAP50-95 0,814 (285 imágenes, 200 sin limón, 173
   limones; mismas fuentes que el entrenamiento: números optimistas). En la Pi:
   `~/vision_estereo/modelos/limon_yolo26n_ncnn_model` (fuera de git; 23 FPS solo). El `.pt` quedó en Drive
-  (`arturito/limon_yolo`). **Sin probar con limones reales ni con las NoIR.** Uso:
+  (`arturito/limon_yolo`). Probado con un limón real en el lab (arriba); falta el campo. **Una sola clase: B3 pide
+  cosechable / no cosechable / obstáculo-oclusión.** Uso:
   `MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh`
 - Revisados por Codex (brazo, base, micro-ROS, cambios del 28/09 y visión) y hallazgos aplicados.
 - `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
@@ -171,8 +173,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - EN común de tracción y GPS en la Pi (luz y buzzer, cuando vuelvan, también: GPIO 17 y 27): la S3 solo tiene libre el GPIO 40 (reservado para un 4.º bumper).
   GPS a la Pi (30/09) para dar un TRIG a cada HC-SR04: los 3 miran al frente y con TRIG común se pisaban los ecos.
 - Videos (~500 MB) y artículos de terceros fuera de git.
-- Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo solo localiza con u >= 271 px en la
-  imagen izquierda (ventana 0,40-0,95 m: el 42 % izquierdo queda ciego) y el brazo en reposo no puede quedar entre
+- Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo tiene una zona ciega a la izquierda de la
+  imagen izquierda (42 % con la calibración vieja de la simulación; ~25 % con la del soporte rígido) y el brazo en reposo no puede quedar entre
   las cámaras y la fila. Con el brazo sobre el eje (29/09): mástil adelante a la derecha, cámara a 0,85 m mirando 94°
   a la izquierda y 28° abajo (del lado izquierdo quedaba tan cerca de la fila que ningún ángulo veía los 3 limones de
   un árbol), y reposo q = (75°, 110°, -30°), girado a la izquierda: J1 no cruza el mástil (girado a la derecha lo
@@ -190,9 +192,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
-3. Verificar las dos cámaras con la cinta nueva (§5). Probar el detector con limones verdes reales frente a las NoIR
-   (con luz, a 40-90 cm; si falla, esas fotos van al entrenamiento). Soporte rígido (hallazgos de §6), recalibrar y
-   medir `/limon/posicion` contra cinta (la guía pide ≤ 35 mm).
+3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
+   hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
 4. Brazo: probar el firmware v0.4 con el motor de J1 en el lugar de J2; con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
