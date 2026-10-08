@@ -92,7 +92,7 @@
 
 <div class="page">
   <header>
-    <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.4 · base</div>
+    <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.6 · base</div>
     <h1>Placa de la ESP32-S3 (base)</h1>
     <p class="lede">La S3 va sobre su placa de expansión Freenove, que ya trae una bornera de tornillo y una tira G-V-S (GND, V, señal) por cada pin. Lo que no trae son los componentes chicos: divisores, pull-down y filtros. Esos van en dos perforadas chicas, una pegada a cada fila de borneras, por las que pasan esas señales antes de llegar a su bornera. Lo demás va directo. Pines de <code>firmware/base/include/pins.h</code>.</p>
   </header>
@@ -137,7 +137,7 @@
     <ol class="pasos"><li><b>Rieles</b> de GND y 3,3 V de la perforada, con alambre desnudo por abajo.</li><li><b>Pines y componentes</b> de cada tira, como en el dibujo. La tira de la batería, la última.</li><li><b>Con el tester, sin conectar nada:</b> que ninguna tira toque un riel, salvo a través de su componente. En la de la batería: 127 k de la entrada a GND.</li><li><b>La perforada sola, con una fuente:</b> 5 V en la entrada de un ECHO dan ~3,3 V a la salida; 12 V en la de la batería dan ~2,55 V (12,6 V, la LiPo cargada: 2,68 V).</li><li><b>La S3 sola por USB</b>, en la Freenove: el GPIO 38 en 0 V al arrancar y al flashear, y la prueba de los LEDs.</li><li><b>Encoders:</b> enchufar uno, girar la rueda a mano y medir que A y B no pasen de 3,3 V en la bornera.</li><li><b>Periféricos de a uno</b>, mirando que cada uno aparezca en <code>/base/estado</code> antes del siguiente. La batería, al final. La primera prueba de motores, con las ruedas en el aire.</li></ol>
   </section>
 
-  <footer>Fuente de verdad: <span class="mono">firmware/base/include/pins.h</span> y <span class="mono">docs/CONEXIONES.md</span> (v0.4). Foto de la S3 con la Freenove en <span class="mono">docs/fotos/esp32 s3 wroom/</span>.</footer>
+  <footer>Fuente de verdad: <span class="mono">firmware/base/include/pins.h</span> y <span class="mono">docs/CONEXIONES.md</span> (v0.6). Foto de la S3 con la Freenove en <span class="mono">docs/fotos/esp32 s3 wroom/</span>.</footer>
 </div>
 
 <script>
