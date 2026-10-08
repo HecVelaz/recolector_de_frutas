@@ -27,9 +27,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
   3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
-  2 servos. **J2/J3 (05/10): pasan del 5840-31ZY (sin fin, J2 no levantaba el brazo y J3 tambaleaba) a 36-555 de
-  58 rpm (139:1; el 06/10 cambian de 98 a 58 rpm por torque; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y correa GT2 5:1 (poleas 20 → 100, correa de 240 mm, ~54 mm entre centros).
-  Llegan entre el 19 y el 29/10**; pines v0.4 ya en `firmware/brazo/include/pins.h` (05/10). Total: 5 IBT-2.
+  2 servos. **J2/J3: 36-555 de 58 rpm (139:1; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y
+  correa GT2 5:1 (poleas 20 → 100, correa de 240 mm, ~54 mm entre centros). Llegan entre el 19 y el 29/10**
+  (por qué se cambió el sin fin 5840 y la versión de 98 rpm: `docs/BITACORA.md`); pines v0.4 ya en `firmware/brazo/include/pins.h` (05/10). Total: 5 IBT-2.
 - Placas (05/10, `docs/placa_s3.html` y `docs/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
   expansión Freenove** (bornera por pin) y sus componentes (divisores de ECHO, 20 k de encoders, filtros, pull-down
   del EN, divisor de batería) en dos perforadas chicas, una sobre cada fila de borneras. La **WROOM es una HW-394 de
@@ -43,7 +43,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 3. Estructura
 - `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
-  `bateria 1` = 10S, `bateria 2` = LiPo, bumpers, `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
+  `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, bumpers, `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
   compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `placa_s3.html`, `placa_wroom.html`,
   inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
@@ -53,7 +53,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 4. Cómo trabajar acá
 - Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF ni `.ipynb`** (bloqueados en
-  `.claude/settings.json`): usar sus `.txt`/`.md`.
+  `.claude/settings.local.json`): usar sus `.txt`/`.md`.
 - Firmware: `~/.platformio/penv/bin/pio`; pines solo en `include/pins.h`; drivers por `symlink://../lib/X`; lógica
   sin Arduino con pruebas `pio test -e native`. Verificar `pio test` y `pio run` sin warnings antes de un commit.
   **Apagar los 12 V antes de flashear o resetear.** ROS 2: unidades SI y `frame_id` explícito; `colcon test`.
@@ -72,12 +72,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
   la alternativa más simple y barata, sin listas largas de piezas nuevas.
 
-## 5. Estado actual (2026-10-05)
+## 5. Estado actual (al 2026-10-08)
 - **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
   conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
   soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
   (partiendo de J1) y `mision` real; 3-9/11 integración, 30 frutos, informes.
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK. **Pines v0.4 (05/10): J1-J3 con IBT-2 (J2 25/26, J3 16/17), EN común 23 (rueda libre solo de las tres juntas: si una se mueve, las otras quedan frenadas), FC J3 en 27 con pull-up interno, sin L298N; J2/J3 con 139:1 (8896 cuentas) y parámetros de J1 a 58 rpm, correa 5:1 (06/10) y signos sin medir.** **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s (nuevo en `ControlArticulacion`), feedforward solo con la zona muerta (`ffSoloZonaMuerta`, nuevo), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` (nuevo) en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Cambiados: `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]), urdf, reposo por defecto de `fsm.py` (antes al frente, ahora el de la simulación, q = 75°/110°/−30°) y las pruebas que usaban puntos al frente. Pruebas OK: firmware 17, brazo_ik 7, mision 30, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK. **Pines v0.4 (05/10): J1-J3 con IBT-2 (J2 25/26, J3 16/17), EN común 23 (rueda libre solo de las tres juntas: si una se mueve, las otras quedan frenadas), FC J3 en 27 con pull-up interno, sin L298N; J2/J3 con 139:1 (8896 cuentas) y parámetros de J1 a 58 rpm, correa 5:1 (06/10) y signos sin medir.** **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s, feedforward solo con la zona muerta (`ffSoloZonaMuerta`), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Definido en `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]) y el urdf; reposo por defecto de `fsm.py`: q = 75°/110°/−30°, el de la simulación. Pruebas OK: firmware 17, brazo_ik 7, mision 30, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
@@ -101,8 +101,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Agentes: `micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` (brazo) y
   `.../usb-Espressif_USB_JTAG_serial_debug_unit_*-if00` (base). Si la S3 no abre sesión, está en modo descarga:
   `~/venvs/esptool/bin/esptool --port <S3> --before no_reset --after watchdog-reset read-mac`.
-  La base se había cortado 2 veces (ping de 20 ms, cortes falsos por latencia): ping a 100 ms y contadores
-  `enlace: pings_fallidos cortes` en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
+  Ping del enlace a 100 ms (a 20 ms daba cortes falsos por latencia); contadores `enlace: pings_fallidos cortes`
+  en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
   la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).
 - Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`; en la notebook, `~/Documentos/vision_estereo`;
   en GitHub al día). `datos/` (calibración, foco, pruebas; fuera de git) solo se genera en la Pi: respaldo en la
@@ -115,10 +115,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   112-271 px). Revisado por Codex. Calibración en uso: v1 (`config/calibracion/`); la v2 (RMS 0,32 px, baseline
   99,3 mm, f ~680) es de un montaje de cartón: recalibrar con el soporte rígido (el usuario avisa) y apuntar
   `CARPETA_CALIBRACION`. Exposiciones izq/der sin sincronizar: localizar con el robot quieto.
-- **Cinta CSI reemplazada (05/10; falta verificar las dos cámaras con `~/scripts/probar_camaras.sh`).** Antes: cinta dañada (30/09), al pasar al soporte nuevo: con ella la cámara no se detecta, o se detecta y falla al
-  transmitir (`Failed to write reg`, `stream on failed`, `Camera frontend has timed out`). Aislada intercambiando
-  cintas: las 2 cámaras y los 2 puertos andan (cinta de Pi 5, 22 a
-  15 pines). Detección: `journalctl -k -b | grep "found subdevice"` (solo al arrancar: cambiar cintas con la Pi apagada).
+- **Cámaras: falta verificar las dos con la cinta CSI nueva (22 a 15 pines) usando `~/scripts/probar_camaras.sh`.**
+  Síntomas de una cinta dañada: la cámara no se detecta, o se detecta y falla al transmitir (`Failed to write reg`,
+  `stream on failed`, `Camera frontend has timed out`); se aísla intercambiando cintas. Detección: `journalctl -k -b | grep "found subdevice"` (solo al arrancar: cambiar cintas con la Pi apagada).
   Transmisión: `start_cameras_full.sh`; `~/scripts/probar_camaras.sh` en la Pi prueba las dos cosas (la parte de transmitir sin
   probar). Vista de las dos en crudo: `/tmp/vista/index.html` servido en el puerto 8081 + `web_video_server` en el 8080
   (`/tmp` se borra al reiniciar). `limon.launch.py` no usa el modo de sensor, el foco ni los índices de
@@ -185,7 +184,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 ## 7. Próximos pasos
 1. Potencia v0.6 (`docs/CONEXIONES.md`): conseguir la seta (2 NC); buscar los capacitores (≥ 25 V). Armar el divisor
    100 k / 27 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
-2. Cablear según `docs/CONEXIONES.md` v0.5 (LiPo → térmica → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
+2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → térmica → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
@@ -196,7 +195,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 4. Brazo: probar el firmware v0.4 con el motor de J1 en el lugar de J2; con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
-5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~3,4 h de cosecha).
+5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).
 6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
 7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —
    luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta solo corta la tracción
