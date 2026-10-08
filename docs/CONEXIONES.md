@@ -40,6 +40,9 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 - HC-SR04 **central** (TRIG 10, ECHO 11 con divisor 1 k / 2 k): sin su dato la base no avanza.
 - Power bank → Pi (cámaras) → S3 y WROOM por USB; GND de las dos placas a la bornera de GND de motores.
 - Brazo: J1 (J2 y J3 cuando lleguen), sus finales de carrera (el homing los usa), el servo de apertura y el buck 3.
+  **Con J1 sola, la prueba es base + visión + J1 a mano** (`/brazo/comando`): `mision` mueve las tres articulaciones
+  y el firmware rechaza el movimiento si alguna no tiene cero. La cosecha con `mision` necesita J2 y J3 instaladas y
+  con homing. No simular sus ceros.
 
 **No se conecta:**
 
@@ -160,14 +163,20 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
 ```
 
 - **Térmica CHINT NXB-63 C10 pegada al conector de la LiPo:** es el ON/OFF de los motores (H8) y la única
-  protección de la LiPo contra un cortocircuito (100C: cientos de amperes). Es de 230 V AC, pero a 12 V DC corta bien
-  (curva C: ~10 A térmico, instantáneo con un corto). Dispara también si dos motores quedan trabados (~20 A) unos
-  segundos: es lo que se quiere. La Pi y los ESP32 siguen encendidos con el power bank.
+  protección de la LiPo contra un cortocircuito (100C: cientos de amperes). **Su capacidad de corte en DC no está
+  documentada** (la etiqueta dice 230 V AC): a 12 V el arco es chico y en la práctica suele cortar, pero no está
+  garantizado. En DC el disparo magnético pide ~1,4 veces más corriente (curva C: ~70-140 A), que una LiPo de 100C da
+  de sobra en un corto. Con dos motores trabados (~20 A = 2 × In) la parte térmica tarda de decenas de segundos a
+  un minuto: no es una protección rápida. Primeras pruebas con fuente de laboratorio limitada en corriente; si la
+  térmica no corta en una prueba controlada, la alternativa mínima es un fusible apto para DC junto al Deans. La Pi
+  y los ESP32 siguen encendidos con el power bank.
 - **Sin buck ni Schottky:** la corriente de frenado vuelve a la LiPo, que la absorbe. La velocidad de los motores
   sigue a la tensión (12,6 → 10,5 V, −17 %): el lazo de velocidad lo compensa; tope ~0,35 m/s, sobra para 0,25.
 - **LiPo sin BMS:** nada corta por descarga. `/base/estado` avisa `BATERIA_BAJA` a 10,5 V (3,5 V por celda) pero
-  **no frena**: parar a mano. Mirar también el indicador de barras. Cargar solo con el balanceador; guardada varios
-  días, a ~11,4 V (3,8 V por celda).
+  **no frena**: parar a mano. Mirar también el indicador de barras. **10,5 V en total no garantizan 3,5 V en cada
+  celda**: ni el ADC ni el indicador de barras ven una celda desbalanceada, y no hay supervisión por celda ni corte
+  automático. Medir cada celda con el balanceador o el tester antes y después de cada prueba, y calibrar la lectura
+  del ADC contra el tester. Cargar solo con el balanceador; guardada varios días, a ~11,4 V (3,8 V por celda).
 - **Seta (se consigue), con 2 contactos NC:** el NC 1 corta la señal EN de la tracción (corte por
   hardware, aunque se cuelgue el firmware; los motores quedan en rueda libre) y el NC 2 avisa a la S3 por el GPIO 47
   (HIGH = apretada o cable cortado). El contacto de una seta no aguanta la corriente de los motores: por eso corta el
@@ -175,8 +184,10 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   queda en FALLA. **Sin `mision` corriendo, mandar `desarmar` al brazo antes de soltar la seta.** Con la seta, J2 y J3
   sueltan el brazo (no se autobloquean). **Si la seta trae un solo NC, avisar:** hay que elegir entre corte de EN y aviso.
 - **Power bank para la Pi:** 5 V 3 A son 15 W; la Pi con YOLO y las cámaras pide ~9 W (picos de ~11 W) y los
-  ESP32 con sus sensores ~2 W (~400 mA). Entra. Sin los 5 A de la fuente oficial, la Pi limita los USB a 600 mA
-  entre todos: no poner `usb_max_current_enable=1`, y un LiDAR no entraría. Usar **una sola salida** del power bank
+  ESP32 con sus sensores ~2 W (~400 mA). Entra. Sin los 5 A de la fuente oficial, la Pi limita a 600 mA el total de
+  los USB **y el conector del ventilador**: no poner `usb_max_current_enable=1`, y un LiDAR no entraría. El margen
+  no está demostrado: probar con el ventilador al máximo, la visión y los dos agentes, y mirar además que no haya
+  desconexiones USB (`dmesg`) ni cortes en los contadores `enlace` de `/<parte>/estado`. Usar **una sola salida** del power bank
   (con varias reparte la potencia) y no cargarlo mientras alimenta la Pi (puede cortar un instante). Verificar con
   la cadena de visión corriendo 10 min: `vcgencmd get_throttled` tiene que dar `0x0` y
   `vcgencmd pmic_read_adc EXT5V_V` ≥ 4,9 V.
@@ -195,16 +206,18 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
 | Lógica: Pi 5 con YOLO (~9 W), ESP32 (0,8 W), sensores (0,6 W) | ~11 W |
 
 Ciclo de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s con el brazo quieto
-→ 32 W en el bus de motores, directo de la LiPo (sin buck). Energía útil: 80 % de la nominal.
+→ (20·(43 + 6) + 5·(70 + 6) + 25·26 + 10·6) / 60 ≈ 34,5 W en el bus de motores (el brazo sostiene mientras la base
+se mueve), directo de la LiPo (sin buck). Energía útil: 80 % de la nominal.
 
 | Batería | Útil | Consumo | Autonomía |
 |---|---|---|---|
-| LiPo, ciclo de cosecha | 71 Wh | 32 W | **~2,2 h** |
+| LiPo, ciclo de cosecha | 71 Wh | 34,5 W | **~2,1 h** |
 | LiPo, avanzando sin parar | 71 Wh | ~48 W | ~1,5 h |
 | LiPo, terreno malo sin parar | 71 Wh | ~73 W | ~1 h |
 | Power bank, lógica | ~55 Wh (74 Wh × ~75 % a 5 V) | 11 W | **~5 h** |
 
-El robot dura lo que dura la LiPo, **~2,2 h de cosecha** (la guía pide ≥ 45 min). Con la 10S serían ~3,4 h.
+El robot dura lo que dura la LiPo, **~2,1 h de cosecha** (la guía pide ≥ 45 min; estimación hasta medir el sostén real
+de J2/J3). Con la 10S serían ~3,2 h.
 
 ## Antes de conectar
 

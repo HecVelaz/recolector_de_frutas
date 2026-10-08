@@ -390,7 +390,7 @@
           <text class="t-sub" x="820" y="488">La 10S queda guardada (con ella: buck 1)</text>
         </svg>
       </div>
-      <figcaption><b>La térmica, pegada al conector, es el ON/OFF de los motores</b> (H8) y la única protección de la LiPo (100C, sin BMS) contra un cortocircuito; a 12 V DC corta bien. Dispara también si dos motores quedan trabados unos segundos. <b>Sin buck</b>: el frenado vuelve a la LiPo, que lo absorbe. <b>La LiPo no corta sola por descarga</b>: <code>BATERIA_BAJA</code> avisa a 10,5 V pero no frena; parar a mano y cargar solo con el balanceador. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): frena por hardware aunque se cuelgue el firmware. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>La Pi va con el power bank</b> (5 V 3 A = 15 W; la Pi con YOLO y los ESP32 piden ~11 W): limita los USB a 600 mA, que alcanzan para los dos ESP32. Verificar con <span class="mono">vcgencmd get_throttled</span> = 0x0 con la visión corriendo. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
+      <figcaption><b>La térmica, pegada al conector, es el ON/OFF de los motores</b> (H8) y la única protección de la LiPo (100C, sin BMS) contra un cortocircuito. Su corte en DC no está documentado (etiqueta de 230 V AC): probar primero con fuente limitada. Con dos motores trabados (~20 A) la parte térmica tarda de decenas de segundos a un minuto. <b>Sin buck</b>: el frenado vuelve a la LiPo, que lo absorbe. <b>La LiPo no corta sola por descarga</b>: <code>BATERIA_BAJA</code> avisa a 10,5 V pero no frena; parar a mano y cargar solo con el balanceador. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): corta por hardware aunque se cuelgue el firmware, pero los motores quedan en rueda libre: no frena, y no sostiene el robot en pendiente. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>La Pi va con el power bank</b> (5 V 3 A = 15 W; la Pi con YOLO y los ESP32 piden ~11 W): limita los USB a 600 mA, que alcanzan para los dos ESP32. Verificar con <span class="mono">vcgencmd get_throttled</span> = 0x0 con la visión corriendo. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
     </figure>
     <div class="tablewrap boardcard">
       <h3>Buck disponibles</h3>
@@ -438,17 +438,17 @@
     </div>
     <div class="tablewrap boardcard">
       <h3>Autonomía</h3>
-      <p class="lede">Ciclo típico de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s detectando con el brazo quieto. Promedio en el bus de motores: (20·43 + 5·70 + 25·26 + 10·6) / 60 ≈ 32 W, directo de la LiPo (sin buck). Energía útil: 80 % de la nominal (LiPo hasta 3,5 V por celda; power bank: ~75 % de 74 Wh llega a 5 V).</p>
+      <p class="lede">Ciclo típico de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s detectando con el brazo quieto. Promedio en el bus de motores, con el brazo sosteniendo mientras la base se mueve: (20·49 + 5·76 + 25·26 + 10·6) / 60 ≈ 34,5 W, directo de la LiPo (sin buck). Energía útil: 80 % de la nominal (LiPo hasta 3,5 V por celda; power bank: ~75 % de 74 Wh llega a 5 V).</p>
       <table>
         <thead><tr><th>Batería</th><th>Energía útil</th><th>Consumo</th><th>Autonomía</th></tr></thead>
         <tbody>
-          <tr><td>LiPo · motores · ciclo de cosecha</td><td class="gpio">71 Wh</td><td class="gpio">32 W</td><td class="gpio"><b>~2,2 h</b></td></tr>
+          <tr><td>LiPo · motores · ciclo de cosecha</td><td class="gpio">71 Wh</td><td class="gpio">34,5 W</td><td class="gpio"><b>~2,1 h</b></td></tr>
           <tr><td>LiPo · motores · avanzando sin parar</td><td class="gpio">71 Wh</td><td class="gpio">~48 W</td><td class="gpio">~1,5 h</td></tr>
           <tr><td>LiPo · motores · terreno malo sin parar</td><td class="gpio">71 Wh</td><td class="gpio">~73 W</td><td class="gpio">~1 h</td></tr>
           <tr><td>Power bank · lógica</td><td class="gpio">~55 Wh</td><td class="gpio">11 W</td><td class="gpio"><b>~5 h</b></td></tr>
         </tbody>
       </table>
-      <p class="lede">El robot dura lo que la batería que se agote primero: <b>~2,2 h de cosecha</b> con la LiPo (la guía pide ≥ 45 min), y el power bank todavía tiene margen. Con la 10S (y el buck 1) serían ~3,4 h: queda guardada por si hace falta.</p>
+      <p class="lede">El robot dura lo que la batería que se agote primero: <b>~2,1 h de cosecha</b> con la LiPo (la guía pide ≥ 45 min), y el power bank todavía tiene margen. Con la 10S (y el buck 1) serían ~3,2 h: queda guardada por si hace falta.</p>
     </div>
   </section>
 
@@ -508,7 +508,7 @@
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>ESP32-WROOM (brazo)</td><td>micro-ROS</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>LiDAR</td><td>fuera del mínimo</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>GPIO 14 · 15</td><td>GPS UP501 (RX · TX del GPS)</td><td>UART0 <span class="mono">/dev/ttyAMA0</span> 9600</td></tr>
-            <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Power bank Xiaomi (5 V 3 A)</td><td>USB a 600 mA (alcanza); sin <span class="mono">usb_max_current_enable</span></td></tr>
+            <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Power bank Xiaomi (5 V 3 A)</td><td>USB + ventilador a 600 mA (probar); sin <span class="mono">usb_max_current_enable</span></td></tr>
           </tbody>
         </table></div>
       </article>
@@ -561,7 +561,7 @@
       <li><span><b>Divisor 100 k / 27 k</b> en el GPIO 1. <b>Si vuelve la 10S, cambiarlo a 120 k / 8,2 k antes</b>: con 42 V, este pondría ~9 V en el GPIO y lo quema.</span></li>
       <li><span><b>Buck 3 ajustado sin carga</b> con el multímetro (6 V, CC 5 A) antes de conectar los servos. <b>Capacitores de ≥ 25 V</b> en el bus de motores, cerca de los IBT-2.</span></li>
       <li><span><b>Seta:</b> verificar con el multímetro cuáles contactos son NC. NC 1 entre el GPIO 38 y el EN de la tracción (10 kΩ a GND del lado de los IBT-2); NC 2 al GPIO 47. Con la seta apretada, <span class="mono">armar</span> tiene que fallar. Sin seta, en el banco: GPIO 47 a GND con un cable.</span></li>
-      <li><span><b>Pi 5 por buck</b>: <span class="mono">usb_max_current_enable=1</span> en <span class="mono">config.txt</span>, o limita los USB a 600 mA.</span></li>
+      <li><span><b>Pi 5 con el power bank</b>: sin <span class="mono">usb_max_current_enable</span>; los 600 mA son para los USB y el ventilador juntos. Probar con el ventilador al máximo y mirar <span class="mono">dmesg</span> por desconexiones USB.</span></li>
       <li><span><b>Pull-down de 10 kΩ</b> en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo). Sin ellos los puentes flotan al arrancar o flashear.</span></li>
       <li><span><b>Divisor en cada ECHO</b> del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V y los GPIO son de 3,3 V.</span></li>
       <li><span><b>Pull-ups externos de 10 kΩ</b> en WROOM 34, 35, 36 y 39: esos pines no tienen pull-up interno.</span></li>

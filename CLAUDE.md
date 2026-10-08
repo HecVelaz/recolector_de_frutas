@@ -21,7 +21,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (se consigue) cortando el EN de la tracción + aviso
   al GPIO 47; sin relé, TVS, Schottky ni fusibles. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
-  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,2 h) y `docs/conexiones.html`.
+  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
