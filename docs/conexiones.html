@@ -170,13 +170,6 @@
           <path class="w data later" d="M750 42 H860"></path>
           <g class="lbl data"><text class="t-pin" x="805" y="35" text-anchor="middle">USB</text></g>
 
-          <!-- Indicadores -->
-          <rect class="box" x="860" y="78" width="230" height="46" rx="4"></rect>
-          <text class="t-title" x="876" y="98">Luz + buzzer</text>
-          <text class="t-sub" x="876" y="115">vía transistor · 12 V / 5 V</text>
-          <path class="w gpio" d="M750 101 H860"></path>
-          <g class="lbl gpio"><text class="t-pin" x="805" y="94" text-anchor="middle">GPIO 17 · 27</text></g>
-
           <!-- GPS (UART de la Pi) -->
           <rect class="box" x="860" y="136" width="230" height="46" rx="4"></rect>
           <text class="t-title" x="876" y="156">GPS Fastrax UP501</text>
@@ -529,8 +522,6 @@
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>ESP32-WROOM (brazo)</td><td>micro-ROS</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>LiDAR</td><td>fuera del mínimo</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>GPIO 14 · 15</td><td>GPS UP501 (RX · TX del GPS)</td><td>UART0 <span class="mono">/dev/ttyAMA0</span> 9600</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>GPIO 17 (pin 11)</td><td>Luz de estado</td><td>vía transistor</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>GPIO 27 (pin 13)</td><td>Buzzer</td><td>vía transistor</td></tr>
             <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Power bank Xiaomi (5 V 3 A)</td><td>USB a 600 mA (alcanza); sin <span class="mono">usb_max_current_enable</span></td></tr>
           </tbody>
         </table></div>

@@ -168,7 +168,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Cualquier nodo de ROS 2 en la misma LAN que la Pi ve y comanda los ESP32 reales (dominio 0): la simulación va
   aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`; con el robot real, no dejar agentes corriendo con el brazo
   armado si no se usa.
-- EN común de tracción, luz/buzzer y GPS en la Pi: la S3 solo tiene libre el GPIO 40 (reservado para un 4.º bumper).
+- EN común de tracción y GPS en la Pi (luz y buzzer, cuando vuelvan, también: GPIO 17 y 27): la S3 solo tiene libre el GPIO 40 (reservado para un 4.º bumper).
   GPS a la Pi (30/09) para dar un TRIG a cada HC-SR04: los 3 miran al frente y con TRIG común se pisaban los ecos.
 - Videos (~500 MB) y artículos de terceros fuera de git.
 - Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo solo localiza con u >= 271 px en la
@@ -197,7 +197,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
 5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~3,4 h de cosecha).
 6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
-7. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
+7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —
+   luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta solo corta la tracción
+   por hardware. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
 8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).

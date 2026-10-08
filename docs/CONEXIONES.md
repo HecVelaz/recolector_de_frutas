@@ -14,7 +14,6 @@ flowchart LR
   CAM[2 × cámaras NoIR] -- CSI0 · CSI1 --> PI[Raspberry Pi 5<br/>ROS 2 Jazzy]
   PI -- USB · micro-ROS --> S3[ESP32-S3<br/>base]
   PI -- USB · micro-ROS --> WR[ESP32-WROOM<br/>brazo]
-  PI -- GPIO 17 · 27 --> IND[Luz + buzzer]
   PI -- UART GPIO 14 · 15 --> GPS[GPS UP501]
   PI -. USB .-> LID[LiDAR]
   S3 --> TR[2 × IBT-2 + DC 895 planetario 53 rpm]
@@ -89,8 +88,6 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | USB | ESP32-WROOM (brazo) | micro-ROS |
 | USB | LiDAR | fuera del mínimo |
 | GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V |
-| GPIO 17 (pin 11) | Luz de estado | vía transistor |
-| GPIO 27 (pin 13) | Buzzer | vía transistor |
 | USB-C | Power bank Xiaomi PB2030MI (5 V 3 A) | sin `usb_max_current_enable`: USB limitados a 600 mA (alcanza) |
 
 ## Alimentación (v0.5: 10S + power bank)
@@ -233,6 +230,6 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
 - GPS en la Pi (UART del header, vía el HAT de borneras): no es de seguridad, queda arriba del mástil con cielo
   despejado y liberó 41/42 de la S3. Driver: `nmea_navsat_driver` (ver `firmware/base/README.md`).
 - Un solo EN para los dos IBT-2 de tracción: la tracción se habilita y deshabilita completa.
-- Luz y buzzer en la Pi: son indicadores del supervisor. La seta y los bumpers quedan en la S3 para que la base
+- Luz y buzzer (H8): fuera hasta después de la prueba integrada; irían en la Pi (GPIO 17 y 27 libres). La seta y los bumpers quedan en la S3 para que la base
   reaccione sola.
 - Se respetan los pines ya probados en `~/pruebas-esp32`: IMU 8/9, motor 4/5, encoder 15/16.

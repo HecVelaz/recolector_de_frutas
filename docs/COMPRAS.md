@@ -48,7 +48,6 @@ TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
 - [ ] 4 resistencias de 20 kΩ: bajar a 3,3 V las salidas de los encoders de tracción
 - [ ] ~10 capacitores cerámicos de 100 nF: S3 6 (3 bumpers, seta, reserva y divisor de la batería) y WROOM 3
       (finales de carrera)
-- [ ] 2 MOSFET de nivel lógico (IRLZ44N) + diodos: luz y buzzer desde la Pi
 
 ## Cables
 
@@ -60,7 +59,7 @@ TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
 
 ## A confirmar si ya los tienen
 
-- [ ] Luz de estado y buzzer (los pide la guía de R2)
+- [ ] Después de la prueba integrada (H8): luz, buzzer y habilitación física del brazo con estado visible
 - [ ] Disipador activo de la Pi 5
 - [x] Voltímetro LED de 4,5-30 V para la LiPo (`fotos/Medidor de Voltaje/`)
 - [ ] Microinterruptores V-152-1C25 ×10, para bumpers y finales de carrera (`fotos/bumpers/`)
