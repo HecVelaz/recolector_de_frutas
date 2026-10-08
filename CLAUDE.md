@@ -17,8 +17,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - **Batería: 10S2P Li-ion de 36 V (30-42 V), 4400 mAh, 158 Wh, XT60** (`docs/fotos/bateria 1/`); lógica: LiPo Zeee 3S 8000 mAh (`docs/fotos/bateria 2/`). Los motores son de
   12 V. Buck (`docs/fotos/bucks/`): solo el **buck 1** (10,5-60 V, 12 A) aguanta la batería; los 2, 3 y 4 van
   colgados de 12 V o de la LiPo. Desde la v0.4 (05/10): 10S → buck 1 → motores; LiPo → buck 2 → Pi y ESP32 (ya no hace
-  falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). Ver
-  `docs/CONEXIONES.md` (v0.4: pines, potencia, autonomía ~3,4 h) y `docs/conexiones.html`.
+  falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). **Potencia v0.5
+  (08/10, solo con lo que hay):** térmica CHINT C10 en la LiPo (protección y ON/OFF general), seta prestada del lab
+  cortando el EN de la tracción + aviso al GPIO 47; sin relé, TVS, Schottky ni fusibles. Ver
+  `docs/CONEXIONES.md` (pines, potencia, autonomía ~3,4 h); el circuito de potencia de `docs/conexiones.html` sigue en v0.4.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
@@ -62,6 +64,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
   usuario lo pide, Codex puede editar con estas reglas
   (`codex --sandbox workspace-write` en el repo; lee este archivo por `AGENTS.md`); al volver, revisar `git log` antes de seguir.
+- **Hardware: trabajar con lo que hay, no con lo ideal** (sin presupuesto ni tiempo para conseguir piezas). Antes de
+  proponer un circuito, una lista de componentes o un cambio de hardware (sobre todo potencia: baterías, step-down,
+  fusibles, protecciones, cableado, conectores; también sensores o placas): 1) revisar `docs/fotos/` y
+  `docs/Componentes_inventario.md`; 2) **preguntar qué componentes hay ahora mismo** si no hay certeza, en vez de
+  completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
+  la alternativa más simple y barata, sin listas largas de piezas nuevas.
 
 ## 5. Estado actual (2026-10-05)
 - **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
@@ -174,9 +182,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
-1. Comprar en el mercado local lo de `docs/COMPRAS.md` (potencia: Schottky, 2200 µF, TVS, relé, seta con 2 NC,
-   fusibles, el de la batería apto ≥ 58 V DC). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
-2. Cablear según `docs/CONEXIONES.md` v0.4 (10S → buck 1 → motores; LiPo → buck 2 → Pi; GND común) y su lista
+1. Potencia v0.5 con lo que hay (`docs/CONEXIONES.md`): confirmar que la seta del lab tenga 2 NC y los valores de los
+   capacitores (≥ 25 V) y diodos del inventario. Armar el divisor 120 k / 8,2 k antes de conectar la batería.
+2. Cablear según `docs/CONEXIONES.md` v0.5 (10S → buck 1 → motores; LiPo → térmica → buck 2 → Pi; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,

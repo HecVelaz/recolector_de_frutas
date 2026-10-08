@@ -1,6 +1,9 @@
 # Conexiones del robot
 
-Versión 0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
+Versión 0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, Deans, cable, borneras,
+capacitores, diodos y resistencias del inventario; seta prestada del laboratorio). Sin relé, TVS, Schottky ≥ 30 A ni
+fusibles. El circuito de potencia de `conexiones.html` sigue en la v0.4 (desactualizado).
+v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
 `docs/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
 WROOM (v0.4) están en `firmware/brazo/include/pins.h` desde el 05/10 (J2/J3 sin probar hasta que lleguen los
@@ -111,39 +114,44 @@ son de 12 V y el IBT-2 aguanta 27 V como máximo: van por el buck 1 (36 → 12,5
 
 El buck 1 no tiene protección contra la corriente que vuelve por la salida (lo dice el vendedor: con motores, diodo).
 
+### Circuito v0.5 (con lo que hay)
+
 ```
-Batería 10S 36 V (30-42 V) → fusible 15 A ≥ 58 V DC junto al borne → interruptor de motores (≥ 20 A, ≥ 60 V DC) → bus 36 V
-  ├─ Buck 1 (36 → 12,5 V, CC 14 A, ventilador) → Schottky ≥ 30 A → relé 12 V 40 A (bobina por la seta NC)
-  │     │  (1N4007 en paralelo con la bobina: cátodo al +)
-│     └─ bus 12 V de motores (2200 µF 25 V + TVS 15 V, p. ej. 5KP15A)
-  │           ├─ fusible 15 A → IBT-2 de tracción ×2
-  │           ├─ llave del brazo (H8) → fusible 10 A → IBT-2 J1 + IBT-2 J2 + IBT-2 J3
-  │           └─ fusible 3 A → Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
+Batería 10S 36 V (30-42 V; su BMS corta cortocircuitos) → XT60 → bus 36 V
+  ├─ Buck 1 (fusible de entrada 15 A; 36 → 12 V, CC 12 A) → bus 12 V de motores (capacitores del inventario, ≥ 25 V)
+  │     ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → seta NC 1 → R_EN + L_EN (10 kΩ a GND del lado de los IBT-2)
+  │     ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
+  │     └─ Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
   └─ divisor 120 k / 8,2 k → S3 GPIO 1 (42 V → 2,69 V)
 
-LiPo 3S (9,9-12,6 V) → fusible 5 A junto al conector → interruptor de lógica → bus 12 V de lógica (sube por el mástil)
+LiPo 3S (9,9-12,6 V) → Deans → térmica CHINT C10 pegada al conector (ON/OFF general, H8) → bus de lógica
   ├─ Buck 2 (→ 5,1 V), arriba al lado de la Pi → Pi 5 (USB-C) → ESP32-S3 y WROOM por USB
-  ├─ ventilador del buck 1 · luz y buzzer (vía transistor) · bobina del relé a través de la seta NC
+  ├─ luz y buzzer (vía transistor)
   └─ indicador de barras (1S-8S) en el conector de balanceo
-  contacto auxiliar NC de la seta → S3 GPIO 47
-GND: los negativos de las dos baterías unidos en un solo punto (los positivos nunca).
+seta NC 2 → S3 GPIO 47 (el otro lado a GND)
+GND: los negativos de las dos baterías unidos en un solo punto (barra de borneras); los positivos nunca.
 ```
 
-- **Seta:** corta el bus de motores del lado de 12 V con un relé automotriz de 12 V 40 A (a 42 V DC haría falta
-  un contactor especial). La bobina se alimenta de la LiPo a través de la seta: los motores, el brazo y los servos se
-  apagan y la Pi y los ESP32 siguen encendidos. La seta enclava y se rearma girándola. La S3 se desarma sola
-  (rearme con `r`); la WROOM no ve la seta y seguiría armada, así que `mision` la desarma al ver `SETA` en
-  `/base/estado` y queda en FALLA (relanzarla para seguir). **Sin `mision` corriendo (brazo a mano), mandar
-  `desarmar` antes de soltar la seta.** **Con la seta, J2 y J3 sueltan el brazo** (no se autobloquean): mientras
-  no haya freno, un contrapeso o un resorte hecho con lo que haya que lo lleve al reposo.
-- **Margen del bus de 12 V:** el TVS 5KP15A empieza a conducir a ~16,7 V pero puede llegar a 24,4 V en un pico, y
-  el capacitor es de 25 V: justo. No frenar la tracción de golpe ni mover tracción y brazo a la vez (el buck 1 queda
-  al límite: 11 A de tracción + 3,9 A del brazo en nominal). Si en el inventario hay un capacitor de 35 V, usar ese.
-- **Diodo, capacitor y TVS:** el Schottky no deja que la corriente de frenado vuelva al buck; esa energía la toma el
-  capacitor, y el TVS recorta si el bus sube (el IBT-2 aguanta 27 V). El diodo cae ~0,5 V: por eso el buck va a 12,5 V.
-- **Corriente:** el CC del buck 1 (14 A) es el límite de los motores. Tracción (42GM-895H a 12 V): 2,6 A en vacío,
-  5,5 A nominal y 10 A trabado cada uno; brazo (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Desde
-  la 10S: ≤ 14 A × 12,5 V / 0,93 / 30 V ≈ 6,3 A, cómodo para el BMS. La LiPo da ~1,5 A (pico ~2 A).
+- **Térmica CHINT NXB-63 C10 en la LiPo, no en la 10S:** la LiPo (100C, sin BMS) es lo único sin ninguna
+  protección contra un cortocircuito; la 10S ya tiene BMS y el buck 1 su fusible de entrada. La térmica es de
+  230 V AC: a 12 V DC corta bien (curva C: ~10 A térmico, instantáneo con un cortocircuito). Es también el ON/OFF
+  general: sin lógica, los EN de los 5 IBT-2 quedan en 0 por sus pull-down y ningún motor se mueve.
+- **Motores sin interruptor:** el XT60 es la desconexión de la 10S. Enchufarlo con la térmica abierta (salta una
+  chispa por los capacitores de entrada del buck 1: normal) y desenchufarlo al terminar.
+- **Seta (prestada del laboratorio), con 2 contactos NC:** el NC 1 corta la señal EN de la tracción (corte por
+  hardware, aunque se cuelgue el firmware; los motores quedan en rueda libre) y el NC 2 avisa a la S3 por el GPIO 47
+  (HIGH = apretada o cable cortado). El contacto de una seta no aguanta la corriente de los motores: por eso corta el
+  EN y no el bus de 12 V. El brazo no tiene corte por hardware: `mision` lo desarma al ver `SETA` en `/base/estado` y
+  queda en FALLA. **Sin `mision` corriendo, mandar `desarmar` al brazo antes de soltar la seta.** Con la seta, J2 y J3
+  sueltan el brazo (no se autobloquean). **Si la seta trae un solo NC, avisar:** hay que elegir entre corte de EN y aviso.
+- **Sin Schottky:** al frenar, la corriente de los motores vuelve al buck 1. Lo contienen las rampas del firmware
+  (tracción con `rampa`, brazo con perfil de velocidad) y los capacitores del bus de 12 V (todos los que haya de
+  ≥ 25 V, cerca de los IBT-2). No frenar la tracción de golpe ni mover tracción y brazo a la vez. Primera prueba con
+  ruedas en el aire: medir con el multímetro que el bus no pase de ~15 V al frenar. Si algún diodo del inventario es
+  Schottky de ≥ 15 A, va en la salida del buck 1 (ánodo al buck) y el buck sube a 12,5 V.
+- **Corriente:** el CC del buck 1 en 12 A (sin ventilador) es el límite de los motores. Tracción (42GM-895H a 12 V):
+  2,6 A en vacío, 5,5 A nominal y 10 A trabado cada uno; brazo (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A
+  a 6 V. Desde la 10S: ≤ 12 A × 12 V / 0,93 / 30 V ≈ 5,2 A. La LiPo da ~1,5 A (pico ~2 A).
 - **LiPo sin BMS:** la Pi la descarga sin parar y el buck 2 no corta por tensión baja. No bajar de 3,5 V por celda
   (10,5 V): mirar el indicador de barras (solo pruebas vigiladas de ≤ 30 min; sin INA219 ni alarma, 06/10).
   Cargar solo con un cargador balanceador; guardada varios días, a ~11,4 V.
@@ -158,7 +166,7 @@ GND: los negativos de las dos baterías unidos en un solo punto (los positivos n
 | Tracción girando o en terreno malo | ~70 W |
 | Brazo moviéndose (J1-J3 + servos) | ~26 W |
 | Brazo quieto sosteniendo (J2/J3 contra el peso + pinza) | ~6 W |
-| Lógica: Pi 5 con YOLO (~9 W), ESP32 (0,8 W), sensores (0,6 W), buck 2 (1,2 W), relé + ventilador + luz (3,5 W) | ~15 W |
+| Lógica: Pi 5 con YOLO (~9 W), ESP32 (0,8 W), sensores (0,6 W), buck 2 (1,2 W), luz + buzzer (~1 W) | ~13 W |
 
 Ciclo de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s con el brazo quieto
 → 32 W en el bus de motores, 37 W desde la 10S. Energía útil: 80 % de la nominal.
@@ -168,7 +176,7 @@ Ciclo de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el
 | 10S, ciclo de cosecha | 126 Wh | 37 W | **~3,4 h** |
 | 10S, avanzando sin parar | 126 Wh | ~55 W | ~2,3 h |
 | 10S, terreno malo sin parar | 126 Wh | ~80 W | ~1,6 h |
-| LiPo, lógica | 71 Wh | 15 W | **~4,7 h** |
+| LiPo, lógica | 71 Wh | 13 W | **~5,5 h** |
 
 El robot dura lo que dura la 10S, **~3,4 h de cosecha**. Con todo desde la 10S serían ~2,4 h, y con los motores en la LiPo ~2,1 h.
 La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: medirla con un ciclo completo.
@@ -176,16 +184,18 @@ La batería de hoverboard puede tener 20-30 % menos de lo que dice la etiqueta: 
 ## Antes de conectar
 
 - [ ] **Dos baterías, un solo GND:** negativos de la 10S y la LiPo unidos en un punto, positivos nunca.
-- [ ] **LiPo:** fusible de 5 A pegado al conector (100C: un cortocircuito son cientos de amperes), indicador de
+- [ ] **LiPo:** térmica C10 pegada al conector (100C: un cortocircuito son cientos de amperes), indicador de
       barras a la vista, no bajar de 10,5 V, cargador balanceador.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Batería de 36 V (42 V cargada):** a la batería solo el buck 1 (los buck 2, 3 y 4 llegan a 32-40 V: se
       queman). **Ajustar cada buck sin carga y con el multímetro antes de conectarle nada** (tensión y CC). Divisor
       de batería **120 k / 8,2 k** (el viejo de 100 k / 27 k pondría ~8,9 V en el GPIO 1 y lo quema). Cargar solo
       con su cargador de 42 V, con el robot apagado.
-- [ ] Conectar el XT60 con el interruptor general abierto (el interruptor, apto para DC, se lleva la chispa de los
-      capacitores de entrada). Respetar la polaridad: el buck 1 tiene fusible, pero la salida al revés lo rompe.
-- [ ] Schottky ≥ 30 A con disipador, 2200 µF 25 V y TVS de 15 V en el bus de motores; ventilador sobre el buck 1-A.
+- [ ] Conectar el XT60 con la térmica de la LiPo abierta y desenchufarlo al terminar. Respetar la polaridad: el buck 1
+      tiene fusible, pero la salida al revés lo rompe.
+- [ ] Capacitores de ≥ 25 V en el bus de 12 V de motores; medir el bus al frenar (≤ ~15 V). CC del buck 1 en 12 A.
+- [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; NC 1 en el EN de la tracción y
+      NC 2 al GPIO 47. Con la seta apretada, `armar` tiene que fallar y las ruedas no deben moverse.
 - [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo).
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
 - [ ] Pull-ups externos de 10 kΩ en WROOM 36 y 39 (finales de carrera; no tienen pull-up interno). En 34/35

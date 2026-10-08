@@ -128,7 +128,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Robot recolector de limones · 2026S2</div>
     <h1>Cableado de Arturito R2D2</h1>
-    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 con IBT-2 y correa, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
+    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
   </header>
 
   <section aria-labelledby="h-general">
@@ -275,14 +275,14 @@
           <g>
             <rect class="box" x="974" y="282" width="210" height="56" rx="4"></rect>
             <text class="t-title" x="986" y="304">J2 hombro</text>
-            <text class="t-sub" x="986" y="324">IBT-2 · 36GP-555 58 rpm · correa</text>
+            <text class="t-sub" x="986" y="324">IBT-2 · 58 rpm · correa 5:1</text>
             <path class="w gpio" d="M820 310 H974"></path>
             <g class="lbl gpio"><text class="t-pin" x="897" y="303" text-anchor="middle">PWM 25/26 · EN 23</text><text class="t-pin" x="897" y="325" text-anchor="middle">enc 32/33</text></g>
           </g>
           <g>
             <rect class="box" x="974" y="356" width="210" height="56" rx="4"></rect>
             <text class="t-title" x="986" y="378">J3 codo</text>
-            <text class="t-sub" x="986" y="398">IBT-2 · 36GP-555 58 rpm · correa</text>
+            <text class="t-sub" x="986" y="398">IBT-2 · 58 rpm · correa 5:1</text>
             <path class="w gpio" d="M820 384 H974"></path>
             <g class="lbl gpio"><text class="t-pin" x="897" y="377" text-anchor="middle">PWM 16/17 · EN 23</text><text class="t-pin" x="897" y="399" text-anchor="middle">enc 18/19</text></g>
           </g>
@@ -316,6 +316,7 @@
   <section aria-labelledby="h-alim">
     <h2 id="h-alim">Circuito de potencia</h2>
     <p class="lede">Dos baterías separadas: la 10S de 36 V mueve los motores y la LiPo 3S alimenta la lógica. Un motor trabado no puede hacer caer la tensión de la Pi, y ya no hace falta comprar el segundo buck 1.</p>
+    <p class="lede"><b>Desactualizado (08/10):</b> este dibujo es la v0.4. La v0.5, solo con lo que hay, está en <code>docs/CONEXIONES.md</code>: térmica CHINT C10 en la LiPo, seta prestada cortando el EN de la tracción, sin relé, TVS, Schottky ni fusibles.</p>
     <figure>
       <div class="scroll">
         <svg viewBox="0 0 1200 580" role="img" aria-label="Circuito de potencia con dos baterías. Arriba, la batería 10S de 36 V pasa por un fusible de 15 A y el interruptor de motores a un bus de 36 V; de ahí el buck 1 baja a 12,5 V, pasa por un diodo Schottky y por el relé de la seta al bus de 12 V de motores, que alimenta la tracción, los tres IBT-2 del brazo, el buck de los servos y el capacitor con TVS. El divisor de 36 V va a la S3. Abajo, la LiPo 3S pasa por un fusible de 5 A y el interruptor de lógica a un bus de 12 V de lógica, que alimenta el buck 2 para la Pi y los ESP32, el ventilador, la luz, el buzzer y la bobina del relé a través de la seta. En el balanceo de la LiPo, un indicador de barras.">
@@ -576,7 +577,7 @@
     <div class="boards">
       <article class="boardcard">
         <h3>36GP-555 · J1, J2 y J3 (encoder SCX-555)</h3>
-        <div class="meta">16 PPR × 4 = 64 cuentas por vuelta del motor · salida de colector abierto (la placa trae los pull-ups) · J1 160 rpm (50:1), J2 y J3 58 rpm (139:1), eje de 8 mm</div>
+        <div class="meta">16 PPR × 4 = 64 cuentas por vuelta del motor · salida de colector abierto (la placa trae los pull-ups) · J1 160 rpm (50:1), J2 y J3 58 rpm (139:1) con correa GT2 5:1 (poleas 20 → 100, 240 mm), eje de 8 mm</div>
         <div class="tablewrap"><table>
           <thead><tr><th>Color</th><th>Función</th><th>Va a</th></tr></thead>
           <tbody>

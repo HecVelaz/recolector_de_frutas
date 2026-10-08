@@ -11,27 +11,15 @@ el segundo buck 1**.
 - [ ] 2 juegos de transmisión 5:1: polea GT2 de 20 dientes con agujero de 8 mm + polea GT2 de 100 dientes + correa
       cerrada GT2 de 240 mm y 6 mm de ancho (~54 mm entre centros; con 18 → 90 harían falta ~62 mm)
 
-## Potencia de motores (10S)
+## Potencia (v0.5, 08/10: solo con lo que hay)
 
-- [ ] Diodo Schottky ≥ 30 A (p. ej. MBR6045 o MBR60100) + disipador: el frenado no vuelve al buck 1
-- [ ] Capacitor de 2200 µF, ≥ 25 V, bajo ESR, en el bus de 12 V de motores
-- [ ] TVS de 15 V y 5 kW (5KP15A), unidireccional
-- [ ] Relé automotriz de 12 V y 40 A + zócalo + diodo 1N4007 en la bobina
-- [ ] Seta de emergencia enclavable (se rearma girándola) con **2 contactos NC**: uno alimenta la bobina del relé y
-      el otro avisa a la S3 (GPIO 47)
-- [ ] Interruptor de motores para DC, ≥ 20 A y ≥ 60 V DC (entre la 10S y el buck 1)
-- [ ] Llave del brazo de 12 V y 10 A
-- [ ] Ventilador de 12 V y 40 mm para el buck 1
-- [ ] Fusible de 15 A **apto para ≥ 58 V DC** + portafusible, en la batería (los fusibles de auto comunes son de 32 V)
-- [ ] Fusibles de 12 V con portafusible: 15 A tracción, 10 A brazo, 3 A servos
-- [ ] Conector XT60 hembra para la 10S
+Ya está: térmica CHINT C10 (en la LiPo), conectores XT60 y Deans hembra, cable grueso, borneras, capacitores,
+diodos y resistencias. Seta: prestada del laboratorio. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
+TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
 
-## Lógica (LiPo 3S)
-
-Sin INA219 ni salvalipo (06/10): solo pruebas vigiladas de ≤ 30 min; alcanza el indicador de barras.
-
-- [ ] Conector Deans (T) hembra + portafusible y fusible de 5 A pegado al conector
-- [ ] Interruptor de lógica de 12 V y 5 A
+- [x] Conector XT60 hembra (10S) y Deans (T) hembra (LiPo)
+- [x] Térmica CHINT NXB-63 C10: protección de la LiPo y ON/OFF general (`llave.jpeg`)
+- [ ] Seta del laboratorio: confirmar que tenga 2 contactos NC
 - [x] Cinta CSI de 22 a 15 pines para la Pi 5 (reemplazada el 05/10)
 
 ## Placas de las ESP32 (`placa_s3.html`, `placa_wroom.html`)
@@ -61,11 +49,11 @@ Sin INA219 ni salvalipo (06/10): solo pruebas vigiladas de ≤ 30 min; alcanza e
 
 ## Cables
 
-- [ ] Silicona de 12-14 AWG roja y negra (potencia)
+- [x] Cable grueso para potencia
 - [ ] Cable de 18 AWG (lógica; también el riel de 6 V y el GND de los servos en la placa de la WROOM)
 - [ ] Cable unifilar fino de colores (24-26 AWG) para las perforadas
 - [ ] ~4 m de cable mallado o trenzado de 4 hilos para los encoders del brazo
-- [ ] Barra de borneras para el GND común y los buses de 12 V
+- [x] Borneras para el GND común y los buses de 12 V
 
 ## A confirmar si ya los tienen
 
