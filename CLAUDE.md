@@ -15,11 +15,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
   a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
 - **Potencia v0.6 (08/10, solo con lo que hay):** motores con la **LiPo Zeee 3S** 11,1 V 8000 mAh, sin BMS
-  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**, por la térmica CHINT C10 pegada al conector (ON/OFF de
-  motores y protección contra cortos); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2030MI**
+  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**: Deans → **fusible de auto 20 A** (la protección contra
+  cortos) → térmica CHINT C10 (solo ON/OFF de motores: es de 230 V AC, sin capacidad de corte en DC publicada); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2030MI**
   5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W: verificar `vcgencmd get_throttled` = 0x0). Divisor de batería
   **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (se consigue) cortando el EN de la tracción + aviso
-  al GPIO 47; sin relé, TVS, Schottky ni fusibles. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
+  al GPIO 47; sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
   Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
@@ -182,9 +182,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
-1. Potencia v0.6 (`docs/CONEXIONES.md`): conseguir la seta (2 NC); buscar los capacitores (≥ 25 V). Armar el divisor
+1. Potencia v0.6 (`docs/CONEXIONES.md`): conseguir el fusible de auto de 20 A con portafusible y la seta (2 NC);
+   buscar los capacitores (≥ 25 V). Armar el divisor
    100 k / 27 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
-2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → térmica → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
+2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → térmica → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,

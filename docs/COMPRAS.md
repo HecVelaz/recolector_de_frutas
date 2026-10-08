@@ -11,14 +11,16 @@ directa y la Pi con el power bank: no hace falta ningún buck nuevo.
 - [ ] 2 juegos de transmisión 5:1: polea GT2 de 20 dientes con agujero de 8 mm + polea GT2 de 100 dientes + correa
       cerrada GT2 de 240 mm y 6 mm de ancho (~54 mm entre centros; con 18 → 90 harían falta ~62 mm)
 
-## Potencia (v0.5, 08/10: solo con lo que hay)
+## Potencia (v0.6, 08/10: solo con lo que hay)
 
 Ya está: LiPo 3S y su cargador balanceador (motores), térmica CHINT C10, Deans, power bank Xiaomi PB2030MI (Pi y
 ESP32), cable grueso, borneras, capacitores, resistencias. La 10S queda guardada. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
-TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
+TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0.6.
 
 - [x] Conector Deans (T) hembra (LiPo)
-- [x] Térmica CHINT NXB-63 C10: ON/OFF de los motores, pegada a la LiPo (`llave.jpeg`)
+- [x] Térmica CHINT NXB-63 C10: solo interruptor ON/OFF de los motores (no protege en DC) (`llave.jpeg`)
+- [ ] **Fusible de auto de lámina de 20 A + portafusible**, pegado al Deans de la LiPo: la única protección real
+      contra un corto (los de auto son para continua hasta 32 V). Buscar primero en el lab o en un auto viejo
 - [x] Power bank Xiaomi PB2030MI 20000 mAh, 5 V 3 A: alimenta la Pi (`fotos/bateria 3/`)
 - [ ] Seta (08/10: todavía no está, se consigue): mejor con 2 contactos NC (EN de la tracción + aviso al GPIO 47)
 - [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores

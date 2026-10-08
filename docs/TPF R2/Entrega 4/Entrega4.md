@@ -218,7 +218,7 @@ La energía útil se toma como el 80 % de la nominal, para no descargar del todo
 | A | 10S Li-ion 36 V, 158 Wh, con BMS → buck 36 → 12 V | LiPo 3S → buck 5 V | ~3,2 h | Hacen falta un buck de alta corriente y protección del frenado (Schottky, TVS); 42 V en el robot |
 | **B (elegida)** | **LiPo 3S 11,1 V, 88,8 Wh, directa al bus de 12 V** | **Power bank Xiaomi 5 V 3 A** | **~2,1 h** | Sin buck: menos circuito; el frenado vuelve a la batería; todo el robot en ≤ 12,6 V |
 
-Se eligió la opción B: con 2,1 h supera con margen los 45 min que pide la guía (H7) y se arma solo con componentes que el grupo ya tiene. La 10S queda guardada por si hace falta más autonomía. Con dos fuentes separadas, un motor trabado no puede hacer caer la tensión de la Raspberry Pi.
+Se eligió la opción B: con 2,1 h supera con margen los 45 min que pide la guía (H7) y se arma con componentes que el grupo ya tiene, más un fusible de auto de bajo costo. La 10S queda guardada por si hace falta más autonomía. Con dos fuentes separadas, un motor trabado no puede hacer caer la tensión de la Raspberry Pi.
 
 | Batería | Energía útil | Consumo | Autonomía |
 |---|---|---|---|
@@ -255,9 +255,10 @@ El robot dura lo que dura la LiPo: **~2,1 h de cosecha**.
 
 <div align="center"><img src="Diagramas/potencia_v06.png" width="600"></div>
 
-<div align="center"><b>Figura 17.</b> Circuito de potencia v0.6: LiPo directa al bus de 12 V de motores y power bank para la lógica, unidos solo por el GND.</div>
+<div align="center"><b>Figura 17.</b> Circuito de potencia v0.6: LiPo directa al bus de 12 V de motores, protegida por un fusible de auto de 20 A, y power bank para la lógica, unidos solo por el GND.</div>
 
-- **Térmica CHINT NXB-63 C10**, pegada al conector de la LiPo: es el botón ON/OFF de los motores (H8) y la protección de la LiPo contra un cortocircuito. Como su etiqueta es de 230 V AC, su corte en continua se va a verificar con una fuente limitada antes de usarla con la batería.
+- **Fusible de auto de 20 A**, pegado al conector Deans de la LiPo: es la protección contra un cortocircuito, la falla más peligrosa de una LiPo de 100C sin BMS. Los fusibles de auto son para corriente continua hasta 32 V, así que a 12,6 V trabajan dentro de su especificación; 20 A deja pasar el uso normal (~3 A de promedio, picos de ~15 A) y corta con un corto o con dos motores trabados.
+- **Térmica CHINT NXB-63 C10**, después del fusible: es solo el botón ON/OFF de los motores (H8). Está certificada para 230 V de alterna y el fabricante no publica capacidad de corte en continua, por eso no se usa como protección y se acciona con los motores quietos.
 - **Seta de emergencia** con dos contactos NC: uno corta la señal EN de los IBT-2 de tracción (los motores quedan en rueda libre aunque se cuelgue el firmware) y el otro avisa a la S3. El contacto de una seta no aguanta la corriente de los motores; por eso corta la señal y no la potencia. El brazo lo desarma el nodo `mision` al recibir el aviso.
 - **Buck 3 (XL4016)**: baja los 12 V a 6 V para los servos de la pinza, con límite de corriente de 5 A.
 - **Capacitores de ≥ 25 V** en el bus de 12 V, cerca de los IBT-2.
@@ -265,7 +266,7 @@ El robot dura lo que dura la LiPo: **~2,1 h de cosecha**.
 
 <div align="center"><img src="Imágenes/termica_chint_c10.jpg" width="600"></div>
 
-<div align="center"><b>Figura 18.</b> Térmica CHINT NXB-63 C10: ON/OFF de los motores y protección de la LiPo.</div>
+<div align="center"><b>Figura 18.</b> Térmica CHINT NXB-63 C10: interruptor ON/OFF de los motores (la protección es el fusible).</div>
 
 <div align="center"><img src="Imágenes/buck3_xl4016.jpg" width="600"></div>
 
@@ -285,7 +286,7 @@ La guía pide indicar el nivel de batería y disponer de un puerto de carga:
 
 ### 4.7 Ubicación de las baterías en el robot
 
-La LiPo (138 × 47 × 36 mm, 493 g) va dentro de la caja, en el lugar que ocupaba la batería de la Entrega 3, cerca del eje de tracción y lejos de los bordes. La térmica queda pegada a su conector y accesible desde la tapa. El power bank va arriba del mástil, al lado de la Raspberry Pi, con su cable USB-C corto: con 3 A, un cable de 5 V largo pierde demasiada tensión.
+La LiPo (138 × 47 × 36 mm, 493 g) va dentro de la caja, en el lugar que ocupaba la batería de la Entrega 3, cerca del eje de tracción y lejos de los bordes. El fusible queda pegado a su conector y la térmica, accesible desde la tapa. El power bank va arriba del mástil, al lado de la Raspberry Pi, con su cable USB-C corto: con 3 A, un cable de 5 V largo pierde demasiada tensión.
 
 ## Etapa 5: Participación y evidencias
 

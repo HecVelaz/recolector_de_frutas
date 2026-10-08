@@ -1,7 +1,8 @@
 # Conexiones del robot
 
 Versión 0.6 — 08/10/2026: **los motores van con la LiPo 3S directa** (sin buck 1 ni Schottky; la 10S queda guardada) y
-**la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 27 k (firmware cambiado). `conexiones.html` y
+**la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 27 k (firmware cambiado). **Protección de la
+LiPo: fusible de auto de 20 A** pegado al Deans; la térmica CHINT queda solo como interruptor (no está certificada en DC). `conexiones.html` y
 `placa_s3.html` ya están en la v0.6.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
@@ -33,7 +34,7 @@ Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía
 entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
 
 **Se conecta:**
-- LiPo → Deans → térmica → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- LiPo → Deans → fusible de auto 20 A → térmica → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
 - **Divisor de batería 100 k / 27 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
@@ -148,7 +149,8 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 ### Circuito v0.6
 
 ```
-LiPo 3S (9,9-12,6 V, sin BMS) → Deans → térmica CHINT C10 pegada al conector (ON/OFF de motores, H8) → bus 12 V de motores
+LiPo 3S (9,9-12,6 V, sin BMS) → Deans → fusible de auto 20 A (portafusible pegado al Deans) → térmica CHINT C10 (ON/OFF
+  de motores, H8) → bus 12 V de motores
   │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → seta NC 1 → R_EN + L_EN (10 kΩ a GND del lado de los IBT-2)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
@@ -162,14 +164,16 @@ seta NC 2 → S3 GPIO 47 (el otro lado a GND)
 GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
 ```
 
-- **Térmica CHINT NXB-63 C10 pegada al conector de la LiPo:** es el ON/OFF de los motores (H8) y la única
-  protección de la LiPo contra un cortocircuito (100C: cientos de amperes). **Su capacidad de corte en DC no está
-  documentada** (la etiqueta dice 230 V AC): a 12 V el arco es chico y en la práctica suele cortar, pero no está
-  garantizado. En DC el disparo magnético pide ~1,4 veces más corriente (curva C: ~70-140 A), que una LiPo de 100C da
-  de sobra en un corto. Con dos motores trabados (~20 A = 2 × In) la parte térmica tarda de decenas de segundos a
-  un minuto: no es una protección rápida. Primeras pruebas con fuente de laboratorio limitada en corriente; si la
-  térmica no corta en una prueba controlada, la alternativa mínima es un fusible apto para DC junto al Deans. La Pi
-  y los ESP32 siguen encendidos con el power bank.
+- **Fusible de auto de 20 A (lámina ATO/ATC) pegado al Deans:** es la protección de la LiPo contra un cortocircuito
+  (100C: cientos de amperes, y sin BMS). Los fusibles de auto son para continua hasta 32 V: a 12,6 V están dentro de
+  especificación. 20 A deja pasar el uso normal (~3 A de promedio, picos de ~15 A) y corta con un corto o con dos
+  motores trabados. El portafusible va lo más cerca posible del conector: el cable antes del fusible no está
+  protegido. Cable del bus de al menos 14 AWG (aguanta los 20 A). Es la única compra de la potencia: sin ella, un
+  corto en una LiPo sin BMS es riesgo de incendio (antes de comprar, buscar uno en el lab).
+- **Térmica CHINT NXB-63 C10, después del fusible: solo interruptor ON/OFF de los motores (H8).** Está certificada
+  para 230 V AC (IEC 60898-1); CHINT no publica capacidad de corte en continua, así que no se cuenta como protección.
+  Accionarla con los motores quietos (pasan pocos cientos de mA: a 12 V el arco es mínimo); no abrirla con motores en
+  marcha salvo emergencia (para eso está la seta). La Pi y los ESP32 siguen encendidos con el power bank.
 - **Sin buck ni Schottky:** la corriente de frenado vuelve a la LiPo, que la absorbe. La velocidad de los motores
   sigue a la tensión (12,6 → 10,5 V, −17 %): el lazo de velocidad lo compensa; tope ~0,35 m/s, sobra para 0,25.
 - **LiPo sin BMS:** nada corta por descarga. `/base/estado` avisa `BATERIA_BAJA` a 10,5 V (3,5 V por celda) pero
@@ -192,8 +196,9 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   la cadena de visión corriendo 10 min: `vcgencmd get_throttled` tiene que dar `0x0` y
   `vcgencmd pmic_read_adc EXT5V_V` ≥ 4,9 V.
 - **Corriente:** tracción (42GM-895H a 12 V): 2,6 A en vacío, 5,5 A nominal y 10 A trabado cada uno; brazo
-  (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Promedio de cosecha ~3 A: lejos de los 10 A de la
-  térmica. No mover tracción y brazo a la vez a plena carga (11 A + 3,9 A disparan la térmica en unos minutos).
+  (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Promedio de cosecha ~3 A, lejos de los 20 A del
+  fusible. La térmica (10 A) puede disparar si tracción y brazo andan a plena carga mucho rato (11 A + 3,9 A): no
+  mover los dos a la vez a plena carga.
 
 ### Consumo y autonomía (estimados; medir con una pinza)
 
@@ -226,7 +231,7 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **Power bank:** cable incorporado (corto), una sola salida, sin cargarlo mientras alimenta la Pi; verificar
       `vcgencmd get_throttled` = `0x0` con la visión corriendo.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
-- [ ] **LiPo:** térmica pegada al conector, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
+- [ ] **LiPo:** fusible de auto de 20 A pegado al Deans (antes de la térmica), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
       frena), cargar solo con el balanceador y fuera del robot. Enchufar el Deans con la térmica abierta y
       respetar la polaridad (los IBT-2 al revés se rompen).
 - [ ] **Divisor de batería 100 k / 27 k** (12,6 V → 2,68 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /

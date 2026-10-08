@@ -313,10 +313,10 @@
     <p class="lede">Dos fuentes separadas: la LiPo 3S mueve los motores (directa, sin buck) y un power bank de 5 V alimenta la Pi y los ESP32. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.6 (08/10/2026): <b>solo con lo que hay</b>, sin relé, TVS ni fusibles; la 10S y el buck 1 quedan guardados. En trazo cortado, lo que todavía no está pero se consigue.</p>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.6. Arriba, la LiPo 3S, con su indicador de barras en el balanceo, pasa por la térmica CHINT C10, que es el ON/OFF de motores y su protección, directo al bus de 12 V de motores, sin buck: brazo, buck de los servos, capacitores y tracción. Un divisor de 100 k y 27 k lleva la tensión de la LiPo a la S3. La seta, que se consigue, corta con su contacto NC 1 la señal EN de la tracción y avisa a la S3 con el NC 2. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
+        <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.6. Arriba, la LiPo 3S, con su indicador de barras en el balanceo, pasa por un fusible de auto de 20 A, que la protege contra cortos, y por la térmica CHINT C10, que es solo el ON/OFF de motores, directo al bus de 12 V de motores, sin buck: brazo, buck de los servos, capacitores y tracción. Un divisor de 100 k y 27 k lleva la tensión de la LiPo a la S3. La seta, que se consigue, corta con su contacto NC 1 la señal EN de la tracción y avisa a la S3 con el NC 2. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
           <text class="t-big" x="16" y="18">Motores · LiPo 3S directa</text>
 
-          <!-- LiPo → térmica → bus 12 V, sin buck -->
+          <!-- LiPo → fusible → térmica → bus 12 V, sin buck -->
           <rect class="box" x="16" y="30" width="220" height="62" rx="4"></rect>
           <text class="t-title" x="28" y="50">LiPo 3S · Zeee 8000 mAh</text>
           <text class="t-sub" x="28" y="67">9,9–12,6 V · 88,8 Wh · 100C</text>
@@ -325,10 +325,13 @@
           <rect class="box" x="270" y="30" width="210" height="44" rx="4"></rect>
           <text class="t-title" x="282" y="50">Indicador de barras</text>
           <text class="t-sub" x="282" y="66">en el balanceo · parar a 10,5 V</text>
-          <path class="w power" d="M126 92 V138"></path>
-          <rect class="box safety" x="16" y="138" width="220" height="44" rx="4"></rect>
+          <path class="w power" d="M126 92 V100"></path>
+          <rect class="box safety" x="16" y="100" width="220" height="30" rx="4"></rect>
+          <text class="t-title" x="28" y="120">Fusible de auto 20 A · en el Deans</text>
+          <path class="w power" d="M126 130 V138"></path>
+          <rect class="box" x="16" y="138" width="220" height="44" rx="4"></rect>
           <text class="t-title" x="28" y="158">Térmica CHINT C10 (H8)</text>
-          <text class="t-sub" x="28" y="174">ON/OFF · protege la LiPo</text>
+          <text class="t-sub" x="28" y="174">solo ON/OFF de motores (es de AC)</text>
           <path class="w power" d="M236 160 H830"></path>
           <g class="lbl power"><text class="t-pin" x="540" y="152" text-anchor="middle">12 V directo, sin buck</text></g>
 
@@ -392,7 +395,7 @@
           <text class="t-sub" x="820" y="488">La 10S queda guardada (con ella: buck 1)</text>
         </svg>
       </div>
-      <figcaption><b>La térmica, pegada al conector, es el ON/OFF de los motores</b> (H8) y la única protección de la LiPo (100C, sin BMS) contra un cortocircuito. Su corte en DC no está documentado (etiqueta de 230 V AC): probar primero con fuente limitada. Con dos motores trabados (~20 A) la parte térmica tarda de decenas de segundos a un minuto. <b>Sin buck</b>: el frenado vuelve a la LiPo, que lo absorbe. <b>La LiPo no corta sola por descarga</b>: <code>BATERIA_BAJA</code> avisa a 10,5 V pero no frena; parar a mano y cargar solo con el balanceador. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): corta por hardware aunque se cuelgue el firmware, pero los motores quedan en rueda libre: no frena, y no sostiene el robot en pendiente. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>La Pi va con el power bank</b> (5 V 3 A = 15 W; la Pi con YOLO y los ESP32 piden ~11 W): limita los USB a 600 mA, que alcanzan para los dos ESP32. Verificar con <span class="mono">vcgencmd get_throttled</span> = 0x0 con la visión corriendo. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
+      <figcaption><b>El fusible de auto de 20 A, pegado al Deans, protege la LiPo</b> (100C, sin BMS) contra un cortocircuito: los fusibles de auto son para continua hasta 32 V. <b>La térmica CHINT es solo el ON/OFF de los motores</b> (H8): está certificada para 230 V AC y no publica capacidad de corte en continua, así que se acciona con los motores quietos. <b>Sin buck</b>: el frenado vuelve a la LiPo, que lo absorbe. <b>La LiPo no corta sola por descarga</b>: <code>BATERIA_BAJA</code> avisa a 10,5 V pero no frena; parar a mano y cargar solo con el balanceador. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): corta por hardware aunque se cuelgue el firmware, pero los motores quedan en rueda libre: no frena, y no sostiene el robot en pendiente. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>La Pi va con el power bank</b> (5 V 3 A = 15 W; la Pi con YOLO y los ESP32 piden ~11 W): limita los USB a 600 mA, que alcanzan para los dos ESP32. Verificar con <span class="mono">vcgencmd get_throttled</span> = 0x0 con la visión corriendo. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
     </figure>
     <div class="tablewrap boardcard">
       <h3>Buck disponibles</h3>
@@ -421,7 +424,7 @@
             <tr><td>Girar o terreno malo</td><td class="gpio">~70 W</td><td>más corriente en las dos ruedas</td></tr>
             <tr><td>Brazo moviéndose</td><td class="gpio">~26 W</td><td>J1, J2 y J3 a ~1,3 A en parte del recorrido, más los servos</td></tr>
             <tr><td>Brazo quieto sosteniendo</td><td class="gpio">~6 W</td><td>J2 y J3 hacen fuerza contra el peso (I²R), y la pinza aprieta</td></tr>
-            <tr><td>Pico</td><td class="gpio">175 W</td><td>sin buck no hay límite: la térmica (10 A) dispara si dura</td></tr>
+            <tr><td>Pico</td><td class="gpio">175 W</td><td>sin buck no hay límite: el fusible de 20 A corta si dura</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -559,7 +562,7 @@
       <li><span><b>GND común.</b> Un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores; los positivos de la LiPo y del power bank nunca se tocan. Sin GND común, los PWM de los ESP32 no tienen referencia en los IBT-2.</span></li>
       <li><span><b>Power bank:</b> su cable incorporado (corto), una sola salida y sin cargarlo mientras alimenta la Pi. Con la visión corriendo 10 min, <span class="mono">vcgencmd get_throttled</span> tiene que dar 0x0.</span></li>
       <li><span><b>J2 y J3 no se sostienen solos.</b> El 36GP-555 es planetario, no sin fin: sin corriente el brazo cae. Al desarmar o con la seta, que quede apoyado en un tope o en el reposo; el resorte del hombro sigue sirviendo.</span></li>
-      <li><span><b>LiPo sin BMS:</b> térmica pegada al conector, indicador de barras a la vista, parar a 10,5 V (<span class="mono">BATERIA_BAJA</span> no frena) y cargar solo con el balanceador, fuera del robot. Enchufar el Deans con la térmica abierta y con la polaridad verificada.</span></li>
+      <li><span><b>LiPo sin BMS:</b> fusible de auto de 20 A pegado al Deans (antes de la térmica, cable de ≥ 14 AWG), indicador de barras a la vista, parar a 10,5 V (<span class="mono">BATERIA_BAJA</span> no frena) y cargar solo con el balanceador, fuera del robot. Enchufar el Deans con la térmica abierta y con la polaridad verificada.</span></li>
       <li><span><b>Divisor 100 k / 27 k</b> en el GPIO 1. <b>Si vuelve la 10S, cambiarlo a 120 k / 8,2 k antes</b>: con 42 V, este pondría ~9 V en el GPIO y lo quema.</span></li>
       <li><span><b>Buck 3 ajustado sin carga</b> con el multímetro (6 V, CC 5 A) antes de conectar los servos. <b>Capacitores de ≥ 25 V</b> en el bus de motores, cerca de los IBT-2.</span></li>
       <li><span><b>Seta:</b> verificar con el multímetro cuáles contactos son NC. NC 1 entre el GPIO 38 y el EN de la tracción (10 kΩ a GND del lado de los IBT-2); NC 2 al GPIO 47. Con la seta apretada, <span class="mono">armar</span> tiene que fallar. Sin seta, en el banco: GPIO 47 a GND con un cable.</span></li>
