@@ -24,6 +24,7 @@ terceros quedan fuera de git (`.gitignore`).
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.
 - `R2/Entrega 2/Entrega2.md` — E2 (27/09, v2.1): diseño y primeros montajes: base de madera 400×400 mm, 2 ruedas motrices de ~150 mm + 2 locas, batería 36 V 4400 mAh, ubicación propuesta de sensores, estéreo de banco en cartón. MPU-6500 y ROS 2 Jazzy/Ubuntu 24.04.5 (corregido el 05/10).
 - `R2/Entrega 3/Entrega3.md` — E3 (27/09): **dimensiones de la base**: caja en T de 40 cm de largo; adelante la parte ancha 40×23 cm (brazo, sobre base impresa en 3D), atrás la angosta 34×17 cm con las ruedas de tracción en rebajes de 3 cm; paredes de 18 cm, madera de 1 cm, 3 bumpers (frente y laterales) con final de carrera, ruedas de 15 cm × 6 cm. Figuras en Drive (enlaces del cuaderno).
+- `R2/Entrega 4/Entrega4.ipynb` (y `.md`) — E4 (fecha 04/10; contenido al 08/10): **actuadores y autonomía**: selección (pares de tracción, J1-J3 y pinza), montaje, control en cascada, consumo, ciclo de cosecha (34,5 W, ~2,1 h con la LiPo; power bank ~5 h), circuito de potencia v0.6. Imágenes adjuntas en el cuaderno; diagramas editables en `Diagramas/*.drawio`. Participación y video: PENDIENTE.
 
 **R1 (brazo)**
 - `R1/Entrega 1/Entrega1_v1.md` — E1 (18/08): 4R = 3R de posición + J4 que rota la pinza; paralelogramo tipo uArm con motores en la base; 150/300/300/50 mm.
