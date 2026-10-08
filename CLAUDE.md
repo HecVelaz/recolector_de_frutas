@@ -20,7 +20,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). **Potencia v0.5
   (08/10, solo con lo que hay):** térmica CHINT C10 en la LiPo (protección y ON/OFF general), seta (se consigue; todavía no está)
   cortando el EN de la tracción + aviso al GPIO 47; sin relé, TVS, Schottky ni fusibles. Ver
-  `docs/CONEXIONES.md` (pines, potencia, autonomía ~3,4 h); el circuito de potencia de `docs/conexiones.html` sigue en v0.4.
+  `docs/CONEXIONES.md` (pines, potencia, autonomía ~3,4 h) y `docs/conexiones.html`.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.

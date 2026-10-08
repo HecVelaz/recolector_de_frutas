@@ -128,7 +128,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Robot recolector de limones · 2026S2</div>
     <h1>Cableado de Arturito R2D2</h1>
-    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
+    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.5 (08/10/2026): potencia solo con lo que hay. v0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
   </header>
 
   <section aria-labelledby="h-general">
@@ -246,7 +246,7 @@
           <g>
             <rect class="box safety" x="16" y="604" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="625">Seta de emergencia</text>
-            <text class="t-sub" x="28" y="644">contacto auxiliar NC a GND</text>
+            <text class="t-sub" x="28" y="644">NC 2 a GND · NC 1 corta el EN</text>
             <path class="w safety" d="M226 630 H380"></path>
             <g class="lbl safety"><text class="t-pin" x="303" y="623" text-anchor="middle">47</text></g>
           </g>
@@ -315,56 +315,38 @@
 
   <section aria-labelledby="h-alim">
     <h2 id="h-alim">Circuito de potencia</h2>
-    <p class="lede">Dos baterías separadas: la 10S de 36 V mueve los motores y la LiPo 3S alimenta la lógica. Un motor trabado no puede hacer caer la tensión de la Pi, y ya no hace falta comprar el segundo buck 1.</p>
-    <p class="lede"><b>Desactualizado (08/10):</b> este dibujo es la v0.4. La v0.5, solo con lo que hay, está en <code>docs/CONEXIONES.md</code>: térmica CHINT C10 en la LiPo, seta prestada cortando el EN de la tracción, sin relé, TVS, Schottky ni fusibles.</p>
+    <p class="lede">Dos baterías separadas: la 10S de 36 V mueve los motores y la LiPo 3S alimenta la lógica. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.5 (08/10/2026): <b>solo con lo que hay</b>, sin relé, TVS ni fusibles. En trazo cortado, lo que todavía no está pero se consigue.</p>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 580" role="img" aria-label="Circuito de potencia con dos baterías. Arriba, la batería 10S de 36 V pasa por un fusible de 15 A y el interruptor de motores a un bus de 36 V; de ahí el buck 1 baja a 12,5 V, pasa por un diodo Schottky y por el relé de la seta al bus de 12 V de motores, que alimenta la tracción, los tres IBT-2 del brazo, el buck de los servos y el capacitor con TVS. El divisor de 36 V va a la S3. Abajo, la LiPo 3S pasa por un fusible de 5 A y el interruptor de lógica a un bus de 12 V de lógica, que alimenta el buck 2 para la Pi y los ESP32, el ventilador, la luz, el buzzer y la bobina del relé a través de la seta. En el balanceo de la LiPo, un indicador de barras.">
+        <svg viewBox="0 0 1200 580" role="img" aria-label="Circuito de potencia v0.5 con dos baterías. Arriba, la batería 10S de 36 V con su BMS se enchufa por el XT60 a un bus de 36 V; de ahí el buck 1, con su fusible de entrada, baja a 12 V y, por un Schottky que se consigue, alimenta el bus de 12 V de motores: brazo, buck de los servos, capacitores y tracción. El divisor de 36 V va a la S3. La seta, que se consigue, corta con su contacto NC 1 la señal EN de la tracción y avisa a la S3 con el NC 2. Abajo, la LiPo 3S pasa por la térmica CHINT C10, que es el ON/OFF general, a un bus de 12 V de lógica, que alimenta el buck 2 para la Pi y los ESP32, la luz, el buzzer y el voltímetro. En el balanceo de la LiPo, un indicador de barras.">
           <text class="t-big" x="16" y="18">Motores · batería 10S</text>
 
           <!-- Cadena de entrada 10S -->
           <rect class="box" x="16" y="30" width="190" height="62" rx="4"></rect>
           <text class="t-title" x="28" y="50">Batería 10S2P · 36 V</text>
           <text class="t-sub" x="28" y="67">30–42 V · 4400 mAh · 158 Wh</text>
-          <text class="t-sub" x="28" y="83">XT60 · BMS de hoverboard</text>
-          <path class="w power" d="M111 92 V116"></path>
-          <rect class="box" x="16" y="116" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="28" y="136">Fusible 15 A</text>
-          <text class="t-sub" x="28" y="152">junto al borne positivo</text>
-          <path class="w power" d="M111 160 V184"></path>
-          <rect class="box" x="16" y="184" width="190" height="44" rx="4"></rect>
-          <text class="t-title" x="28" y="204">Interruptor de motores</text>
-          <text class="t-sub" x="28" y="220">apto para DC · H8</text>
-          <path class="w power" d="M206 206 H250"></path>
+          <text class="t-sub" x="28" y="83">BMS de hoverboard (corta cortos)</text>
+          <path class="w power" d="M111 92 V138"></path>
+          <rect class="box" x="16" y="138" width="190" height="44" rx="4"></rect>
+          <text class="t-title" x="28" y="158">XT60 · desconexión</text>
+          <text class="t-sub" x="28" y="174">enchufar con la térmica abierta</text>
+          <path class="w power" d="M206 160 H250"></path>
 
           <!-- Bus 36 V -->
           <path class="w power" d="M250 160 V280"></path>
-          <circle class="dot" cx="250" cy="206" r="4.5"></circle>
+          <circle class="dot" cx="250" cy="160" r="4.5"></circle>
           <g class="lbl power"><text class="t-pin" x="250" y="300" text-anchor="middle">bus 36 V</text></g>
 
-          <!-- Buck 1 → Schottky → relé -->
+          <!-- Buck 1 → Schottky -->
           <path class="w power" d="M250 160 H290"></path>
-          <rect class="box" x="290" y="138" width="160" height="44" rx="4"></rect>
-          <text class="t-title" x="302" y="158">Buck 1 · 36 → 12,5 V</text>
-          <text class="t-sub" x="302" y="174">CC 14 A · con ventilador</text>
-          <path class="w supply" d="M450 160 H480"></path>
-          <rect class="box" x="480" y="138" width="130" height="44" rx="4"></rect>
-          <text class="t-title" x="492" y="158">Schottky ≥ 30 A</text>
-          <text class="t-sub" x="492" y="174">el frenado no vuelve</text>
-          <path class="w supply" d="M610 160 H640"></path>
-          <rect class="box safety" x="640" y="138" width="150" height="44" rx="4"></rect>
-          <text class="t-title" x="652" y="158">Relé 12 V · 40 A</text>
-          <text class="t-sub" x="652" y="174">automotriz · NA</text>
-          <path class="w supply" d="M790 160 H830"></path>
-
-          <!-- Seta -->
-          <rect class="box safety" x="640" y="226" width="176" height="44" rx="4"></rect>
-          <text class="t-title" x="652" y="246">Seta (NC)</text>
-          <text class="t-sub" x="652" y="262">bobina desde 12 V de lógica</text>
-          <path class="w safety" d="M725 226 V182"></path>
-          <g class="lbl safety"><text class="t-pin" x="732" y="208">bobina</text></g>
-          <path class="w safety" d="M725 270 V290"></path>
-          <g class="lbl safety"><text class="t-pin" x="725" y="306" text-anchor="middle">contacto aux. → S3 GPIO 47</text></g>
+          <rect class="box" x="290" y="138" width="186" height="44" rx="4"></rect>
+          <text class="t-title" x="302" y="158">Buck 1 · 36 → 12 V</text>
+          <text class="t-sub" x="302" y="174">fusible de entrada 15 A · CC 12 A</text>
+          <path class="w supply" d="M476 160 H500"></path>
+          <rect class="box later" x="500" y="138" width="166" height="44" rx="4"></rect>
+          <text class="t-title" x="512" y="158">Schottky ≥ 15 A</text>
+          <text class="t-sub" x="512" y="174">se consigue · buck a 12,5 V</text>
+          <path class="w supply" d="M666 160 H830"></path>
 
           <!-- Medición 36 V -->
           <path class="w power" d="M250 280 H290"></path>
@@ -372,9 +354,17 @@
           <text class="t-title" x="302" y="278">Divisor 120 k / 8,2 k</text>
           <text class="t-sub" x="302" y="294">42 V → 2,69 V</text>
           <path class="w analog" d="M450 280 H480"></path>
-          <rect class="box" x="480" y="258" width="150" height="44" rx="4"></rect>
+          <rect class="box" x="480" y="258" width="140" height="44" rx="4"></rect>
           <text class="t-title" x="492" y="278">S3 · ADC GPIO 1</text>
           <text class="t-sub" x="492" y="294">aviso a 32 V</text>
+
+          <!-- Seta: NC 1 corta el EN de la tracción, NC 2 avisa a la S3 -->
+          <rect class="box safety later" x="636" y="304" width="180" height="56" rx="4"></rect>
+          <text class="t-title" x="648" y="322">Seta · 2 NC · se consigue</text>
+          <text class="t-sub" x="648" y="338">NC 1: GPIO 38 → EN tracción</text>
+          <text class="t-sub" x="648" y="353">NC 2: → S3 GPIO 47 (aviso)</text>
+          <path class="w safety" d="M816 336 H870"></path>
+          <g class="lbl safety"><text class="t-pin" x="843" y="352" text-anchor="middle">EN</text></g>
 
           <!-- Bus 12 V de motores -->
           <path class="w supply" d="M830 110 V320"></path>
@@ -382,21 +372,21 @@
           <g class="lbl supply"><text class="t-pin" x="822" y="104" text-anchor="end">bus 12 V de motores</text></g>
           <path class="w supply" d="M830 120 H870 M830 180 H870 M830 250 H870 M830 320 H870"></path>
           <rect class="box" x="870" y="98" width="314" height="44" rx="4"></rect>
-          <text class="t-title" x="882" y="118">Tracción · fusible 15 A</text>
-          <text class="t-sub" x="882" y="134">IBT-2 izq. + IBT-2 der. · 42GM-895H 53 rpm</text>
+          <text class="t-title" x="882" y="118">Brazo · IBT-2 J1 + J2 + J3</text>
+          <text class="t-sub" x="882" y="134">36GP-555 · EN WROOM 23: lo desarma mision</text>
           <rect class="box" x="870" y="158" width="314" height="44" rx="4"></rect>
-          <text class="t-title" x="882" y="178">Llave del brazo (H8) · fusible 10 A</text>
-          <text class="t-sub" x="882" y="194">IBT-2 J1 + IBT-2 J2 + IBT-2 J3 · 36GP-555</text>
+          <text class="t-title" x="882" y="178">Buck 3 · 12 → 6 V · CC 5 A</text>
+          <text class="t-sub" x="882" y="194">2 servos RDS3218 · 20 kg·cm · 4,8–6,8 V</text>
           <rect class="box" x="870" y="228" width="314" height="44" rx="4"></rect>
-          <text class="t-title" x="882" y="248">Buck 3 · 12 → 6 V · CC 5 A · fusible 3 A</text>
-          <text class="t-sub" x="882" y="264">2 servos RDS3218 · 20 kg·cm · 4,8–6,8 V</text>
+          <text class="t-title" x="882" y="248">Capacitores del inventario · ≥ 25 V</text>
+          <text class="t-sub" x="882" y="264">cerca de los IBT-2 · toman el frenado</text>
           <rect class="box" x="870" y="298" width="314" height="44" rx="4"></rect>
-          <text class="t-title" x="882" y="318">2200 µF 25 V + TVS 15 V</text>
-          <text class="t-sub" x="882" y="334">toman la energía del frenado</text>
+          <text class="t-title" x="882" y="318">Tracción · IBT-2 izq. + IBT-2 der.</text>
+          <text class="t-sub" x="882" y="334">42GM-895H 53 rpm · EN por la seta</text>
 
           <!-- Separador -->
-          <path d="M16 366 H1184" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4"></path>
-          <text class="t-big" x="16" y="392">Lógica · LiPo 3S</text>
+          <path d="M16 372 H1184" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4"></path>
+          <text class="t-big" x="16" y="394">Lógica · LiPo 3S</text>
 
           <!-- Cadena de entrada LiPo -->
           <rect class="box" x="16" y="404" width="190" height="62" rx="4"></rect>
@@ -404,14 +394,10 @@
           <text class="t-sub" x="28" y="441">9,9–12,6 V · 88,8 Wh · 100C</text>
           <text class="t-sub" x="28" y="457">Deans (T) · balanceo JST-XH · sin BMS</text>
           <path class="w power" d="M206 426 H236"></path>
-          <rect class="box" x="236" y="404" width="110" height="44" rx="4"></rect>
-          <text class="t-title" x="248" y="424">Fusible 5 A</text>
-          <text class="t-sub" x="248" y="440">junto al conector</text>
-          <path class="w power" d="M346 426 H370"></path>
-          <rect class="box" x="370" y="404" width="130" height="44" rx="4"></rect>
-          <text class="t-title" x="382" y="424">Interruptor lógica</text>
-          <text class="t-sub" x="382" y="440">se enciende primero</text>
-          <path class="w supply" d="M500 426 H530"></path>
+          <rect class="box safety" x="236" y="404" width="220" height="44" rx="4"></rect>
+          <text class="t-title" x="248" y="424">Térmica CHINT C10 · ON/OFF (H8)</text>
+          <text class="t-sub" x="248" y="440">pegada al conector · protege la LiPo</text>
+          <path class="w supply" d="M456 426 H530"></path>
           <path class="w supply" d="M111 466 V500"></path>
           <rect class="box" x="16" y="500" width="190" height="44" rx="4"></rect>
           <text class="t-title" x="28" y="520">Indicador de barras</text>
@@ -434,23 +420,23 @@
           <text class="t-title" x="922" y="410">ESP32-S3 y WROOM por USB</text>
           <text class="t-sub" x="922" y="426">+ encoders, sensores y lógica de los IBT-2</text>
           <rect class="box" x="570" y="454" width="310" height="44" rx="4"></rect>
-          <text class="t-title" x="582" y="474">Ventilador · luz · buzzer · voltímetro</text>
-          <text class="t-sub" x="582" y="490">y la bobina del relé, a través de la seta</text>
+          <text class="t-title" x="582" y="474">Luz · buzzer · voltímetro</text>
+          <text class="t-sub" x="582" y="490">luz y buzzer vía transistor desde la Pi</text>
 
           <text class="t-sub" x="910" y="476">GND: los negativos de las dos baterías</text>
           <text class="t-sub" x="910" y="492">unidos en un solo punto (nunca los positivos)</text>
-          <text class="t-sub" x="910" y="520">Trazo cortado: falta comprar</text>
+          <text class="t-sub" x="910" y="520">Trazo cortado: se consigue, todavía no está</text>
           <text class="t-sub" x="910" y="538">Solo el buck 1 aguanta los 42 V de la 10S</text>
         </svg>
       </div>
-      <figcaption>La seta corta el bus de motores del lado de 12 V (tracción, brazo y servos): la Pi y los ESP32 siguen encendidos con la LiPo y la S3 lee la seta por el contacto auxiliar. El CC de 14 A del buck 1 limita los motores. <b>La LiPo no tiene BMS</b> y la Pi la descarga sin parar: no bajar de 3,5 V por celda (10,5 V), mirando el indicador de barras del conector de balanceo (sin INA219 ni alarma: solo pruebas vigiladas de ≤ 30 min). El voltímetro de 4,5–30 V del bus de lógica sirve para mirar, pero no avisa. Cargarla solo con un cargador balanceador. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
+      <figcaption><b>La térmica es el ON/OFF general</b> y la única protección de la LiPo (100C, sin BMS): abierta, la lógica se apaga y los pull-down dejan en 0 el EN de los 5 IBT-2. La 10S se desconecta por el XT60. <b>La seta corta la señal EN de la tracción</b>, no el bus de 12 V (su contacto no aguanta la corriente de los motores): frena por hardware aunque se cuelgue el firmware. El brazo lo desarma <code>mision</code> al ver <code>SETA</code>. <b>Sin Schottky</b>, el frenado vuelve al buck 1: lo contienen las rampas del firmware y los capacitores; medir que el bus no pase de ~15 V al frenar. El CC de 12 A del buck 1 (sin ventilador) limita los motores. <b>LiPo sin BMS:</b> no bajar de 3,5 V por celda (10,5 V), mirando el indicador de barras (solo pruebas vigiladas de ≤ 30 min). Cargarla solo con un cargador balanceador. En el banco, el bus de motores puede salir de una fuente de laboratorio.</figcaption>
     </figure>
     <div class="tablewrap boardcard">
       <h3>Buck disponibles</h3>
       <table>
         <thead><tr><th>Buck</th><th>Entrada</th><th>Salida · corriente</th><th>Uso</th></tr></thead>
         <tbody>
-          <tr><td class="gpio"><span class="tag supply"></span>1 (×1)</td><td><b>10,5–60 V</b></td><td>0–45 V · 12 A cont. (15 A con ventilador)</td><td>10S 36 → 12,5 V, bus de motores</td></tr>
+          <tr><td class="gpio"><span class="tag supply"></span>1 (×1)</td><td><b>10,5–60 V</b></td><td>0–45 V · 12 A cont. (15 A con ventilador)</td><td>10S 36 → 12 V (12,5 V con Schottky), bus de motores</td></tr>
           <tr><td class="gpio"><span class="tag supply"></span>2 (×1)</td><td>7–32 V</td><td>0,8–28 V · 8 A</td><td>LiPo 3S → 5,1 V, Pi 5</td></tr>
           <tr><td class="gpio"><span class="tag supply"></span>3 (×2)</td><td>4–38 V</td><td>1,25–36 V · 5 A cont.</td><td>12 → 6 V servos; el otro de repuesto</td></tr>
           <tr><td class="gpio"><span class="tag supply"></span>4 (×1)</td><td>6–40 V</td><td>1,2–36 V · 15 A cont.</td><td>repuesto (no aguanta 42 V)</td></tr>
@@ -485,22 +471,22 @@
             <tr><td>ESP32-S3 + WROOM (USB, sin Wi-Fi)</td><td class="gpio">~0,8 W</td></tr>
             <tr><td>Encoders, IMU, GPS, HC-SR04, lógica de los IBT-2</td><td class="gpio">~0,6 W</td></tr>
             <tr><td>Pérdidas del buck 2 (~90 %)</td><td class="gpio">~1,2 W</td></tr>
-            <tr><td>Bobina del relé + ventilador + luz/buzzer</td><td class="gpio">~3,5 W</td></tr>
-            <tr><td><b>Total</b> (pico ~19 W)</td><td class="gpio"><b>~15 W</b></td></tr>
+            <tr><td>Luz + buzzer</td><td class="gpio">~1 W</td></tr>
+            <tr><td><b>Total</b> (pico ~17 W)</td><td class="gpio"><b>~13 W</b></td></tr>
           </tbody>
         </table></div>
       </article>
     </div>
     <div class="tablewrap boardcard">
       <h3>Autonomía</h3>
-      <p class="lede">Ciclo típico de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s detectando con el brazo quieto. Promedio en el bus de motores: (20·43 + 5·70 + 25·26 + 10·6) / 60 ≈ 32 W, y 37 W desde la batería (buck 1 y Schottky, ~88 %). Energía útil: 80 % de la nominal (10S hasta 32 V; LiPo hasta 3,5 V por celda).</p>
+      <p class="lede">Ciclo típico de cosecha por limón (60 s): 20 s avanzando, 5 s maniobrando, 25 s con el brazo en movimiento y 10 s detectando con el brazo quieto. Promedio en el bus de motores: (20·43 + 5·70 + 25·26 + 10·6) / 60 ≈ 32 W, y 37 W desde la batería (buck 1 y Schottky, ~88 %; sin Schottky, un poco menos). Energía útil: 80 % de la nominal (10S hasta 32 V; LiPo hasta 3,5 V por celda).</p>
       <table>
         <thead><tr><th>Batería</th><th>Energía útil</th><th>Consumo</th><th>Autonomía</th></tr></thead>
         <tbody>
           <tr><td>10S · motores · ciclo de cosecha</td><td class="gpio">126 Wh</td><td class="gpio">37 W</td><td class="gpio"><b>~3,4 h</b></td></tr>
           <tr><td>10S · motores · avanzando sin parar</td><td class="gpio">126 Wh</td><td class="gpio">~55 W</td><td class="gpio">~2,3 h</td></tr>
           <tr><td>10S · motores · terreno malo sin parar</td><td class="gpio">126 Wh</td><td class="gpio">~80 W</td><td class="gpio">~1,6 h</td></tr>
-          <tr><td>LiPo 3S · lógica</td><td class="gpio">71 Wh</td><td class="gpio">15 W</td><td class="gpio"><b>~4,7 h</b></td></tr>
+          <tr><td>LiPo 3S · lógica</td><td class="gpio">71 Wh</td><td class="gpio">13 W</td><td class="gpio"><b>~5,5 h</b></td></tr>
         </tbody>
       </table>
       <p class="lede">El robot dura lo que la batería que se agote primero: <b>~3,4 h de cosecha</b>, y la LiPo todavía tiene margen. Comparación: con todo desde la 10S (y un segundo buck 1), 126 Wh / 53 W ≈ 2,4 h; con los motores en la LiPo y la lógica en la 10S, 71 Wh / 33 W ≈ 2,1 h. La batería de hoverboard es barata y puede tener 20–30 % menos de lo que dice la etiqueta: medirla con un ciclo completo.</p>
@@ -612,11 +598,12 @@
     <h2 id="h-check">Antes de conectar</h2>
     <ul class="checks">
       <li><span><b>Dos baterías, un solo GND.</b> Los negativos de la 10S y de la LiPo se unen en un punto; los positivos nunca. Sin GND común, los PWM de los ESP32 no tienen referencia en los IBT-2.</span></li>
-      <li><span><b>LiPo sin BMS:</b> fusible de 5 A pegado al conector (100C es un cortocircuito de cientos de amperes), indicador de barras a la vista, no bajar de 10,5 V y cargar solo con un balanceador, sobre una superficie no inflamable.</span></li>
+      <li><span><b>LiPo sin BMS:</b> térmica C10 pegada al conector (100C es un cortocircuito de cientos de amperes), indicador de barras a la vista, no bajar de 10,5 V y cargar solo con un balanceador, sobre una superficie no inflamable.</span></li>
       <li><span><b>J2 y J3 no se sostienen solos.</b> El 36GP-555 es planetario, no sin fin: sin corriente el brazo cae. Al desarmar o con la seta, que quede apoyado en un tope o en el reposo; el resorte del hombro sigue sirviendo.</span></li>
       <li><span><b>A la 10S, solo el buck 1.</b> Los buck 2, 3 y 4 se queman con 42 V. Ajustar cada buck sin carga y con el multímetro (tensión y CC) antes de conectarle nada.</span></li>
-      <li><span><b>XT60 con el interruptor abierto</b> (el interruptor, apto para DC, se lleva la chispa de los capacitores) y polaridad verificada: la salida al revés rompe el buck.</span></li>
-      <li><span><b>Schottky ≥ 30 A, 2200 µF y TVS de 15 V</b> en el bus de motores: el buck 1 no protege su salida de la corriente que vuelve al frenar.</span></li>
+      <li><span><b>XT60 con la térmica abierta</b> (salta una chispa por los capacitores del buck 1: normal), polaridad verificada (la salida al revés rompe el buck) y desenchufarlo al terminar.</span></li>
+      <li><span><b>Capacitores de ≥ 25 V en el bus de motores</b> y, cuando se consiga, Schottky ≥ 15 A a la salida del buck 1: el buck no protege su salida de la corriente que vuelve al frenar. Medir el bus al frenar (≤ ~15 V).</span></li>
+      <li><span><b>Seta:</b> verificar con el multímetro cuáles contactos son NC. NC 1 entre el GPIO 38 y el EN de la tracción (10 kΩ a GND del lado de los IBT-2); NC 2 al GPIO 47. Con la seta apretada, <span class="mono">armar</span> tiene que fallar. Sin seta, en el banco: GPIO 47 a GND con un cable.</span></li>
       <li><span><b>Pi 5 por buck</b>: <span class="mono">usb_max_current_enable=1</span> en <span class="mono">config.txt</span>, o limita los USB a 600 mA.</span></li>
       <li><span><b>Pull-down de 10 kΩ</b> en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo). Sin ellos los puentes flotan al arrancar o flashear.</span></li>
       <li><span><b>Divisor en cada ECHO</b> del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V y los GPIO son de 3,3 V.</span></li>

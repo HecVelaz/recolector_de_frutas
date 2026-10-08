@@ -2,7 +2,7 @@
 
 Versión 0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, Deans, cable, borneras,
 capacitores (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
-fusibles. El circuito de potencia de `conexiones.html` sigue en la v0.4 (desactualizado).
+fusibles. `conexiones.html` y `placa_s3.html` ya están en la v0.5.
 v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
 `docs/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
