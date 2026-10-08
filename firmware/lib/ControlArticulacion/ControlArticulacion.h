@@ -10,7 +10,8 @@
 // El lazo interno trabaja en rpm del EJE DE SALIDA DEL MOTOR (donde se identificó G(s) = K/(τs+1) en la E5).
 // El externo trabaja en grados de la ARTICULACIÓN. Los une la relación de transmisión (correas/poleas).
 // paso() se llama cada dt (10 ms) con las cuentas del encoder y devuelve el duty a aplicar.
-// Duty 0 significa freno: con el sin fin de J2/J3 el brazo queda sostenido sin corriente.
+// Duty 0 significa freno: con el EN en alto, el IBT-2 cortocircuita el motor, que se opone al giro pero no sostiene
+// el peso. J2 y J3 son planetarios y no se autobloquean: con duty 0 el brazo baja despacio.
 
 struct ConfigArticulacion {
   const char *nombre;
