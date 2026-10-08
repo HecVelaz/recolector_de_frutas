@@ -18,7 +18,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   12 V. Buck (`docs/fotos/bucks/`): solo el **buck 1** (10,5-60 V, 12 A) aguanta la batería; los 2, 3 y 4 van
   colgados de 12 V o de la LiPo. Desde la v0.4 (05/10): 10S → buck 1 → motores; LiPo → buck 2 → Pi y ESP32 (ya no hace
   falta un segundo buck 1). Divisor de batería 120 k / 8,2 k (el viejo de 12 V quemaría el GPIO). **Potencia v0.5
-  (08/10, solo con lo que hay):** térmica CHINT C10 en la LiPo (protección y ON/OFF general), seta prestada del lab
+  (08/10, solo con lo que hay):** térmica CHINT C10 en la LiPo (protección y ON/OFF general), seta (se consigue; todavía no está)
   cortando el EN de la tracción + aviso al GPIO 47; sin relé, TVS, Schottky ni fusibles. Ver
   `docs/CONEXIONES.md` (pines, potencia, autonomía ~3,4 h); el circuito de potencia de `docs/conexiones.html` sigue en v0.4.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
@@ -182,8 +182,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
-1. Potencia v0.5 con lo que hay (`docs/CONEXIONES.md`): confirmar que la seta del lab tenga 2 NC y los valores de los
-   capacitores (≥ 25 V) y diodos del inventario. Armar el divisor 120 k / 8,2 k antes de conectar la batería.
+1. Potencia v0.5 con lo que hay (`docs/CONEXIONES.md`): conseguir la seta (2 NC) y un Schottky ≥ 15 A; buscar los
+   capacitores (≥ 25 V). Armar el divisor 120 k / 8,2 k antes de conectar la batería.
 2. Cablear según `docs/CONEXIONES.md` v0.5 (10S → buck 1 → motores; LiPo → térmica → buck 2 → Pi; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).

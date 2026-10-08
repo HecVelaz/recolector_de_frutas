@@ -1,7 +1,7 @@
 # Conexiones del robot
 
 Versión 0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, Deans, cable, borneras,
-capacitores, diodos y resistencias del inventario; seta prestada del laboratorio). Sin relé, TVS, Schottky ≥ 30 A ni
+capacitores (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
 fusibles. El circuito de potencia de `conexiones.html` sigue en la v0.4 (desactualizado).
 v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:

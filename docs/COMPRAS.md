@@ -19,7 +19,9 @@ TVS, relé, interruptores, ventilador, fusibles): ver `CONEXIONES.md` v0.5.
 
 - [x] Conector XT60 hembra (10S) y Deans (T) hembra (LiPo)
 - [x] Térmica CHINT NXB-63 C10: protección de la LiPo y ON/OFF general (`llave.jpeg`)
-- [ ] Seta del laboratorio: confirmar que tenga 2 contactos NC
+- [ ] Seta (08/10: todavía no está, se consigue): mejor con 2 contactos NC (EN de la tracción + aviso al GPIO 47)
+- [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores
+- [ ] Diodo Schottky de ≥ 15 A (08/10: se consigue): salida del buck 1; sin él, solo rampas y capacitores
 - [x] Cinta CSI de 22 a 15 pines para la Pi 5 (reemplazada el 05/10)
 
 ## Placas de las ESP32 (`placa_s3.html`, `placa_wroom.html`)
