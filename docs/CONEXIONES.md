@@ -24,6 +24,33 @@ flowchart LR
   WR --> PZ[Pinza: 2 servos]
 ```
 
+## Prueba integrada mínima (08/10)
+
+Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía (H5, H7, H8) vuelve antes de la
+entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
+
+**Se conecta:**
+- 10S → XT60 → térmica → buck 1 (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
+- IMU (sin ella la base no se mueve ni se rearma).
+- HC-SR04 **central** (TRIG 10, ECHO 11 con divisor 1 k / 2 k): sin su dato la base no avanza.
+- Power bank → Pi (cámaras) → S3 y WROOM por USB; GND de las dos placas a la bornera de GND de motores.
+- Brazo: J1 (J2 y J3 cuando lleguen), sus finales de carrera (el homing los usa), el servo de apertura y el buck 3.
+
+**No se conecta:**
+
+| Qué | Efecto | Ojo |
+|---|---|---|
+| GPS | `/gps/fix` no publica; nadie lo usa | — |
+| Bumpers ×3 y sus 100 nF | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en la térmica |
+| HC-SR04 izquierdo y derecho | `/range/izq` y `/range/der` en NaN | Sin esquivar: la prueba va con teleop + `mision` |
+| Divisor de batería | `BATERIA_BAJA` siempre en `/base/estado` (no frena) | El BMS corta a ~30 V; mirar la carga a mano |
+| Servo de giro (J4) | Queda quieto | Agarrar solo con la apertura |
+| Seta | **Cable del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sacar el puente al poner la seta |
+| Schottky | Frenado contra el buck 1 | Medir el bus al frenar (≤ ~15 V) |
+
+Recorrido autónomo, luz, buzzer, habilitación del brazo, app y LiDAR: después.
+
 ## ESP32-S3 · base
 
 Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa 22 GPIO; queda libre el 40 (reservado por si la
