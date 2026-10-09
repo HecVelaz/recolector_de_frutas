@@ -1,8 +1,8 @@
 # Conexiones del robot
 
-Versión 0.6 — 08/10/2026: **los motores van con la LiPo 3S directa** (sin buck 1 ni Schottky; la 10S queda guardada) y
+Versión 0.6 — 08/10/2026 (09/10: **la LiPo pasa a XT60** porque no hay Deans hembra, par de XT60 en `fotos/conectores/`; **la seta ya está**, `fotos/llaves/`): **los motores van con la LiPo 3S directa** (sin buck 1 ni Schottky; la 10S queda guardada) y
 **la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 27 k (firmware cambiado). **Protección de la
-LiPo: fusible de auto de 20 A** pegado al Deans; la térmica CHINT queda solo como interruptor (no está certificada en DC). `conexiones.html` y
+LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `conexiones.html` y
 `placa_s3.html` ya están en la v0.6.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
@@ -34,7 +34,7 @@ Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía
 entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
 
 **Se conecta:**
-- LiPo → Deans → fusible de auto 20 A → térmica → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- LiPo → XT60 → fusible de auto 20 A → térmica → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
 - **Divisor de batería 100 k / 27 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
@@ -125,7 +125,7 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 
 ## Alimentación (v0.6: LiPo 3S + power bank)
 
-- **Motores: LiPo Zeee 3S1P** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, Deans (T), balanceo JST-XH, 493 g,
+- **Motores: LiPo Zeee 3S1P** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, Deans (T) de fábrica **cambiado por XT60** (09/10: no hay Deans hembra), balanceo JST-XH, 493 g,
   **sin BMS** (`docs/fotos/bateria 2/`). Los motores son de 12 V y el IBT-2 acepta 5,5-27 V: van **directo, sin
   buck**. Hay cargador balanceador.
 - **Lógica: power bank Xiaomi PB2030MI** 20000 mAh (~74 Wh), 33 W, salida 5 V 3 A por cable USB-C incorporado,
@@ -149,7 +149,7 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 ### Circuito v0.6
 
 ```
-LiPo 3S (9,9-12,6 V, sin BMS) → Deans → fusible de auto 20 A (portafusible pegado al Deans) → térmica CHINT C10 (ON/OFF
+LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → térmica CHINT C10 (ON/OFF
   de motores, H8) → bus 12 V de motores
   │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → seta NC 1 → R_EN + L_EN (10 kΩ a GND del lado de los IBT-2)
@@ -164,7 +164,7 @@ seta NC 2 → S3 GPIO 47 (el otro lado a GND)
 GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
 ```
 
-- **Fusible de auto de 20 A (lámina ATO/ATC) pegado al Deans:** es la protección de la LiPo contra un cortocircuito
+- **Fusible de auto de 20 A (lámina ATO/ATC) pegado al XT60:** es la protección de la LiPo contra un cortocircuito
   (100C: cientos de amperes, y sin BMS). Los fusibles de auto son para continua hasta 32 V: a 12,6 V están dentro de
   especificación. 20 A deja pasar el uso normal (~3 A de promedio, picos de ~15 A) y corta con un corto o con dos
   motores trabados. El portafusible va lo más cerca posible del conector: el cable antes del fusible no está
@@ -181,12 +181,12 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   celda**: ni el ADC ni el indicador de barras ven una celda desbalanceada, y no hay supervisión por celda ni corte
   automático. Medir cada celda con el balanceador o el tester antes y después de cada prueba, y calibrar la lectura
   del ADC contra el tester. Cargar solo con el balanceador; guardada varios días, a ~11,4 V (3,8 V por celda).
-- **Seta (se consigue), con 2 contactos NC:** el NC 1 corta la señal EN de la tracción (corte por
+- **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 contactos NC:** el NC 1 corta la señal EN de la tracción (corte por
   hardware, aunque se cuelgue el firmware; los motores quedan en rueda libre) y el NC 2 avisa a la S3 por el GPIO 47
   (HIGH = apretada o cable cortado). El contacto de una seta no aguanta la corriente de los motores: por eso corta el
   EN y no el bus de 12 V. El brazo no tiene corte por hardware: `mision` lo desarma al ver `SETA` en `/base/estado` y
   queda en FALLA. **Sin `mision` corriendo, mandar `desarmar` al brazo antes de soltar la seta.** Con la seta, J2 y J3
-  sueltan el brazo (no se autobloquean). **Si la seta trae un solo NC, avisar:** hay que elegir entre corte de EN y aviso.
+  sueltan el brazo (no se autobloquean). **Si trae un solo NC**, pasarle un bloque NC del selector de llave que vino con ella (mismo sistema de 22 mm, se enganchan con clip).
 - **Power bank para la Pi:** 5 V 3 A son 15 W; la Pi con YOLO y las cámaras pide ~9 W (picos de ~11 W) y los
   ESP32 con sus sensores ~2 W (~400 mA). Entra. Sin los 5 A de la fuente oficial, la Pi limita a 600 mA el total de
   los USB **y el conector del ventilador**: no poner `usb_max_current_enable=1`, y un LiDAR no entraría. El margen
@@ -231,8 +231,10 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **Power bank:** cable incorporado (corto), una sola salida, sin cargarlo mientras alimenta la Pi; verificar
       `vcgencmd get_throttled` = `0x0` con la visión corriendo.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
-- [ ] **LiPo:** fusible de auto de 20 A pegado al Deans (antes de la térmica), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
-      frena), cargar solo con el balanceador y fuera del robot. Enchufar el Deans con la térmica abierta y
+- [ ] **Conector de la LiPo:** cortar el Deans **de a un cable** (los dos juntos con la pinza hacen un corto), soldar el
+      **XT60 hembra** del lado de la batería (rojo al +) con termocontraíble, con la LiPo a media carga. El macho va al portafusible.
+- [ ] **LiPo:** fusible de auto de 20 A pegado al XT60 (antes de la térmica), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
+      frena), cargar solo con el balanceador y fuera del robot. Enchufar el XT60 con la térmica abierta y
       respetar la polaridad (los IBT-2 al revés se rompen).
 - [ ] **Divisor de batería 100 k / 27 k** (12,6 V → 2,68 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /
       8,2 k antes de conectarla**: con 42 V, el de 100 k / 27 k pondría ~9 V en el GPIO y lo quema.

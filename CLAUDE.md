@@ -15,10 +15,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
   a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
 - **Potencia v0.6 (08/10, solo con lo que hay):** motores con la **LiPo Zeee 3S** 11,1 V 8000 mAh, sin BMS
-  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**: Deans → **fusible de auto 20 A** (la protección contra
+  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**: XT60 (el Deans de fábrica se cambia: no hay hembra) → **fusible de auto 20 A** (la protección contra
   cortos) → térmica CHINT C10 (solo ON/OFF de motores: es de 230 V AC, sin capacidad de corte en DC publicada); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2030MI**
   5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W: verificar `vcgencmd get_throttled` = 0x0). Divisor de batería
-  **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (se consigue) cortando el EN de la tracción + aviso
+  **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`) cortando el EN de la tracción + aviso
   al GPIO 47; sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
   Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h) y `docs/conexiones.html`.
@@ -43,7 +43,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 
 ## 3. Estructura
 - `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
-  `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, bumpers, `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
+  `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, bumpers, `llaves` (seta y selector), `conectores` (XT60), `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
   compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `placa_s3.html`, `placa_wroom.html`,
   inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
@@ -184,7 +184,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
-1. Potencia v0.6 (`docs/CONEXIONES.md`): conseguir el fusible de auto de 20 A con portafusible y la seta (2 NC);
+1. Potencia v0.6 (`docs/CONEXIONES.md`): conseguir el fusible de auto de 20 A con portafusible (la seta ya está: verificar 2 NC); cambiar el Deans de la LiPo por XT60;
    buscar los capacitores (≥ 25 V). Armar el divisor
    100 k / 27 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
 2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → térmica → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
