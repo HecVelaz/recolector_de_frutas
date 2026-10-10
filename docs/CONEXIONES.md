@@ -4,6 +4,8 @@ Versión 0.6 — 08/10/2026 (09/10: **la LiPo pasa a XT60** porque no hay Deans 
 **la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 27 k (firmware cambiado). **Protección de la
 LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `conexiones.html` y
 `placa_s3.html` ya están en la v0.6.
+10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
+la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable por cable, con fotos: `potencia.html`.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
 fusibles. La Pi 5 pasa al power bank.
@@ -34,7 +36,7 @@ Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía
 entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
 
 **Se conecta:**
-- LiPo → XT60 → fusible de auto 20 A → térmica → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- LiPo → XT60 → fusible de auto 20 A → selector WEG → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
 - **Divisor de batería 100 k / 27 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
@@ -50,7 +52,7 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 | Qué | Efecto | Ojo |
 |---|---|---|
 | GPS | `/gps/fix` no publica; nadie lo usa | — |
-| Bumpers ×3 y sus 100 nF | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en la térmica |
+| Bumpers ×3 y sus 100 nF | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en el selector |
 | HC-SR04 izquierdo y derecho | `/range/izq` y `/range/der` en NaN | Sin esquivar: la prueba va con teleop + `mision` |
 | Servo de giro (J4) | Queda quieto | Agarrar solo con la apertura |
 | Seta | **Cable del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sacar el puente al poner la seta |
@@ -149,8 +151,8 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 ### Circuito v0.6
 
 ```
-LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → térmica CHINT C10 (ON/OFF
-  de motores, H8) → bus 12 V de motores
+LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → selector WEG, 2 NA en
+  paralelo (ON/OFF de motores, H8) → bus 12 V de motores
   │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → seta NC 1 → R_EN + L_EN (10 kΩ a GND del lado de los IBT-2)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
@@ -170,10 +172,11 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   motores trabados. El portafusible va lo más cerca posible del conector: el cable antes del fusible no está
   protegido. Cable del bus de al menos 14 AWG (aguanta los 20 A). Es la única compra de la potencia: sin ella, un
   corto en una LiPo sin BMS es riesgo de incendio (antes de comprar, buscar uno en el lab).
-- **Térmica CHINT NXB-63 C10, después del fusible: solo interruptor ON/OFF de los motores (H8).** Está certificada
-  para 230 V AC (IEC 60898-1); CHINT no publica capacidad de corte en continua, así que no se cuenta como protección.
-  Accionarla con los motores quietos (pasan pocos cientos de mA: a 12 V el arco es mínimo); no abrirla con motores en
-  marcha salvo emergencia (para eso está la seta). La Pi y los ESP32 siguen encendidos con el power bank.
+- **Selector WEG, después del fusible: interruptor ON/OFF de los motores (H8; reemplaza a la térmica CHINT, 10/10).**
+  Trae 2 bloques BC10 con contacto NA 3-4 (10 A térmicos cada uno): van **en paralelo** (puente 3-3 y 4-4 con el
+  mismo cable grueso) para conducir hasta ~20 A cerrados. No es protección: la protección es el fusible. Accionarlo
+  con los motores quietos (pasan pocos cientos de mA: a 12 V el arco es mínimo; en paralelo no corta mejor que uno
+  solo); no abrirlo con motores en marcha salvo emergencia (para eso está la seta). La Pi y los ESP32 siguen encendidos con el power bank.
 - **Sin buck ni Schottky:** la corriente de frenado vuelve a la LiPo, que la absorbe. La velocidad de los motores
   sigue a la tensión (12,6 → 10,5 V, −17 %): el lazo de velocidad lo compensa; tope ~0,35 m/s, sobra para 0,25.
 - **LiPo sin BMS:** nada corta por descarga. `/base/estado` avisa `BATERIA_BAJA` a 10,5 V (3,5 V por celda) pero
@@ -181,12 +184,12 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   celda**: ni el ADC ni el indicador de barras ven una celda desbalanceada, y no hay supervisión por celda ni corte
   automático. Medir cada celda con el balanceador o el tester antes y después de cada prueba, y calibrar la lectura
   del ADC contra el tester. Cargar solo con el balanceador; guardada varios días, a ~11,4 V (3,8 V por celda).
-- **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 contactos NC:** el NC 1 corta la señal EN de la tracción (corte por
+- **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 bloques NC 1-2 apilados (AdvanCon SIB2-BE102, `hongo.jpeg`):** el NC 1 corta la señal EN de la tracción (corte por
   hardware, aunque se cuelgue el firmware; los motores quedan en rueda libre) y el NC 2 avisa a la S3 por el GPIO 47
   (HIGH = apretada o cable cortado). El contacto de una seta no aguanta la corriente de los motores: por eso corta el
   EN y no el bus de 12 V. El brazo no tiene corte por hardware: `mision` lo desarma al ver `SETA` en `/base/estado` y
   queda en FALLA. **Sin `mision` corriendo, mandar `desarmar` al brazo antes de soltar la seta.** Con la seta, J2 y J3
-  sueltan el brazo (no se autobloquean). **Si trae un solo NC**, pasarle un bloque NC del selector de llave que vino con ella (mismo sistema de 22 mm, se enganchan con clip).
+  sueltan el brazo (no se autobloquean). Cada bloque, una sola función: no mezclar sus bornes.
 - **Power bank para la Pi:** 5 V 3 A son 15 W; la Pi con YOLO y las cámaras pide ~9 W (picos de ~11 W) y los
   ESP32 con sus sensores ~2 W (~400 mA). Entra. Sin los 5 A de la fuente oficial, la Pi limita a 600 mA el total de
   los USB **y el conector del ventilador**: no poner `usb_max_current_enable=1`, y un LiDAR no entraría. El margen
@@ -197,8 +200,8 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   `vcgencmd pmic_read_adc EXT5V_V` ≥ 4,9 V.
 - **Corriente:** tracción (42GM-895H a 12 V): 2,6 A en vacío, 5,5 A nominal y 10 A trabado cada uno; brazo
   (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Promedio de cosecha ~3 A, lejos de los 20 A del
-  fusible. La térmica (10 A) puede disparar si tracción y brazo andan a plena carga mucho rato (11 A + 3,9 A): no
-  mover los dos a la vez a plena carga.
+  fusible. Los 2 NA del selector en paralelo conducen hasta ~20 A (reparto desigual: no mover tracción y brazo a la
+  vez a plena carga mucho rato).
 
 ### Consumo y autonomía (estimados; medir con una pinza)
 
@@ -233,8 +236,8 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Conector de la LiPo:** cortar el Deans **de a un cable** (los dos juntos con la pinza hacen un corto), soldar el
       **XT60 hembra** del lado de la batería (rojo al +) con termocontraíble, con la LiPo a media carga. El macho va al portafusible.
-- [ ] **LiPo:** fusible de auto de 20 A pegado al XT60 (antes de la térmica), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
-      frena), cargar solo con el balanceador y fuera del robot. Enchufar el XT60 con la térmica abierta y
+- [ ] **LiPo:** fusible de auto de 20 A pegado al XT60 (antes del selector), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
+      frena), cargar solo con el balanceador y fuera del robot. Enchufar el XT60 con el selector en OFF y
       respetar la polaridad (los IBT-2 al revés se rompen).
 - [ ] **Divisor de batería 100 k / 27 k** (12,6 V → 2,68 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /
       8,2 k antes de conectarla**: con 42 V, el de 100 k / 27 k pondría ~9 V en el GPIO y lo quema.
@@ -264,8 +267,8 @@ de J2/J3). Con la 10S serían ~3,2 h.
       que la WROOM arrancó, o pasar la señal al GPIO 13 (libre).
 - [ ] **LEDs de la Freenove:** además de bumpers y seta, medir si cargan el GPIO 1 (divisor de 7,7 kΩ: un LED
       cambia mucho la lectura de batería), los encoders (15-18) y el I²C (8/9). Si cargan, sacar ese LED.
-- [ ] **Divisor de batería después de la térmica:** con la térmica cerrada y la S3 apagada, la LiPo empuja ~2,7 V
-      al GPIO 1 por 100 kΩ (≤ 0,1 mA). Enchufar primero el power bank y abrir la térmica antes de desenchufarlo.
+- [ ] **Divisor de batería después del selector:** con el selector en ON y la S3 apagada, la LiPo empuja ~2,7 V
+      al GPIO 1 por 100 kΩ (≤ 0,1 mA). Enchufar primero el power bank y pasar el selector a OFF antes de desenchufarlo.
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.

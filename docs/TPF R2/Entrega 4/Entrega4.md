@@ -257,16 +257,16 @@ El robot dura lo que dura la LiPo: **~2,1 h de cosecha**.
 
 <div align="center"><b>Figura 17.</b> Circuito de potencia v0.6: LiPo directa al bus de 12 V de motores, protegida por un fusible de auto de 20 A, y power bank para la lógica, unidos solo por el GND.</div>
 
-- **Fusible de auto de 20 A**, pegado al conector Deans de la LiPo: es la protección contra un cortocircuito, la falla más peligrosa de una LiPo de 100C sin BMS. Los fusibles de auto son para corriente continua hasta 32 V, así que a 12,6 V trabajan dentro de su especificación; 20 A deja pasar el uso normal (~3 A de promedio, picos de ~15 A) y corta con un corto o con dos motores trabados.
-- **Térmica CHINT NXB-63 C10**, después del fusible: es solo el botón ON/OFF de los motores (H8). Está certificada para 230 V de alterna y el fabricante no publica capacidad de corte en continua, por eso no se usa como protección y se acciona con los motores quietos.
+- **Fusible de auto de 20 A**, pegado al conector XT60 de la LiPo: es la protección contra un cortocircuito, la falla más peligrosa de una LiPo de 100C sin BMS. Los fusibles de auto son para corriente continua hasta 32 V, así que a 12,6 V trabajan dentro de su especificación; 20 A deja pasar el uso normal (~3 A de promedio, picos de ~15 A) y corta con un corto o con dos motores trabados.
+- **Selector WEG**, después del fusible: es el ON/OFF de los motores (H8). Trae dos contactos NA (bloques BC10, 10 A cada uno) que se conectan en paralelo para conducir hasta ~20 A. No es una protección (eso es el fusible) y se acciona con los motores quietos.
 - **Seta de emergencia** con dos contactos NC: uno corta la señal EN de los IBT-2 de tracción (los motores quedan en rueda libre aunque se cuelgue el firmware) y el otro avisa a la S3. El contacto de una seta no aguanta la corriente de los motores; por eso corta la señal y no la potencia. El brazo lo desarma el nodo `mision` al recibir el aviso.
 - **Buck 3 (XL4016)**: baja los 12 V a 6 V para los servos de la pinza, con límite de corriente de 5 A.
 - **Capacitores de ≥ 25 V** en el bus de 12 V, cerca de los IBT-2.
 - **GND común**: el GND de cada ESP32 va a la bornera de GND del bus de motores; los positivos de las dos fuentes nunca se unen.
 
-<div align="center"><img src="Imágenes/termica_chint_c10.jpg" width="600"></div>
+<div align="center"><img src="Imágenes/selector_weg.jpg" width="600"></div>
 
-<div align="center"><b>Figura 18.</b> Térmica CHINT NXB-63 C10: interruptor ON/OFF de los motores (la protección es el fusible).</div>
+<div align="center"><b>Figura 18.</b> Selector WEG con dos contactos NA (bloques BC10) en paralelo: interruptor ON/OFF de los motores (la protección es el fusible).</div>
 
 <div align="center"><img src="Imágenes/buck3_xl4016.jpg" width="600"></div>
 
@@ -286,7 +286,7 @@ La guía pide indicar el nivel de batería y disponer de un puerto de carga:
 
 ### 4.7 Ubicación de las baterías en el robot
 
-La LiPo (138 × 47 × 36 mm, 493 g) va dentro de la caja, en el lugar que ocupaba la batería de la Entrega 3, cerca del eje de tracción y lejos de los bordes. El fusible queda pegado a su conector y la térmica, accesible desde la tapa. El power bank va arriba del mástil, al lado de la Raspberry Pi, con su cable USB-C corto: con 3 A, un cable de 5 V largo pierde demasiada tensión.
+La LiPo (138 × 47 × 36 mm, 493 g) va dentro de la caja, en el lugar que ocupaba la batería de la Entrega 3, cerca del eje de tracción y lejos de los bordes. El fusible queda pegado a su conector y el selector, accesible desde la tapa. El power bank va arriba del mástil, al lado de la Raspberry Pi, con su cable USB-C corto: con 3 A, un cable de 5 V largo pierde demasiada tensión.
 
 ## Etapa 5: Participación y evidencias
 
