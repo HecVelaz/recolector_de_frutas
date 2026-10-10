@@ -355,7 +355,7 @@ cableado(document.getElementById('cb'), document.getElementById('cb-f'), {"y0": 
   var PB = { y: 780, k0: 3, k1: 19, filas: 10, arriba: false, gndK: 3, gndTerm: 1, tiras: [
     [4, 'Bumper izq. · NA', 'bump', null, [['C', '100 nF', 2]]],
     [5, 'Seta · NC 2', 'bump', null, [['C', '100 nF', 2]]],
-    [12, 'EN de los 2 IBT-2 · entra por la seta NC 1', 'mot', null, [['R', '10 k', 2]]],
+    [12, 'EN-T · entra de la seta NC 1, sale a los 2 IBT-2 (NO va a la 38)', 'mot', null, [['R', '10 k', 2]], false, true],
     [13, 'Bumper der. · NA', 'bump', null, [['C', '100 nF', 2]]],
     [14, 'Reserva (4.º bumper)', 'res', null, [['C', '100 nF', 2]], true],
     [18, '+12 V LiPo 3S (después del selector)', 'bat', '100 k', [['R', '27 k', 2], ['C', '100 nF', 3, 'L']]] ] };
@@ -447,7 +447,7 @@ cableado(document.getElementById('cb'), document.getElementById('cb-f'), {"y0": 
       });
       pin(xs, fy(jIn), t[2] === 'bat' ? COL.v5 : col, opt);
       pin(xs, fy(jOut), col, opt);
-      cable([[xs, fy(jOut)], [tx(k), yT]], col, 3.5, opt);
+      if (!t[6]) cable([[xs, fy(jOut)], [tx(k), yT]], col, 3.5, opt);  // t[6]: tira sin cable a su bornera (EN-T, va después de la seta)
       // etiqueta de entrada (de dónde viene el cable del periférico)
       var ly = B.arriba ? B.y - 10 : B.y + B.filas * P + 10;
       el('text', { x: xs + 4, y: ly, 'text-anchor': B.arriba ? 'start' : 'end', class: 'pf-in', fill: col,

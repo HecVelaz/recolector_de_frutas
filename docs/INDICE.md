@@ -19,6 +19,7 @@ terceros quedan fuera de git (`.gitignore`).
 - `CONEXIONES.md` — Conexionado v0.6 (08/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, prueba integrada mínima, circuito de potencia solo con lo que hay (LiPo 3S directa para motores, power bank para la Pi y los ESP32; la 10S guardada), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `conexiones.html`: lo mismo como diagrama.
 - `COMPRAS.md` — Lista de compras con casillas, del conexionado v0.4.
 - `placa_s3.html` / `placa_wroom.html` — Placas de las ESP32 (05/10): cableado de cada periférico a su pin, montaje (S3 sobre la Freenove + dos perforadas; WROOM HW-394 en perforada de 7 × 9 cm), tabla pin por pin y orden de armado y prueba.
+- `seta.html` — La seta cable por cable (10/10): qué tornillo es cuál (foto), los 7 cables numerados, el 10 kΩ y el 100 nF en la perforada, qué hace la Pi (solo software) y cómo probarla.
 
 **R2 (robot móvil "Arturito R2D2")**
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.
