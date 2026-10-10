@@ -57,6 +57,10 @@
   svg .lbl.power text, svg .lbl-power { fill: var(--w-power); } svg .lbl.gnd text { fill: var(--w-gnd); }
   svg .lbl.supply text { fill: var(--w-supply); } svg .lbl.analog text { fill: var(--w-analog); } svg .lbl.safety text { fill: var(--w-safety); }
   svg image { border-radius: 4px; }
+  svg .t-term { font-family: var(--mono); font-size: 11.5px; font-weight: 500; }
+  svg .term { stroke: var(--card); stroke-width: 1.2; }
+  svg .term.power { fill: var(--w-power); } svg .term.gnd { fill: var(--w-gnd); }
+  svg .term.motor { fill: var(--w-motor); } svg .term.supply { fill: var(--w-supply); }
   .parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 16px; }
   .part { display: grid; grid-template-columns: 110px 1fr; gap: 14px; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; align-items: start; }
   .part img, .nofoto { width: 110px; height: 110px; object-fit: contain; background: #fff; border-radius: 4px; border: 1px solid var(--soft); }
@@ -133,87 +137,137 @@
           <circle class="dot gnd" cx="800" cy="272" r="4.5"></circle>
           <path class="w power" d="M840 248 H900"></path>
           <path class="w gnd" d="M800 272 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="228" width="170" height="64" rx="6"></rect>
-          <text class="t-title" x="910" y="250">5 · IBT-2 tracción izq.</text>
-          <text class="t-sub" x="910" y="266">S3 PWM 4/5 · 14-16 AWG</text>
-          <text class="t-pin" x="910" y="282">B+ · B−   M+ · M−</text>
-          <g class="lbl safety"><text class="t-pin" x="1064" y="222" text-anchor="end">EN ← EN-T</text></g>
-          <path class="w motor" d="M1070 252 H1150"></path><path class="w motor" d="M1070 268 H1150"></path>
-          <text class="t-pin" x="1110" y="247" text-anchor="middle">M+</text><text class="t-pin" x="1110" y="282" text-anchor="middle">M−</text>
-          <rect class="box" x="1150" y="228" width="230" height="64" rx="6"></rect>
-          <image href="fotos/potencia/motor_traccion.jpg" x="1154" y="231" width="52" height="58" preserveAspectRatio="xMidYMid meet"></image>
+          <rect class="box" x="900" y="226" width="214" height="68" rx="6"></rect>
+          <text class="t-title" x="938" y="248">5 · Tracción izq.</text>
+          <text class="t-sub" x="938" y="264">IBT-2 · S3 PWM 4/5</text>
+          <text class="t-sub" x="938" y="279">B 14-16 · M 16 AWG</text>
+          <g class="lbl safety"><text class="t-pin" x="1108" y="220" text-anchor="end">EN ← EN-T</text></g>
+          <path class="w motor" d="M1114 248 H1150"></path><path class="w motor" d="M1114 272 H1150"></path>
+          <rect class="term power" x="896" y="244" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="252">B+</text>
+          <rect class="term gnd" x="896" y="268" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="276">B−</text>
+          <rect class="term motor" x="1110" y="244" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="252" text-anchor="end">M+</text>
+          <rect class="term motor" x="1110" y="268" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="276" text-anchor="end">M−</text>
+          <rect class="box" x="1150" y="226" width="230" height="68" rx="6"></rect>
+          <image href="fotos/potencia/motor_traccion.jpg" x="1154" y="230" width="52" height="60" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="1212" y="252">Motor izq. 42GM-895H</text>
           <text class="t-sub" x="1212" y="269">12 V · 5,5 A nom. · 10 A trabado</text>
+          <text class="t-pin" x="1212" y="285">2 cables del motor</text>
           <circle class="dot power" cx="840" cy="343" r="4.5"></circle>
           <circle class="dot gnd" cx="800" cy="367" r="4.5"></circle>
           <path class="w power" d="M840 343 H900"></path>
           <path class="w gnd" d="M800 367 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="323" width="170" height="64" rx="6"></rect>
-          <text class="t-title" x="910" y="345">6 · IBT-2 tracción der.</text>
-          <text class="t-sub" x="910" y="361">S3 PWM 6/7 · 14-16 AWG</text>
-          <text class="t-pin" x="910" y="377">B+ · B−   M+ · M−</text>
-          <g class="lbl safety"><text class="t-pin" x="1064" y="317" text-anchor="end">EN ← EN-T</text></g>
-          <path class="w motor" d="M1070 347 H1150"></path><path class="w motor" d="M1070 363 H1150"></path>
-          <text class="t-pin" x="1110" y="342" text-anchor="middle">M+</text><text class="t-pin" x="1110" y="377" text-anchor="middle">M−</text>
-          <rect class="box" x="1150" y="323" width="230" height="64" rx="6"></rect>
-          <image href="fotos/potencia/motor_traccion.jpg" x="1154" y="326" width="52" height="58" preserveAspectRatio="xMidYMid meet"></image>
+          <rect class="box" x="900" y="321" width="214" height="68" rx="6"></rect>
+          <text class="t-title" x="938" y="343">6 · Tracción der.</text>
+          <text class="t-sub" x="938" y="359">IBT-2 · S3 PWM 6/7</text>
+          <text class="t-sub" x="938" y="374">B 14-16 · M 16 AWG</text>
+          <g class="lbl safety"><text class="t-pin" x="1108" y="315" text-anchor="end">EN ← EN-T</text></g>
+          <path class="w motor" d="M1114 343 H1150"></path><path class="w motor" d="M1114 367 H1150"></path>
+          <rect class="term power" x="896" y="339" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="347">B+</text>
+          <rect class="term gnd" x="896" y="363" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="371">B−</text>
+          <rect class="term motor" x="1110" y="339" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="347" text-anchor="end">M+</text>
+          <rect class="term motor" x="1110" y="363" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="371" text-anchor="end">M−</text>
+          <rect class="box" x="1150" y="321" width="230" height="68" rx="6"></rect>
+          <image href="fotos/potencia/motor_traccion.jpg" x="1154" y="325" width="52" height="60" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="1212" y="347">Motor der. 42GM-895H</text>
           <text class="t-sub" x="1212" y="364">12 V · 5,5 A nom. · 10 A trabado</text>
+          <text class="t-pin" x="1212" y="380">2 cables del motor</text>
           <circle class="dot power" cx="840" cy="453" r="4.5"></circle>
           <circle class="dot gnd" cx="800" cy="477" r="4.5"></circle>
           <path class="w power" d="M840 453 H900"></path>
           <path class="w gnd" d="M800 477 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="433" width="170" height="64" rx="6"></rect>
-          <text class="t-title" x="910" y="455">7 · IBT-2 J1</text>
-          <text class="t-sub" x="910" y="471">WROOM PWM · 18 AWG</text>
-          <text class="t-pin" x="910" y="487">B+ · B−   M+ · M−</text>
-          <g class="lbl safety"><text class="t-pin" x="1064" y="427" text-anchor="end">EN ← EN-B</text></g>
-          <path class="w motor" d="M1070 457 H1150"></path><path class="w motor" d="M1070 473 H1150"></path>
-          <text class="t-pin" x="1110" y="452" text-anchor="middle">M+</text><text class="t-pin" x="1110" y="487" text-anchor="middle">M−</text>
-          <rect class="box" x="1150" y="433" width="230" height="64" rx="6"></rect>
-          <image href="fotos/potencia/motor_brazo.jpg" x="1154" y="436" width="52" height="58" preserveAspectRatio="xMidYMid meet"></image>
+          <rect class="box" x="900" y="431" width="214" height="68" rx="6"></rect>
+          <text class="t-title" x="938" y="453">7 · Brazo J1</text>
+          <text class="t-sub" x="938" y="469">IBT-2 · WROOM PWM</text>
+          <text class="t-sub" x="938" y="484">B y M: 18 AWG</text>
+          <g class="lbl safety"><text class="t-pin" x="1108" y="425" text-anchor="end">EN ← EN-B</text></g>
+          <path class="w motor" d="M1114 453 H1150"></path><path class="w motor" d="M1114 477 H1150"></path>
+          <rect class="term power" x="896" y="449" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="457">B+</text>
+          <rect class="term gnd" x="896" y="473" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="481">B−</text>
+          <rect class="term motor" x="1110" y="449" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="457" text-anchor="end">M+</text>
+          <rect class="term motor" x="1110" y="473" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="481" text-anchor="end">M−</text>
+          <rect class="box" x="1150" y="431" width="230" height="68" rx="6"></rect>
+          <image href="fotos/potencia/motor_brazo.jpg" x="1154" y="435" width="52" height="60" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="1212" y="457">J1 · 36GP-555 160 rpm</text>
           <text class="t-sub" x="1212" y="474">1,3 A nom. · 10 A trabado</text>
+          <text class="t-pin" x="1212" y="490">2 cables del motor</text>
           <circle class="dot power" cx="840" cy="548" r="4.5"></circle>
           <circle class="dot gnd" cx="800" cy="572" r="4.5"></circle>
           <path class="w power" d="M840 548 H900"></path>
           <path class="w gnd" d="M800 572 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="528" width="170" height="64" rx="6"></rect>
-          <text class="t-title" x="910" y="550">8 · IBT-2 J2</text>
-          <text class="t-sub" x="910" y="566">WROOM PWM 25/26 · 18 AWG</text>
-          <text class="t-pin" x="910" y="582">B+ · B−   M+ · M−</text>
-          <g class="lbl safety"><text class="t-pin" x="1064" y="522" text-anchor="end">EN ← EN-B</text></g>
-          <path class="w motor" d="M1070 552 H1150"></path><path class="w motor" d="M1070 568 H1150"></path>
-          <text class="t-pin" x="1110" y="547" text-anchor="middle">M+</text><text class="t-pin" x="1110" y="582" text-anchor="middle">M−</text>
-          <rect class="box" x="1150" y="528" width="230" height="64" rx="6"></rect>
-          <image href="fotos/potencia/motor_brazo.jpg" x="1154" y="531" width="52" height="58" preserveAspectRatio="xMidYMid meet"></image>
+          <rect class="box" x="900" y="526" width="214" height="68" rx="6"></rect>
+          <text class="t-title" x="938" y="548">8 · Brazo J2</text>
+          <text class="t-sub" x="938" y="564">IBT-2 · WROOM 25/26</text>
+          <text class="t-sub" x="938" y="579">B y M: 18 AWG</text>
+          <g class="lbl safety"><text class="t-pin" x="1108" y="520" text-anchor="end">EN ← EN-B</text></g>
+          <path class="w motor" d="M1114 548 H1150"></path><path class="w motor" d="M1114 572 H1150"></path>
+          <rect class="term power" x="896" y="544" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="552">B+</text>
+          <rect class="term gnd" x="896" y="568" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="576">B−</text>
+          <rect class="term motor" x="1110" y="544" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="552" text-anchor="end">M+</text>
+          <rect class="term motor" x="1110" y="568" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="576" text-anchor="end">M−</text>
+          <rect class="box" x="1150" y="526" width="230" height="68" rx="6"></rect>
+          <image href="fotos/potencia/motor_brazo.jpg" x="1154" y="530" width="52" height="60" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="1212" y="552">J2 · 36-555 58 rpm</text>
           <text class="t-sub" x="1212" y="569">1,3 A nom. · cae sin corriente</text>
+          <text class="t-pin" x="1212" y="585">2 cables del motor</text>
           <circle class="dot power" cx="840" cy="643" r="4.5"></circle>
           <circle class="dot gnd" cx="800" cy="667" r="4.5"></circle>
           <path class="w power" d="M840 643 H900"></path>
           <path class="w gnd" d="M800 667 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="623" width="170" height="64" rx="6"></rect>
-          <text class="t-title" x="910" y="645">9 · IBT-2 J3</text>
-          <text class="t-sub" x="910" y="661">WROOM PWM 16/17 · 18 AWG</text>
-          <text class="t-pin" x="910" y="677">B+ · B−   M+ · M−</text>
-          <g class="lbl safety"><text class="t-pin" x="1064" y="617" text-anchor="end">EN ← EN-B</text></g>
-          <path class="w motor" d="M1070 647 H1150"></path><path class="w motor" d="M1070 663 H1150"></path>
-          <text class="t-pin" x="1110" y="642" text-anchor="middle">M+</text><text class="t-pin" x="1110" y="677" text-anchor="middle">M−</text>
-          <rect class="box" x="1150" y="623" width="230" height="64" rx="6"></rect>
-          <image href="fotos/potencia/motor_brazo.jpg" x="1154" y="626" width="52" height="58" preserveAspectRatio="xMidYMid meet"></image>
+          <rect class="box" x="900" y="621" width="214" height="68" rx="6"></rect>
+          <text class="t-title" x="938" y="643">9 · Brazo J3</text>
+          <text class="t-sub" x="938" y="659">IBT-2 · WROOM 16/17</text>
+          <text class="t-sub" x="938" y="674">B y M: 18 AWG</text>
+          <g class="lbl safety"><text class="t-pin" x="1108" y="615" text-anchor="end">EN ← EN-B</text></g>
+          <path class="w motor" d="M1114 643 H1150"></path><path class="w motor" d="M1114 667 H1150"></path>
+          <rect class="term power" x="896" y="639" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="647">B+</text>
+          <rect class="term gnd" x="896" y="663" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="671">B−</text>
+          <rect class="term motor" x="1110" y="639" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="647" text-anchor="end">M+</text>
+          <rect class="term motor" x="1110" y="663" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="671" text-anchor="end">M−</text>
+          <rect class="box" x="1150" y="621" width="230" height="68" rx="6"></rect>
+          <image href="fotos/potencia/motor_brazo.jpg" x="1154" y="625" width="52" height="60" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="1212" y="647">J3 · 36-555 58 rpm</text>
           <text class="t-sub" x="1212" y="664">1,3 A nom. · cae sin corriente</text>
-          <circle class="dot power" cx="840" cy="748" r="4.5"></circle><circle class="dot gnd" cx="800" cy="772" r="4.5"></circle>
-          <path class="w power" d="M840 748 H900"></path><path class="w gnd" d="M800 772 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="724" width="170" height="72" rx="6"></rect>
-          <image href="fotos/potencia/buck3.jpg" x="906" y="728" width="58" height="48" preserveAspectRatio="xMidYMid meet"></image>
-          <text class="t-title" x="970" y="746">10 · Buck 3</text>
-          <text class="t-sub" x="970" y="762">XL4016 · 12 → 6 V</text>
-          <text class="t-sub" x="970" y="777">CC 5 A · 18 AWG</text>
-          <text class="t-pin" x="908" y="790">IN+ IN−   OUT+ OUT−</text>
-          <path class="w supply" d="M1070 752 H1150"></path><path class="w gnd" d="M1070 768 H1150"></path>
-          <g class="lbl supply"><text class="t-pin" x="1110" y="747" text-anchor="middle">6 V</text></g>
+          <text class="t-pin" x="1212" y="680">2 cables del motor</text>
+          <circle class="dot power" cx="840" cy="748" r="4.5"></circle>
+          <circle class="dot gnd" cx="800" cy="772" r="4.5"></circle>
+          <path class="w power" d="M840 748 H900"></path>
+          <path class="w gnd" d="M800 772 H833 a7 7 0 0 1 14 0 H900"></path>
+          <rect class="box" x="900" y="724" width="214" height="72" rx="6"></rect>
+          <image href="fotos/potencia/buck3.jpg" x="940" y="730" width="54" height="44" preserveAspectRatio="xMidYMid meet"></image>
+          <text class="t-title" x="1000" y="740">10 · Buck 3</text>
+          <text class="t-sub" x="1000" y="756">12 → 6 V</text>
+          <text class="t-sub" x="1000" y="771">CC 5 A</text>
+          <text class="t-sub" x="940" y="789">18 AWG</text>
+          <path class="w supply" d="M1114 748 H1150"></path><path class="w gnd" d="M1114 772 H1150"></path>
+          <rect class="term power" x="896" y="744" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="752">IN+</text>
+          <rect class="term gnd" x="896" y="768" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="908" y="776">IN−</text>
+          <rect class="term supply" x="1110" y="744" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="752" text-anchor="end">OUT+</text>
+          <rect class="term gnd" x="1110" y="768" width="8" height="8" rx="1.5"></rect>
+          <text class="t-term" x="1106" y="776" text-anchor="end">OUT−</text>
+          <g class="lbl supply"><text class="t-pin" x="1132" y="743" text-anchor="middle">6 V</text></g>
           <rect class="box" x="1150" y="724" width="230" height="72" rx="6"></rect>
           <image href="fotos/potencia/servo.jpg" x="1154" y="728" width="60" height="64" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="1220" y="750">2 servos RDS3218</text>
