@@ -60,7 +60,7 @@ $$\tau_{rueda} = \frac{F}{2}\,r = 8{,}6 \cdot 0{,}075 \approx 0{,}64\ \text{N·m
 
 y para 0,25 m/s la rueda gira a $\omega = v/r = 3{,}3$ rad/s ≈ **32 rpm**.
 
-<div align="center"><img src="Imágenes/tabla_42gm895h.jpg" width="600"></div>
+<div align="center"><img src="Imágenes/Fig1_tabla_42gm895h.jpg" width="600"></div>
 
 <div align="center"><b>Figura 1.</b> Tabla del vendedor del 42GM-895H. Se eligió la reducción 189:1 (columna de 53 rpm) a 12 V.</div>
 
@@ -78,7 +78,7 @@ $$\tau_{J2} = g\left[m_{L2}\frac{L_2}{2} + m_{L3}\left(L_2 + \frac{L_3}{2}\right
 
 **Par en J1 (giro de la base):** no levanta peso; lo domina la inercia. Con $I \approx \sum m\,r^2 \approx 0{,}22$ kg·m² y la aceleración máxima del firmware (60 °/s² = 1,05 rad/s²), $\tau_{J1} \approx 0{,}23$ N·m ≈ 2,3 kgf·cm más la fricción.
 
-<div align="center"><img src="Imágenes/tabla_36_555.jpg" width="600"></div>
+<div align="center"><img src="Imágenes/Fig2.avif" width="600"></div>
 
 <div align="center"><b>Figura 2.</b> Tabla del vendedor del 36-555 a 12 V. J1 usa la reducción 50:1 (160 rpm); J2 y J3, la 139:1 (58 rpm).</div>
 
@@ -164,7 +164,7 @@ La Raspberry Pi 5 corre ROS 2 y solo manda consignas por USB (micro-ROS). Cada E
 
 <div align="center"><img src="Diagramas/conexionado_general.png" width="600"></div>
 
-<div align="center"><b>Figura 11.</b> Conexionado general v0.6, con los GPIO de cada placa. En trazo cortado, lo que queda fuera de la prueba integrada mínima.</div>
+<div align="center"><b>Figura 11.</b> Conexionado general v0.7, con los GPIO de cada placa. En trazo cortado, lo que queda fuera de la prueba integrada mínima.</div>
 
 ### 3.2 Control en cascada de las articulaciones
 
@@ -235,7 +235,7 @@ El robot dura lo que dura la LiPo: **~2,1 h de cosecha**.
 
 ### 4.4 Baterías seleccionadas
 
-**Motores: LiPo Zeee 3S1P.** 11,1 V nominales (9,9-12,6 V), 8000 mAh, 88,8 Wh, descarga de 100C, conector Deans (T) y balanceo JST-XH; 138 × 47 × 36 mm y 493 g. Los motores son de 12 V y el IBT-2 acepta de 5,5 a 27 V, así que la LiPo va directa al bus de motores. La velocidad sigue a la tensión (−17 % entre 12,6 y 10,5 V), pero el lazo de velocidad lo compensa. No tiene BMS: se carga fuera del robot con un cargador balanceador.
+**Motores: LiPo Zeee 3S1P.** 11,1 V nominales (9,9-12,6 V), 8000 mAh, 88,8 Wh, descarga de 100C y balanceo JST-XH; 138 × 47 × 36 mm y 493 g. Trae de fábrica un conector Deans (T), que se cambió por un XT60 porque no había Deans hembra. Los motores son de 12 V y el IBT-2 acepta de 5,5 a 27 V, así que la LiPo va directa al bus de motores. La velocidad sigue a la tensión (−17 % entre 12,6 y 10,5 V), pero el lazo de velocidad lo compensa. No tiene BMS: se carga fuera del robot con un cargador balanceador.
 
 <div align="center"><img src="Imágenes/lipo_3s_zeee.jpg" width="600"></div>
 
@@ -255,20 +255,20 @@ El robot dura lo que dura la LiPo: **~2,1 h de cosecha**.
 
 <div align="center"><img src="Diagramas/potencia_v06.png" width="600"></div>
 
-<div align="center"><b>Figura 17.</b> Circuito de potencia v0.6: LiPo directa al bus de 12 V de motores, protegida por un fusible de auto de 20 A, y power bank para la lógica, unidos solo por el GND.</div>
+<div align="center"><b>Figura 17.</b> Circuito de potencia v0.7: LiPo directa al bus de 12 V de motores, protegida por un fusible de auto de 20 A, y power bank para la lógica, unidos solo por el GND.</div>
 
 - **Fusible de auto de 20 A**, pegado al conector XT60 de la LiPo: es la protección contra un cortocircuito, la falla más peligrosa de una LiPo de 100C sin BMS. Los fusibles de auto son para corriente continua hasta 32 V, así que a 12,6 V trabajan dentro de su especificación; 20 A deja pasar el uso normal (~3 A de promedio, picos de ~15 A) y corta con un corto o con dos motores trabados.
 - **Selector WEG**, después del fusible: es el ON/OFF de los motores (H8). Trae dos contactos NA (bloques BC10, 10 A cada uno) que se conectan en paralelo para conducir hasta ~20 A. No es una protección (eso es el fusible) y se acciona con los motores quietos.
-- **Seta de emergencia** con dos contactos NC: uno corta la señal EN de los IBT-2 de tracción (los motores quedan en rueda libre aunque se cuelgue el firmware) y el otro avisa a la S3. El contacto de una seta no aguanta la corriente de los motores; por eso corta la señal y no la potencia. El brazo lo desarma el nodo `mision` al recibir el aviso.
+- **Seta de emergencia** con dos contactos NC: el primero corta el + del bus de 12 V, después del selector, así que los cinco IBT-2 y el buck de los servos quedan sin tensión aunque se cuelgue el firmware (los motores quedan en rueda libre). El segundo avisa a la S3 por el GPIO 47, que pasa a EMERGENCIA y no rearranca sola al soltarla. El contacto es para alterna (10 A, 400 V~) y cada corte con carga lo gasta, así que se usa solo en emergencias; el ON/OFF diario es el selector. La WROOM sigue encendida por USB: el nodo `mision` la desarma al recibir el aviso, para que el brazo no salte al volver los 12 V. Como J2 y J3 no se autobloquean, con la seta el brazo baja hasta su tope.
 - **Buck 3 (XL4016)**: baja los 12 V a 6 V para los servos de la pinza, con límite de corriente de 5 A.
 - **Capacitores de ≥ 25 V** en el bus de 12 V, cerca de los IBT-2.
 - **GND común**: el GND de cada ESP32 va a la bornera de GND del bus de motores; los positivos de las dos fuentes nunca se unen.
 
-<div align="center"><img src="Imágenes/selector_weg.jpg" width="600"></div>
+<div align="center"><img src="../../fotos/llaves/selector.jpeg" width="600"></div>
 
 <div align="center"><b>Figura 18.</b> Selector WEG con dos contactos NA (bloques BC10) en paralelo: interruptor ON/OFF de los motores (la protección es el fusible).</div>
 
-<div align="center"><img src="Imágenes/buck3_xl4016.jpg" width="600"></div>
+<div align="center"><img src="Imágenes/buck3.png" width="600"></div>
 
 <div align="center"><b>Figura 19.</b> Buck XL4016 (buck 3): 12 → 6 V para los servos.</div>
 
@@ -278,15 +278,15 @@ La guía pide indicar el nivel de batería y disponer de un puerto de carga:
 
 - **Nivel de la LiPo:** un divisor de 100 kΩ / 27 kΩ lleva la tensión (12,6 V → 2,68 V) al ADC de la ESP32-S3, que la publica en ROS y avisa `BATERIA_BAJA` a 10,5 V (3,5 V por celda). Además, un **indicador de barras** en el conector de balanceo la muestra en el robot. Como no hay supervisión por celda, cada celda se mide con el balanceador antes y después de cada prueba.
 - **Nivel del power bank:** sus propios LEDs.
-- **Carga:** la LiPo se desenchufa por su conector Deans y se carga con el balanceador por el conector JST-XH; el power bank se carga por USB-C.
+- **Carga:** la LiPo se desenchufa por su conector XT60 y se carga con el balanceador por el conector JST-XH; el power bank se carga por USB-C.
 
-<div align="center"><img src="Imágenes/indicador_barras.jpg" width="600"></div>
+<div align="center"><img src="Imágenes/Fig20%20Indicador.png" width="600"></div>
 
 <div align="center"><b>Figura 20.</b> Indicador de barras para baterías de litio de 1S a 8S, en el balanceo de la LiPo.</div>
 
 ### 4.7 Ubicación de las baterías en el robot
 
-La LiPo (138 × 47 × 36 mm, 493 g) va dentro de la caja, en el lugar que ocupaba la batería de la Entrega 3, cerca del eje de tracción y lejos de los bordes. El fusible queda pegado a su conector y el selector, accesible desde la tapa. El power bank va arriba del mástil, al lado de la Raspberry Pi, con su cable USB-C corto: con 3 A, un cable de 5 V largo pierde demasiada tensión.
+La LiPo (138 × 47 × 36 mm, 493 g) va dentro de la caja, en el lugar que ocupaba la batería de la Entrega 3, cerca del eje de tracción y lejos de los bordes. El fusible queda pegado a su conector, y el selector y la seta, accesibles desde la tapa. El power bank va arriba del mástil, al lado de la Raspberry Pi, con su cable USB-C corto: con 3 A, un cable de 5 V largo pierde demasiada tensión.
 
 ## Etapa 5: Participación y evidencias
 
