@@ -54,13 +54,13 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   detector. `graphify-out/`: grafo del repo (local, fuera de git).
 
 ## 4. Cómo trabajar acá
-- Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF ni `.ipynb`** (bloqueados en
-  `.claude/settings.local.json`): usar sus `.txt`/`.md`.
+- Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF** (bloqueados en
+  `.claude/settings.local.json`): usar sus `.txt`/`.md`. Los `.ipynb` se pueden leer (11/10); preferir su `.md` si existe.
 - Firmware: `~/.platformio/penv/bin/pio`; pines solo en `include/pins.h`; drivers por `symlink://../lib/X`; lógica
   sin Arduino con pruebas `pio test -e native`. Verificar `pio test` y `pio run` sin warnings antes de un commit.
   **Apagar los 12 V antes de flashear o resetear.** ROS 2: unidades SI y `frame_id` explícito; `colcon test`.
 - **Entregas (`docs/TPF R*/`): el usuario las edita a mano en Drive/Colab** (el profesor sigue el panel de actividad).
-  Claude edita el `.ipynb` y el `.md` locales (para leer el `.ipynb`, el usuario quita la regla del deny) y le pasa qué
+  Claude edita el `.ipynb` y el `.md` locales y le pasa qué
   copiar. Imágenes por link `lh3.googleusercontent.com/d/<ID>=w2400`: al cambiar una, subir nueva versión en Drive (mismo
   ID) y cambiar el `=w` para saltear la caché. Diagramas: `.drawio` → PNG con Firefox headless + visor de diagrams.net
   (no hay draw.io instalado; el snap de Firefox no ve `/tmp`: usar `~/snap/firefox/common/render/`).
