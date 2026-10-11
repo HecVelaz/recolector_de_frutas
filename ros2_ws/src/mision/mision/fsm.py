@@ -98,7 +98,7 @@ class Mision:
             self._fallar(t, 'brazo ' + (', '.join(fallas) if fallas else 'desarmado'))
 
     def al_estado_base(self, texto, t):
-        # La seta corta el EN de la tracción pero la WROOM sigue encendida y armada: al soltarla, el brazo arrancaría con el error
+        # La seta corta los 12 V de los motores pero la WROOM sigue encendida y armada: al soltarla, el brazo arrancaría con el error
         # acumulado mientras J2/J3 caían. Desarmar y quedar en FALLA (no se rearma sola: hay que relanzar la misión).
         if 'SETA' not in texto.split():
             return

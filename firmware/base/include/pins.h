@@ -37,7 +37,7 @@ constexpr int PIN_BUMPER_FRENTE = 14;
 constexpr int PIN_BUMPER_IZQ = 21;
 constexpr int PIN_BUMPER_DER = 39;
 
-// Seta: contacto auxiliar NORMALMENTE CERRADO a GND, pull-up interno. Seta suelta = LOW; apretada o cable
+// Seta: bloque B, NORMALMENTE CERRADO a GND (el bloque A corta el + del bus de 12 V), pull-up interno. Seta suelta = LOW; apretada o cable
 // cortado = HIGH (falla segura).
 constexpr int PIN_SETA = 47;
 

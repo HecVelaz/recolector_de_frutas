@@ -49,18 +49,18 @@
   svg .box.seta { stroke: var(--w-power); stroke-width: 2; }
   svg .perf { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 5; }
   svg .w { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-  svg .w.en { stroke: var(--w-en); } svg .w.aviso { stroke: var(--w-aviso); } svg .w.gnd { stroke: var(--w-gnd); }
+  svg .w.en { stroke: var(--w-en); } svg .w.power { stroke: var(--w-power); stroke-width: 4.5; } svg .dot.power { fill: var(--w-power); } svg .term.power { fill: var(--w-power); } svg .w.aviso { stroke: var(--w-aviso); } svg .w.gnd { stroke: var(--w-gnd); }
   svg .dot.en { fill: var(--w-en); } svg .dot.aviso { fill: var(--w-aviso); } svg .dot.gnd { fill: var(--w-gnd); }
   svg .term { stroke: var(--card); stroke-width: 1.2; }
   svg .term.en { fill: var(--w-en); } svg .term.aviso { fill: var(--w-aviso); } svg .term.gnd { fill: var(--w-gnd); } svg .term.muted { fill: var(--rule); }
   svg .num circle { stroke: var(--card); stroke-width: 2; }
   svg .num text { font: 600 13px var(--sans); fill: #fff; text-anchor: middle; dominant-baseline: central; }
-  svg .num.en circle { fill: var(--w-en); } svg .num.aviso circle { fill: var(--w-aviso); } svg .num.gnd circle { fill: var(--w-gnd); }
+  svg .num.en circle { fill: var(--w-en); } svg .num.power circle { fill: var(--w-power); } svg .num.aviso circle { fill: var(--w-aviso); } svg .num.gnd circle { fill: var(--w-gnd); }
   svg .num.gnd text { fill: var(--card); }
   svg .ring { fill: none; stroke-width: 3; }
   svg .lead { fill: none; stroke-width: 1.6; }
   .n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font: 600 12.5px var(--sans); }
-  .n.en { background: var(--w-en); } .n.aviso { background: var(--w-aviso); } .n.gnd { background: var(--w-gnd); color: var(--card); }
+  .n.en { background: var(--w-en); } .n.power { background: var(--w-power); } .n.aviso { background: var(--w-aviso); } .n.gnd { background: var(--w-gnd); color: var(--card); }
   .ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
   .idea { background: var(--card); border: 1px solid var(--rule); border-top: 5px solid var(--c); border-radius: 6px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
   .idea p { font-size: 14px; }
@@ -87,25 +87,25 @@
   <header>
     <div class="eyebrow">Grupo 2 · Arturito R2D2 · seta de emergencia · 10/10/2026</div>
     <h1>La seta, cable por cable</h1>
-    <p class="lede">La seta <b>no tiene ningún cable a la Pi</b>: se cablea solo a la S3 (en la Freenove y su perforada) y a los dos IBT-2 de tracción. Son <b>7 cables</b>, <b>2 puentes</b> (uno en cada IBT-2) y <b>2 componentes</b> (un 10 kΩ y un 100 nF). Al brazo le avisa la Pi por software, sin cables. Todo con cable fino de señal (22-26 AWG): por acá pasan miliamperes, no la corriente de los motores.</p>
+    <p class="lede">La seta va <b>después del fusible y del selector</b>: su bloque A corta el + de los 12 V de todos los motores y su bloque B le avisa a la S3. <b>No tiene ningún cable a la Pi.</b> Son <b>5 cables</b>: 2 gruesos de potencia y 3 finos de señal, más un capacitor de 100 nF. La Pi, el power bank y las ESP32 no pasan por la seta: siguen encendidos.</p>
   </header>
 
   <section aria-labelledby="h-idea">
     <h2 id="h-idea">La idea: dos bloques, dos trabajos</h2>
     <div class="ideas">
-      <div class="idea" style="--c: var(--w-en)">
-        <h3>Bloque A (el de arriba): corta las ruedas</h3>
-        <p>Está en el medio del cable <b>EN</b> que va de la S3 a los IBT-2. Al apretar la seta se abre, el 10 kΩ lleva el EN a 0 V y los IBT-2 se apagan. Funciona aunque el firmware esté colgado.</p>
-        <p class="tag">cables 1 a 4 · violeta</p>
+      <div class="idea" style="--c: var(--w-power)">
+        <h3>Bloque A (el de arriba): corta los 12 V</h3>
+        <p>Va en serie con el + del bus, entre el selector y la bornera +12 V. Al apretar la seta se quedan sin tensión los <b>cinco IBT-2</b> (tracción y brazo) y el <b>buck de los servos</b>. No depende de ningún programa.</p>
+        <p class="tag">cables 1 y 2 · gruesos · rojo</p>
       </div>
       <div class="idea" style="--c: var(--w-aviso)">
         <h3>Bloque B (el de abajo): le avisa a la S3</h3>
-        <p>Une el GPIO 47 con GND. Al apretar la seta se abre, el pull-up interno sube el 47 a 3,3 V y el firmware pasa a <code>SETA</code>. Es un interruptor y nada más: no corta nada por sí solo.</p>
-        <p class="tag">cables 5, 6 y 7 · turquesa y negro</p>
+        <p>Une el GPIO 47 con GND. Al apretar la seta se abre, el pull-up interno sube el 47 a 3,3 V y el firmware pasa a <code>SETA</code>: baja el EN de la tracción y queda en EMERGENCIA, así <b>al soltar la seta las ruedas no arrancan solas</b>.</p>
+        <p class="tag">cables 3, 4 y 5 · finos · turquesa y negro</p>
       </div>
       <div class="idea" style="--c: var(--w-sw)">
-        <h3>El brazo: por software, a través de la Pi</h3>
-        <p>No tiene corte por cable. La S3 publica <code>SETA</code> en <code>/base/estado</code>, <code>mision</code> (en la Pi) lo ve y desarma el brazo. Por eso <b>sin <code>mision</code> corriendo el brazo no se para solo</b>.</p>
+        <h3>El brazo: la Pi lo desarma por software</h3>
+        <p>Sus motores ya se quedan sin tensión por el bloque A, pero la WROOM sigue encendida por USB y armada. <code>mision</code> (en la Pi) ve <code>SETA</code> y la desarma, para que <b>al soltar la seta el brazo no salte</b>.</p>
         <p class="tag">sin cables: USB y micro-ROS · naranja</p>
       </div>
     </div>
@@ -113,217 +113,205 @@
 
   <section aria-labelledby="h-foto">
     <h2 id="h-foto">Paso 1: qué tornillo es cuál</h2>
-    <p>Mirada desde atrás, como queda en la tabla de madera. Los números 1 y 2 están impresos en cada bloque, pero <b>en el de arriba el 1 está a la derecha y en el de abajo, a la izquierda</b>.</p>
+    <p>Mirada desde atrás, como queda en la tabla de madera. Arriba, el bloque A (potencia); abajo, el B (aviso). <b>No los mezcles: si los 12 V llegan al bloque B, entran al GPIO 47 y queman la S3.</b></p>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 820 400" style="min-width: 640px" role="img" aria-label="Foto de atrás de la seta con los cuatro tornillos marcados: arriba a la derecha A1, cable 1 desde la bornera 38; arriba a la izquierda A2, cable 2 a la tira EN-T; abajo a la izquierda B1, cable 5 a la tira del 47; abajo a la derecha B2, cable 7 a GND. Los dos tornillos del centro no se usan.">
+        <svg viewBox="0 0 820 400" style="min-width: 640px" role="img" aria-label="Foto de atrás de la seta con los cuatro tornillos marcados: los dos de arriba son el bloque A, por donde pasan los cables gruesos 1 y 2 de los 12 V; abajo a la izquierda B1, cable 3 a la tira del 47; abajo a la derecha B2, cable 5 a GND. Los dos tornillos del centro no se usan.">
           <image href="fotos/potencia/hongo_atras.jpg" x="10" y="10" width="380" height="380" preserveAspectRatio="xMidYMid meet"></image>
-          <!-- tornillos -->
-          <circle class="ring" cx="298" cy="120" r="30" stroke="var(--w-en)"></circle>
-          <circle class="ring" cx="103" cy="126" r="30" stroke="var(--w-en)"></circle>
+          <circle class="ring" cx="298" cy="120" r="30" stroke="var(--w-power)"></circle>
+          <circle class="ring" cx="103" cy="126" r="30" stroke="var(--w-power)"></circle>
           <circle class="ring" cx="120" cy="300" r="30" stroke="var(--w-aviso)"></circle>
           <circle class="ring" cx="300" cy="290" r="30" stroke="var(--w-gnd)"></circle>
           <circle class="ring" cx="200" cy="105" r="18" stroke="var(--muted)" stroke-dasharray="4 3"></circle>
           <circle class="ring" cx="212" cy="330" r="18" stroke="var(--muted)" stroke-dasharray="4 3"></circle>
-          <!-- líneas a las etiquetas -->
-          <path class="lead" d="M328 120 H430" stroke="var(--w-en)"></path>
-          <path class="lead" d="M103 96 V30 H430 V150" stroke="var(--w-en)"></path>
+          <path class="lead" d="M328 120 H430" stroke="var(--w-power)"></path>
+          <path class="lead" d="M103 96 V30 H430 V150" stroke="var(--w-power)"></path>
           <path class="lead" d="M120 330 V380 H430 V250" stroke="var(--w-aviso)"></path>
           <path class="lead" d="M330 290 H430 V320" stroke="var(--w-gnd)"></path>
           <path class="lead" d="M218 105 L250 70 H430" stroke="var(--muted)" stroke-dasharray="4 3"></path>
-          <!-- etiquetas -->
           <g transform="translate(445,52)"><text class="t-sub" x="0" y="20">tornillos del centro</text><text class="t-sub" x="0" y="36">(traba del bloque): no se usan</text></g>
           <g transform="translate(445,108)">
-            <g class="num en"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">1</text></g>
+            <g class="num power"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">1</text></g>
             <text class="t-title" x="30" y="17">A1 · arriba a la derecha</text>
-            <text class="t-sub" x="30" y="34">llega el cable 1 desde la bornera 38</text>
+            <text class="t-sub" x="30" y="34">cable grueso 1, desde el selector (borne 4)</text>
           </g>
           <g transform="translate(445,150)">
-            <g class="num en"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">2</text></g>
+            <g class="num power"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">2</text></g>
             <text class="t-title" x="30" y="17">A2 · arriba a la izquierda</text>
-            <text class="t-sub" x="30" y="34">sale el cable 2 a la tira EN-T (10 kΩ)</text>
+            <text class="t-sub" x="30" y="34">cable grueso 2, a la bornera +12 V</text>
+            <text class="t-sub" x="30" y="50">(da lo mismo cuál de los dos es 1 o 2)</text>
           </g>
           <g transform="translate(445,236)">
-            <g class="num aviso"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">5</text></g>
+            <g class="num aviso"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">3</text></g>
             <text class="t-title" x="30" y="17">B1 · abajo a la izquierda</text>
-            <text class="t-sub" x="30" y="34">sale el cable 5 a la tira del 47 (100 nF)</text>
+            <text class="t-sub" x="30" y="34">cable fino 3, a la tira del 47 (100 nF)</text>
           </g>
           <g transform="translate(445,306)">
-            <g class="num gnd"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">7</text></g>
+            <g class="num gnd"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">5</text></g>
             <text class="t-title" x="30" y="17">B2 · abajo a la derecha</text>
-            <text class="t-sub" x="30" y="34">sale el cable 7 al riel de GND</text>
+            <text class="t-sub" x="30" y="34">cable fino 5, al riel de GND</text>
           </g>
         </svg>
       </div>
-      <figcaption>Antes de atornillar nada, <b>confirmalo con el tester en continuidad</b>: A1-A2 pita con la seta suelta y deja de pitar apretada; lo mismo B1-B2. Entre un tornillo de A y uno de B nunca tiene que pitar. Si en tu seta los números están en otro lado, manda lo impreso: A = el bloque cuyos tornillos llevan el EN; B = el del aviso.</figcaption>
+      <figcaption>Antes de atornillar, <b>confirmalo con el tester en continuidad</b>: A1-A2 pita con la seta suelta y deja de pitar apretada; lo mismo B1-B2. Entre un tornillo de A y uno de B nunca tiene que pitar. Si los números impresos no coinciden con la foto, manda lo que mida el tester.</figcaption>
     </figure>
   </section>
 
   <section aria-labelledby="h-diag">
     <h2 id="h-diag">Paso 2: el circuito completo</h2>
     <div class="legend">
-      <span><i style="background:var(--w-en)"></i>EN de la tracción (pasa por el bloque A)</span>
-      <span><i style="background:var(--w-aviso)"></i>aviso al GPIO 47 (bloque B)</span>
+      <span><i style="background:var(--w-power)"></i>+12 V de los motores (cable grueso)</span>
+      <span><i style="background:var(--w-aviso)"></i>aviso al GPIO 47 (cable fino)</span>
       <span><i style="background:var(--w-gnd)"></i>GND</span>
+      <span><i style="background:var(--w-en)"></i>EN de la tracción (ya no pasa por la seta)</span>
     </div>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 -24 1100 674" style="min-width: 980px" role="img" aria-label="Circuito de la seta. Cable 1: bornera 38 de la Freenove al tornillo A1. Cable 2: tornillo A2 a la tira EN-T de la perforada, que tiene un 10 kilohm a GND. Cables 3 y 4: de la tira EN-T a R_EN de cada IBT-2 de tracción, con un puente de R_EN a L_EN en cada uno. Cable 5: tornillo B1 a la tira del 47, que tiene un 100 nanofaradios a GND. Cable 6: de esa tira a la bornera 47. Cable 7: tornillo B2 al riel de GND. El riel de GND de la perforada va a una bornera GND.">
-          <!-- S3 en la Freenove -->
-          <rect class="box" x="20" y="200" width="180" height="420" rx="6"></rect>
-          <text class="t-title" x="34" y="226">ESP32-S3</text>
-          <text class="t-sub" x="34" y="243">en la Freenove</text>
-          <text class="t-sub" x="34" y="259">(borneras de abajo)</text>
-          <rect class="term en" x="196" y="256" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="188" y="265" text-anchor="end">38</text>
-          <text class="t-sub" x="188" y="283" text-anchor="end">salida EN</text>
-          <text class="t-sub" x="188" y="298" text-anchor="end">3,3 V armada</text>
-          <rect class="term aviso" x="196" y="416" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="188" y="425" text-anchor="end">47</text>
-          <text class="t-sub" x="188" y="443" text-anchor="end">entrada</text>
-          <text class="t-sub" x="188" y="458" text-anchor="end">pull-up interno</text>
-          <rect class="term gnd" x="196" y="566" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="188" y="575" text-anchor="end">GND</text>
+        <svg viewBox="0 0 1100 600" style="min-width: 980px" role="img" aria-label="Circuito de la seta. Arriba: LiPo, XT60 y fusible de 20 A al selector WEG; cable grueso 1 del borne 4 del selector al bloque A de la seta; cable grueso 2 del bloque A a la bornera +12 V, de donde salen los cinco IBT-2, el buck de los servos, el voltímetro y el divisor. Abajo: cable 3 del tornillo B1 a la tira del 47 en la perforada, con 100 nF a GND; cable 4 de la tira a la bornera 47 de la S3; cable 5 del tornillo B2 al riel de GND. Una línea punteada une los dos bloques: es el mismo botón. A la derecha, el EN de la tracción sale del GPIO 38 a la tira EN-T con 10 kilohm a GND y de ahí a los dos IBT-2, sin pasar por la seta.">
+          <!-- Fila de potencia -->
+          <rect class="box" x="20" y="60" width="170" height="80" rx="6"></rect>
+          <text class="t-title" x="34" y="86">LiPo → XT60</text>
+          <text class="t-title" x="34" y="106">→ fusible 20 A</text>
+          <text class="t-sub" x="34" y="126">el fusible siempre primero</text>
+          <path class="w power" d="M190 100 H240"></path>
+          <rect class="box" x="240" y="60" width="170" height="80" rx="6"></rect>
+          <text class="t-title" x="325" y="86" text-anchor="middle">Selector WEG</text>
+          <text class="t-sub" x="325" y="104" text-anchor="middle">ON/OFF de todos los días</text>
+          <text class="t-sub" x="325" y="120" text-anchor="middle">(2 NA en paralelo)</text>
+          <rect class="term power" x="235" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="252" y="134">3</text>
+          <rect class="term power" x="405" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="398" y="134" text-anchor="end">4</text>
+          <path class="w power" d="M410 100 H540"></path>
 
-          <!-- Seta -->
-          <text class="t-title" x="320" y="30">Seta (vista de atrás, los dos bloques dibujados lado a lado)</text>
-          <rect class="box seta" x="320" y="50" width="180" height="90" rx="6"></rect>
-          <text class="t-title" x="410" y="76" text-anchor="middle">Bloque B (abajo)</text>
-          <text class="t-sub" x="410" y="94" text-anchor="middle">aviso</text>
-          <path d="M350 118 H382 L412 102 M420 118 H470" fill="none" stroke="var(--ink)" stroke-width="2"></path>
-          <path d="M412 110 V126" stroke="var(--ink)" stroke-width="2"></path>
-          <rect class="term aviso" x="315" y="90" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="332" y="132">1</text>
-          <rect class="term gnd" x="495" y="90" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="488" y="132" text-anchor="end">2</text>
+          <rect class="box seta" x="540" y="50" width="200" height="100" rx="6"></rect>
+          <text class="t-title" x="640" y="74" text-anchor="middle">Seta · bloque A (arriba)</text>
+          <path d="M575 120 H607 L637 104 M645 120 H705" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+          <path d="M637 112 V128" stroke="var(--ink)" stroke-width="2"></path>
+          <rect class="term power" x="535" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="552" y="144">A1</text>
+          <rect class="term power" x="735" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="728" y="144" text-anchor="end">A2</text>
+          <path class="w power" d="M740 100 H860"></path>
 
-          <rect class="box seta" x="600" y="50" width="180" height="90" rx="6"></rect>
-          <text class="t-title" x="690" y="76" text-anchor="middle">Bloque A (arriba)</text>
-          <text class="t-sub" x="690" y="94" text-anchor="middle">corta el EN</text>
-          <path d="M630 118 H662 L692 102 M700 118 H750" fill="none" stroke="var(--ink)" stroke-width="2"></path>
-          <path d="M692 110 V126" stroke="var(--ink)" stroke-width="2"></path>
-          <rect class="term en" x="595" y="90" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="612" y="132">2</text>
-          <rect class="term en" x="775" y="90" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="768" y="132" text-anchor="end">1</text>
-          <text class="t-sub" x="410" y="160" text-anchor="middle">NC: cerrado con la seta suelta</text>
-          <text class="t-sub" x="690" y="160" text-anchor="middle">NC: cerrado con la seta suelta</text>
+          <!-- Bornera +12 V -->
+          <path d="M860 60 V260" stroke="var(--w-power)" stroke-width="10" stroke-linecap="round"></path>
+          <text class="t-title" x="876" y="70">Bornera +12 V</text>
+          <path class="w power" d="M860 110 H900" stroke-width="2.4"></path><text class="t-sub" x="908" y="114">IBT-2 tracción izq. y der.</text>
+          <path class="w power" d="M860 150 H900" stroke-width="2.4"></path><text class="t-sub" x="908" y="154">IBT-2 J1, J2 y J3</text>
+          <path class="w power" d="M860 190 H900" stroke-width="2.4"></path><text class="t-sub" x="908" y="194">buck 3 → servos</text>
+          <path class="w power" d="M860 230 H900" stroke-width="2.4"></path><text class="t-sub" x="908" y="234">voltímetro y divisor (GPIO 1)</text>
+          <text class="t-sub" x="876" y="282">todo esto se apaga con la seta</text>
+
+          <!-- Mismo botón -->
+          <path d="M637 150 V330" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="6 5" fill="none"></path>
+          <text class="t-sub" x="648" y="244">mismo botón: los dos</text>
+          <text class="t-sub" x="648" y="260">bloques se abren juntos</text>
+
+          <!-- S3 -->
+          <rect class="box" x="20" y="330" width="180" height="240" rx="6"></rect>
+          <text class="t-title" x="34" y="356">ESP32-S3</text>
+          <text class="t-sub" x="34" y="373">en la Freenove</text>
+          <text class="t-sub" x="34" y="389">(borneras de abajo)</text>
+          <rect class="term aviso" x="196" y="426" width="9" height="9" rx="2"></rect>
+          <text class="t-term" x="188" y="435" text-anchor="end">47</text>
+          <text class="t-sub" x="188" y="453" text-anchor="end">entrada</text>
+          <text class="t-sub" x="188" y="468" text-anchor="end">pull-up interno</text>
+          <rect class="term gnd" x="196" y="526" width="9" height="9" rx="2"></rect>
+          <text class="t-term" x="188" y="535" text-anchor="end">GND</text>
+
+          <!-- Seta B -->
+          <rect class="box seta" x="540" y="330" width="200" height="100" rx="6"></rect>
+          <text class="t-title" x="640" y="354" text-anchor="middle">Seta · bloque B (abajo)</text>
+          <path d="M575 400 H607 L637 384 M645 400 H705" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+          <path d="M637 392 V408" stroke="var(--ink)" stroke-width="2"></path>
+          <rect class="term aviso" x="535" y="375" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="552" y="424">B1</text>
+          <rect class="term gnd" x="735" y="375" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="728" y="424" text-anchor="end">B2</text>
 
           <!-- Perforada -->
-          <rect class="perf" x="260" y="310" width="520" height="310" rx="8"></rect>
-          <text class="t-sub" x="272" y="612">perforada de la S3 (debajo de la fila de borneras de abajo)</text>
+          <rect class="perf" x="250" y="400" width="250" height="180" rx="8"></rect>
+          <text class="t-sub" x="262" y="596">perforada de la S3</text>
+          <rect x="300" y="422" width="110" height="16" rx="3" fill="var(--soft)" stroke="var(--w-aviso)" stroke-width="1.6"></rect>
+          <text class="t-title" x="300" y="414">tira 47</text>
+          <circle class="dot aviso" cx="355" cy="430" r="5"></circle>
+          <path class="w aviso" d="M355 430 V478"></path>
+          <path d="M341 478 H369 M341 486 H369" stroke="var(--ink)" stroke-width="2.6"></path>
+          <text class="t-title" x="377" y="488">100 nF</text>
+          <path class="w gnd" d="M355 486 V550"></path>
+          <!-- Cable 3: B1 → tira 47 -->
+          <path class="w aviso" d="M535 380 H460 V430 H410"></path>
+          <!-- Cable 4: tira 47 → bornera 47 -->
+          <path class="w aviso" d="M300 430 H205"></path>
+          <!-- Cable 5: B2 → riel GND -->
+          <path class="w gnd" d="M745 380 H775 V550 H480"></path>
+          <!-- Riel GND → bornera GND -->
+          <path class="w gnd" d="M480 550 H270" stroke-width="4"></path>
+          <circle class="dot gnd" cx="355" cy="550" r="4.5"></circle>
+          <circle class="dot gnd" cx="480" cy="550" r="4.5"></circle>
+          <text class="t-sub" x="380" y="542">riel de GND</text>
+          <path class="w gnd" d="M270 550 H240 V530 H205"></path>
+          <text class="t-sub" x="210" y="566">ya existe</text>
 
-          <!-- Cable 1: 38 → A1 -->
-          <path class="w en" d="M205 260 H240 V-8 H820 V95 H785"></path>
-          <!-- Cable 2: A2 → tira EN-T -->
-          <path class="w en" d="M595 95 H570 V340 H600"></path>
-          <!-- Tira EN-T -->
-          <rect x="600" y="332" width="150" height="16" rx="3" fill="var(--soft)" stroke="var(--w-en)" stroke-width="1.6"></rect>
-          <text class="t-title" x="600" y="322">tira EN-T</text>
-          <circle class="dot en" cx="650" cy="340" r="5"></circle>
-          <path class="w en" d="M650 340 V385"></path>
-          <rect x="642" y="385" width="16" height="56" rx="2" fill="var(--card)" stroke="var(--ink)" stroke-width="1.6"></rect>
-          <text class="t-title" x="666" y="410">10 kΩ</text>
-          <text class="t-sub" x="666" y="427">a GND</text>
-          <path class="w gnd" d="M650 441 V590"></path>
-          <!-- Cables 3 y 4: tira EN-T → IBT-2 -->
-          <path class="w en" d="M750 340 H850"></path>
-          <circle class="dot en" cx="850" cy="340" r="5"></circle>
-          <path class="w en" d="M850 340 V290 H900"></path>
-          <path class="w en" d="M850 340 V470 H900"></path>
-
-          <!-- IBT-2 izq -->
-          <rect class="box" x="900" y="230" width="180" height="130" rx="6"></rect>
-          <text class="t-title" x="914" y="254">IBT-2 tracción izq.</text>
-          <rect class="term en" x="896" y="286" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="914" y="295">R_EN</text>
-          <rect class="term en" x="896" y="308" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="914" y="317">L_EN</text>
-          <path class="w en" d="M880 290 V312 H900" stroke-width="2.4"></path>
-          <circle class="dot en" cx="880" cy="290" r="4"></circle>
-          <text class="t-sub" x="976" y="306">puente R_EN–L_EN</text>
-          <text class="t-sub" x="914" y="342">PWM, VCC y GND: placa_s3.html</text>
-          <!-- IBT-2 der -->
-          <rect class="box" x="900" y="410" width="180" height="130" rx="6"></rect>
-          <text class="t-title" x="914" y="434">IBT-2 tracción der.</text>
-          <rect class="term en" x="896" y="466" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="914" y="475">R_EN</text>
-          <rect class="term en" x="896" y="488" width="9" height="9" rx="2"></rect>
-          <text class="t-term" x="914" y="497">L_EN</text>
-          <path class="w en" d="M880 470 V492 H900" stroke-width="2.4"></path>
-          <circle class="dot en" cx="880" cy="470" r="4"></circle>
-          <text class="t-sub" x="976" y="486">puente R_EN–L_EN</text>
-          <text class="t-sub" x="914" y="522">PWM, VCC y GND: placa_s3.html</text>
-
-          <!-- Cable 5: B1 → tira 47 -->
-          <path class="w aviso" d="M315 95 H290 V230 H400 V420 H380"></path>
-          <!-- Tira 47 -->
-          <rect x="300" y="412" width="80" height="16" rx="3" fill="var(--soft)" stroke="var(--w-aviso)" stroke-width="1.6"></rect>
-          <text class="t-title" x="300" y="402">tira 47</text>
-          <circle class="dot aviso" cx="340" cy="420" r="5"></circle>
-          <path class="w aviso" d="M340 420 V470"></path>
-          <path d="M326 470 H354 M326 478 H354" stroke="var(--ink)" stroke-width="2.6"></path>
-          <text class="t-title" x="362" y="480">100 nF</text>
-          <text class="t-sub" x="362" y="496">a GND</text>
-          <path class="w gnd" d="M340 478 V590"></path>
-          <!-- Cable 6: tira 47 → bornera 47 -->
-          <path class="w aviso" d="M300 420 H205"></path>
-          <!-- Cable 7: B2 → riel GND -->
-          <path class="w gnd" d="M505 95 H530 V590"></path>
-
-          <!-- Riel de GND -->
-          <path class="w gnd" d="M280 590 H700" stroke-width="4"></path>
-          <circle class="dot gnd" cx="340" cy="590" r="4.5"></circle>
-          <circle class="dot gnd" cx="530" cy="590" r="4.5"></circle>
-          <circle class="dot gnd" cx="650" cy="590" r="4.5"></circle>
-          <text class="t-sub" x="356" y="582">riel de GND</text>
-          <path class="w gnd" d="M280 590 H230 V570 H205"></path>
-          <text class="t-sub" x="218" y="604">ya existe</text>
+          <!-- EN, aparte -->
+          <rect class="box" x="820" y="330" width="260" height="240" rx="6" stroke-dasharray="5 4"></rect>
+          <text class="t-title" x="836" y="356">EN de la tracción</text>
+          <text class="t-sub" x="836" y="373">ya no pasa por la seta</text>
+          <rect class="term en" x="832" y="402" width="9" height="9" rx="2"></rect>
+          <text class="t-term" x="848" y="411">S3 · 38</text>
+          <path class="w en" d="M836 420 V450 H900"></path>
+          <rect x="900" y="442" width="90" height="16" rx="3" fill="var(--soft)" stroke="var(--w-en)" stroke-width="1.6"></rect>
+          <text class="t-sub" x="904" y="436">tira EN-T</text>
+          <circle class="dot en" cx="945" cy="450" r="4.5"></circle>
+          <path class="w en" d="M945 450 V476"></path>
+          <rect x="938" y="476" width="14" height="38" rx="2" fill="var(--card)" stroke="var(--ink)" stroke-width="1.4"></rect>
+          <text class="t-sub" x="958" y="498">10 kΩ a GND</text>
+          <path class="w gnd" d="M945 514 V530"></path>
+          <path class="w en" d="M990 450 H1040"></path>
+          <text class="t-sub" x="836" y="552">→ R_EN + L_EN de los 2 IBT-2</text>
+          <text class="t-sub" x="836" y="566">detalle: placa_s3.html</text>
 
           <!-- Números de cable -->
-          <g class="num en"><circle cx="530" cy="-8" r="12"></circle><text x="530" y="-8">1</text></g>
-          <g class="num en"><circle cx="570" cy="240" r="12"></circle><text x="570" y="240">2</text></g>
-          <g class="num en"><circle cx="850" cy="314" r="12"></circle><text x="850" y="314">3</text></g>
-          <g class="num en"><circle cx="850" cy="420" r="12"></circle><text x="850" y="420">4</text></g>
-          <g class="num aviso"><circle cx="345" cy="230" r="12"></circle><text x="345" y="230">5</text></g>
-          <g class="num aviso"><circle cx="250" cy="420" r="12"></circle><text x="250" y="420">6</text></g>
-          <g class="num gnd"><circle cx="530" cy="250" r="12"></circle><text x="530" y="250">7</text></g>
+          <g class="num power"><circle cx="475" cy="100" r="12"></circle><text x="475" y="100">1</text></g>
+          <g class="num power"><circle cx="800" cy="100" r="12"></circle><text x="800" y="100">2</text></g>
+          <g class="num aviso"><circle cx="490" cy="380" r="12"></circle><text x="490" y="380">3</text></g>
+          <g class="num aviso"><circle cx="250" cy="430" r="12"></circle><text x="250" y="430">4</text></g>
+          <g class="num gnd"><circle cx="775" cy="470" r="12"></circle><text x="775" y="470">5</text></g>
         </svg>
       </div>
-      <figcaption>La <b>tira EN-T no lleva cable a la bornera 38</b>: es la única tira de la perforada que no termina en su bornera. Lo que llega a los IBT-2 sale de la tira, <i>después</i> de la seta. Orden de los pines del IBT-2 según la tira de 8 pines más común: confirmarlo en la serigrafía de cada placa.</figcaption>
+      <figcaption>El voltímetro y el divisor de la batería quedan después de la seta: con la seta apretada marcan 0 V y <code>/base/estado</code> muestra <code>BATERIA_BAJA</code>. Es normal, no frena nada: la lectura vuelve al soltarla.</figcaption>
     </figure>
   </section>
 
   <section aria-labelledby="h-tabla">
     <h2 id="h-tabla">Paso 3: lista de cables (tildalos a medida que los ponés)</h2>
     <div class="tablewrap"><table>
-      <thead><tr><th></th><th>Cable</th><th>Desde</th><th>Hasta</th><th>Nota</th></tr></thead>
+      <thead><tr><th></th><th>Cable</th><th>Desde</th><th>Hasta</th><th>Tipo</th></tr></thead>
       <tbody>
-        <tr><td><input type="checkbox" aria-label="cable 1 puesto"></td><td><span class="n en">1</span></td><td>Bornera <b>38</b> de la Freenove</td><td>Seta <b>A1</b> (arriba a la derecha)</td><td>Directo, sin pasar por la perforada.</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 2 puesto"></td><td><span class="n en">2</span></td><td>Seta <b>A2</b> (arriba a la izquierda)</td><td>Entrada de la <b>tira EN-T</b></td><td>Trenzar 1 y 2 juntos hasta la seta (ida y vuelta del mismo circuito).</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 3 puesto"></td><td><span class="n en">3</span></td><td>Tira EN-T</td><td><b>R_EN</b> del IBT-2 izquierdo</td><td>En el IBT-2, puente corto de R_EN a L_EN.</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 4 puesto"></td><td><span class="n en">4</span></td><td>Tira EN-T</td><td><b>R_EN</b> del IBT-2 derecho</td><td>Ídem: puente R_EN–L_EN.</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 5 puesto"></td><td><span class="n aviso">5</span></td><td>Seta <b>B1</b> (abajo a la izquierda)</td><td>Entrada de la <b>tira 47</b></td><td>Trenzar 5 y 7 juntos hasta la seta.</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 6 puesto"></td><td><span class="n aviso">6</span></td><td>Salida de la tira 47</td><td>Bornera <b>47</b> de la Freenove</td><td>Cable corto, como el resto de las tiras.</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 7 puesto"></td><td><span class="n gnd">7</span></td><td>Seta <b>B2</b> (abajo a la derecha)</td><td><b>Riel de GND</b> de la perforada</td><td>O cualquier bornera GND de la Freenove: es el mismo GND.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 1 puesto"></td><td><span class="n power">1</span></td><td>Selector WEG, borne <b>4</b></td><td>Seta <b>A1</b> (arriba)</td><td>Grueso, como el del bus (12-14 AWG). Ida y vuelta juntos y cortos.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 2 puesto"></td><td><span class="n power">2</span></td><td>Seta <b>A2</b> (arriba)</td><td><b>Bornera +12 V</b></td><td>Grueso, igual que el 1.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 3 puesto"></td><td><span class="n aviso">3</span></td><td>Seta <b>B1</b> (abajo a la izquierda)</td><td>Entrada de la <b>tira 47</b></td><td>Fino (22-26 AWG). Trenzado con el 5.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 4 puesto"></td><td><span class="n aviso">4</span></td><td>Salida de la tira 47</td><td>Bornera <b>47</b> de la Freenove</td><td>Fino, corto.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 5 puesto"></td><td><span class="n gnd">5</span></td><td>Seta <b>B2</b> (abajo a la derecha)</td><td><b>Riel de GND</b> de la perforada</td><td>Fino. O cualquier bornera GND de la Freenove.</td></tr>
       </tbody>
     </table></div>
     <div class="cols">
       <div>
-        <h3>Componentes en la perforada</h3>
+        <h3>Componente en la perforada</h3>
         <ul class="steps">
-          <li><b>10 kΩ</b> de la tira EN-T al riel de GND. Es lo que apaga los IBT-2 cuando la seta se abre: sin él, el EN queda flotando y un IBT-2 podría seguir habilitado.</li>
-          <li><b>100 nF</b> de la tira 47 al riel de GND. Filtra rebotes y ruido que levanta el cable largo hasta la seta.</li>
+          <li><b>100 nF</b> de la tira 47 al riel de GND. Filtra rebotes y el ruido que levanta el cable largo hasta la seta.</li>
+          <li>El <b>10 kΩ de la tira EN-T</b> sigue haciendo falta, pero ya no tiene que ver con la seta: mantiene apagados los IBT-2 de tracción mientras la S3 arranca o se flashea. La tira EN-T va con un cable corto a la bornera 38, como las demás.</li>
         </ul>
       </div>
       <div>
         <h3>Errores que hay que evitar</h3>
         <ul class="steps">
-          <li>Unir la tira EN-T con la bornera 38: el 10 kΩ queda antes de la seta y no sirve.</li>
-          <li>Llevar un EN de un IBT-2 directo al 38: ese motor no se corta con la seta.</li>
-          <li>Olvidarse el puente R_EN–L_EN: el IBT-2 maneja solo media H y el motor gira para un solo lado.</li>
-          <li>Mezclar los bloques (por ejemplo, A2 con B2): el EN quedaría a GND, o el 47 en el circuito del EN.</li>
-          <li>Pasar los 12 V o los cables de motor por la seta: no aguanta esa corriente.</li>
+          <li><b>12 V en el bloque B:</b> entran al GPIO 47 y queman la S3. Marcá los cables gruesos y no los lleves al bloque de abajo.</li>
+          <li><b>La seta antes del fusible:</b> el fusible va primero, pegado al XT60. Todo cable antes del fusible queda sin protección.</li>
+          <li><b>La seta en el negativo:</b> el GND de los motores está unido al de las ESP32; si se corta el negativo, la corriente busca volver por los cables de señal. Siempre en el +.</li>
+          <li><b>Cable fino en el bloque A:</b> por ahí pasa la corriente de todos los motores.</li>
+          <li><b>Usarla como interruptor de todos los días:</b> el bloque es para alterna (<code>10(6)A 400V~</code>) y cada corte con carga lo gasta. Una NC soldada no corta y no te avisa. Para prender y apagar está el selector, con los motores quietos.</li>
         </ul>
       </div>
     </div>
@@ -331,12 +319,12 @@
 
   <section aria-labelledby="h-sw">
     <h2 id="h-sw">Lo que pasa después, sin cables (la parte de la Pi)</h2>
-    <p>Desde acá todo viaja por los USB que la Pi ya tiene con las dos ESP32. No hay que cablear nada más.</p>
+    <p>Los motores ya están sin tensión por el bloque A. Lo que sigue sirve para que <b>nada arranque solo al soltar la seta</b>, y viaja por los USB que la Pi ya tiene con las dos ESP32.</p>
     <div class="flow">
-      <div><b>La S3 lee el 47 en HIGH</b><span>Pasa a EMERGENCIA y además pone su GPIO 38 en 0 V (las ruedas ya estaban cortadas por el bloque A).</span></div>
+      <div><b>La S3 lee el 47 en HIGH</b><span>Pasa a EMERGENCIA y pone el GPIO 38 (EN de la tracción) en 0 V. Al soltar la seta las ruedas siguen apagadas hasta <code>r</code> y <code>armar</code>.</span></div>
       <div><span class="via">USB · micro-ROS</span><b>La Pi recibe <code>/base/estado</code> con <code>SETA</code></b><span>2 veces por segundo, mientras la seta siga apretada.</span></div>
       <div><b><code>mision</code> manda <code>desarmar</code></b><span>Por <code>/brazo/comando</code>, y la FSM queda en FALLA. No se rearma sola.</span></div>
-      <div><span class="via">USB · micro-ROS</span><b>La WROOM pone el GPIO 23 en 0 V</b><span>Es el EN común de J1, J2 y J3: los tres motores quedan sueltos. J2 y J3 caen (no se autobloquean).</span></div>
+      <div><span class="via">USB · micro-ROS</span><b>La WROOM se desarma</b><span>GPIO 23 (EN de J1, J2 y J3) en 0 V. Sin esto, al volver los 12 V el brazo correría a recuperar el error que acumuló mientras J2 y J3 caían.</span></div>
     </div>
     <p class="warn"><b>Sin <code>mision</code> corriendo, nadie desarma el brazo.</b> Si estás probando a mano, desarmalo vos antes de soltar la seta: <code>ros2 topic pub --once /brazo/comando std_msgs/msg/String "data: desarmar"</code></p>
   </section>
@@ -345,26 +333,25 @@
     <section aria-labelledby="h-estados">
       <h2 id="h-estados">Qué medir en cada caso</h2>
       <div class="tablewrap"><table>
-        <thead><tr><th>Situación</th><th>Bornera 38</th><th>Tira EN-T</th><th>Bornera 47</th><th>Ruedas</th></tr></thead>
+        <thead><tr><th>Situación</th><th>Bornera +12 V</th><th>Bornera 47</th><th>Qué pasa</th></tr></thead>
         <tbody>
-          <tr><td>Armada, seta suelta</td><td class="m">3,3 V</td><td class="m">3,3 V</td><td class="m">0 V</td><td>andan</td></tr>
-          <tr><td><b>Seta apretada</b></td><td class="m">0 V*</td><td class="m">0 V</td><td class="m">3,3 V</td><td>sueltas</td></tr>
-          <tr><td>Desarmada o S3 apagada</td><td class="m">0 V</td><td class="m">0 V</td><td class="m">—</td><td>sueltas</td></tr>
-          <tr><td>Cable de la seta cortado</td><td class="m">—</td><td class="m">0 V</td><td class="m">3,3 V</td><td>sueltas: falla segura</td></tr>
+          <tr><td>Seta suelta, selector ON</td><td class="m">LiPo (≈ 11-12,6 V)</td><td class="m">0 V</td><td>todo normal</td></tr>
+          <tr><td><b>Seta apretada</b></td><td class="m">0 V</td><td class="m">3,3 V</td><td>motores y servos sin tensión; S3 en EMERGENCIA</td></tr>
+          <tr><td>Cable 1 o 2 cortado</td><td class="m">0 V</td><td class="m">0 V</td><td>sin motores (falla segura)</td></tr>
+          <tr><td>Cable 3 o 5 cortado</td><td class="m">LiPo</td><td class="m">3,3 V</td><td>S3 en EMERGENCIA: tracción apagada (falla segura)</td></tr>
         </tbody>
       </table></div>
-      <p class="lede">* El firmware lo baja al ver el 47; aunque no lo hiciera, la tira EN-T queda en 0 V por el bloque A.</p>
     </section>
 
     <section aria-labelledby="h-prueba">
       <h2 id="h-prueba">Paso 4: probar, en este orden</h2>
       <ul class="check">
-        <li><input type="checkbox" aria-label="hecho"><span><b>Sin nada conectado:</b> tester en continuidad, A1-A2 y B1-B2 pitan con la seta suelta y no pitan apretada.</span></li>
-        <li><input type="checkbox" aria-label="hecho"><span><b>Selector WEG en OFF</b> (sin 12 V en los motores), la S3 por USB. Monitor serie, <code>sens</code>: con la seta suelta dice <code>seta: suelta</code>; apretada, <code>APRETADA</code>.</span></li>
-        <li><input type="checkbox" aria-label="hecho"><span>Todavía en OFF: armar la base y medir R_EN en cada IBT-2: <b>3,3 V</b>. Apretar la seta: <b>0 V</b> en los dos.</span></li>
-        <li><input type="checkbox" aria-label="hecho"><span>Con la seta apretada, <code>armar</code> tiene que fallar.</span></li>
-        <li><input type="checkbox" aria-label="hecho"><span><b>Ruedas en el aire, selector en ON</b>, velocidad baja: apretar la seta y ver que las ruedas se sueltan.</span></li>
-        <li><input type="checkbox" aria-label="hecho"><span>Para volver: girar la seta para soltarla, mandar <code>r</code> (rearmar) y después <code>armar</code> por <code>/base/comando</code>, o por el monitor serie.</span></li>
+        <li><input type="checkbox" aria-label="hecho"><span><b>Sin nada conectado:</b> tester en continuidad, A1-A2 y B1-B2 pitan con la seta suelta y no pitan apretada; entre A y B, nunca.</span></li>
+        <li><input type="checkbox" aria-label="hecho"><span><b>Sin la LiPo:</b> selector en ON, continuidad del + del XT60 a la bornera +12 V. Apretar la seta: abierto.</span></li>
+        <li><input type="checkbox" aria-label="hecho"><span><b>La S3 sola por USB</b>, monitor serie, <code>sens</code>: con la seta suelta dice <code>seta: suelta</code>; apretada, <code>APRETADA</code>.</span></li>
+        <li><input type="checkbox" aria-label="hecho"><span><b>Con la LiPo, selector en ON:</b> el voltímetro marca la batería. Apretar la seta: se apaga y la bornera +12 V da 0 V.</span></li>
+        <li><input type="checkbox" aria-label="hecho"><span><b>Ruedas en el aire</b>, <code>armar</code> y velocidad baja: apretar la seta, las ruedas se sueltan. Soltarla: no arrancan solas. Volver con <code>r</code> y <code>armar</code>.</span></li>
+        <li><input type="checkbox" aria-label="hecho"><span><b>Brazo, con <code>mision</code> corriendo:</b> apretar la seta, <code>mision</code> pasa a FALLA y el brazo queda desarmado. Al soltarla, el brazo no se mueve.</span></li>
       </ul>
     </section>
   </div>
@@ -372,11 +359,11 @@
   <section aria-labelledby="h-sin">
     <h2 id="h-sin">Si todavía no ponés la seta (prueba integrada)</h2>
     <ul class="steps">
-      <li>Un cable directo de la bornera 38 a la entrada de la tira EN-T, en lugar de los cables 1 y 2. El 10 kΩ sigue en la tira.</li>
+      <li>Un cable grueso del borne 4 del selector directo a la bornera +12 V, en lugar de los cables 1 y 2.</li>
       <li>Un puente de la bornera 47 a GND; si no, la S3 queda en EMERGENCIA y no arma.</li>
-      <li>Sacar los dos puentes cuando se ponga la seta.</li>
+      <li>Sin seta no hay parada de emergencia: alguien con la mano en el selector. Sacar los dos puentes cuando se ponga la seta.</li>
     </ul>
   </section>
 
-  <footer>Generado el 10/10/2026 a partir de <code>CONEXIONES.md</code> v0.6, <code>potencia.html</code>, <code>placa_s3.html</code>, <code>firmware/base/include/pins.h</code> (seta en el 47, EN en el 38) y <code>mision/fsm.py</code>. Foto: <code>docs/fotos/potencia/hongo_atras.jpg</code>.</footer>
+  <footer>Actualizado el 10/10/2026: la seta corta el + del bus de 12 V (decisión del grupo; antes cortaba el EN de la tracción). Fuentes: <code>CONEXIONES.md</code> v0.7, <code>potencia.html</code>, <code>placa_s3.html</code>, <code>firmware/base/include/pins.h</code> (seta en el 47, EN en el 38) y <code>mision/fsm.py</code>. Foto: <code>docs/fotos/potencia/hongo_atras.jpg</code>.</footer>
 </div>

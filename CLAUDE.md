@@ -18,8 +18,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**: XT60 (el Deans de fábrica se cambia: no hay hembra) → **fusible de auto 20 A** (la protección contra
   cortos) → **selector WEG** (ON/OFF de motores: 2 bloques NA BC10 en paralelo; la térmica CHINT salió el 10/10); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2030MI**
   5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W: verificar `vcgencmd get_throttled` = 0x0). Divisor de batería
-  **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`) cortando el EN de la tracción + aviso
-  al GPIO 47; sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
+  **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`): **bloque A corta el + del bus de 12 V** (entre selector y bornera; 10/10,
+  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/seta.html`); sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
   Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/conexiones.html` y `docs/potencia.html` (potencia cable por cable, con fotos).
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
@@ -200,8 +200,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).
 6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
 7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —
-   luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta solo corta la tracción
-   por hardware. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
+   luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta ya corta los 12 V de
+   todos los motores. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
 8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).

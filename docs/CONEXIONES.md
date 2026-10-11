@@ -6,6 +6,9 @@ LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo com
 `placa_s3.html` ya están en la v0.6.
 10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
 la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable por cable, con fotos: `potencia.html`.
+10/10 (v0.7): **la seta corta el + del bus de 12 V** (bloque A entre el selector y la bornera +12 V; decisión del grupo,
+más simple y corta también el brazo y los servos) y el bloque B avisa al GPIO 47. El EN de la tracción ya no pasa por
+la seta. Cable por cable: `seta.html`.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
 fusibles. La Pi 5 pasa al power bank.
@@ -36,7 +39,7 @@ Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía
 entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
 
 **Se conecta:**
-- LiPo → XT60 → fusible de auto 20 A → selector WEG → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- LiPo → XT60 → fusible de auto 20 A → selector WEG → (seta, cuando esté) → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
 - **Divisor de batería 100 k / 27 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
@@ -55,7 +58,7 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 | Bumpers ×3 y sus 100 nF | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en el selector |
 | HC-SR04 izquierdo y derecho | `/range/izq` y `/range/der` en NaN | Sin esquivar: la prueba va con teleop + `mision` |
 | Servo de giro (J4) | Queda quieto | Agarrar solo con la apertura |
-| Seta | **Cable del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sacar el puente al poner la seta |
+| Seta | **Cable grueso del selector a la bornera +12 V y otro del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sin parada de emergencia: alguien en el selector. Sacar los puentes al poner la seta |
 
 Recorrido autónomo, luz, buzzer, habilitación del brazo, app y LiDAR: después.
 
@@ -75,7 +78,7 @@ cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRI
 | 10 · 41 · 42 | TRIG del HC-SR04 central · esquina izq. · esquina der. | de a uno, cada 40 ms |
 | 11 · 12 · 13 | ECHO frente · izquierda · derecha | divisor 1 k / 2 k |
 | 14 · 21 · 39 | Bumpers frente · izquierda · derecha | NA a GND, pull-up interno (GPIO 40 queda libre) |
-| 47 | Contacto auxiliar **NC** de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
+| 47 | Bloque B (**NC**) de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
 | 1 | Divisor de batería 100 k / 27 k (LiPo 3S) | ADC1 canal 0 (12,6 V → 2,68 V) |
 
 ## ESP32-WROOM-32D · brazo (v0.4)
@@ -152,9 +155,9 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 
 ```
 LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → selector WEG, 2 NA en
-  paralelo (ON/OFF de motores, H8) → bus 12 V de motores
+  paralelo (ON/OFF de motores, H8) → seta, bloque A NC (corte de emergencia, cable grueso) → bus 12 V de motores
   │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
-  ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → seta NC 1 → R_EN + L_EN (10 kΩ a GND del lado de los IBT-2)
+  ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → R_EN + L_EN (10 kΩ a GND)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
   ├─ Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
   └─ divisor 100 k / 27 k → S3 GPIO 1 (12,6 V → 2,68 V)
@@ -162,7 +165,7 @@ LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pe
 
 Power bank Xiaomi PB2030MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
   └─ USB → ESP32-S3 y WROOM (y de sus pines de 5 V/3V3: encoders, IMU, HC-SR04, lógica de los IBT-2)
-seta NC 2 → S3 GPIO 47 (el otro lado a GND)
+seta, bloque B NC → S3 GPIO 47 (el otro lado a GND; 100 nF a GND en el pin). Nunca 12 V en este bloque.
 GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
 ```
 
@@ -184,12 +187,17 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   celda**: ni el ADC ni el indicador de barras ven una celda desbalanceada, y no hay supervisión por celda ni corte
   automático. Medir cada celda con el balanceador o el tester antes y después de cada prueba, y calibrar la lectura
   del ADC contra el tester. Cargar solo con el balanceador; guardada varios días, a ~11,4 V (3,8 V por celda).
-- **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 bloques NC 1-2 apilados (AdvanCon SIB2-BE102, `hongo.jpeg`):** el NC 1 corta la señal EN de la tracción (corte por
-  hardware, aunque se cuelgue el firmware; los motores quedan en rueda libre) y el NC 2 avisa a la S3 por el GPIO 47
-  (HIGH = apretada o cable cortado). El contacto de una seta no aguanta la corriente de los motores: por eso corta el
-  EN y no el bus de 12 V. El brazo no tiene corte por hardware: `mision` lo desarma al ver `SETA` en `/base/estado` y
-  queda en FALLA. **Sin `mision` corriendo, mandar `desarmar` al brazo antes de soltar la seta.** Con la seta, J2 y J3
-  sueltan el brazo (no se autobloquean). Cada bloque, una sola función: no mezclar sus bornes.
+- **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 bloques NC 1-2 apilados (AdvanCon SIB2-BE102, `hongo.jpeg`):** el bloque A (arriba) corta el + del bus de 12 V,
+  después del fusible y del selector: los cinco IBT-2 y el buck de los servos quedan sin tensión (corte por hardware,
+  aunque se cuelgue el firmware; los motores quedan en rueda libre: no frena). El bloque B (abajo) avisa a la S3 por el
+  GPIO 47 (HIGH = apretada o cable cortado): la S3 pasa a EMERGENCIA y no rearranca sola al soltarla (`r` y `armar`).
+  **El bloque está pensado para alterna (`10(6)A 400V~`), sin dato para continua:** a 12 V corta una emergencia, pero
+  cada corte con carga gasta los contactos y una NC soldada no corta. Solo para emergencias (el ON/OFF diario es el
+  selector, con los motores quietos) y probarla cada tanto (apretada: 0 V en la bornera +12 V). Cable grueso ida y vuelta
+  hasta la seta. La WROOM sigue encendida por USB: `mision` la desarma al ver `SETA` en `/base/estado` y queda en
+  FALLA, para que el brazo no salte al volver los 12 V. **Sin `mision` corriendo, mandar `desarmar` al brazo antes de
+  soltar la seta.** Con la seta, J2 y J3 sueltan el brazo (no se autobloquean). Con la seta apretada el divisor
+  marca 0 V (`BATERIA_BAJA`): normal. **Cada bloque, una sola función: 12 V en el bloque B queman el GPIO 47.**
 - **Power bank para la Pi:** 5 V 3 A son 15 W; la Pi con YOLO y las cámaras pide ~9 W (picos de ~11 W) y los
   ESP32 con sus sensores ~2 W (~400 mA). Entra. Sin los 5 A de la fuente oficial, la Pi limita a 600 mA el total de
   los USB **y el conector del ventilador**: no poner `usb_max_current_enable=1`, y un LiDAR no entraría. El margen
@@ -243,8 +251,9 @@ de J2/J3). Con la 10S serían ~3,2 h.
       8,2 k antes de conectarla**: con 42 V, el de 100 k / 27 k pondría ~9 V en el GPIO y lo quema.
 - [ ] **Ajustar el buck 3 sin carga y con el multímetro** (6 V, CC 5 A) antes de conectar los servos.
 - [ ] Capacitores de ≥ 25 V en el bus de 12 V de motores, cerca de los IBT-2.
-- [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; NC 1 en el EN de la tracción y
-      NC 2 al GPIO 47. Con la seta apretada, `armar` tiene que fallar y las ruedas no deben moverse.
+- [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; bloque A en el + del bus (selector →
+      bornera +12 V, cable grueso) y bloque B al GPIO 47. Con la seta apretada, 0 V en la bornera +12 V y `armar`
+      tiene que fallar; al soltarla, las ruedas no arrancan solas.
 - [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo).
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
 - [ ] Pull-ups externos de 10 kΩ en WROOM 36 y 39 (finales de carrera; no tienen pull-up interno). En 34/35

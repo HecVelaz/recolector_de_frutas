@@ -164,7 +164,7 @@ Los nombres coinciden con los estados de la guía R2 (INACTIVO, NAVEGANDO, BUSCA
 
 ## 8. Seguridad mínima
 
-1. **Hardware:** la seta corta la potencia de motores (relé/contactor) sin pasar por software; los ESP32 y la Pi siguen encendidos y leen su estado. Rearme manual explícito, sin reinicio automático.
+1. **Hardware:** la seta corta la potencia de motores (su bloque NC A en el + del bus de 12 V, sin relé) sin pasar por software; los ESP32 y la Pi siguen encendidos y leen su estado. Rearme manual explícito, sin reinicio automático.
 2. **Habilitación del brazo** con llave/relé separado (H8).
 3. **ESP32:** watchdog de comandos, bumper → freno inmediato en la base, detección de atasco, límites articulares.
 4. **Pi:** `supervisor_seguridad` lleva la misión a EMERGENCIA ante bumper, inclinación (IMU) o pérdida de heartbeat de cualquier ESP32.
