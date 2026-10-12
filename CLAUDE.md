@@ -82,7 +82,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
   la alternativa más simple y barata, sin listas largas de piezas nuevas.
 
-## 5. Estado actual (al 2026-10-08)
+## 5. Estado actual (al 2026-10-12)
 - **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
   conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
   soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
@@ -204,7 +204,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
    hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
-4. Brazo: probar el firmware v0.4 con el motor de J1 en el lugar de J2; con los motores nuevos, pasos 0-3 de
+4. Brazo: **reflashear con los pines v0.5** (12/10; el binario de la Pi tiene los v0.4) y armar el shield y la perforada
+   de distribución según `placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
+   si falta, 10 k a 3V3). Probar el firmware con el motor de J1 en el lugar de J2; con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
 5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).
