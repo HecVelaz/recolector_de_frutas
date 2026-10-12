@@ -68,7 +68,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Plugins: **codex** (revisor con `-s read-only`; sandbox arreglado el 28/09 con el perfil AppArmor `/etc/apparmor.d/bwrap`;
   lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
   sesión); **graphify** (grafo del repo); **ponytail**
-  (instalado, sin usar todavía). `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
+  (instalado, sin usar todavía); **anatomy** (figuras isométricas, en `~/.claude/skills/`; para informes, no antes del 3/11).
+  Locales (`.claude/`, fuera de git): **`/pi-sync`** (rsync a la Pi, `colcon build` y flasheo de los ESP32;
+  sin probar con la Pi) y un hook que pide confirmar los 12 V apagados antes de `pio ... -t upload` o `esptool`. `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
   usuario lo pide, Codex puede editar con estas reglas
   (`codex --sandbox workspace-write` en el repo; lee este archivo por `AGENTS.md`); al volver, revisar `git log` antes de seguir.
