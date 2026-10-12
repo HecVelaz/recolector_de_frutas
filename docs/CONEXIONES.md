@@ -81,22 +81,24 @@ cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRI
 | 47 | Bloque B (**NC**) de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
 | 1 | Divisor de batería 100 k / 27 k (LiPo 3S) | ADC1 canal 0 (12,6 V → 2,68 V) |
 
-## ESP32-WROOM-32D · brazo (v0.4)
+## ESP32-WROOM-32D · brazo (v0.5)
 
-DevKit con CH340, `/dev/ttyUSB0`. Tres IBT-2 con un solo EN; queda libre el GPIO 13.
+DevKit con CH340, `/dev/ttyUSB0`, en un **shield de borneras de 30 pines** (`fotos/esp32 wroom 32D/`). Tres IBT-2 con un
+solo EN; queda libre el GPIO 13. v0.5 (12/10): encoder de J2 a 36/39 y finales de carrera de J1/J2 a 32/33. Así la
+única resistencia de la placa es el pull-down del 23: los encoders traen su pull-up y los finales de carrera usan el interno.
 
 | GPIO | Conecta a | Nota |
 |---|---|---|
 | 21 · 22 | J1 IBT-2 RPWM · LPWM | 20 kHz (probado) |
 | 25 · 26 | J2 IBT-2 RPWM · LPWM | empezar como J1; probar 1 kHz (con el 5840 rendía más) |
 | 16 · 17 | J3 IBT-2 RPWM · LPWM | igual que J2 |
-| 23 | R_EN + L_EN de los 3 IBT-2 | pull-down 10 kΩ; quietos = frenados (EN alto, PWM 0) |
-| 34 · 35 | J1 encoder A · B | pull-up externo 10 kΩ |
-| 32 · 33 | J2 encoder A · B | pull-up interno |
-| 18 · 19 | J3 encoder A · B | pull-up interno |
+| 23 | R_EN + L_EN de los 3 IBT-2 | pull-down 10 kΩ (la única resistencia); quietos = frenados (EN alto, PWM 0) |
+| 34 · 35 | J1 encoder A · B | pull-up de la placa del encoder (5,1 kΩ) |
+| 36 (VP) · 39 (VN) | J2 encoder A · B | pull-up de la placa del encoder (5,1 kΩ) |
+| 18 · 19 | J3 encoder A · B | pull-up de la placa del encoder + interno |
 | 4 | Servo de apertura de la pinza | 50 Hz |
 | 14 | Servo de giro J4 | pulsa durante el arranque |
-| 36 · 39 · 27 | Finales de carrera (cero) J1 · J2 · J3 | 36/39 pull-up externo 10 kΩ; 27 interno |
+| 32 · 33 · 27 | Finales de carrera (cero) J1 · J2 · J3 | NA a GND, pull-up interno; sin 100 nF (el homing pide 3 lecturas seguidas) |
 | 13 | libre | reserva |
 
 Motores 36GP-555 (J1, J2, J3), encoder SCX-555 de 16 PPR (64 cuentas por vuelta del motor), salida de colector abierto
@@ -256,11 +258,12 @@ de J2/J3). Con la 10S serían ~3,2 h.
       tiene que fallar; al soltarla, las ruedas no arrancan solas.
 - [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo).
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.
-- [ ] Pull-ups externos de 10 kΩ en WROOM 36 y 39 (finales de carrera; no tienen pull-up interno). En 34/35
-      (encoder de J1) alcanza el de 5,1 kΩ de la SCX-555: medir que esté; si no, 10 kΩ a 3V3.
+- [ ] WROOM 34/35 y 36/39 (encoders de J1 y J2) no tienen pull-up interno: alcanza el de 5,1 kΩ de la SCX-555.
+      Medir que esté (encoder a 3V3, sin girar: A y B en 0 o 3,3 V, nunca a mitad); si no, 10 kΩ a 3V3.
 - [ ] Encoders de J1, J2 y J3 a 3V3 (la SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: a 5 V las salidas quedan a 5 V).
 - [ ] Bumpers y finales de carrera: microinterruptores V-152-1C25 (SPDT, rodillo). Común a GND y NA al GPIO, sin
-      alimentación; con cables largos, 100 nF a GND en el pin.
+      alimentación; con cables largos, 100 nF a GND en el pin (bumpers; en los finales de carrera del brazo, solo si
+      el homing se dispara sin tocarlos).
 - [ ] Encoders de tracción (42GM-895H): azul = Vcc 5-24 V, verde = GND, amarillo = A, blanco = B; motor en negro y
       rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
       tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,

@@ -257,3 +257,14 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Sin INA219 ni salvalipo: solo pruebas vigiladas de ≤ 30 min con el indicador de barras de la LiPo.
 - Correa de J2 y J3: GT2 5:1 (`relacion` 5) con poleas 20 → 100 y correa cerrada de 240 mm: ~54 mm entre centros
   (18 → 90 pediría ~62 mm). Velocidad máxima de la articulación: 58 / 5 ≈ 11,6 rpm (70 °/s).
+
+## 2026-10-12
+
+### Brazo: shield de borneras y pines v0.5
+- La HW-394 va en un shield de borneras de 30 pines (foto en `fotos/esp32 wroom 32D/`): sale la perforada de 7 × 9 con
+  zócalo; queda una perforada chica de distribución (rieles 5 V, 3,3 V, EN, GND y 6 V), porque el shield trae un solo VIN y un solo 3V3.
+- Pines v0.5: encoder de J2 de 32/33 a 36/39 (VP/VN) y finales de carrera de J1/J2 de 36/39 a 32/33. Los encoders SCX-555
+  traen pull-up de 5,1 kΩ y los finales de carrera usan el interno: la única resistencia de la WROOM es el pull-down
+  de 10 kΩ del EN (23). Sin 100 nF en los finales de carrera: el homing ya pide 3 lecturas seguidas (`HOME_FC_LECTURAS`).
+- `pins.h`, `CONEXIONES.md`, `conexiones.html` y `placa_wroom.html` (plano nuevo del shield y la distribución). 17 pruebas
+  OK; compilan `esp32dev` y `ros` sin warnings. Falta reflashear el brazo y probar en la placa.

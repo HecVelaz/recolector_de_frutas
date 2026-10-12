@@ -5,8 +5,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  /* Plano de taller: la perforada a escala (1 agujero = 2,54 mm) con la HW-394 en el centro, conectores en el
-     borde y etiquetas afuera como serigrafía; debajo, tabla pin por pin. Misma paleta que conexiones.html. */
+  /* Plano de taller: el shield de borneras con la HW-394 (qué va en cada tornillo) y la perforada de distribución
+     con sus rieles; debajo, tabla pin por pin. Misma paleta que conexiones.html. */
   :root {
     --paper: #f2f5f3; --card: #ffffff; --ink: #17231f; --muted: #56655f; --rule: #c3cfca; --soft: #e4ebe7;
     --w-supply: #cf7a12; --w-v33: #0f7f86; --w-v6: #b0457a; --w-gpio: #237a4f; --w-gnd: #3b4843;
@@ -37,7 +37,8 @@
   #placa text { font-family: var(--sans); fill: var(--ink); }
   #placa .pl { font-family: var(--mono); font-size: 10px; }
   #placa .nm { font-family: var(--cond); font-weight: 600; font-size: 12px; }
-  #placa .tiny { font-family: var(--mono); font-size: 8.5px; fill: var(--muted); }
+  #placa .tiny { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
+  #placa .pl.gris { fill: var(--muted); }
   #placa .kp { font-family: var(--mono); font-size: 9px; fill: var(--kit-ink); }
   #placa .kt { font-family: var(--cond); font-weight: 600; font-size: 14px; fill: var(--kit-ink); }
   #placa .ks { font-size: 10.5px; fill: var(--kit-ink); opacity: .75; }
@@ -53,8 +54,8 @@
   .conn:focus { outline: none; }
   .conn:focus-visible .box { stroke-width: 3; }
   .kpin { transition: opacity .15s; }
-  svg.focus .conn:not(.on), svg.focus .kpin.used:not(.on) { opacity: .22; }
-  .kpin.on circle { stroke: var(--kit-ink); stroke-width: 2.5; }
+  svg.focus .kpin.used:not(.on) { opacity: .22; }
+  .kpin.on circle { stroke: var(--ink); stroke-width: 2.5; }
   .conn.on .box { stroke-width: 3; }
   @media (prefers-reduced-motion: reduce) { .conn, .kpin { transition: none; } }
 
@@ -65,6 +66,7 @@
   th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--soft); vertical-align: top; }
   th { font: 600 11.5px var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--rule); }
   td.m { font-family: var(--mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tbody.grp th:focus-visible { outline: 2px solid #1565c0; }
   tbody.grp th { text-transform: none; letter-spacing: 0; font: 600 14px var(--cond); color: var(--ink); padding-top: 14px; cursor: pointer; }
   tbody.grp th .tipo { font: 400 12.5px var(--sans); color: var(--muted); margin-left: 8px; }
   tbody.grp th .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; }
@@ -104,43 +106,43 @@
 
 <div class="page">
   <header>
-    <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.4 · brazo</div>
+    <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.5 · brazo</div>
     <h1>Placa de la ESP32-WROOM-32D (brazo)</h1>
-    <p class="lede">Perforada de 7 × 9 cm con la HW-394 (30 pines, USB-C, CH340) enchufada en dos tiras hembra. En el borde van los conectores de los 3 IBT-2, los 3 encoders, los 3 finales de carrera y los 2 servos, con sus componentes al lado. Los cables de cada conector a su GPIO van por debajo y no están dibujados: el plano dice dónde va cada cosa y la tabla, qué pin va con qué. <b>Tocá un conector</b> para ver a qué pines de la WROOM va. Los pines son los de <code>firmware/brazo/include/pins.h</code> (conexionado v0.4).</p>
+    <p class="lede">La HW-394 (30 pines, USB-C, CH340) va enchufada en un <b>shield de borneras</b> (foto en <code>docs/fotos/esp32 wroom 32D/</code>): cada GPIO tiene su tornillo. El shield trae un solo VIN, un solo 3V3 y dos GND, así que la alimentación de los periféricos se reparte en una <b>perforada chica de distribución</b> con cinco rieles (5 V, 3,3 V, EN, GND y 6 V). En toda la placa hay <b>una sola resistencia</b>: el pull-down de 10 k del EN. Los encoders traen su propio pull-up y los finales de carrera usan el interno. Los pines son los de <code>firmware/brazo/include/pins.h</code> (conexionado v0.5).</p>
   </header>
 
   <section aria-labelledby="h-cb">
     <h2 id="h-cb">Cómo se conecta todo</h2>
-    <p class="lede">La HW-394 dibujada con el USB arriba, como va en la perforada. Tocá un grupo o un periférico para ver solo sus cables. Los 6 V de los servos vienen del buck 3.</p>
+    <p class="lede">La HW-394 dibujada con el USB arriba. Tocá un grupo o un periférico para ver solo sus cables. Los 6 V de los servos vienen del buck 3.</p>
     <div class="cb-filtros" id="cb-f" role="group" aria-label="Mostrar solo un grupo de cables"></div>
     <div class="cb-wrap"><svg id="cb" role="img" aria-label="Cableado de la ESP32-WROOM: los periféricos a los costados y un cable de color de cada uno a su pin."></svg></div>
     <div class="cb-leer">
-      <p><b>Cada cable de color</b> va del pin del periférico (a los costados) al pin de la ESP32 (en el centro).</p>
-      <p><b>Las etiquetas 5V, GND, 3V3</b> no son cables dibujados: van a cualquier pin o riel con ese nombre. Todos los GND están unidos.</p>
-      <p><b>"1 kΩ en serie"</b>: la resistencia va en el medio del cable. <b>"+ 2 kΩ a GND"</b>: de ese cable sale una resistencia a GND. Todos los componentes van en la perforada.</p>
+      <p><b>Cada cable de color</b> va del pin del periférico (a los costados) al pin de la ESP32 (en el centro), o sea a su bornera del shield.</p>
+      <p><b>Las etiquetas 5V, GND, 3V3</b> no son cables dibujados: van al riel con ese nombre de la perforada de distribución. Todos los GND están unidos.</p>
+      <p><b>"+ 10 kΩ a GND"</b>: de ese cable sale una resistencia a GND. Es la única de la placa y va en la perforada, entre el riel EN y el GND.</p>
     </div>
   </section>
 
   <section aria-labelledby="h-plano">
-    <h2 id="h-plano">Plano de la placa</h2>
+    <h2 id="h-plano">Plano del shield y la distribución</h2>
     <div class="legend" aria-hidden="true">
       <span><i style="background:var(--w-gnd)"></i>GND</span>
       <span><i style="background:var(--w-supply)"></i>5 V (VIN, del USB)</span>
       <span><i style="background:var(--w-v33)"></i>3,3 V</span>
       <span><i style="background:var(--w-v6)"></i>6 V de los servos (buck 3)</span>
-      <span><i style="background:var(--w-gpio)"></i>GPIO</span>
+      <span><i style="background:var(--w-gpio)"></i>GPIO y EN</span>
     </div>
     <figure>
-      <div class="scroll"><svg id="placa" role="img" aria-label="Plano de la perforada de la WROOM: la HW-394 en el centro con el USB arriba; a la izquierda los tres IBT-2; a la derecha los tres encoders, los tres finales de carrera y la reserva; abajo los dos servos y la bornera de 6 V."></svg></div>
-      <figcaption>Vista desde arriba, a escala: cada punto es un agujero (2,54 mm). El marco es GND; el riel de 5 V baja por la izquierda (para los IBT-2) y el de 3,3 V por la derecha (encoders y pull-up). Donde un cable salta sobre otro, no se tocan. El riel de 6 V y el GND de abajo llevan la corriente de los servos: van con alambre grueso.</figcaption>
+      <div class="scroll"><svg id="placa" role="img" aria-label="Plano: arriba el shield con la HW-394 y lo que va en cada bornera; abajo la perforada de distribución con los rieles de 5 V, 3,3 V, EN, GND y 6 V y qué cable sale de cada punto."></svg></div>
+      <figcaption>Arriba, el shield como en la foto (USB a la izquierda): sobre cada bornera, qué cable se atornilla ahí. En gris, las que no se usan: 12, 15, 2 y 5 son de arranque, RX0/TX0 son el USB y EN es el reset. VIN, 3V3, GND y D23 bajan a la perforada de distribución. Ahí cada riel reparte su línea a los periféricos, y debajo de cada punto dice qué cable sale. El riel de 6 V y el GND llevan la corriente de los servos: van con alambre grueso.</figcaption>
     </figure>
   </section>
 
   <section aria-labelledby="h-tabla">
     <h2 id="h-tabla">Pin por pin</h2>
-    <p class="lede">Los conectores de los IBT-2 siguen el orden de pines del módulo, así el cable Dupont va derecho, 1 a 1. Tocá el nombre de un conector para resaltarlo en el plano.</p>
+    <p class="lede">Por periférico: a qué bornera del shield o a qué riel va cada cable. Tocá el nombre de un periférico para resaltarlo en el plano.</p>
     <div class="card"><div class="tablewrap"><table id="tabla">
-      <thead><tr><th>Pin</th><th>Va a</th><th>En la placa</th><th>Cable</th></tr></thead>
+      <thead><tr><th>Pin</th><th>Va a</th><th>Nota</th><th>Cable</th></tr></thead>
     </table></div></div>
   </section>
 
@@ -148,28 +150,25 @@
     <div class="card">
       <h2>Materiales</h2>
       <ul class="lista">
-        <li>Placa perforada de 7 × 9 cm, doble faz</li>
-        <li>2 tiras de pines hembra de 1 × 15 (zócalo de la HW-394)</li>
-        <li>3 tiras macho de 1 × 8 (IBT-2) + 3 cables Dupont hembra-hembra de 8 hilos</li>
-        <li>3 conectores JST-XH de 4 vías (encoders) y 4 de 2 vías (finales de carrera y reserva), macho en la placa y cable armado</li>
-        <li>2 tiras macho de 1 × 3 para los servos (enchufe estándar: marrón GND, rojo V+, naranja señal)</li>
-        <li>1 bornera de 2 vías, paso 5,08 mm (6 V del buck 3)</li>
-        <li>Resistencias de 10 k: 3 obligatorias (pull-up de 36 y 39, pull-down del 23) y 3 opcionales (34, 35 y 27)</li>
-        <li>3 capacitores cerámicos de 100 nF (finales de carrera)</li>
-        <li>Alambre de 18 AWG para el riel de 6 V y el GND de los servos; unifilar fino para las señales</li>
-        <li>4 separadores M3</li>
+        <li>Shield de borneras para la HW-394 de 30 pines (ya está)</li>
+        <li>Un pedazo de perforada para la distribución (con la mitad de la de 7 × 9 alcanza)</li>
+        <li>1 resistencia de 10 k (pull-down del EN, GPIO 23)</li>
+        <li>1 bornera de 2 vías, paso 5,08 mm (6 V del buck 3), y tiras macho para los cables de los periféricos</li>
+        <li>Cables Dupont hacia los IBT-2 (con un extremo pelado y estañado para el tornillo del shield)</li>
+        <li>Alambre de 18 AWG para el riel de 6 V y el GND de los servos; unifilar fino para lo demás</li>
+        <li>Sin capacitores: el homing ya pide 3 lecturas seguidas del final de carrera</li>
       </ul>
     </div>
     <div class="card">
-      <h2>Antes de soldar</h2>
+      <h2>Antes de atornillar</h2>
       <ul class="lista">
-        <li><b>El orden de pines sale de la foto de tu HW-394</b> (<code>docs/fotos/esp32 wroom 32D/</code>), con el USB arriba. Medí la separación entre las dos tiras presentando la placa, y soldá las tiras hembra con la HW-394 enchufada.</li>
-        <li><b>Servos:</b> la corriente (2-3 A cada uno si se traban) entra por la bornera de 6 V y vuelve por el GND de abajo. Usá alambre grueso en esos dos tramos, no pistas finas. La WROOM solo da la señal.</li>
-        <li><b>Encoders a 3,3 V</b>: verde a 3V3, azul a GND. La SCX-555 trae pull-up de 5,1 k a su Vcc: a 5 V, A y B saldrían a 5 V.</li>
-        <li>34, 35, 36 y 39 (VP/VN) son solo entrada y no tienen pull-up interno. En los finales de carrera de 36 y 39 los 10 k son obligatorios; en el encoder de J1, opcionales (la SCX-555 ya trae los suyos).</li>
+        <li><b>Cable pelado y estañado</b> (o con puntera) en cada tornillo, nunca el pin Dupont metido en la bornera: se afloja con la vibración.</li>
+        <li><b>Servos:</b> la corriente (2-3 A cada uno si se traban) entra por la bornera de 6 V y vuelve por el GND de la distribución. Usá alambre grueso en esos dos tramos. La WROOM solo da la señal.</li>
+        <li><b>Encoders a 3,3 V</b>: verde al riel de 3,3 V, azul a GND. La SCX-555 trae pull-up de 5,1 k a su Vcc: a 5 V, A y B saldrían a 5 V.</li>
+        <li>34, 35, 36 (VP) y 39 (VN) son solo entrada y no tienen pull-up interno. Ahí van solo los encoders, que traen el suyo: medí que esté (encoder a 3,3 V, sin girar: cada salida en 0 o 3,3 V, nunca a mitad). Si falta, 10 k a 3,3 V en esa bornera.</li>
+        <li>Si algún final de carrera dispara el homing sin tocarlo, agregale un 100 nF de su bornera a GND.</li>
         <li>El GPIO 14 pulsa durante el arranque: el servo de giro puede moverse un poco al encender.</li>
-        <li>No conectar 0, 2, 5, 12 y 15 (arranque) ni TX0/RX0 (consola). El 13 queda de reserva.</li>
-        <li>La placa no lleva los 12 V de los motores: al IBT-2 solo van PWM, EN, 5 V y GND por este conector. La potencia va de la barra de borneras a B+/B−.</li>
+        <li>El shield no lleva los 12 V de los motores: al IBT-2 solo van PWM, EN, 5 V y GND. La potencia va de la barra de borneras a B+/B−.</li>
       </ul>
     </div>
   </section>
@@ -177,27 +176,22 @@
   <section aria-labelledby="h-pasos">
     <h2 id="h-pasos">Armado y prueba, en este orden</h2>
     <ol class="pasos">
-      <li><b>Tiras hembra</b> de la HW-394, después el <b>marco de GND</b>, los rieles de 5 V y 3,3 V, y el de 6 V con alambre grueso.</li>
-      <li><b>Conectores, resistencias y capacitores</b>, como en el plano.</li>
-      <li><b>Cables de señal</b>, de a uno, tachando cada fila de la tabla.</li>
-      <li><b>Sin la HW-394, con el tester:</b> que no haya corto entre 5 V, 3,3 V, 6 V y GND, y que cada pin de conector llegue al agujero correcto del zócalo.</li>
-      <li><b>Flashear</b> el firmware del brazo (ya tiene los pines de esta placa), con los 12 V apagados.</li>
-      <li><b>La HW-394 sola por USB</b> (sin periféricos): el GPIO 23 en 0 V al arrancar y al flashear.</li>
-      <li><b>Finales de carrera:</b> apretar cada uno y ver que su pin pase de 3,3 V a 0 V. <b>Encoders:</b> girar cada motor a mano y ver que cuente, primero J1 (como en <code>pruebas-esp32/10</code>).</li>
+      <li><b>Perforada de distribución:</b> los cinco rieles (6 V y GND con alambre grueso), la resistencia de 10 k entre EN y GND y la bornera de 6 V.</li>
+      <li><b>Con el tester, sin nada conectado:</b> que no haya corto entre 5 V, 3,3 V, 6 V, EN y GND, y que entre EN y GND haya 10 k.</li>
+      <li><b>Del shield a la distribución:</b> VIN al 5 V, 3V3 al 3,3 V, GND al GND y D23 al EN.</li>
+      <li><b>Flashear</b> el firmware del brazo (ya tiene los pines v0.5), con los 12 V apagados.</li>
+      <li><b>La HW-394 sola por USB</b> (sin periféricos): el riel EN en 0 V al arrancar y al flashear.</li>
+      <li><b>Finales de carrera:</b> apretar cada uno y ver que su bornera pase de 3,3 V a 0 V. <b>Encoders:</b> girar cada motor a mano y ver que cuente, primero J1 (como en <code>pruebas-esp32/10</code>).</li>
       <li><b>Servos</b> con el buck 3 ya ajustado a 6 V sin carga. <b>Motores de a uno</b>, con el brazo apoyado: J2 y J3 no se sostienen solos.</li>
     </ol>
   </section>
 
-  <footer>Fuente de verdad: <span class="mono">firmware/brazo/include/pins.h</span> y <span class="mono">docs/CONEXIONES.md</span> (v0.6). La ubicación de cada cosa en la placa es una propuesta: si al presentar las piezas algo no entra, se corre; lo que no cambia es qué va con qué.</footer>
+  <footer>Fuente de verdad: <span class="mono">firmware/brazo/include/pins.h</span> y <span class="mono">docs/CONEXIONES.md</span> (brazo v0.5). La ubicación de cada cosa en la perforada es una propuesta: si al presentar las piezas algo no entra, se corre; lo que no cambia es qué va con qué.</footer>
 </div>
 
 <script>
 (function () {
   var NS = 'http://www.w3.org/2000/svg';
-  var P = 14, ML = 130, MT = 44, NI = 27, NJ = 35, MR = 150, MB = 110;
-  var BW = NI * P, BH = NJ * P, W = ML + BW + MR, H = MT + BH + MB;
-  function X(i) { return ML + P / 2 + i * P; }
-  function Y(j) { return MT + P / 2 + j * P; }
   function el(tag, attrs, parent, text) {
     var e = document.createElementNS(NS, tag);
     for (var k in attrs) e.setAttribute(k, attrs[k]);
@@ -206,225 +200,143 @@
     return e;
   }
   var svg = document.getElementById('placa');
+  var W = 900, H = 800;
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var gR = el('g', {}, svg), gV = el('g', {}, svg), gS = el('g', {}, svg), gT = el('g', {}, svg);  // rieles, 10 k, shield, puntos
 
-  // side: left (columna 1), right (columna 25), bottom (fila 33). pins: [nombre, va a, en la placa, cable, etiqueta de afuera]
-  var IBT = function (j, a, b) {
-    return [['RPWM', 'GPIO ' + a, '', '', 'RPWM → ' + a], ['LPWM', 'GPIO ' + b, '', '', 'LPWM → ' + b],
-            ['R_EN', 'GPIO 23', 'puente con L_EN', '', 'R_EN → 23'], ['L_EN', 'GPIO 23', 'puente con R_EN', '', 'L_EN → 23'],
-            ['R_IS', 'sin conectar', '', '', 'R_IS  ·'], ['L_IS', 'sin conectar', '', '', 'L_IS  ·'],
-            ['VCC', '5 V', 'riel de 5 V', '', 'VCC  5V'], ['GND', 'GND', 'marco de GND', '', 'GND']];
-  };
-  var ENC = function (a, b, pu) {
-    return [['Vcc', '3,3 V', 'riel de 3,3 V', 'verde', '3V3'], ['GND', 'GND', 'marco de GND', 'azul', 'GND'],
-            ['A', 'GPIO ' + a, pu ? '10 k a 3,3 V (opcional)' : '', 'negro', 'A → ' + a],
-            ['B', 'GPIO ' + b, pu ? '10 k a 3,3 V (opcional)' : '', 'rojo', 'B → ' + b]];
-  };
-  var FC = function (g, extra) {
-    return [['NA', 'GPIO ' + g, '100 nF a GND · ' + extra, '', 'NA → ' + g], ['C (común)', 'GND', 'marco de GND', '', 'GND']];
-  };
+  // ---------- Shield (como en la foto: USB a la izquierda) ----------
+  // [serigrafía del shield, categoría, etiqueta, periféricos]. Categoría nc = no se usa.
+  var TOP = [['VIN', 'v5', '', 'j1 j2 j3'], ['GND', 'nc', 'libre', ''], ['D13', 'res', 'reserva', 'res13'],
+             ['D12', 'nc', 'no usar', ''], ['D14', 'gpio', 'servo giro S', 'servo-giro'], ['D27', 'gpio', 'FC J3', 'fc-j3'],
+             ['D26', 'gpio', 'J2 LPWM', 'j2'], ['D25', 'gpio', 'J2 RPWM', 'j2'], ['D33', 'gpio', 'FC J2', 'fc-j2'],
+             ['D32', 'gpio', 'FC J1', 'fc-j1'], ['D35', 'gpio', 'enc J1 B', 'enc-j1'], ['D34', 'gpio', 'enc J1 A', 'enc-j1'],
+             ['VN', 'gpio', 'enc J2 B', 'enc-j2'], ['VP', 'gpio', 'enc J2 A', 'enc-j2'], ['EN', 'nc', 'no usar', '']];
+  var BOT = [['3V3', 'v33', '', 'enc-j1 enc-j2 enc-j3'], ['GND', 'gnd', '', 'j1 j2 j3 enc-j1 enc-j2 enc-j3 fc-j1 fc-j2 fc-j3 servo-ap servo-giro v6 pd res13'],
+             ['D15', 'nc', 'no usar', ''], ['D2', 'nc', 'no usar', ''], ['D4', 'gpio', 'servo apertura S', 'servo-ap'],
+             ['RX2', 'gpio', 'J3 RPWM (16)', 'j3'], ['TX2', 'gpio', 'J3 LPWM (17)', 'j3'], ['D5', 'nc', 'no usar', ''],
+             ['D18', 'gpio', 'enc J3 A', 'enc-j3'], ['D19', 'gpio', 'enc J3 B', 'enc-j3'], ['D21', 'gpio', 'J1 RPWM', 'j1'],
+             ['RX0', 'nc', 'USB', ''], ['TX0', 'nc', 'USB', ''], ['D22', 'gpio', 'J1 LPWM', 'j1'], ['D23', 'gpio', '', 'j1 j2 j3 pd']];
+  var FILL = { v5: 'var(--w-supply)', v33: 'var(--w-v33)', gnd: 'var(--w-gnd)', v6: 'var(--w-v6)', gpio: 'var(--w-gpio)', res: 'var(--muted)', nc: 'none' };
+  function TX(k) { return 100 + k * 50; }
+  var YT = 175, YB = 345;
+  el('rect', { x: 62, y: 152, width: 776, height: 216, rx: 8, fill: 'var(--kit)' }, gS);
+  el('rect', { x: 190, y: 205, width: 520, height: 110, rx: 6, fill: '#2f3f39', stroke: '#51625b' }, gS);
+  el('rect', { x: 168, y: 242, width: 30, height: 36, rx: 4, fill: '#9aa5a5' }, gS);
+  el('text', { x: 450, y: 255, 'text-anchor': 'middle', class: 'kt' }, gS, 'ESP32-WROOM-32D · HW-394');
+  el('text', { x: 450, y: 274, 'text-anchor': 'middle', class: 'ks' }, gS, 'enchufada en el shield de borneras · USB-C → Pi (/dev/ttyUSB0)');
+  function fila(list, y, arriba) {
+    list.forEach(function (t, k) {
+      var x = TX(k), g = el('g', { class: 'kpin' + (t[3] ? ' used' : ''), 'data-c': t[3] }, gT);
+      el('rect', { x: x - 20, y: y - 14, width: 40, height: 28, rx: 3, fill: '#3d4a45', stroke: '#2a3530' }, g);
+      el('circle', { cx: x, cy: y, r: 7.5, fill: t[1] === 'nc' ? '#c9d2ce' : FILL[t[1]], stroke: '#e9efe9', 'stroke-width': 1.5 }, g);
+      el('text', { x: x, y: arriba ? y + 28 : y - 20, 'text-anchor': 'middle', class: 'kp' }, g, t[0]);
+      if (t[2]) {
+        var ty = arriba ? y - 22 : y + 22;
+        el('text', { x: x + 3.5, y: ty, 'text-anchor': arriba ? 'start' : 'end', class: 'pl' + (t[1] === 'nc' ? ' gris' : ''),
+                     transform: 'rotate(-90 ' + (x + 3.5) + ' ' + ty + ')' }, g, t[2]);
+      }
+    });
+  }
+  fila(TOP, YT, true);
+  fila(BOT, YB, false);
+
+  // ---------- Perforada de distribución ----------
+  // [y, categoría, nombre, x inicial, x final, grueso, x del nombre]. Orden elegido para que ninguna bajada cruce un riel.
+  var RIEL = { en: [530, 'gpio', 'EN (23)', 330, 830, false, 320], gnd: [580, 'gnd', 'GND', 150, 860, true, 860],
+               v33: [630, 'v33', '3,3 V', 100, 470, false, 478], v5: [680, 'v5', '5 V', 40, 470, false, 478],
+               v6: [730, 'v6', '6 V', 560, 860, true, 860] };
+  el('rect', { x: 20, y: 490, width: 860, height: 300, rx: 6, fill: 'var(--pcb)', stroke: 'var(--pcb-edge)', 'stroke-width': 1.5 }, gR);
+  el('text', { x: 34, y: 776, class: 'nm' }, gR, 'Perforada de distribución');
+  function linea(d, cat, grueso) {
+    return el('path', { d: d, class: 'w c-' + cat + (grueso ? ' grueso' : '') }, gR);
+  }
+  Object.keys(RIEL).forEach(function (k) {
+    var r = RIEL[k];
+    linea('M' + r[3] + ',' + r[0] + ' H' + r[4], r[1], r[5]);
+    var fin = r[6] >= r[4];
+    el('text', { x: r[6], y: fin && !r[5] ? r[0] + 4 : r[0] - 9, 'text-anchor': fin && !r[5] ? 'start' : 'end', class: 'nm' }, gR, r[2]);
+  });
+  // Bajadas del shield a los rieles
+  linea('M' + TX(0) + ',' + YT + ' H40 V' + RIEL.v5[0], 'v5');
+  linea('M' + TX(0) + ',' + YB + ' V' + RIEL.v33[0], 'v33');
+  linea('M' + TX(1) + ',' + YB + ' V' + RIEL.gnd[0], 'gnd');
+  linea('M' + TX(14) + ',' + YB + ' V' + RIEL.en[0], 'gpio');
+  // Pull-down de 10 k entre EN y GND
+  var gPd = el('g', { class: 'kpin used', 'data-c': 'pd' }, gV);
+  el('line', { x1: 830, y1: RIEL.en[0], x2: 830, y2: RIEL.gnd[0], stroke: 'var(--muted)', 'stroke-width': 1.5 }, gPd);
+  el('rect', { x: 824, y: 542, width: 12, height: 26, rx: 2, fill: 'var(--res)', stroke: 'var(--ink)' }, gPd);
+  el('text', { x: 818, y: 559, 'text-anchor': 'end', class: 'tiny' }, gPd, '10 k');
+  // Puntos de cada riel: [riel, x, etiqueta, periférico]
+  var TAPS = [['v5', 230, 'VCC J1', 'j1'], ['v5', 320, 'VCC J2', 'j2'], ['v5', 410, 'VCC J3', 'j3'],
+              ['v33', 230, 'enc J1', 'enc-j1'], ['v33', 320, 'enc J2', 'enc-j2'], ['v33', 410, 'enc J3', 'enc-j3'],
+              ['en', 380, 'R_EN J1', 'j1'], ['en', 445, 'L_EN J1', 'j1'], ['en', 510, 'R_EN J2', 'j2'],
+              ['en', 575, 'L_EN J2', 'j2'], ['en', 640, 'R_EN J3', 'j3'], ['en', 705, 'L_EN J3', 'j3']];
+  ['IBT J1', 'IBT J2', 'IBT J3', 'enc J1', 'enc J2', 'enc J3', 'FC J1', 'FC J2', 'FC J3', 'servo ap.', 'servo giro', 'buck 3']
+    .forEach(function (t, i) {
+      var ids = ['j1', 'j2', 'j3', 'enc-j1', 'enc-j2', 'enc-j3', 'fc-j1', 'fc-j2', 'fc-j3', 'servo-ap', 'servo-giro', 'v6'];
+      TAPS.push(['gnd', 195 + i * 55, t, ids[i]]);
+    });
+  TAPS.push(['v6', 640, 'V+ ap.', 'servo-ap'], ['v6', 720, 'V+ giro', 'servo-giro'], ['v6', 845, '+6 V buck 3', 'v6']);
+  TAPS.forEach(function (t) {
+    var r = RIEL[t[0]], g = el('g', { class: 'kpin used', 'data-c': t[3] }, gT);
+    el('circle', { cx: t[1], cy: r[0], r: 5, fill: FILL[r[1]], stroke: 'var(--card)', 'stroke-width': 1.5 }, g);
+    el('text', { x: t[1], y: r[0] + 17, 'text-anchor': t[1] > 830 ? 'end' : 'middle', class: 'tiny' }, g, t[2]);
+  });
+
+  // ---------- Periféricos (tabla y resaltado) ----------
+  // pins: [pin, va a, nota, cable]
+  function IBT(a, sa, b, sb) {
+    return [['RPWM', 'bornera ' + sa, 'GPIO ' + a, ''], ['LPWM', 'bornera ' + sb, 'GPIO ' + b, ''],
+            ['R_EN', 'riel EN', 'GPIO 23 por D23', ''], ['L_EN', 'riel EN', 'GPIO 23 por D23', ''],
+            ['R_IS · L_IS', 'sin conectar', '', ''], ['VCC', 'riel 5 V', 'VIN del shield', ''], ['GND', 'riel GND', '', '']];
+  }
+  function ENC(sa, sb, nota) {
+    return [['Vcc', 'riel 3,3 V', 'nunca a 5 V', 'verde'], ['GND', 'riel GND', '', 'azul'],
+            ['A', 'bornera ' + sa, nota, 'negro'], ['B', 'bornera ' + sb, nota, 'rojo']];
+  }
+  function FC(s) { return [['NA', 'bornera ' + s, 'pull-up interno', ''], ['C (común)', 'riel GND', '', '']]; }
+  function SERVO(s, nota) {
+    return [['GND', 'riel GND', 'alambre grueso', 'marrón'], ['V+', 'riel 6 V', 'alambre grueso', 'rojo'], ['señal', 'bornera ' + s, nota, 'naranja']];
+  }
   var CONN = [
-    { id: 'j1', name: 'IBT-2 de J1', side: 'left', at: 3, tipo: 'tira macho 1 × 8 · Dupont 1 a 1', pins: IBT(1, 21, 22) },
-    { id: 'j2', name: 'IBT-2 de J2', side: 'left', at: 13, tipo: 'tira macho 1 × 8 · Dupont 1 a 1', pins: IBT(2, 25, 26) },
-    { id: 'j3', name: 'IBT-2 de J3', side: 'left', at: 23, tipo: 'tira macho 1 × 8 · Dupont 1 a 1', pins: IBT(3, 16, 17) },
-    { id: 'enc-j1', name: 'Encoder J1', side: 'right', at: 3, tipo: 'JST-XH 4 vías', pins: ENC(34, 35, true) },
-    { id: 'enc-j2', name: 'Encoder J2', side: 'right', at: 9, tipo: 'JST-XH 4 vías', pins: ENC(32, 33) },
-    { id: 'enc-j3', name: 'Encoder J3', side: 'right', at: 15, tipo: 'JST-XH 4 vías', pins: ENC(18, 19) },
-    { id: 'fc-j1', name: 'Final de carrera J1', side: 'right', at: 21, tipo: 'JST-XH 2 vías', pins: FC('36 (VP)', '10 k a 3,3 V') },
-    { id: 'fc-j2', name: 'Final de carrera J2', side: 'right', at: 24, tipo: 'JST-XH 2 vías', pins: FC('39 (VN)', '10 k a 3,3 V') },
-    { id: 'fc-j3', name: 'Final de carrera J3', side: 'right', at: 27, tipo: 'JST-XH 2 vías', pins: FC('27', 'pull-up interno (10 k opcional)') },
-    { id: 'res13', name: 'Reserva', side: 'right', at: 30, opt: true, tipo: 'JST-XH 2 vías · opcional',
-      pins: [['señal', 'GPIO 13', '', '', '→ 13'], ['GND', 'GND', 'marco de GND', '', 'GND']] },
-    { id: 'servo-ap', name: ['Servo', 'apertura'], side: 'bottom', at: 4, tipo: 'tira macho 1 × 3 (enchufe del servo)',
-      pins: [['GND', 'GND', 'marco de GND (alambre grueso)', 'marrón', 'GND'], ['V+', '6 V', 'riel de 6 V', 'rojo', 'V+ 6V'],
-             ['señal', 'GPIO 4', '', 'naranja', 'S → 4']] },
-    { id: 'servo-giro', name: ['Servo', 'giro J4'], side: 'bottom', at: 9, tipo: 'tira macho 1 × 3 (enchufe del servo)',
-      pins: [['GND', 'GND', 'marco de GND (alambre grueso)', 'marrón', 'GND'], ['V+', '6 V', 'riel de 6 V', 'rojo', 'V+ 6V'],
-             ['señal', 'GPIO 14', 'pulsa al arrancar', 'naranja', 'S → 14']] },
-    { id: 'v6', name: ['6 V', 'buck 3'], side: 'bottom', at: 14, step: 2, tipo: 'bornera 2 vías, 5,08 mm',
-      pins: [['+6 V', 'riel de 6 V', 'alambre grueso hasta los dos V+', 'rojo', '+6V'], ['GND', 'GND', 'marco de GND, común con el buck 3', 'negro', 'GND']] }
+    { id: 'j1', name: 'IBT-2 de J1', tipo: 'motor de la base', pins: IBT(21, 'D21', 22, 'D22') },
+    { id: 'j2', name: 'IBT-2 de J2', tipo: 'motor del hombro', pins: IBT(25, 'D25', 26, 'D26') },
+    { id: 'j3', name: 'IBT-2 de J3', tipo: 'motor del codo', pins: IBT(16, 'RX2', 17, 'TX2') },
+    { id: 'pd', name: 'Pull-down del EN', tipo: 'la única resistencia', pins: [['10 k', 'riel EN ↔ riel GND', 'mantiene los 3 IBT-2 apagados mientras la WROOM arranca o se flashea', '']] },
+    { id: 'enc-j1', name: 'Encoder J1', tipo: 'SCX-555, a 3,3 V', pins: ENC('D34', 'D35', 'GPIO 34/35, pull-up de la placa del encoder') },
+    { id: 'enc-j2', name: 'Encoder J2', tipo: 'SCX-555, a 3,3 V', pins: ENC('VP', 'VN', 'GPIO 36/39, pull-up de la placa del encoder') },
+    { id: 'enc-j3', name: 'Encoder J3', tipo: 'SCX-555, a 3,3 V', pins: ENC('D18', 'D19', 'GPIO 18/19') },
+    { id: 'fc-j1', name: 'Final de carrera J1', tipo: 'microinterruptor, NA', pins: FC('D32') },
+    { id: 'fc-j2', name: 'Final de carrera J2', tipo: 'microinterruptor, NA', pins: FC('D33') },
+    { id: 'fc-j3', name: 'Final de carrera J3', tipo: 'microinterruptor, NA', pins: FC('D27') },
+    { id: 'servo-ap', name: 'Servo de apertura', tipo: 'enchufe del servo', pins: SERVO('D4', 'GPIO 4') },
+    { id: 'servo-giro', name: 'Servo de giro (J4)', tipo: 'enchufe del servo', pins: SERVO('D14', 'GPIO 14, pulsa al arrancar') },
+    { id: 'v6', name: '6 V del buck 3', tipo: 'bornera de 2 vías', pins: [['+6 V', 'riel 6 V', 'alambre grueso', 'rojo'], ['GND', 'riel GND', 'común con el buck 3', 'negro']] },
+    { id: 'res13', name: 'Reserva', tipo: 'opcional', opt: true, pins: [['señal', 'bornera D13', 'GPIO 13', ''], ['GND', 'riel GND', '', '']] }
   ];
 
-  var USO = {
-    '21': ['gpio', 'j1'], '22': ['gpio', 'j1'], '25': ['gpio', 'j2'], '26': ['gpio', 'j2'], '16': ['gpio', 'j3'], '17': ['gpio', 'j3'],
-    '23': ['gpio', 'j1 j2 j3 pd'], '34': ['gpio', 'enc-j1'], '35': ['gpio', 'enc-j1'], '32': ['gpio', 'enc-j2'], '33': ['gpio', 'enc-j2'],
-    '18': ['gpio', 'enc-j3'], '19': ['gpio', 'enc-j3'], 'VP': ['gpio', 'fc-j1'], 'VN': ['gpio', 'fc-j2'], '27': ['gpio', 'fc-j3'],
-    '4': ['gpio', 'servo-ap'], '14': ['gpio', 'servo-giro'], '13': ['res', 'res13'],
-    'VIN': ['v5', ''], '3V3': ['v33', ''], 'GND': ['gnd', '']
-  };
-  var IZQ = ['3V3', 'GND', '15', '2', '4', '16', '17', '5', '18', '19', '21', 'RX0', 'TX0', '22', '23'];
-  var DER = ['VIN', 'GND', '13', '12', '14', '27', '26', '25', '33', '32', '35', '34', 'VN', 'VP', 'EN'];
-  var KI = 8, KD = 18, K0 = 8;   // columnas de las tiras hembra y fila del primer pin
-
-  // ---------- Placa ----------
-  var pat = el('pattern', { id: 'agujeros', x: ML, y: MT, width: P, height: P, patternUnits: 'userSpaceOnUse' }, el('defs', {}, svg));
-  el('circle', { cx: P / 2, cy: P / 2, r: 2.1, fill: 'var(--hole)' }, pat);
-  el('rect', { x: ML, y: MT, width: BW, height: BH, rx: 6, fill: 'var(--pcb)', stroke: 'var(--pcb-edge)', 'stroke-width': 1.5 }, svg);
-  el('rect', { x: ML, y: MT, width: BW, height: BH, rx: 6, fill: 'url(#agujeros)' }, svg);
-  var gW = el('g', {}, svg), gC = el('g', {}, svg), gK = el('g', {}, svg), gS = el('g', {}, svg);
-
-  function wire(pts, cat, hops, grueso) {
-    hops = hops || [];
-    var d = 'M' + X(pts[0][0]) + ',' + Y(pts[0][1]);
-    for (var k = 1; k < pts.length; k++) {
-      var a = pts[k - 1], b = pts[k];
-      if (a[0] === b[0]) {
-        var dir = Math.sign(b[1] - a[1]);
-        hops.filter(function (h) { return h[0] === a[0] && (h[1] - a[1]) * dir > 0 && (b[1] - h[1]) * dir > 0; })
-          .forEach(function (h) { d += ' L' + X(h[0]) + ',' + (Y(h[1]) - dir * 4) + ' A4,4 0 0 1 ' + X(h[0]) + ',' + (Y(h[1]) + dir * 4); });
-      } else {
-        var dx = Math.sign(b[0] - a[0]);
-        hops.filter(function (h) { return h[1] === a[1] && (h[0] - a[0]) * dx > 0 && (b[0] - h[0]) * dx > 0; })
-          .forEach(function (h) { d += ' L' + (X(h[0]) - dx * 4) + ',' + Y(h[1]) + ' A4,4 0 0 ' + (dx > 0 ? 1 : 0) + ' ' + (X(h[0]) + dx * 4) + ',' + Y(h[1]); });
-      }
-      d += ' L' + X(b[0]) + ',' + Y(b[1]);
-    }
-    return el('path', { d: d, class: 'w c-' + cat + (grueso ? ' grueso' : '') }, gW);
-  }
-  function dot(i, j, cat) { el('circle', { cx: X(i), cy: Y(j), r: 3.4, class: 'f-' + cat }, gW); }
-  function label(x, y, t, anchor) { return el('text', { x: x, y: y, 'text-anchor': anchor || 'middle', class: 'tiny' }, gC, t); }
-  function resistor(a, b, opt) {
-    var x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]);
-    el('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: 'var(--muted)', 'stroke-width': 1.3 }, gC);
-    var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2, ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-    var r = el('rect', { x: cx - 5, y: cy - 3.3, width: 10, height: 6.6, rx: 2, fill: opt ? 'var(--card)' : 'var(--res)', stroke: 'var(--ink)',
-                         'stroke-width': 1, transform: 'rotate(' + ang + ' ' + cx + ' ' + cy + ')' }, gC);
-    if (opt) r.setAttribute('stroke-dasharray', '2 2');
-  }
-  function cap(a, b) {
-    var x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]);
-    el('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: 'var(--muted)', 'stroke-width': 1.3 }, gC);
-    var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2, ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-    var g = el('g', { transform: 'rotate(' + ang + ' ' + cx + ' ' + cy + ')' }, gC);
-    el('rect', { x: cx - 2.5, y: cy - 6, width: 5, height: 12, fill: 'var(--pcb)' }, g);
-    [-2, 2].forEach(function (d) { el('line', { x1: cx + d, y1: cy - 6, x2: cx + d, y2: cy + 6, stroke: 'var(--ink)', 'stroke-width': 1.8 }, g); });
-  }
-
-  // Rieles: marco de GND, 5 V (VIN) por la izquierda, 3,3 V por la derecha, GND de la WROOM al marco
-  wire([[0, 34], [0, 0], [26, 0], [26, 34], [0, 34]], 'gnd');
-  wire([[KD, K0], [KD, 1], [2, 1], [2, 30]], 'v5', [[KD, 2]]);
-  wire([[KI, K0], [KI, 2], [24, 2], [24, 27]], 'v33');
-  wire([[KD, K0 + 1], [26, K0 + 1]], 'gnd', [[24, K0 + 1]]); dot(26, K0 + 1, 'gnd');
-
-  // IBT-2: VCC al 5 V, GND al marco, puente R_EN–L_EN
-  [3, 13, 23].forEach(function (r) {
-    wire([[1, r + 6], [2, r + 6]], 'v5'); dot(2, r + 6, 'v5');
-    wire([[1, r + 7], [0, r + 7]], 'gnd'); dot(0, r + 7, 'gnd');
-    wire([[1, r + 2], [1, r + 3]], 'gpio', [], true);
-  });
-  resistor([1, 5], [0, 5]); dot(0, 5, 'gnd');
-  label(X(2.4), Y(5) + 3, '10 k a GND', 'start');
-
-  // Encoders: Vcc al 3,3 V, GND al marco; pull-up opcionales en J1
-  [3, 9, 15].forEach(function (r) {
-    wire([[25, r], [24, r]], 'v33'); dot(24, r, 'v33');
-    wire([[25, r + 1], [26, r + 1]], 'gnd'); dot(26, r + 1, 'gnd');
-  });
-  resistor([25, 5], [24, 5], true); resistor([25, 6], [24, 6], true);
-  label(X(23.4), Y(5.6), '10 k opc.', 'end');
-
-  // Finales de carrera: 100 nF al marco, 10 k al 3,3 V
-  [[21, false], [24, false], [27, true]].forEach(function (f) {
-    var r = f[0];
-    cap([25, r], [26, r]); dot(26, r, 'gnd');
-    wire([[25, r + 1], [26, r + 1]], 'gnd'); dot(26, r + 1, 'gnd');
-    resistor([25, r], [24, r], f[1]); dot(24, r, 'v33');
-    label(X(23.4), Y(r) + 3, f[1] ? '10 k opc.' : '10 k', 'end');
-  });
-  wire([[25, 31], [26, 31]], 'gnd'); dot(26, 31, 'gnd');
-
-  // Servos y 6 V (alambre grueso)
-  wire([[14, 33], [14, 31], [5, 31], [5, 33]], 'v6', [], true);
-  wire([[10, 31], [10, 33]], 'v6', [], true); dot(10, 31, 'v6');
-  [4, 9, 16].forEach(function (c) { wire([[c, 33], [c, 34]], 'gnd', [], true); dot(c, 34, 'gnd'); });
-  wire([[4, 34], [16, 34]], 'gnd', [], true);
-  label(X(9.5), Y(30.2), 'riel de 6 V · alambre grueso');
-
-  // ---------- HW-394 ----------
-  var kx1 = X(KI - 1.2), kx2 = X(KD + 1.2), ky1 = Y(K0 - 3.6), ky2 = Y(K0 + 17.6);
-  el('rect', { x: X(12) - 8, y: ky1 - 16, width: X(14) - X(12) + 16, height: 20, rx: 3, fill: 'var(--muted)' }, gS);
-  el('rect', { x: kx1, y: ky1, width: kx2 - kx1, height: ky2 - ky1, rx: 5, fill: 'var(--kit)', 'fill-opacity': .95 }, gS);
-  el('text', { x: X(13), y: MT - 14, 'text-anchor': 'middle', class: 'pl' }, svg, 'USB-C → Pi (/dev/ttyUSB0)');
-  el('text', { x: X(13), y: Y(K0 + 15.6), 'text-anchor': 'middle', class: 'kt' }, gS, 'ESP32-WROOM-32D');
-  el('text', { x: X(13), y: Y(K0 + 16.7), 'text-anchor': 'middle', class: 'ks' }, gS, 'HW-394 · 2 tiras hembra 1 × 15');
-  function kitCol(list, col, izq) {
-    list.forEach(function (t, k) {
-      var j = K0 + k, u = USO[t], g = el('g', { class: 'kpin' + (u && u[1] ? ' used' : ''), 'data-c': u ? u[1] : '' }, gS);
-      if (u) el('circle', { cx: X(col), cy: Y(j), r: 4.4, class: 'f-' + u[0] }, g);
-      else el('circle', { cx: X(col), cy: Y(j), r: 3.8, fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.2 }, g);
-      el('text', { x: X(col) + (izq ? 9 : -9), y: Y(j) + 3.2, 'text-anchor': izq ? 'start' : 'end', class: 'kp', opacity: u ? 1 : .55 }, g, t);
-    });
-  }
-  kitCol(IZQ, KI, true);
-  kitCol(DER, KD, false);
-
-  // ---------- Conectores ----------
-  var CATCOL = { gpio: 'var(--w-gpio)', res: 'var(--muted)', v6: 'var(--w-v6)' };
-  CONN.forEach(function (c) {
-    var step = c.step || 1;
-    var pos = c.pins.map(function (_, k) {
-      return c.side === 'left' ? [1, c.at + k] : c.side === 'right' ? [25, c.at + k] : [c.at + k * step, 33];
-    });
-    var cat = c.id === 'v6' ? 'v6' : c.opt ? 'res' : 'gpio';
-    var g = el('g', { class: 'conn' + (c.opt ? ' opt' : ''), 'data-id': c.id, tabindex: 0, role: 'button',
-                      'aria-label': [].concat(c.name).join(' ') + ': resaltar sus pines' }, gK);
-    var xs = pos.map(function (p) { return X(p[0]); }), ys = pos.map(function (p) { return Y(p[1]); });
-    var pad = c.id === 'v6' ? 7 : 5;
-    el('rect', { class: 'box', x: Math.min.apply(0, xs) - pad, y: Math.min.apply(0, ys) - pad,
-                 width: Math.max.apply(0, xs) - Math.min.apply(0, xs) + 2 * pad, height: Math.max.apply(0, ys) - Math.min.apply(0, ys) + 2 * pad,
-                 rx: 2, stroke: CATCOL[cat] }, g);
-    pos.forEach(function (p, k) {
-      var pin = c.pins[k], fn = pin[0];
-      var cl = /GND|C \(/.test(fn) ? 'f-gnd' : /VCC/.test(fn) ? 'f-v5' : fn === 'Vcc' ? 'f-v33' : /V\+|\+6/.test(fn) ? 'f-v6' : /_IS/.test(fn) ? 'f-res' : 'f-' + cat;
-      if (k === 0) el('rect', { x: X(p[0]) - 3.8, y: Y(p[1]) - 3.8, width: 7.6, height: 7.6, class: cl }, g);
-      else el('circle', { cx: X(p[0]), cy: Y(p[1]), r: 3.9, class: cl }, g);
-      var t = pin[4] + (pin[3] && c.side === 'right' ? '  ' + pin[3] : '');
-      if (c.side === 'left') el('text', { x: ML - 8, y: Y(p[1]) + 3.4, 'text-anchor': 'end', class: 'pl' }, g, t);
-      else if (c.side === 'right') el('text', { x: ML + BW + 8, y: Y(p[1]) + 3.4, class: 'pl' }, g, t);
-      else {
-        var ty = MT + BH + 7, tx = X(p[0]) + 3.4;
-        el('text', { x: tx, y: ty, 'text-anchor': 'end', class: 'pl', transform: 'rotate(-90 ' + tx + ' ' + ty + ')' }, g, t);
-      }
-    });
-    if (c.side === 'left') el('text', { x: ML - 8, y: Y(c.at - 1) + 3.5, 'text-anchor': 'end', class: 'nm' }, g, c.name);
-    else if (c.side === 'right') el('text', { x: ML + BW + 8, y: Y(c.at - 1) + 3.5, class: 'nm' }, g, c.name);
-    else {
-      var cx = (Math.min.apply(0, xs) + Math.max.apply(0, xs)) / 2;
-      c.name.forEach(function (line, k) { el('text', { x: cx, y: MT + BH + 72 + k * 13, 'text-anchor': 'middle', class: 'nm' }, g, line); });
-    }
-  });
-
-  // ---------- Resaltado ----------
   var activo = null;
   function enfocar(id) {
     activo = activo === id ? null : id;
     svg.classList.toggle('focus', !!activo);
-    svg.querySelectorAll('.conn').forEach(function (g) { g.classList.toggle('on', g.getAttribute('data-id') === activo); });
     svg.querySelectorAll('.kpin').forEach(function (g) {
       g.classList.toggle('on', !!activo && (g.getAttribute('data-c') || '').split(' ').indexOf(activo) >= 0);
     });
     document.querySelectorAll('tbody.grp').forEach(function (tb) { tb.classList.toggle('on', tb.getAttribute('data-id') === activo); });
   }
-  svg.querySelectorAll('.conn').forEach(function (g) {
-    g.addEventListener('click', function () { enfocar(g.getAttribute('data-id')); });
-    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enfocar(g.getAttribute('data-id')); } });
-  });
-
-  // ---------- Tabla ----------
   var tabla = document.getElementById('tabla');
-  var lista = CONN.slice();
-  lista.splice(3, 0, { id: 'pd', name: 'Pull-down del EN', tipo: 'resistencia en el conector de J1',
-                       pins: [['10 k', 'GPIO 23 ↔ GND', 'mantiene los 3 IBT-2 apagados mientras la WROOM arranca o se flashea', '']] });
-  lista.forEach(function (c) {
+  CONN.forEach(function (c) {
     var tb = document.createElement('tbody'); tb.className = 'grp'; tb.setAttribute('data-id', c.id); tabla.appendChild(tb);
     var trh = document.createElement('tr'); tb.appendChild(trh);
-    var th = document.createElement('th'); th.colSpan = 4; trh.appendChild(th);
+    var th = document.createElement('th'); th.colSpan = 4; th.tabIndex = 0; trh.appendChild(th);
     var col = c.id === 'v6' ? 'var(--w-v6)' : c.opt ? 'var(--muted)' : 'var(--w-gpio)';
-    th.innerHTML = '<span class="dot" style="background:' + col + '"></span>' + [].concat(c.name).join(' ') + '<span class="tipo">' + c.tipo + '</span>';
-    th.addEventListener('click', function () { enfocar(c.id); svg.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    th.innerHTML = '<span class="dot" style="background:' + col + '"></span>' + c.name + '<span class="tipo">' + c.tipo + '</span>';
+    function ir() { enfocar(c.id); svg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    th.addEventListener('click', ir);
+    th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ir(); } });
     c.pins.forEach(function (p) {
       var tr = document.createElement('tr'); tb.appendChild(tr);
-      [p[0], p[1], p[2], p[3]].forEach(function (v, k) {
+      p.forEach(function (v, k) {
         var td = document.createElement('td'); td.textContent = v || ''; if (k < 2) td.className = 'm'; tr.appendChild(td);
       });
     });
@@ -591,5 +503,5 @@ function cableado(svg, filtros, D) {
   });
 }
 
-cableado(document.getElementById('cb'), document.getElementById('cb-f'), {"y0": 120, "pitch": 52, "modulo": "ESP-WROOM-32D", "placa": "HW-394", "usb": "top", "usbs": [650], "usbTxt": "USB-C → Pi (/dev/ttyUSB0)", "pwrTxt": {"5V": "VIN (5V)"}, "left": ["3V3", "GND", "15", "2", "4", "16", "17", "5", "18", "19", "21", "RX0", "TX0", "22", "23"], "right": ["VIN", "GND", "13", "12", "14", "27", "26", "25", "33", "32", "35", "34", "VN", "VP", "EN"], "groups": [{"id": "mot", "name": "Motores (IBT-2)", "color": "#2e7d32"}, {"id": "enc", "name": "Encoders", "color": "#7b1fa2"}, {"id": "fc", "name": "Finales de carrera", "color": "#8d5524"}, {"id": "servo", "name": "Servos", "color": "#3949ab"}], "blocks": [{"g": "servo", "side": "L", "title": "Servo de apertura", "sub": "pinza · enchufe del servo", "pins": [{"n": "GND", "pwr": "GND", "color": "marrón"}, {"n": "V+", "pwr": "6V", "color": "rojo"}, {"n": "S", "to": "4", "color": "naranja"}]}, {"g": "mot", "side": "L", "title": "IBT-2 de J3", "sub": "motor del codo", "pins": [{"n": "RPWM", "to": "16"}, {"n": "LPWM", "to": "17"}, {"n": "R_EN", "to": "23"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "enc", "side": "L", "title": "Encoder J3", "sub": "SCX-555, a 3,3 V", "pins": [{"n": "Vcc", "pwr": "3V3", "color": "verde"}, {"n": "GND", "pwr": "GND", "color": "azul"}, {"n": "A", "to": "18", "color": "negro"}, {"n": "B", "to": "19", "color": "rojo"}]}, {"g": "mot", "side": "L", "title": "IBT-2 de J1", "sub": "motor de la base", "pins": [{"n": "RPWM", "to": "21"}, {"n": "LPWM", "to": "22"}, {"n": "R_EN", "to": "23", "shunt": "10 kΩ a GND"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "servo", "side": "R", "title": "Servo de giro (J4)", "sub": "se mueve un poco al arrancar", "pins": [{"n": "GND", "pwr": "GND", "color": "marrón"}, {"n": "V+", "pwr": "6V", "color": "rojo"}, {"n": "S", "to": "14", "color": "naranja"}]}, {"g": "fc", "side": "R", "title": "Final de carrera J3", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "27", "shunt": "100 nF a GND"}, {"n": "C", "pwr": "GND"}]}, {"g": "mot", "side": "R", "title": "IBT-2 de J2", "sub": "motor del hombro", "pins": [{"n": "RPWM", "to": "25"}, {"n": "LPWM", "to": "26"}, {"n": "R_EN", "to": "23"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "enc", "side": "R", "title": "Encoder J2", "sub": "SCX-555, a 3,3 V", "pins": [{"n": "Vcc", "pwr": "3V3", "color": "verde"}, {"n": "GND", "pwr": "GND", "color": "azul"}, {"n": "A", "to": "32", "color": "negro"}, {"n": "B", "to": "33", "color": "rojo"}]}, {"g": "enc", "side": "R", "title": "Encoder J1", "sub": "SCX-555, a 3,3 V", "pins": [{"n": "Vcc", "pwr": "3V3", "color": "verde"}, {"n": "GND", "pwr": "GND", "color": "azul"}, {"n": "A", "to": "34", "color": "negro"}, {"n": "B", "to": "35", "color": "rojo"}]}, {"g": "fc", "side": "R", "title": "Final de carrera J2", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "VN", "shunt": "100 nF a GND y 10 kΩ a 3V3"}, {"n": "C", "pwr": "GND"}]}, {"g": "fc", "side": "R", "title": "Final de carrera J1", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "VP", "shunt": "100 nF a GND y 10 kΩ a 3V3"}, {"n": "C", "pwr": "GND"}]}]});
+cableado(document.getElementById('cb'), document.getElementById('cb-f'), {"y0": 120, "pitch": 52, "modulo": "ESP-WROOM-32D", "placa": "HW-394", "usb": "top", "usbs": [650], "usbTxt": "USB-C → Pi (/dev/ttyUSB0) · en el shield de borneras", "pwrTxt": {"5V": "VIN (5V)"}, "left": ["3V3", "GND", "15", "2", "4", "16", "17", "5", "18", "19", "21", "RX0", "TX0", "22", "23"], "right": ["VIN", "GND", "13", "12", "14", "27", "26", "25", "33", "32", "35", "34", "VN", "VP", "EN"], "groups": [{"id": "mot", "name": "Motores (IBT-2)", "color": "#2e7d32"}, {"id": "enc", "name": "Encoders", "color": "#7b1fa2"}, {"id": "fc", "name": "Finales de carrera", "color": "#8d5524"}, {"id": "servo", "name": "Servos", "color": "#3949ab"}], "blocks": [{"g": "servo", "side": "L", "title": "Servo de apertura", "sub": "pinza · enchufe del servo", "pins": [{"n": "GND", "pwr": "GND", "color": "marrón"}, {"n": "V+", "pwr": "6V", "color": "rojo"}, {"n": "S", "to": "4", "color": "naranja"}]}, {"g": "mot", "side": "L", "title": "IBT-2 de J3", "sub": "motor del codo", "pins": [{"n": "RPWM", "to": "16"}, {"n": "LPWM", "to": "17"}, {"n": "R_EN", "to": "23"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "enc", "side": "L", "title": "Encoder J3", "sub": "SCX-555, a 3,3 V", "pins": [{"n": "Vcc", "pwr": "3V3", "color": "verde"}, {"n": "GND", "pwr": "GND", "color": "azul"}, {"n": "A", "to": "18", "color": "negro"}, {"n": "B", "to": "19", "color": "rojo"}]}, {"g": "mot", "side": "L", "title": "IBT-2 de J1", "sub": "motor de la base", "pins": [{"n": "RPWM", "to": "21"}, {"n": "LPWM", "to": "22"}, {"n": "R_EN", "to": "23", "shunt": "10 kΩ a GND"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "servo", "side": "R", "title": "Servo de giro (J4)", "sub": "se mueve un poco al arrancar", "pins": [{"n": "GND", "pwr": "GND", "color": "marrón"}, {"n": "V+", "pwr": "6V", "color": "rojo"}, {"n": "S", "to": "14", "color": "naranja"}]}, {"g": "fc", "side": "R", "title": "Final de carrera J3", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "27"}, {"n": "C", "pwr": "GND"}]}, {"g": "mot", "side": "R", "title": "IBT-2 de J2", "sub": "motor del hombro", "pins": [{"n": "RPWM", "to": "25"}, {"n": "LPWM", "to": "26"}, {"n": "R_EN", "to": "23"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "enc", "side": "R", "title": "Encoder J2", "sub": "SCX-555, a 3,3 V", "pins": [{"n": "Vcc", "pwr": "3V3", "color": "verde"}, {"n": "GND", "pwr": "GND", "color": "azul"}, {"n": "A", "to": "VP", "color": "negro"}, {"n": "B", "to": "VN", "color": "rojo"}]}, {"g": "enc", "side": "R", "title": "Encoder J1", "sub": "SCX-555, a 3,3 V", "pins": [{"n": "Vcc", "pwr": "3V3", "color": "verde"}, {"n": "GND", "pwr": "GND", "color": "azul"}, {"n": "A", "to": "34", "color": "negro"}, {"n": "B", "to": "35", "color": "rojo"}]}, {"g": "fc", "side": "R", "title": "Final de carrera J2", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "33"}, {"n": "C", "pwr": "GND"}]}, {"g": "fc", "side": "R", "title": "Final de carrera J1", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "32"}, {"n": "C", "pwr": "GND"}]}]});
 </script>

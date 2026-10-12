@@ -272,7 +272,7 @@
             <text class="t-title" x="986" y="304">J2 hombro</text>
             <text class="t-sub" x="986" y="324">IBT-2 · 58 rpm · correa 5:1</text>
             <path class="w gpio" d="M820 310 H974"></path>
-            <g class="lbl gpio"><text class="t-pin" x="897" y="303" text-anchor="middle">PWM 25/26 · EN 23</text><text class="t-pin" x="897" y="325" text-anchor="middle">enc 32/33</text></g>
+            <g class="lbl gpio"><text class="t-pin" x="897" y="303" text-anchor="middle">PWM 25/26 · EN 23</text><text class="t-pin" x="897" y="325" text-anchor="middle">enc 36/39</text></g>
           </g>
           <g>
             <rect class="box" x="974" y="356" width="210" height="56" rx="4"></rect>
@@ -293,7 +293,7 @@
             <text class="t-title" x="986" y="526">Finales de carrera</text>
             <text class="t-sub" x="986" y="546">cero de J1 · J2 · J3 · NA a GND</text>
             <path class="w gpio" d="M820 532 H974"></path>
-            <g class="lbl gpio"><text class="t-pin" x="897" y="525" text-anchor="middle">36 · 39 ↑ext · 27</text></g>
+            <g class="lbl gpio"><text class="t-pin" x="897" y="525" text-anchor="middle">32 · 33 · 27</text></g>
           </g>
 
           <!-- Notas de lectura -->
@@ -485,20 +485,20 @@
 
       <article class="boardcard">
         <h3>ESP32-WROOM-32D · brazo</h3>
-        <div class="meta">HW-394 (CH340) · <span class="mono">/dev/ttyUSB0</span> · de <span class="mono">firmware/brazo/include/pins.h</span></div>
+        <div class="meta">HW-394 (CH340) en shield de borneras · <span class="mono">/dev/ttyUSB0</span> · de <span class="mono">firmware/brazo/include/pins.h</span></div>
         <div class="tablewrap"><table>
           <thead><tr><th>GPIO</th><th>Conecta a</th><th>Nota</th></tr></thead>
           <tbody>
             <tr><td class="gpio"><span class="tag gpio"></span>21 · 22</td><td>J1 IBT-2 RPWM · LPWM</td><td>20 kHz (probado)</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>25 · 26</td><td>J2 IBT-2 RPWM · LPWM</td><td>empezar como J1; probar 1 kHz</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>16 · 17</td><td>J3 IBT-2 RPWM · LPWM</td><td>igual que J2</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>23</td><td>R_EN + L_EN de los 3 IBT-2</td><td>pull-down 10 k; quietos = frenados</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>34 · 35</td><td>J1 encoder A · B</td><td>pull-up externo 10 k</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>32 · 33</td><td>J2 encoder A · B</td><td>pull-up interno</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>18 · 19</td><td>J3 encoder A · B</td><td>pull-up interno</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>23</td><td>R_EN + L_EN de los 3 IBT-2</td><td>pull-down 10 k (la única resistencia); quietos = frenados</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>34 · 35</td><td>J1 encoder A · B</td><td>pull-up de la placa del encoder</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>36 · 39</td><td>J2 encoder A · B</td><td>pull-up de la placa del encoder</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>18 · 19</td><td>J3 encoder A · B</td><td>pull-up de la placa del encoder</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>4</td><td>Servo apertura de la pinza</td><td>50 Hz</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14</td><td>Servo giro J4</td><td>pulsa al arrancar</td></tr>
-            <tr><td class="gpio"><span class="tag gpio"></span>36 · 39 · 27</td><td>Finales de carrera (cero) J1 · J2 · J3</td><td>36/39 pull-up externo; 27 interno</td></tr>
+            <tr><td class="gpio"><span class="tag gpio"></span>32 · 33 · 27</td><td>Finales de carrera (cero) J1 · J2 · J3</td><td>pull-up interno</td></tr>
             <tr><td class="gpio">13</td><td>libre</td><td>reserva</td></tr>
           </tbody>
         </table></div>
