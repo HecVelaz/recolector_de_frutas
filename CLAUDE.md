@@ -23,7 +23,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   ponerlo si aparecen paradas por `SETA` sin tocarla); sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
   Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/conexiones.html` y `docs/potencia.html` (potencia cable por cable, con fotos;
-  publicada en https://claude.ai/artifact/XgHwcJdBMFjG3Wtzww6Dbz, link compartido: republicar ahí si cambia).
+  publicada en https://claude.ai/artifact/XgHwcJdBMFjG3Wtzww6Dbz, link compartido: republicar ahí si cambia). Otros HTML publicados
+  (republicar en el mismo link): `conexiones` 5hi4sWhQBTHYNr3FLSfbBT, `placa_s3` Eh7aHHJxkqLbDRWDK8V4QC, `placa_wroom`
+  9bNnuG8gzoY4JaQFYZkM2M, `seta` Xg44ttLdCxQPopHYMKNGdw (privada).
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
