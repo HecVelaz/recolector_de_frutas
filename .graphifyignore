@@ -7,4 +7,4 @@ graphify-out/
 .claude/
 .git/
 # La página del diagrama duplica docs/CONEXIONES.md
-docs/conexiones.html
+docs/html/conexiones.html

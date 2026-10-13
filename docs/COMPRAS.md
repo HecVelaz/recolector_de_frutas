@@ -1,6 +1,6 @@
 # Lista de compras
 
-Versión del 05/10/2026, armada a partir del conexionado v0.4 (`CONEXIONES.md` y `conexiones.html`) y del inventario
+Versión del 05/10/2026, armada a partir del conexionado v0.4 (`CONEXIONES.md` y `html/conexiones.html`) y del inventario
 (`Componentes_inventario.md`). Marcar con `[x]` lo que ya se compró. Desde la v0.6 (08/10) los motores van con la LiPo
 directa y la Pi con el power bank: no hace falta ningún buck nuevo.
 
@@ -28,7 +28,7 @@ TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0
 - [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores
 - [x] Cinta CSI de 22 a 15 pines para la Pi 5 (reemplazada el 05/10)
 
-## Placas de las ESP32 (`placa_s3.html`, `placa_wroom.html`)
+## Placas de las ESP32 (`html/placa_s3.html`, `html/placa_wroom.html`)
 
 - [ ] Perforada doble faz de 9 × 15 cm: se corta en dos tiras de ~9 × 3 cm para la S3 (una sobre cada fila de
       borneras de la Freenove); y una de 7 × 9 cm para la WROOM

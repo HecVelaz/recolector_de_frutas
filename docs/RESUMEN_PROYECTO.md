@@ -53,7 +53,7 @@ grafo del repo con graphify: 1009 nodos y 54 comunidades.
 - `INDICE.md`: una línea por documento.
 - `ARQUITECTURA.md`: objetivo mínimo, nodos, control y FSM.
 - `Componentes_inventario.md`: inventario de componentes.
-- `CONEXIONES.md` y `conexiones.html`: pines de las dos placas y de la Pi, y alimentación.
+- `CONEXIONES.md` y `html/conexiones.html`: pines de las dos placas y de la Pi, y alimentación.
 
 ### 10. Arquitectura: un ESP32 por subsistema
 La Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy) se ocupa de la visión, la IK y la misión. Habla por USB (micro-ROS)

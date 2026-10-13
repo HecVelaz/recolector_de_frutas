@@ -19,10 +19,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   cortos) → **selector WEG** (ON/OFF de motores: 2 bloques NA BC10 en paralelo; la térmica CHINT salió el 10/10); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2030MI**
   5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W: verificar `vcgencmd get_throttled` = 0x0). Divisor de batería
   **100 k / 27 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`): **bloque A corta el + del bus de 12 V** (entre selector y bornera; 10/10,
-  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/seta.html`; directo, sin 100 nF:
+  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/html/seta.html`; directo, sin 100 nF:
   ponerlo si aparecen paradas por `SETA` sin tocarla); sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 27 k quema el GPIO).
-  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/conexiones.html` y `docs/potencia.html` (potencia cable por cable, con fotos;
+  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/html/conexiones.html` y `docs/html/potencia.html` (potencia cable por cable, con fotos;
   publicada en https://claude.ai/artifact/XgHwcJdBMFjG3Wtzww6Dbz, link compartido: republicar ahí si cambia). Otros HTML publicados
   (republicar en el mismo link): `conexiones` 5hi4sWhQBTHYNr3FLSfbBT, `placa_s3` Eh7aHHJxkqLbDRWDK8V4QC, `placa_wroom`
   9bNnuG8gzoY4JaQFYZkM2M, `seta` Xg44ttLdCxQPopHYMKNGdw (privada).
@@ -34,7 +34,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   2 servos. **J2/J3: 36-555 de 58 rpm (139:1; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y
   correa GT2 5:1 (poleas 20 → 100, correa de 240 mm, ~54 mm entre centros). Llegan entre el 19 y el 29/10**
   (por qué se cambió el sin fin 5840 y la versión de 98 rpm: `docs/BITACORA.md`); pines v0.5 en `firmware/brazo/include/pins.h` (12/10). Total: 5 IBT-2.
-- Placas (05/10, `docs/placa_s3.html` y `docs/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
+- Placas (05/10, `docs/html/placa_s3.html` y `docs/html/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
   expansión Freenove** (bornera por pin) y sus componentes (divisores de ECHO, 20 k de encoders, pull-down
   del EN, divisor de batería; **sin capacitores** desde el 13/10: bumpers y seta directo a su bornera) en dos perforadas chicas, una sobre cada fila de borneras. La **WROOM es una HW-394 de
   30 pines** (USB-C, CH340) **en un shield de borneras** (12/10, foto en `docs/fotos/esp32 wroom 32D/`) + una perforada
@@ -49,7 +49,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 ## 3. Estructura
 - `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
   `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, bumpers, `llaves` (seta y selector), `conectores` (XT60), `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
-  compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `placa_s3.html`, `placa_wroom.html`,
+  compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `html/` (páginas: conexiones, potencia, placas y seta; `html/fotos` es un enlace a `fotos/`),
   inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
@@ -202,12 +202,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → selector WEG → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
    radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
-   Armar las placas según `placa_s3.html` y `placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
+   Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
    hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
 4. Brazo: **reflashear con los pines v0.5** (12/10; el binario de la Pi tiene los v0.4) y armar el shield y la perforada
-   de distribución según `placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
+   de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
    si falta, 10 k a 3V3). Probar el firmware con el motor de J1 en el lugar de J2; con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).

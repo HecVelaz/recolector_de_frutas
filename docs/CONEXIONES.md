@@ -2,19 +2,19 @@
 
 Versión 0.6 — 08/10/2026 (09/10: **la LiPo pasa a XT60** porque no hay Deans hembra, par de XT60 en `fotos/conectores/`; **la seta ya está**, `fotos/llaves/`): **los motores van con la LiPo 3S directa** (sin buck 1 ni Schottky; la 10S queda guardada) y
 **la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 27 k (firmware cambiado). **Protección de la
-LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `conexiones.html` y
-`placa_s3.html` ya están en la v0.6.
+LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `html/conexiones.html` y
+`html/placa_s3.html` ya están en la v0.6.
 10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
-la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable por cable, con fotos: `potencia.html`.
+la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable por cable, con fotos: `html/potencia.html`.
 10/10 (v0.7): **la seta corta el + del bus de 12 V** (bloque A entre el selector y la bornera +12 V; decisión del grupo,
 más simple y corta también el brazo y los servos) y el bloque B avisa al GPIO 47. El EN de la tracción ya no pasa por
-la seta. Cable por cable: `seta.html`.
+la seta. Cable por cable: `html/seta.html`.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
 fusibles. La Pi 5 pasa al power bank.
 v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
-`docs/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
+`docs/html/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
 WROOM (v0.4) están en `firmware/brazo/include/pins.h` desde el 05/10 (J2/J3 sin probar hasta que lleguen los
 motores); la conexión de la Pi sigue siendo una propuesta. Probado en placa: J1 y, con los motores viejos, J2/J3 (`pruebas-esp32/10`).
 

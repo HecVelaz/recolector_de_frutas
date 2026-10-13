@@ -43,7 +43,7 @@ de las tres a la vez: si una se mueve, las demás quedan frenadas (duty 0 con el
 - Servos alimentados con 6 V **aparte** (buck 3, no del ESP32), GND común.
 - Pull-down de 10 kΩ en el EN común (sin él: **apagar los 12 V antes de flashear o pulsar EN**).
 - Canales LEDC: 0-1 J1, 2-3 J2, 4-5 J3 (IBT-2, 20 kHz), 6-7 servos (50 Hz). PCNT: unidades 0, 1 y 2.
-- Placa y cableado: `docs/placa_wroom.html`.
+- Placa y cableado: `docs/html/placa_wroom.html`.
 
 ## Uso
 

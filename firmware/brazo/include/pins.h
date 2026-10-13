@@ -1,7 +1,7 @@
 #pragma once
 
 // Placa: ESP32-WROOM-32D en una HW-394 de 30 pines (USB-C, CH340 -> /dev/ttyUSB0). Controla el brazo completo.
-// Pines del conexionado v0.5 (docs/CONEXIONES.md, docs/placa_wroom.html). Montada en un shield de borneras de 30 pines.
+// Pines del conexionado v0.5 (docs/CONEXIONES.md, docs/html/placa_wroom.html). Montada en un shield de borneras de 30 pines.
 // v0.5 (12/10): encoder de J2 a 36/39 y finales de carrera de J1/J2 a 32/33, para que ninguno necesite pull-up externo.
 // Evitar: GPIO6-11 (flash), 0/2/5/12/15 (strapping), 1/3 (UART0 = USB).
 // 34-39: solo entrada y SIN pull-up interno: ahí van solo los encoders, que traen pull-up en su placa.
