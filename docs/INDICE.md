@@ -18,8 +18,8 @@ terceros quedan fuera de git (`.gitignore`).
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
 - `CONEXIONES.md` — Conexionado v0.6 (08/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, prueba integrada mínima, circuito de potencia solo con lo que hay (LiPo 3S directa para motores, power bank para la Pi y los ESP32; la 10S guardada), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `conexiones.html`: lo mismo como diagrama.
 - `COMPRAS.md` — Lista de compras con casillas, del conexionado v0.4.
-- `placa_s3.html` / `placa_wroom.html` — Placas de las ESP32 (05/10): cableado de cada periférico a su pin, montaje (S3 sobre la Freenove + dos perforadas; WROOM HW-394 en shield de borneras + perforada de distribución, pines v0.5 del 12/10), tabla pin por pin y orden de armado y prueba.
-- `seta.html` — La seta cable por cable (10/10): el bloque A corta el + del bus de 12 V y el B avisa al GPIO 47; qué tornillo es cuál (foto), los 5 cables numerados, el 100 nF en la perforada, qué hace la Pi (solo software) y cómo probarla.
+- `placa_s3.html` / `placa_wroom.html` — Placas de las ESP32 (05/10): cableado de cada periférico a su pin, montaje (S3 sobre la Freenove + dos perforadas solo con resistencias, sin capacitores desde el 13/10; WROOM HW-394 en shield de borneras + perforada de distribución, pines v0.5 del 12/10), tabla pin por pin y orden de armado y prueba.
+- `seta.html` — La seta cable por cable (10/10): el bloque A corta el + del bus de 12 V y el B avisa al GPIO 47; qué tornillo es cuál (foto), los 4 cables numerados (directo a las borneras, sin capacitor), qué hace la Pi (solo software) y cómo probarla.
 
 **R2 (robot móvil "Arturito R2D2")**
 - `R2/Entrega 1/Entrega1.md` — E1 (30/08): estado del arte en cítricos, componentes (batería y LiDAR sin definir), pruebas de IMU/GPS/bumpers/ultrasonido con video.

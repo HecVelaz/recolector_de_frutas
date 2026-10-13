@@ -302,7 +302,7 @@
           <path class="w power" d="M840 282 H807 a7 7 0 0 0 -14 0 H740"></path><path class="w gnd" d="M800 302 H740"></path>
           <rect class="box" x="560" y="345" width="180" height="70" rx="6"></rect>
           <text class="t-title" x="572" y="367">13 · Divisor 100 k / 27 k</text>
-          <text class="t-sub" x="572" y="383">12,6 V → 2,68 V · 100 nF a GND</text>
+          <text class="t-sub" x="572" y="383">12,6 V → 2,68 V (sin capacitor)</text>
           <text class="t-sub" x="572" y="398">en la perforada de la S3</text>
           <circle class="dot power" cx="840" cy="362" r="4.5"></circle><circle class="dot gnd" cx="800" cy="400" r="4.5"></circle>
           <path class="w power" d="M840 362 H807 a7 7 0 0 0 -14 0 H740"></path><path class="w gnd" d="M800 400 H740"></path>
@@ -394,7 +394,7 @@
       <article class="part"><img src="fotos/potencia/voltimetro.jpg" alt="12 · Voltímetro LED" loading="lazy"><div><h3>12 · Voltímetro LED</h3><p>Muestra la tensión de la LiPo con los motores encendidos (va después del selector: apagado, no descarga la batería).</p><p class="con">Rojo ← bornera +12 V · negro ← bornera GND. Parar a 10,5 V.</p></div></article>
       <article class="part"><img src="fotos/potencia/powerbank.jpg" alt="14 · Power bank Xiaomi PB2030MI" loading="lazy"><div><h3>14 · Power bank Xiaomi PB2030MI</h3><p>Alimenta la Pi y, a través de ella, las dos ESP32. Su negativo no se une al de la LiPo por cable: queda común por el USB y el GND de las ESP32.</p><p class="con">Cable USB-C propio → Pi 5. Una sola salida; no cargarlo mientras alimenta.</p></div></article>
       <article class="part"><img src="fotos/potencia/esp32_s3.jpg" alt="16 · ESP32-S3 (base)" loading="lazy"><div><h3>16 · ESP32-S3 (base)</h3><p>Mide la batería (GPIO 1 por el divisor) y maneja el EN de la tracción (GPIO 38, con 10 k a GND). Lee el bloque B de la seta en el GPIO 47.</p><p class="con">GND → bornera GND con un cable propio (sin esto los PWM no tienen referencia).</p></div></article>
-      <article class="part"><img src="fotos/potencia/hongo_atras.jpg" alt="18 · Seta AdvanCon (2 bloques NC)" loading="lazy"><div><h3>18 · Seta AdvanCon (2 bloques NC)</h3><p>Dos bloques NC 1-2 apilados (foto de atrás), separados entre sí. El de arriba (A) corta el + del bus de 12 V por hardware: los cinco IBT-2 y el buck de los servos quedan sin tensión (rueda libre: no frena). El de abajo (B) avisa a la S3.</p><p class="con">A: selector (4) ↔ bornera +12 V, cable grueso · B: GPIO 47 ↔ GND (100 nF a GND en el pin). Rótulo 10(6)A 400V~: solo emergencias. Tester: suelta = continuidad, apretada = abierto.</p></div></article>
+      <article class="part"><img src="fotos/potencia/hongo_atras.jpg" alt="18 · Seta AdvanCon (2 bloques NC)" loading="lazy"><div><h3>18 · Seta AdvanCon (2 bloques NC)</h3><p>Dos bloques NC 1-2 apilados (foto de atrás), separados entre sí. El de arriba (A) corta el + del bus de 12 V por hardware: los cinco IBT-2 y el buck de los servos quedan sin tensión (rueda libre: no frena). El de abajo (B) avisa a la S3.</p><p class="con">A: selector (4) ↔ bornera +12 V, cable grueso · B: GPIO 47 ↔ GND, directo a las borneras. Rótulo 10(6)A 400V~: solo emergencias. Tester: suelta = continuidad, apretada = abierto.</p></div></article>
     </div>
   </section>
 
@@ -423,13 +423,13 @@
         <tr><td>Tracción izq. (42GM-895H)</td><td>rojo → M+ · negro → M−</td><td>azul → 5 V S3</td><td>verde → GND</td><td>amarillo → S3 <b>15</b></td><td>blanco → S3 <b>16</b></td><td class="n">S3 4 · 5</td></tr>
         <tr><td>Tracción der. (42GM-895H)</td><td>rojo → M+ · negro → M−</td><td>azul → 5 V S3</td><td>verde → GND</td><td>amarillo → S3 <b>17</b></td><td>blanco → S3 <b>18</b></td><td class="n">S3 6 · 7</td></tr>
         <tr><td>J1 (36GP-555)</td><td>blanco → M+ · amarillo → M−</td><td>verde → <b>3V3</b> WROOM</td><td>azul → GND</td><td>negro → WROOM <b>34</b></td><td>rojo → WROOM <b>35</b></td><td class="n">WROOM 21 · 22</td></tr>
-        <tr><td>J2 (36-555)</td><td>blanco → M+ · amarillo → M−</td><td>verde → <b>3V3</b> WROOM</td><td>azul → GND</td><td>negro → WROOM <b>32</b></td><td>rojo → WROOM <b>33</b></td><td class="n">WROOM 25 · 26</td></tr>
+        <tr><td>J2 (36-555)</td><td>blanco → M+ · amarillo → M−</td><td>verde → <b>3V3</b> WROOM</td><td>azul → GND</td><td>negro → WROOM <b>36 (VP)</b></td><td>rojo → WROOM <b>39 (VN)</b></td><td class="n">WROOM 25 · 26</td></tr>
         <tr><td>J3 (36-555)</td><td>blanco → M+ · amarillo → M−</td><td>verde → <b>3V3</b> WROOM</td><td>azul → GND</td><td>negro → WROOM <b>18</b></td><td>rojo → WROOM <b>19</b></td><td class="n">WROOM 16 · 17</td></tr>
       </tbody>
     </table></div>
     <ul>
       <li><b>Tracción:</b> el encoder va a 5 V y trae pull-up de 10 kΩ a su Vcc, así que A y B salen a 5 V. Cada uno lleva <b>20 kΩ a GND</b> en la perforada de la S3 (queda en ~3,3 V). Antes de enchufar: sin alimentar, medir ≈ 10 kΩ de A y de B al azul; alimentado, girar despacio y ver que el alto no pase de 3,3 V.</li>
-      <li><b>Brazo:</b> el encoder SCX-555 va a <b>3V3, nunca a 5 V</b>. Trae pull-ups de 5,1 kΩ; el 34 y el 35 no tienen pull-up interno: medir que estén (si no, 10 kΩ a 3V3).</li>
+      <li><b>Brazo:</b> el encoder SCX-555 va a <b>3V3, nunca a 5 V</b>. Trae pull-ups de 5,1 kΩ; 34, 35, 36 y 39 no tienen pull-up interno: medir que estén (si no, 10 kΩ a 3V3).</li>
       <li>Los colores se invierten entre motores: en la tracción el azul es Vcc; en el brazo, GND. Verificar con el tester antes de alimentar.</li>
       <li>Si una rueda o una articulación gira o cuenta al revés, no se cruzan cables: <code>MOTOR_INVERTIDO</code> / <code>ENC_INVERTIDO</code> en <code>base_config.h</code> o <code>brazo_config.h</code>.</li>
     </ul>

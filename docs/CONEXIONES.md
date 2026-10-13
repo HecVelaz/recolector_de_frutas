@@ -55,7 +55,7 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 | Qué | Efecto | Ojo |
 |---|---|---|
 | GPS | `/gps/fix` no publica; nadie lo usa | — |
-| Bumpers ×3 y sus 100 nF | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en el selector |
+| Bumpers ×3 | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en el selector |
 | HC-SR04 izquierdo y derecho | `/range/izq` y `/range/der` en NaN | Sin esquivar: la prueba va con teleop + `mision` |
 | Servo de giro (J4) | Queda quieto | Agarrar solo con la apertura |
 | Seta | **Cable grueso del selector a la bornera +12 V y otro del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sin parada de emergencia: alguien en el selector. Sacar los puentes al poner la seta |
@@ -65,7 +65,9 @@ Recorrido autónomo, luz, buzzer, habilitación del brazo, app y LiDAR: después
 ## ESP32-S3 · base
 
 Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa 22 GPIO; queda libre el 40 (reservado por si la
-cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRIG.
+cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRIG. Sin capacitores (13/10): bumpers
+y seta van directo con el pull-up interno. Quedan las resistencias que no se pueden sacar: divisores 1 k / 2 k de los
+ECHO (salen a 5 V), 20 k de los encoders (salen a 5 V y piden Vcc ≥ 5 V), 10 k del EN (38) y el divisor de batería.
 
 | GPIO | Conecta a | Nota |
 |---|---|---|
@@ -167,7 +169,7 @@ LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pe
 
 Power bank Xiaomi PB2030MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
   └─ USB → ESP32-S3 y WROOM (y de sus pines de 5 V/3V3: encoders, IMU, HC-SR04, lógica de los IBT-2)
-seta, bloque B NC → S3 GPIO 47 (el otro lado a GND; 100 nF a GND en el pin). Nunca 12 V en este bloque.
+seta, bloque B NC → S3 GPIO 47 (el otro lado a GND; directo, sin capacitor). Nunca 12 V en este bloque.
 GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
 ```
 
@@ -262,8 +264,8 @@ de J2/J3). Con la 10S serían ~3,2 h.
       Medir que esté (encoder a 3V3, sin girar: A y B en 0 o 3,3 V, nunca a mitad); si no, 10 kΩ a 3V3.
 - [ ] Encoders de J1, J2 y J3 a 3V3 (la SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: a 5 V las salidas quedan a 5 V).
 - [ ] Bumpers y finales de carrera: microinterruptores V-152-1C25 (SPDT, rodillo). Común a GND y NA al GPIO, sin
-      alimentación; con cables largos, 100 nF a GND en el pin (bumpers; en los finales de carrera del brazo, solo si
-      el homing se dispara sin tocarlos).
+      alimentación, sin capacitor (S3 y WROOM, 13/10). Si uno dispara sin tocarlo (bumper, seta o final de carrera),
+      100 nF de su pin a GND. Lo mismo con la batería si la lectura del GPIO 1 salta.
 - [ ] Encoders de tracción (42GM-895H): azul = Vcc 5-24 V, verde = GND, amarillo = A, blanco = B; motor en negro y
       rojo. Salida con pull-up interno de 10 kΩ a Vcc: alimentados a 5 V, **A y B salen a 5 V** y la S3 no los
       tolera. Poner 20 kΩ de cada salida a GND (con el pull-up interno queda en ~3,3 V) y medir con el multímetro,

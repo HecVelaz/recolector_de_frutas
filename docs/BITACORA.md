@@ -268,3 +268,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   de 10 kΩ del EN (23). Sin 100 nF en los finales de carrera: el homing ya pide 3 lecturas seguidas (`HOME_FC_LECTURAS`).
 - `pins.h`, `CONEXIONES.md`, `conexiones.html` y `placa_wroom.html` (plano nuevo del shield y la distribución). 17 pruebas
   OK; compilan `esp32dev` y `ros` sin warnings. Falta reflashear el brazo y probar en la placa.
+
+## 2026-10-13
+
+### Base: la S3 sin capacitores
+- Como en la WROOM: salen los 100 nF de los 3 bumpers, la seta, la reserva (40) y la batería. Bumpers, seta y reserva
+  van directo a su bornera con el pull-up interno; la perforada de abajo queda con el EN y la batería.
+- No se pueden sacar: divisores 1 k / 2 k de los ECHO (5 V), 20 k de los encoders de tracción (salen a 5 V y la hoja
+  pide Vcc 5-24 V: no se pueden alimentar a 3,3 V), 10 k del EN (38) y el divisor 100 k / 27 k. Quedan 14 resistencias.
+- Si un bumper o la seta disparan sin tocarlos, o la lectura de batería salta: 100 nF de ese pin a GND.
+- `placa_s3.html`, `seta.html` (4 cables en vez de 5), `potencia.html`, `conexiones.html`, `CONEXIONES.md`. Sin cambios de firmware.

@@ -573,7 +573,7 @@
       <li><span><b>Divisor en cada ECHO</b> del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V y los GPIO son de 3,3 V.</span></li>
       <li><span><b>Pull-ups externos de 10 kΩ</b> en WROOM 34, 35, 36 y 39: esos pines no tienen pull-up interno.</span></li>
       <li><span><b>Encoders de J1, J2 y J3 a 3V3.</b> La SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: alimentada a 5 V, sus salidas quedarían a 5 V.</span></li>
-      <li><span><b>Bumpers y finales de carrera:</b> microinterruptores V-152-1C25 (SPDT). Común (C) a GND y NA al GPIO; no necesitan alimentación. Con cables largos, 100 nF a GND en el pin.</span></li>
+      <li><span><b>Bumpers y finales de carrera:</b> microinterruptores V-152-1C25 (SPDT). Común (C) a GND y NA al GPIO; no necesitan alimentación, pull-up interno y sin capacitor: si alguno dispara sin tocarlo, 100 nF de su pin a GND.</span></li>
       <li><span><b>Servos con su propio buck</b> (buck 3, CC en 5 A) y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
       <li><span><b>Cables de cámara</b> de 15 a 22 pines: la Pi 5 usa el conector chico en CSI0 y CSI1.</span></li>
       <li><span><b>GPS a 3,3 V</b> en el UART de la Pi (<span class="mono">dtparam=uart0=on</span>): TX del GPS al GPIO 15, RX al 14.</span></li>
