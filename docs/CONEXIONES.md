@@ -285,6 +285,12 @@ de J2/J3). Con la 10S serían ~3,2 h.
       al GPIO 1 por 100 kΩ (≤ 0,1 mA). Enchufar primero el power bank y pasar el selector a OFF antes de desenchufarlo.
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
+- [ ] **Pruebas acotadas y vigiladas (revisión de Codex, 14/10):** la seta (contacto de alterna), el selector (2 BC10
+      en paralelo no suman 20 A) y el fusible (no salta con 2 motores trabados: solo cortos) no están garantizados
+      para cortar con carga en continua. Por eso: mover el selector **solo con los motores quietos**; con la seta
+      apretada, **mandar `desarmar` y confirmar el brazo desarmado antes de soltarla**; **nada de pruebas de motores
+      trabados con la LiPo**; cables a las borneras con **cobre pelado y retorcido, sin estañar** (el estaño cede
+      bajo el tornillo).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
 - [ ] GPIO de reserva: S3 40 (sin ADC) y WROOM 13.
 - [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son bumpers.

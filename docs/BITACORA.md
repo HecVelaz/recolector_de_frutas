@@ -278,3 +278,17 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   pide Vcc 5-24 V: no se pueden alimentar a 3,3 V), 10 k del EN (38) y el divisor 100 k / 27 k. Quedan 14 resistencias.
 - Si un bumper o la seta disparan sin tocarlos, o la lectura de batería salta: 100 nF de ese pin a GND.
 - `placa_s3.html`, `seta.html` (4 cables en vez de 5), `potencia.html`, `conexiones.html`, `CONEXIONES.md`. Sin cambios de firmware.
+
+## 2026-10-14
+
+### Revisión de Codex de lo cambiado desde el 08/10 (potencia, seta, brazo v0.5, S3 sin capacitores)
+- Pines v0.5 bien y coherentes entre `CONEXIONES.md`, los HTML y los dos `pins.h`; sin strapping ni ADC2/Wi-Fi nuevos.
+  Bien: cortar el +, fusible antes de los mandos, bloque B separado de los 12 V, pull-down de los EN, sacar los 100 nF.
+- Hallazgos (límites de componentes sin presupuesto, no errores de conexión): la seta `10(6)A 400V~` no tiene corte
+  DC garantizado (riesgo real: soldarse tras muchos cortes con carga); 2 BC10 en paralelo no suman 20 A al abrir;
+  el fusible de 20 A solo protege contra cortos (2 motores trabados = su nominal); al soltar la seta el brazo puede
+  rearmarse antes de que llegue `desarmar`; no estañar cables bajo tornillo. El de la regeneración con la seta abierta
+  se descartó: con el EN bajo, la fuerza contraelectromotriz no supera los 12 V.
+- Decisión del usuario: está bien así, con pruebas acotadas y vigiladas. Reglas en "Antes de conectar" de
+  `CONEXIONES.md`. HTML sin cambios.
+- `docs/html/todo.html` (`armar_todo.py`): las 5 páginas en una, con cajas clickeables que llevan al detalle.
