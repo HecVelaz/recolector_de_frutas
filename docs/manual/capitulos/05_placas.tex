@@ -26,7 +26,7 @@ V_\text{GPIO} = V_\text{entrada}\,\frac{R_\text{abajo}}{R_\text{arriba} + R_\tex
 \begin{itemize}
   \item ECHO del HC-SR04: 1~kΩ arriba y 2~kΩ abajo: $5 \cdot \frac{2}{3} = 3{,}33$~V.
   \item Encoders de tracción: tienen un pull-up interno de 10~kΩ a 5~V; se agrega 20~kΩ a GND: $5 \cdot \frac{20}{30} = 3{,}33$~V.
-  \item Batería: 100~kΩ arriba y 27~kΩ abajo: $12{,}6 \cdot \frac{27}{127} = 2{,}68$~V (el ADC lee hasta $\sim$3,1~V).
+  \item Batería: 100~kΩ arriba y 30~kΩ abajo: $12{,}6 \cdot \frac{27}{127} = 2{,}68$~V (el ADC lee hasta $\sim$3,1~V).
 \end{itemize}
 
 \subsection{Pull-up y pull-down}
@@ -64,7 +64,7 @@ chicas, una sobre cada fila de borneras. Desde el 13/10 \textbf{no lleva capacit
 11 · 12 · 13 & ECHO frente · izquierda · derecha & divisor 1~k / 2~k \\
 14 · 21 · 39 & Bumpers frente · izquierda · derecha & NA a GND, pull-up interno \\
 47 & Seta, bloque B (NC) & a GND; HIGH = apretada o cable cortado \\
-1 & Divisor de batería 100~k / 27~k & ADC1 canal 0 \\
+1 & Divisor de batería 100~k / 30~k & ADC1 canal 0 \\
 40 & libre & reservado para un 4.º bumper \\
 \bottomrule
 \end{longtable}}

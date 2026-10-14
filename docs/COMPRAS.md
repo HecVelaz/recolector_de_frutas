@@ -47,7 +47,7 @@ TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0
       (WROOM 36, 39); opcionales: pull-ups de WROOM 34, 35 y 27, y 4 en la S3 si los LEDs de la Freenove cargan
       los pines de los bumpers y la seta
 - [ ] 3 resistencias de 1 kΩ y 3 de 2 kΩ: divisores de los ECHO de los HC-SR04
-- [ ] 1 resistencia de 100 kΩ y 1 de 27 kΩ: divisor de la LiPo 3S (S3 GPIO 1)
+- [ ] 1 resistencia de 100 kΩ y 1 de 30 kΩ: divisor de la LiPo 3S (S3 GPIO 1)
 - [ ] 4 resistencias de 20 kΩ: bajar a 3,3 V las salidas de los encoders de tracción
 - [ ] ~10 capacitores cerámicos de 100 nF: S3 6 (3 bumpers, seta, reserva y divisor de la batería) y WROOM 3
       (finales de carrera)

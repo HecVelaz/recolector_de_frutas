@@ -34,7 +34,7 @@ fusible, batería baja), la Pi y los ESP32 siguen encendidos y saben lo que pas�
   \node[caja,right=14mm of bus,yshift=22mm] (t) {2 × IBT-2 de tracción};
   \node[caja,right=14mm of bus,yshift=10mm] (b) {3 × IBT-2 del brazo};
   \node[caja,right=14mm of bus,yshift=-2mm] (bk) {buck 3 → 6 V → 2 servos};
-  \node[caja,right=14mm of bus,yshift=-14mm] (dv) {divisor 100 k / 27 k → S3 GPIO 1};
+  \node[caja,right=14mm of bus,yshift=-14mm] (dv) {divisor 100 k / 30 k → S3 GPIO 1};
   \node[caja,right=14mm of bus,yshift=-26mm] (cap) {capacitores ≥ 25 V};
   \foreach \n in {t,b,bk,dv,cap} \draw[pot] (bus.east |- \n) -- (\n);
   \node[caja,below=10mm of lipo,font=\scriptsize] (ind) {indicador de barras\\(conector de balanceo)};
@@ -100,8 +100,8 @@ IBT-2 (×5) & Puentes H BTS7960: 2 de tracción y 3 del brazo. Entrada de potenc
 Buck 3 & XL4016 (4--38~V de entrada, 5~A). Baja 12~V a 6~V para los servos, con límite de corriente en 5~A.
   \textbf{Ajustarlo sin carga y con el multímetro} antes de conectar los servos. \\
 Capacitores & Electrolíticos de $\geq 25$~V cerca de los IBT-2, para absorber picos. \\
-Divisor 100~k / 27~k & Baja 12,6~V a 2,68~V para el ADC del GPIO~1 de la S3. Si alguna vez vuelve la batería 10S
-  (36~V), \textbf{cambiarlo antes a 120~k / 8,2~k}: con 42~V el de 27~k pondría $\sim$9~V en el GPIO y lo quema. \\
+Divisor 100~k / 30~k & Baja 12,6~V a 2,91~V para el ADC del GPIO~1 de la S3. Si alguna vez vuelve la batería 10S
+  (36~V), \textbf{cambiarlo antes a 120~k / 8,2~k}: con 42~V el de 30~k pondría $\sim$9~V en el GPIO y lo quema. \\
 Voltímetro / indicador & Muestra la tensión a la vista. Parar a 10,5~V. \\
 Power bank & 20\,000~mAh, 5~V 3~A. Una sola salida, cable incorporado (corto), arriba al lado de la Pi. No cargarlo
   mientras alimenta la Pi (puede cortar un instante). \\

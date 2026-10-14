@@ -248,7 +248,7 @@
           <g>
             <rect class="box" x="16" y="670" width="210" height="52" rx="4"></rect>
             <text class="t-title" x="28" y="691">Tensión de batería</text>
-            <text class="t-sub" x="28" y="710">divisor 100 k / 27 k · LiPo 3S</text>
+            <text class="t-sub" x="28" y="710">divisor 100 k / 30 k · LiPo 3S</text>
             <path class="w analog" d="M226 696 H380"></path>
             <g class="lbl analog"><text class="t-pin" x="303" y="689" text-anchor="middle">ADC 1</text></g>
           </g>
@@ -313,7 +313,7 @@
     <p class="lede">Dos fuentes separadas: la LiPo 3S mueve los motores (directa, sin buck) y un power bank de 5 V alimenta la Pi y los ESP32. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.6 (08/10/2026): <b>solo con lo que hay</b>, sin relé, TVS ni fusibles; la 10S y el buck 1 quedan guardados. En trazo cortado, lo que todavía no está pero se consigue.</p>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.6. Arriba, la LiPo 3S, con su indicador de barras en el balanceo, pasa por un fusible de auto de 20 A, que la protege contra cortos, y por el selector WEG (dos contactos NA en paralelo), que es el ON/OFF de motores, directo al bus de 12 V de motores, sin buck: brazo, buck de los servos, capacitores y tracción. Un divisor de 100 k y 27 k lleva la tensión de la LiPo a la S3. La seta corta con su bloque NC A el + del bus de motores, después del selector, y avisa a la S3 con el bloque B. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
+        <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.6. Arriba, la LiPo 3S, con su indicador de barras en el balanceo, pasa por un fusible de auto de 20 A, que la protege contra cortos, y por el selector WEG (dos contactos NA en paralelo), que es el ON/OFF de motores, directo al bus de 12 V de motores, sin buck: brazo, buck de los servos, capacitores y tracción. Un divisor de 100 k y 30 k lleva la tensión de la LiPo a la S3. La seta corta con su bloque NC A el + del bus de motores, después del selector, y avisa a la S3 con el bloque B. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
           <text class="t-big" x="16" y="18">Motores · LiPo 3S directa</text>
 
           <!-- LiPo → fusible → selector → bus 12 V, sin buck -->
@@ -343,8 +343,8 @@
           <circle class="dot" cx="815" cy="160" r="4.5"></circle>
           <path class="w power" d="M815 160 V230 H270 V280 H290"></path>
           <rect class="box" x="290" y="258" width="160" height="44" rx="4"></rect>
-          <text class="t-title" x="302" y="278">Divisor 100 k / 27 k</text>
-          <text class="t-sub" x="302" y="294">12,6 V → 2,68 V</text>
+          <text class="t-title" x="302" y="278">Divisor 100 k / 30 k</text>
+          <text class="t-sub" x="302" y="294">12,6 V → 2,91 V</text>
           <path class="w analog" d="M450 280 H480"></path>
           <rect class="box" x="480" y="258" width="140" height="44" rx="4"></rect>
           <text class="t-title" x="492" y="278">S3 · ADC GPIO 1</text>
@@ -478,7 +478,7 @@
             <tr><td class="gpio"><span class="tag gpio"></span>11 · 12 · 13</td><td>ECHO centro · esquina izq. · esquina der.</td><td>divisor 1 k / 2 k</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14 · 21 · 39</td><td>Bumpers frente · izq. · der.</td><td>NA a GND</td></tr>
             <tr><td class="gpio"><span class="tag safety"></span>47</td><td>Contacto auxiliar NC de la seta</td><td>HIGH = apretada</td></tr>
-            <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería 100 k / 27 k (LiPo 3S)</td><td>12,6 V → 2,68 V</td></tr>
+            <tr><td class="gpio"><span class="tag analog"></span>1</td><td>Divisor de batería 100 k / 30 k (LiPo 3S)</td><td>12,6 V → 2,91 V</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -565,7 +565,7 @@
       <li><span><b>Power bank:</b> su cable incorporado (corto), una sola salida y sin cargarlo mientras alimenta la Pi. Con la visión corriendo 10 min, <span class="mono">vcgencmd get_throttled</span> tiene que dar 0x0.</span></li>
       <li><span><b>J2 y J3 no se sostienen solos.</b> El 36GP-555 es planetario, no sin fin: sin corriente el brazo cae. Al desarmar o con la seta, que quede apoyado en un tope o en el reposo; el resorte del hombro sigue sirviendo.</span></li>
       <li><span><b>LiPo sin BMS:</b> fusible de auto de 20 A pegado al XT60 (antes del selector, cable de ≥ 14 AWG), indicador de barras a la vista, parar a 10,5 V (<span class="mono">BATERIA_BAJA</span> no frena) y cargar solo con el balanceador, fuera del robot. Enchufar el XT60 con el selector en OFF y con la polaridad verificada.</span></li>
-      <li><span><b>Divisor 100 k / 27 k</b> en el GPIO 1. <b>Si vuelve la 10S, cambiarlo a 120 k / 8,2 k antes</b>: con 42 V, este pondría ~9 V en el GPIO y lo quema.</span></li>
+      <li><span><b>Divisor 100 k / 30 k</b> en el GPIO 1. <b>Si vuelve la 10S, cambiarlo a 120 k / 8,2 k antes</b>: con 42 V, este pondría ~10 V en el GPIO y lo quema.</span></li>
       <li><span><b>Buck 3 ajustado sin carga</b> con el multímetro (6 V, CC 5 A) antes de conectar los servos. <b>Capacitores de ≥ 25 V</b> en el bus de motores, cerca de los IBT-2.</span></li>
       <li><span><b>Seta:</b> verificar con el multímetro cuáles contactos son NC. Bloque A en el + del bus, entre el selector y la bornera +12 V, con cable grueso; bloque B entre el GPIO 47 y GND. <b>Nunca 12 V en el bloque B</b> (quema la S3). Con la seta apretada, la bornera +12 V da 0 V y <span class="mono">armar</span> tiene que fallar. Sin seta, en el banco: un cable grueso del selector a la bornera y el GPIO 47 a GND.</span></li>
       <li><span><b>Pi 5 con el power bank</b>: sin <span class="mono">usb_max_current_enable</span>; los 600 mA son para los USB y el ventilador juntos. Probar con el ventilador al máximo y mirar <span class="mono">dmesg</span> por desconexiones USB.</span></li>

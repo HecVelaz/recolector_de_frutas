@@ -62,9 +62,9 @@ constexpr int US_CADA = 4;   // 40 ms entre disparos, de a un HC-SR04: cada uno 
 constexpr float IMU_FILTRO = 0.1f;  // pasa bajos de roll y pitch (a 50 Hz: ~0,2 s)
 constexpr uint32_t IMU_VALIDA_MS = 200;  // sin muestras de la IMU por más de esto, la base no se mueve
 
-// Batería LiPo 3S (9,9-12,6 V, desde el 08/10; antes la 10S): divisor 100 k / 27 k -> 12,6 V da 2,68 V en el ADC
-// (con 11 dB mide hasta ~3,1 V: ~14,6 V). Si vuelve la 10S (42 V), volver a 120 k / 8,2 k: este divisor la quemaría
-constexpr float BATERIA_DIVISOR = (100.0f + 27.0f) / 27.0f;
+// Batería LiPo 3S (9,9-12,6 V, desde el 08/10; antes la 10S): divisor 100 k / 30 k -> 12,6 V da 2,91 V en el ADC
+// (con 11 dB mide hasta ~3,1 V: ~13,4 V). Si vuelve la 10S (42 V), volver a 120 k / 8,2 k: este divisor la quemaría
+constexpr float BATERIA_DIVISOR = (100.0f + 30.0f) / 30.0f;
 constexpr uint32_t BATERIA_CADA_MS = 200;
 
 // PWM de los IBT-2 (como en pruebas-esp32/06)

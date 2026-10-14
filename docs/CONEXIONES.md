@@ -1,7 +1,7 @@
 # Conexiones del robot
 
 Versión 0.6 — 08/10/2026 (09/10: **la LiPo pasa a XT60** porque no hay Deans hembra, par de XT60 en `fotos/conectores/`; **la seta ya está**, `fotos/llaves/`): **los motores van con la LiPo 3S directa** (sin buck 1 ni Schottky; la 10S queda guardada) y
-**la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 27 k (firmware cambiado). **Protección de la
+**la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 30 k (firmware cambiado). **Protección de la
 LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `html/conexiones.html` y
 `html/placa_s3.html` ya están en la v0.6.
 10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
@@ -40,7 +40,7 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 
 **Se conecta:**
 - LiPo → XT60 → fusible de auto 20 A → selector WEG → (seta, cuando esté) → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
-- **Divisor de batería 100 k / 27 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
+- **Divisor de batería 100 k / 30 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
 - HC-SR04 **central** (TRIG 10, ECHO 11 con divisor 1 k / 2 k): sin su dato la base no avanza.
@@ -81,7 +81,7 @@ ECHO (salen a 5 V), 20 k de los encoders (salen a 5 V y piden Vcc ≥ 5 V), 10 k
 | 11 · 12 · 13 | ECHO frente · izquierda · derecha | divisor 1 k / 2 k |
 | 14 · 21 · 39 | Bumpers frente · izquierda · derecha | NA a GND, pull-up interno (GPIO 40 queda libre) |
 | 47 | Bloque B (**NC**) de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
-| 1 | Divisor de batería 100 k / 27 k (LiPo 3S) | ADC1 canal 0 (12,6 V → 2,68 V) |
+| 1 | Divisor de batería 100 k / 30 k (LiPo 3S) | ADC1 canal 0 (12,6 V → 2,91 V) |
 
 ## ESP32-WROOM-32D · brazo (v0.5)
 
@@ -141,7 +141,7 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
   12,7 × 7,5 × 3 cm (`docs/fotos/bateria 3/`). Trae protección de cortocircuito, sobrecorriente, sobredescarga y
   temperatura. Alimenta la Pi y, por sus USB, los dos ESP32.
 - **Guardada: YONGZHI 10S2P** de 18650, 36 V (30-42 V), 4400 mAh (158 Wh), XT60, con BMS (`docs/fotos/bateria 1/`).
-  Vuelve solo si hace falta más autonomía: con ella, buck 1 → 12 V y divisor 120 k / 8,2 k (el de 100 k / 27 k
+  Vuelve solo si hace falta más autonomía: con ella, buck 1 → 12 V y divisor 120 k / 8,2 k (el de 100 k / 30 k
   pondría ~10 V en el GPIO 1 y lo quema) y `bateriaMin` 32 V en `base_config.h`.
 
 Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
@@ -164,7 +164,7 @@ LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pe
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → R_EN + L_EN (10 kΩ a GND)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
   ├─ Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
-  └─ divisor 100 k / 27 k → S3 GPIO 1 (12,6 V → 2,68 V)
+  └─ divisor 100 k / 30 k → S3 GPIO 1 (12,6 V → 2,91 V)
   indicador de barras (1S-8S) en el conector de balanceo, a la vista
 
 Power bank Xiaomi PB2030MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
@@ -251,8 +251,8 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **LiPo:** fusible de auto de 20 A pegado al XT60 (antes del selector), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
       frena), cargar solo con el balanceador y fuera del robot. Enchufar el XT60 con el selector en OFF y
       respetar la polaridad (los IBT-2 al revés se rompen).
-- [ ] **Divisor de batería 100 k / 27 k** (12,6 V → 2,68 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /
-      8,2 k antes de conectarla**: con 42 V, el de 100 k / 27 k pondría ~9 V en el GPIO y lo quema.
+- [ ] **Divisor de batería 100 k / 30 k** (12,6 V → 2,91 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /
+      8,2 k antes de conectarla**: con 42 V, el de 100 k / 30 k pondría ~10 V en el GPIO y lo quema.
 - [ ] **Ajustar el buck 3 sin carga y con el multímetro** (6 V, CC 5 A) antes de conectar los servos.
 - [ ] Capacitores de ≥ 25 V en el bus de 12 V de motores, cerca de los IBT-2.
 - [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; bloque A en el + del bus (selector →
