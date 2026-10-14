@@ -1,0 +1,218 @@
+\chapter{El sistema completo en una mirada}\label{cap:general}
+
+\section{La idea central: la Pi piensa, los ESP32 ejecutan}
+
+El robot tiene \textbf{tres computadoras}, cada una con un trabajo distinto:
+
+\begin{description}
+  \item[Raspberry Pi 5] (Ubuntu 24.04, ROS~2 Jazzy). Es el ``cerebro'': ve con las cámaras, detecta limones con
+        YOLO, calcula su posición 3D, decide qué hacer (misión y recorrido) y calcula los ángulos del brazo. No
+        maneja ningún motor directamente: solo \textbf{manda consignas}.
+  \item[ESP32-S3 (base)] Mueve las dos ruedas de tracción a la velocidad pedida, cuenta los pulsos de los encoders,
+        calcula la odometría, lee la IMU, los 3 ultrasonidos, los 3 bumpers, la seta y la batería, y \textbf{decide
+        sola la seguridad de la base}: si algo anda mal, frena sin preguntarle a la Pi.
+  \item[ESP32-WROOM-32D (brazo)] Lleva J1, J2 y J3 a los ángulos pedidos con un control en cascada y maneja los dos
+        servos de la pinza. También se frena sola ante fallas (atasco, límites, encoder roto, pérdida de la Pi).
+\end{description}
+
+\begin{idea}
+La Pi dice \textbf{qué} hacer (``andá a 0,1~m/s'', ``poné J2 a 45°''). Cada ESP32 decide \textbf{cómo} hacerlo
+(cuánto PWM darle a cada motor, 100 veces por segundo) y \textbf{si es seguro} hacerlo. Si la Pi se cuelga o se
+desconecta el USB, cada ESP32 se detiene sola en menos de medio segundo.
+\end{idea}
+
+Hablan entre sí por \textbf{USB} usando \textbf{micro-ROS}: para el resto de ROS~2, cada ESP32 aparece como un nodo
+más que publica y se suscribe a tópicos.
+
+\section{Diagrama de bloques}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[every node/.append style={minimum width=27mm}]
+  \tikzset{t/.style={topico,align=center,minimum width=0pt}}
+  % columnas x = 0, 4.6, 9.6, 14.2 ; filas en cm
+  \node[nodo] (cam) at (0,0) {Cámaras\\\cod{camera\_ros}};
+  \node[nodo] (disp) at (0,-2.2) {rectificación\\+ disparidad SGBM};
+  \node[nodo] (gps) at (0,-4.6) {\cod{nmea\_navsat}\\GPS};
+  \node[nodo] (yolo) at (4.6,0) {\cod{detector\_node}\\YOLO};
+  \node[nodo] (loc) at (4.6,-2.2) {\cod{localizador\_node}\\estéreo};
+  \node[nodo] (mis) at (9.6,-2.2) {\cod{mision}\\FSM};
+  \node[nodo] (rec) at (9.6,-4.6) {\cod{recorrido}\\(autónomo)};
+  \node[nodo] (ik) at (14.2,-2.2) {\cod{brazo\_ik}\\cinemática inversa};
+  \node[nodo] (tel) at (1.6,-6.8) {\cod{teleop}\\(teclado, a mano)};
+  \node[caja] (ag1) at (6.2,-6.8) {agente micro-ROS\\\cod{/dev/ttyACM0}};
+  \node[caja] (ag2) at (14.2,-6.8) {agente micro-ROS\\\cod{/dev/ttyUSB0}};
+  \draw[datos] (cam) -- node[t,above]{imagen} (yolo);
+  \draw[datos] (cam) -- node[t,right]{imágenes\\izq. y der.} (disp);
+  \draw[datos] (disp) -- node[t,above]{/disparity} (loc);
+  \draw[datos] (yolo) -- node[t,right]{/yolo/detecciones} (loc);
+  \draw[datos] (loc) -- node[t,above]{/limon/\\posicion} (mis);
+  \draw[datos] (mis) -- node[t,above]{/brazo/\\objetivo} (ik);
+  \draw[datos,<->] (mis) -- node[t,left]{estado y\\``fuera de alcance''} (rec);
+  \draw[datos] (rec) |- node[t,pos=0.75,above]{/cmd\_vel} (ag1);
+  \draw[datos,dashed] (tel) -- node[t,above]{/cmd\_vel} (ag1);
+  \draw[datos] (ik) -- node[t,right]{/brazo/joint\_cmd} (ag2);
+  \draw[datos] (mis.south east) -- node[t,right,pos=0.45]{/pinza/cierre\\/brazo/comando} ($(ag2.north west)+(0.3,0)$);
+  \begin{scope}[on background layer]
+    \node[grupo,fill=acento!3,fit=(cam)(gps)(tel)(ag1)(ag2)(ik)(yolo),inner sep=10pt,label={[font=\bfseries]above:Raspberry Pi 5 — Ubuntu 24.04 — ROS 2 Jazzy}] (pi) {};
+  \end{scope}
+  \node[placa,align=left,font=\small,text width=66mm] (s3) at (6.2,-9.6)
+    {\textbf{ESP32-S3 · base}\\\footnotesize PI de velocidad de cada rueda (100 Hz)\\\footnotesize odometría, IMU, 3 HC-SR04, 3 bumpers\\\footnotesize seta, batería, \textbf{seguridad local}};
+  \node[placa,align=left,font=\small,text width=66mm] (wr) at (14.2,-9.6)
+    {\textbf{ESP32-WROOM-32D · brazo}\\\footnotesize cascada posición → velocidad (100 Hz)\\\footnotesize J1, J2, J3 + homing + límites\\\footnotesize 2 servos de la pinza};
+  \draw[datos,<->] (ag1) -- node[t,right]{USB (micro-ROS)} (s3);
+  \draw[datos,<->] (ag2) -- node[t,right]{USB (micro-ROS)} (wr);
+  \node[caja] (tr) at (4.6,-12.2) {2 × IBT-2\\2 × 42GM-895H};
+  \node[caja] (sen) at (7.8,-12.2) {IMU · HC-SR04\\bumpers · seta};
+  \node[caja] (art) at (12.6,-12.2) {3 × IBT-2\\J1 · J2 · J3};
+  \node[caja] (pz) at (15.8,-12.2) {2 servos\\RDS3218};
+  \draw[gpio] (s3) -- (tr); \draw[gpio,<-] (s3) -- (sen);
+  \draw[gpio] (wr) -- (art); \draw[gpio] (wr) -- (pz);
+  \node[caja,draw=rojo,thick] (lipo) at (0,-12.2) {LiPo 3S\\11,1 V};
+  \node[caja,draw=naranja,thick] (pb) at (0,-9.6) {Power bank\\5 V 3 A};
+  \draw[pot] (lipo) -- node[t,above]{12 V} (tr);
+  \draw[pot] (lipo.south) -- ++(0,-0.5) -| node[t,pos=0.25,below]{12 V (pasa por fusible, selector y seta)} (art.south);
+  \draw[logica] (pb) -- node[t,left]{5 V} (pb |- pi.south);
+\end{tikzpicture}}
+\caption{Arquitectura del sistema. Azul: nodos de ROS~2 en la Pi. Gris: placas. Las flechas llevan el nombre del
+tópico de ROS~2 por el que viaja el dato. \cod{recorrido} también escucha
+\topic{/yolo/detecciones}, \topic{/odom}, \topic{/range/*}, \topic{/bumpers} y \topic{/imu/data\_raw} (no dibujados). El
+teclado (\cod{teleop}) se usa en vez del recorrido autónomo, nunca a la vez.}
+\label{fig:bloques}
+\end{figure}
+
+\section{Dónde está cada cosa en el robot}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[scale=21]
+  % base en T (x adelante, y a la izquierda); dibujada con x hacia arriba
+  \begin{scope}[rotate=90]
+    \fill[suave,draw=tinta,thick] (-0.085,-0.17) -- (0.085,-0.17) -- (0.085,-0.20) -- (0.315,-0.20) -- (0.315,0.20)
+      -- (0.085,0.20) -- (0.085,0.17) -- (-0.085,0.17) -- cycle;
+    % ruedas de tracción
+    \fill[tinta] (-0.075,0.175) rectangle (0.075,0.22);
+    \fill[tinta] (-0.075,-0.22) rectangle (0.075,-0.175);
+    % ruedas locas
+    \draw[tinta,fill=white] (0.27,0.14) circle (0.02); \draw[tinta,fill=white] (0.27,-0.14) circle (0.02);
+    % eje y base_link
+    \draw[dashed,gris] (0,-0.24) -- (0,0.24);
+    \fill[rojo] (0,0) circle (0.006);
+    \draw[->,rojo,thick] (0,0) -- (0.07,0) node[right,font=\scriptsize]{$x$};
+    \draw[->,rojo,thick] (0,0) -- (0,0.07) node[above,font=\scriptsize]{$y$};
+    % brazo
+    \fill[acento] (0,0.11) circle (0.025);
+    \draw[acento,very thick] (0,0.11) -- ++(150:0.07);
+    % mástil y cámaras
+    \fill[naranja] (0.255,-0.17) circle (0.016);
+    \draw[naranja,thick,->] (0.255,-0.17) -- ++(94:0.12);
+    % HC-SR04
+    \foreach \yy/\aa in {0/0,0.15/15,-0.15/-15} {\fill[verde] (0.323,\yy) circle (0.008); \draw[verde,->] (0.323,\yy) -- ++(\aa:0.06);}
+    % bumpers
+    \draw[violeta,line width=2pt] (0.32,-0.05) -- (0.32,0.05);
+    \draw[violeta,line width=2pt] (0.15,0.205) -- (0.25,0.205);
+    \draw[violeta,line width=2pt] (0.15,-0.205) -- (0.25,-0.205);
+  \end{scope}
+  % rótulos (figura: x = -y del robot, y = x del robot)
+  \node[font=\scriptsize,gris] at (0,0.43) {ADELANTE (parte ancha, 40 × 23 cm)};
+  \node[font=\scriptsize,gris] at (0,-0.135) {ATRÁS (parte angosta, 34 × 17 cm)};
+  \node[font=\scriptsize,anchor=west,align=left] (lus) at (0.27,0.37) {\textcolor{verde}{3 × HC-SR04 al frente}\\\textcolor{verde}{(0°, ±15°)}};
+  \node[font=\scriptsize,anchor=west,align=left] (lm) at (0.27,0.27) {\textcolor{naranja}{mástil: cámaras y Pi,}\\\textcolor{naranja}{miran 94° a la izquierda}};
+  \draw[naranja,thin] (lm.west) -- (0.185,0.255);
+  \node[font=\scriptsize,anchor=west,align=left] (lb) at (0.27,0.16) {\textcolor{violeta}{bumpers: frente}\\\textcolor{violeta}{y laterales}};
+  \draw[violeta,thin] (lb.west) -- (0.21,0.18);
+  \node[font=\scriptsize,anchor=east,align=right] (la) at (-0.27,0.14) {\textcolor{acento}{brazo: J1 sobre el eje,}\\\textcolor{acento}{a 0,11 m del centro}};
+  \draw[acento,thin] (la.east) -- (-0.12,0.02);
+  \node[font=\scriptsize,anchor=east] at (-0.235,-0.05) {rueda izq.};
+  \node[font=\scriptsize,anchor=west] at (0.235,-0.05) {rueda der.};
+  \node[font=\scriptsize,anchor=north] at (0.04,-0.09) {\textcolor{rojo}{\cod{base\_link}}};
+\end{tikzpicture}}
+\caption{Vista desde arriba (medidas de la entrega R2~E3 y de la simulación; posiciones del mástil y del brazo
+\textbf{preliminares}). El origen \cod{base\_link} está en el eje de las ruedas de tracción, a 8,5~cm del borde
+trasero. Los limones están a la \textbf{izquierda} del robot: el brazo y las cámaras miran hacia ese lado.}
+\label{fig:planta}
+\end{figure}
+
+\section{Un limón, de principio a fin}
+
+Esta es la secuencia completa de una cosecha autónoma. Cada paso se explica en detalle más adelante.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[x=23.5mm,y=-6.6mm,font=\small]
+  \foreach \x/\n in {0/YOLO,1/Estéreo,2/\cod{recorrido},3/\cod{mision},4/\cod{brazo\_ik},5/S3 (base),6/WROOM (brazo)} {
+    \node[placa,minimum width=21mm,font=\footnotesize\bfseries] at (\x,0) {\n};
+    \draw[gris,dashed] (\x,0.7) -- (\x,17.8);
+  }
+  \providecommand{\msg}[4]{\draw[datos] (#1,#3) -- node[topico,above,font=\tiny\ttfamily]{#4} (#2,#3);}
+  \newcommand{\anot}[3]{\node[anchor=west,font=\scriptsize,fill=white,inner sep=1pt] at (#1+0.05,#2) {#3};}
+  \msg{2}{5}{1.4}{/cmd\_vel 0,10 m/s}
+  \anot{5}{1.4}{AVANZAR}
+  \msg{0}{2}{2.6}{limón en la zona útil}
+  \msg{2}{5}{3.8}{/cmd\_vel = 0}
+  \anot{5}{3.8}{frena: MIRAR}
+  \msg{1}{3}{5.0}{/limon/posicion ×5}
+  \anot{3}{6.0}{¿alcanzable? \textbf{no}}
+  \msg{3}{2}{7.0}{fuera de alcance}
+  \anot{2}{8.0}{$\Delta x = +0{,}23$ m: ARRIMAR}
+  \msg{2}{5}{9.0}{/cmd\_vel hasta x+0,23}
+  \msg{1}{3}{10.2}{/limon/posicion}
+  \anot{3}{11.1}{\textbf{alcanzable}: APROXIMAR}
+  \msg{3}{4}{12.0}{/brazo/objetivo}
+  \msg{4}{6}{13.0}{/brazo/joint\_cmd}
+  \anot{6}{14.0}{mueve J1–J3}
+  \msg{6}{3}{15.0}{llego (estado)}
+  \msg{3}{6}{16.0}{/pinza/cierre 100}
+  \anot{6}{16.0}{AGARRAR}
+  \msg{3}{4}{17.0}{objetivo = reposo}
+  \anot{4}{17.0}{RETIRAR, luego SOLTAR}
+\end{tikzpicture}}
+\caption{Diagrama de secuencia de una cosecha con el recorrido autónomo. La base \textbf{nunca} se mueve mientras
+el brazo trabaja.}
+\label{fig:secuencia}
+\end{figure}
+
+En palabras:
+\begin{enumerate}
+  \item \textbf{AVANZAR}: \cod{recorrido} manda \topic{/cmd\_vel} con 0,10~m/s por el centro del pasillo. La S3
+        convierte eso en rpm para cada rueda y las controla con sus encoders.
+  \item YOLO ve un limón. Con el ancho de la caja se estima si está a una distancia que el estéreo puede medir
+        (0,38--0,96~m). Si es así, \cod{recorrido} \textbf{frena}: el estéreo necesita el robot quieto porque las dos
+        cámaras no toman la foto exactamente al mismo tiempo.
+  \item Quieto, el estéreo publica la posición 3D del limón en \topic{/limon/posicion}. \cod{mision} junta 5
+        muestras que coincidan a menos de 2~cm, pasa el punto al marco del brazo con la TF y pregunta a la
+        cinemática inversa si es alcanzable.
+  \item Si \textbf{no} es alcanzable, \cod{recorrido} calcula cuántos centímetros avanzar o retroceder por el
+        pasillo para que lo sea, y se mueve esa distancia midiendo con la odometría.
+  \item Si es alcanzable, \cod{mision} manda el punto a \cod{brazo\_ik}, que calcula los ángulos de las tres
+        articulaciones y se los manda a la WROOM.
+  \item La WROOM mueve J1, J2 y J3. Cuando las tres llegaron, \cod{mision} cierra la pinza, lleva el brazo a la
+        pose de reposo y abre la pinza para soltar el limón.
+  \item Vuelve a ESPERAR y \cod{recorrido} sigue avanzando hasta el próximo limón o el fin de la hilera.
+\end{enumerate}
+
+\section{Las capas de seguridad}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=2mm]
+  \node[caja,draw=rojo,fill=rojo!6,minimum width=150mm,text width=145mm,align=left] (h) {\textbf{1. Hardware}: la seta corta el
+    + de los 12~V de todos los motores. Funciona aunque se cuelgue todo el software. El fusible de 20~A protege la
+    LiPo de un cortocircuito.};
+  \node[caja,draw=violeta,fill=violeta!6,minimum width=150mm,text width=145mm,align=left,below=of h] (e) {\textbf{2. Firmware de
+    cada ESP32}: watchdog de 300~ms, bumpers, distancia al frente, vuelco, atasco de motores, límites articulares,
+    encoder roto. Decide sin la Pi.};
+  \node[caja,draw=acento,fill=acento!6,minimum width=150mm,text width=145mm,align=left,below=of e] (a) {\textbf{3. Armado por
+    sesión}: después de cada conexión con la Pi, los ESP32 ignoran las órdenes de movimiento hasta recibir
+    \cod{armar}.};
+  \node[caja,draw=verde,fill=verde!6,minimum width=150mm,text width=145mm,align=left,below=of a] (m) {\textbf{4. Misión en la Pi}:
+    si ve \cod{SETA} en \topic{/base/estado}, desarma el brazo y pasa a FALLA; la base solo se mueve con el brazo
+    en reposo; si el brazo no llega en 20~s, FALLA.};
+  \node[caja,draw=gris,fill=suave,minimum width=150mm,text width=145mm,align=left,below=of m] (o) {\textbf{5. Operador}: pruebas
+    acotadas y vigiladas, con alguien con la mano en el selector o la seta.};
+\end{tikzpicture}
+\caption{Capas de seguridad, de la más dura (hardware) a la más blanda (procedimientos).}
+\end{figure}

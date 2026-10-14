@@ -1,0 +1,159 @@
+\chapter{Puesta en marcha, paso a paso}\label{cap:marcha}
+
+Este capítulo es la receta para encender y probar el robot real, en orden. Cada paso se apoya en el anterior: no
+saltear pasos. \textbf{Hasta hoy (14/10) nada de esto se probó con los periféricos reales}: las placas solo se
+probaron solas.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=3mm,every node/.style={font=\small}]
+  \foreach \i/\t [count=\n] in {0/Antes de conectar,1/Encendido y agentes,2/Base en el aire,3/Base en el piso,
+     4/Sensores en ROS,5/Visión,6/Brazo: J1,7/Brazo: J2 y J3,8/TF cámara → brazo,9/Misión,10/Recorrido autónomo} {
+    \node[caja,minimum width=48mm,anchor=west] (p\n) at ({mod(\i,2)*80mm},{-floor(\i/2)*11mm}) {\textbf{\n.} \t};
+  }
+\end{tikzpicture}
+\caption{Orden de las pruebas.}
+\end{figure}
+
+\section{Paso 0: antes de conectar}
+
+\begin{itemize}[label=$\square$]
+  \item \textbf{GND común}: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
+        Sin eso, los PWM no tienen referencia en los IBT-2. Los positivos de la LiPo y del power bank nunca se tocan.
+  \item \textbf{Divisor de batería} 100~k / 27~k armado y medido \textbf{con la lógica apagada} antes de conectar la LiPo.
+  \item \textbf{Fusible} de 20~A pegado al XT60. Cable del bus de al menos 14~AWG.
+  \item \textbf{Buck 3} ajustado a 6~V sin carga, con el multímetro, antes de conectar los servos.
+  \item \textbf{Seta}: verificar con el multímetro qué contactos son NC antes de cablearla.
+  \item Pull-down de 10~kΩ en cada EN (S3 GPIO~38 y WROOM GPIO~23).
+  \item Divisor 1~k / 2~k en cada ECHO de los HC-SR04.
+  \item \textbf{Encoders de tracción}: medir sin alimentar la resistencia de cada salida a Vcc (debería dar $\approx$
+        10~kΩ). Con los 20~kΩ a GND, girando despacio, el alto no tiene que pasar de 3,3~V.
+  \item \textbf{Encoders del brazo} a 3,3~V (no a 5~V). Sin girar, A y B en 0 o 3,3~V, nunca a mitad; si no, falta el
+        pull-up (10~kΩ a 3V3).
+  \item \textbf{IBT-2 a 3,3~V}: leer el integrado de entrada de los 5 módulos. Con 74HC244 a 5~V el alto mínimo es
+        3,5~V: los 3,3~V del ESP32 quedan fuera de hoja. Probar cada uno a 20~kHz.
+  \item \textbf{LEDs de la Freenove}: medir si cargan el GPIO~1 (lectura de batería), los encoders o el I²C.
+  \item Cables a las borneras con cobre pelado, \textbf{sin estañar}.
+  \item Brazo en reposo \textbf{apoyado en un tope} (J2 y J3 caen sin corriente).
+\end{itemize}
+
+\section{Paso 1: encendido y agentes}
+
+\begin{enumerate}
+  \item Selector en \textbf{OFF}. Enchufar el power bank a la Pi y esperar que arranque.
+  \item Conectar por SSH: \cod{ssh r2d2@100.116.96.71}.
+  \item Verificar alimentación: \cod{vcgencmd get\_throttled} tiene que dar \cod{0x0}.
+  \item Verificar que la Pi tenga el repo y los binarios al día (ver \cod{/pi-sync} en el capítulo~\ref{cap:estado}).
+  \item Arrancar los dos agentes, cada uno en su terminal (sección~\ref{sec:armar}).
+  \item Comprobar las tasas:
+\begin{lstlisting}[language=consola]
+ros2 topic hz /odom                      # 25 Hz
+ros2 topic hz /brazo/joint_states        # 20 Hz
+ros2 topic echo /base/estado --field data
+ros2 topic echo /brazo/estado --field data
+\end{lstlisting}
+  \item Enchufar la LiPo (XT60) con el selector en OFF. Mirar el voltímetro.
+\end{enumerate}
+
+\section{Paso 2: base con las ruedas en el aire}
+
+Con la base sobre un soporte, ruedas sin tocar nada. Mejor en modo serie (firmware \cod{esp32s3}, monitor abierto),
+o por \topic{/base/comando} con micro-ROS (la respuesta sale en \topic{/base/respuesta}).
+
+\begin{enumerate}
+  \item \cod{sens}: ver que respondan la IMU, las distancias, los bumpers, la seta y la batería. Comparar la tensión
+        con el tester.
+  \item Selector en ON. \cod{r} (rearmar la seguridad) y, con micro-ROS, \cod{armar}.
+  \item \cod{d 25 0} repetido (rueda izquierda), después \cod{d 0 25} (derecha). Cada rueda tiene que girar
+        \textbf{hacia adelante} y \cod{e} mostrar rpm positivas.
+        \begin{itemize}
+          \item Gira al revés → cambiar \cod{MOTOR\_INVERTIDO} en \archivo{base\_config.h}.
+          \item Gira bien pero las rpm salen negativas → cambiar \cod{ENC\_INVERTIDO}.
+        \end{itemize}
+  \item \textbf{Cuentas por vuelta}: con la base liberada (\cod{l}), marcar la rueda, girarla a mano 10 vueltas hacia
+        adelante y leer \cod{vueltas} en \cod{e}. Si no da 10: nuevo valor = $8316 \times 10 / \text{vueltas leídas}$.
+  \item \cod{log 20} y \cod{w 20 20 3}: CSV de la respuesta del lazo de velocidad, para graficar.
+  \item \cod{v 0.1 0 2}, \cod{v 0 0.5 2}: movimiento con rampa.
+  \item Probar la seta: apretarla → EMERGENCIA, 0~V en la bornera +12~V, \cod{armar} y \cod{v} rechazados. Soltarla:
+        las ruedas \textbf{no} arrancan solas; hace falta \cod{r}.
+  \item Probar el watchdog: \cod{ros2 topic pub -r 10 /cmd\_vel \ldots} y cortar con Ctrl+C: frena a los 300~ms.
+\end{enumerate}
+
+\section{Paso 3: base en el piso}
+
+\begin{enumerate}
+  \item \cod{odo0}, \cod{v 0.1 0 3} y medir con cinta cuánto avanzó. Comparar con $x$ en \cod{e}: corregir
+        \cod{radioRueda} en \cod{CFG\_DIF}.
+  \item Girar 360° en el lugar (\cod{v 0 0.5}) y comparar el ángulo: corregir la \cod{trocha}.
+  \item \cod{cal} con el robot quieto (sesgo del giróscopo).
+  \item Teleop con el teclado desde la Pi:
+\begin{lstlisting}[language=consola]
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 'armar'}"
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0
+\end{lstlisting}
+  \item Medir la distancia de frenado del watchdog a 0,25~m/s.
+  \item Grabar un rosbag de \topic{/cmd\_vel} y \topic{/odom} (criterio M1 de la arquitectura).
+\end{enumerate}
+
+\section{Paso 4: sensores en ROS}
+\begin{itemize}
+  \item \topic{/range/frente}: acercar una caja; tiene que bajar. A menos de 0,20~m la base no avanza.
+  \item \topic{/bumpers}: apretar cada uno; bit 0 frente, 1 izquierda, 2 derecha.
+  \item \topic{/imu/data\_raw}: inclinar la base; a más de 25° entra en VUELCO.
+  \item \topic{/battery}: comparar con el tester.
+  \item \topic{/gps/fix} (si el GPS está conectado a la Pi): \cod{cat /dev/ttyAMA0} tiene que mostrar frases \cod{\$GP\ldots}.
+\end{itemize}
+
+\section{Paso 5: visión}
+\begin{enumerate}
+  \item \cod{\textasciitilde/scripts/probar\_camaras.sh}: las dos cámaras a 30~FPS.
+  \item \cod{start\_limon.sh} con el modelo (capítulo~\ref{cap:vision}).
+  \item Limón real a 40/55/70/90~cm en el eje: \topic{/limon/posicion} contra cinta.
+  \item Prueba de campo en un arbusto y al sol (NoIR).
+\end{enumerate}
+
+\section{Paso 6: brazo con J1}
+Una articulación a la vez, con la fuente limitada a 2--3~A si se puede.
+\begin{enumerate}
+  \item Reflashear la WROOM con los pines v0.5.
+  \item \cod{d 1 20} repetido: ver con \cod{e} que la velocidad tenga el mismo signo que el duty.
+  \item \cod{v 1 10 3}: lazo de velocidad solo.
+  \item Llevar J1 a la marca del banco (brazo hacia la izquierda) y \cod{z 1}. O \cod{home 1} con el final de carrera.
+  \item \cod{j 1 120}, \cod{j 1 60}: movimientos en posición.
+  \item Con micro-ROS: \cod{armar} y \topic{/brazo/joint\_cmd}.
+\end{enumerate}
+
+\section{Paso 7: J2 y J3 (cuando lleguen los motores)}
+\begin{enumerate}
+  \item Montar con el brazo \textbf{apoyado}: no se sostienen solos.
+  \item Medir signos (\cod{ENC\_INVERTIDO}, \cod{MOTOR\_INVERTIDO}) con \cod{d}.
+  \item Identificar zona muerta, $K$, $\tau$ y ajustar el PI (pasos 0--3 de \archivo{pruebas-esp32/10}).
+  \item Medir \cod{HOME\_Q} (ángulo de cada final de carrera) y \cod{POSE\_CERO}.
+  \item Ajustar \cod{kpPos}, \cod{velMax}, \cod{accMax} con carga.
+  \item Probar \topic{/brazo/objetivo} con \cod{brazo\_ik} a varios puntos medidos con cinta.
+\end{enumerate}
+
+\section{Paso 8: TF cámara → brazo}
+\begin{enumerate}
+  \item Con el soporte de cámaras montado en el mástil, medir con cinta $x$, $y$, $z$ de \cod{stereo\_camera\_link}
+        respecto de \cod{brazo\_base}.
+  \item Lanzar \cod{mision.launch.py} con esos valores y ángulos aproximados.
+  \item Poner un limón en un lugar medido a mano y comparar con lo que da la TF
+        (\cod{ros2 run tf2\_ros tf2\_echo brazo\_base camera} + \topic{/limon/posicion}). Ajustar roll, pitch y yaw.
+  \item Medir \cod{largo\_herramienta}.
+\end{enumerate}
+
+\section{Paso 9: misión}
+\begin{enumerate}
+  \item Base quieta, limón a la vista y al alcance. Mano en la seta.
+  \item \cod{cierre} bajo al principio (por ejemplo 40) y subirlo hasta que agarre sin aplastar.
+  \item \cod{ros2 launch mision mision.launch.py \ldots} y seguir \topic{/mision/estado}.
+  \item Video de al menos 5 cosechas seguidas (criterio M4).
+\end{enumerate}
+
+\section{Paso 10: recorrido autónomo}
+\begin{enumerate}
+  \item Robot en el centro del pasillo, mirando a lo largo.
+  \item Parámetros de la zona útil de la cámara real (\cod{f\_px}, \cod{u\_min}).
+  \item \cod{autonomo:=true}, con alguien al lado con la mano en la seta.
+\end{enumerate}

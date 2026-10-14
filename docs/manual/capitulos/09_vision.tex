@@ -1,0 +1,244 @@
+\chapter{Visión: encontrar el limón en 3D}\label{cap:vision}
+
+La visión vive en un repositorio aparte, \cod{HecVelaz/vision\_estereo} (en la Pi: \archivo{\textasciitilde/vision\_estereo}).
+Toda la cadena corre en la Raspberry Pi.
+
+\section{La cadena completa}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[every node/.append style={font=\small}]
+  \node[caja] (cl) at (0,0) {cámara izq.\\(cámara 0)};
+  \node[caja] (cr) at (0,-2.2) {cámara der.\\(cámara 1)};
+  \node[nodo] (rl) at (3.4,0) {rectificar};
+  \node[nodo] (rr) at (3.4,-2.2) {rectificar};
+  \node[nodo] (sg) at (7.6,-1.1) {disparidad\\SGBM};
+  \node[nodo] (yo) at (7.6,1.5) {YOLO\\(NCNN)};
+  \node[nodo] (lo) at (11.6,-1.1) {localizador};
+  \node[caja] (out) at (15.4,-1.1) {\topic{/limon/posicion}\\PointStamped\\marco \cod{camera}};
+  \draw[datos] (cl) -- (rl); \draw[datos] (cr) -- (rr);
+  \draw[datos] (rl) -- node[topico,above,sloped]{/left/image\_rect} (sg);
+  \draw[datos] (rr) -- node[topico,below,sloped]{/right/image\_rect} (sg);
+  \draw[datos] (rl) |- (yo);
+  \draw[datos] (sg) -- node[topico,above]{/disparity} (lo);
+  \draw[datos] (yo) -| node[topico,pos=0.25,above]{/yolo/detecciones} (lo);
+  \draw[datos] (lo) -- (out);
+\end{tikzpicture}}
+\caption{De las dos imágenes a la posición del limón. YOLO corre solo sobre la imagen izquierda rectificada; el
+estéreo da la profundidad de cada píxel.}
+\end{figure}
+
+\section{Las cámaras}
+
+\begin{itemize}
+  \item Dos \textbf{Raspberry Pi Camera Module 3 NoIR} (sensor IMX708), por CSI. \textbf{La cámara 0 de libcamera es la
+        izquierda} (verificado con la paralaje de un objeto cercano).
+  \item Sensor completo 2304:1296 escalado a 640 × 480, \textbf{foco fijo} (izquierda 2,90, derecha 2,15 dioptrías),
+        30~FPS (10~FPS dentro de la cadena del limón, para dejar CPU).
+  \item Todo sale de un solo archivo: \archivo{config/camaras.yaml} (índices, modo, foco, FPS y carpeta de calibración).
+  \item \textbf{NoIR} significa sin filtro infrarrojo: al sol los colores salen rosados y el detector puede fallar.
+        Pendiente de probar al aire libre.
+  \item Las dos cámaras \textbf{no están sincronizadas}: cada una toma la foto en su momento. Con el robot en
+        movimiento la disparidad sale mal. Por eso \textbf{se localiza con el robot quieto}.
+\end{itemize}
+
+\section{Cómo funciona el estéreo}
+
+\subsection{La idea}
+Mirá un dedo con un ojo cerrado y después con el otro: el dedo ``salta'' respecto del fondo, y salta más cuanto más
+cerca está. Las dos cámaras hacen lo mismo. Si un punto aparece en la columna $u_L$ de la imagen izquierda y en $u_R$
+de la derecha, la \textbf{disparidad} es $d = u_L - u_R$ (en píxeles).
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[scale=1.15]
+  \coordinate (OL) at (0,0); \coordinate (OR) at (2,0); \coordinate (P) at (1.3,4);
+  \draw[thick] (-0.8,0.8) -- (0.8,0.8);
+  \draw[thick] (1.2,0.8) -- (2.8,0.8);
+  \node[font=\scriptsize,anchor=east] at (-0.85,0.8) {imagen izq.};
+  \node[font=\scriptsize,anchor=west] at (2.85,0.8) {imagen der.};
+  \fill (OL) circle (1.5pt) node[below]{$O_L$}; \fill (OR) circle (1.5pt) node[below]{$O_R$};
+  \fill[naranja] (P) circle (3pt) node[above]{limón $P$};
+  \draw[naranja] (OL) -- (P); \draw[naranja] (OR) -- (P);
+  \path (OL) -- (P) coordinate[pos=0.2] (pl); \path (OR) -- (P) coordinate[pos=0.2] (pr);
+  \fill[acento] (pl) circle (1.5pt) node[above left=-1pt,font=\scriptsize]{$u_L$};
+  \fill[acento] (pr) circle (1.5pt) node[above right=-1pt,font=\scriptsize]{$u_R$};
+  \draw[<->] (0,-0.55) -- node[below]{$B$ = 89,5 mm (baseline)} (2,-0.55);
+  \draw[<->] (-2.4,0) -- node[left]{$Z$} (-2.4,4);
+  \draw[<->] (4.2,0) -- node[right]{$f$} (4.2,0.8);
+  \node[align=left,anchor=west,font=\small] at (5.2,2.2) {
+    $Z = \dfrac{f\,B}{d}$, \quad $d = u_L - u_R$\\[10pt]
+    $X = \dfrac{(u - c_x)\,Z}{f}$, \quad $Y = \dfrac{(v - c_y)\,Z}{f}$\\[10pt]
+    $f = 654{,}3$ px, \; $B = 0{,}0895$ m $\Rightarrow fB = 58{,}6$ px·m\\[4pt]
+    $Z = 0{,}40$ m $\Rightarrow d = 146$ px; \; $Z = 0{,}90$ m $\Rightarrow d = 65$ px\\[6pt]
+    Error: $\Delta Z \approx \dfrac{Z^2}{f B}\,\Delta d$; con $\Delta d = 0{,}5$ px a 0,9 m, $\Delta Z \approx 7$ mm};
+\end{tikzpicture}}
+\caption{Triangulación estéreo. El error crece con el cuadrado de la distancia: por eso el limón se mira de cerca.}
+\end{figure}
+
+\subsection{Calibración y rectificación}
+Para usar esas fórmulas hacen falta $f$, $B$, el centro óptico $(c_x, c_y)$, la distorsión de cada lente y la
+rotación entre las dos cámaras. Se miden con una \textbf{calibración estéreo}: se fotografía un tablero de ajedrez
+(9 × 6 esquinas, cuadros de 25~mm) en unas 30 posiciones y OpenCV ajusta todos los parámetros.
+
+Con eso se \textbf{rectifican} las imágenes: se deforman para que las dos queden como si las cámaras fueran
+perfectamente paralelas. Entonces un punto aparece \textbf{en la misma fila} de las dos imágenes, y buscar su pareja es
+buscar solo a lo largo de esa fila.
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Calibración en uso} & \archivo{config/calibracion\_soporte\_2/} (soporte rígido, 01/10) \\
+\midrule
+Pares de imágenes & 34 \\
+Error RMS estéreo & 0,36~px \\
+Error epipolar medio (p95) & 0,08~px (0,21~px) \\
+Baseline & 89,5~mm (con regla: 90~mm) \\
+Focal rectificada & 654,3~px \\
+Ventana de trabajo & 0,38--0,96~m (disparidad 61--156~px) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{peligro}[La calibración se pierde si algo se mueve]
+Vale solo para el mismo modo de sensor, resolución y foco, y \textbf{mientras las cámaras no se muevan entre sí}. Si el
+soporte se golpea o se cambia el foco, hay que recalibrar.
+\end{peligro}
+
+\begin{lstlisting}[language=consola]
+python3 ~/vision_estereo/herramientas/ajustar_foco.py                 # foco por cámara (tablero a 55 cm)
+python3 ~/vision_estereo/herramientas/calibrar_estereo.py capturar    # captura guiada (vista: /calibracion/vista)
+python3 ~/vision_estereo/herramientas/calibrar_estereo.py calcular --salida config/calibracion_<nombre>
+# después: apuntar "calibracion:" de config/camaras.yaml a la carpeta nueva
+python3 ~/vision_estereo/herramientas/medir_profundidad_tablero.py    # control de escala
+\end{lstlisting}
+
+\subsection{Disparidad: SGBM}
+El nodo de disparidad calcula $d$ para cada píxel. Hay dos algoritmos:
+\begin{description}
+  \item[BM] (\textit{block matching}): rápido ($\sim$10~Hz), más ruidoso, $\sim$500 puntos por limón.
+  \item[SGBM] (\textit{semi-global}): más lento ($\sim$2,5~Hz), mucho más limpio, $\sim$1000 puntos por limón.
+        \textbf{Es el que se usa} (por defecto desde el 01/10; \cod{ALGORITMO=0} vuelve a BM).
+\end{description}
+Solo se buscan disparidades entre 61 y 156~px (0,38 a 0,96~m). Eso tiene un costo: la \textbf{zona ciega}. Un punto en
+la columna $u$ de la imagen izquierda solo se puede emparejar si $u - d \geq 0$; con la ventana actual, el cuarto
+izquierdo de la imagen ($u <$ $\sim$163~px) \textbf{se detecta pero no se localiza}.
+
+\section{El detector YOLO}
+
+\begin{itemize}
+  \item Modelo \textbf{YOLO26n} (nano) con una sola clase, \cod{limon}. Entrenado en Google Colab
+        (\archivo{vision/entrenamiento\_limon/}) con datasets de Roboflow.
+  \item Exportado a \textbf{NCNN} para la CPU de la Pi: 23~FPS solo; 7--9~FPS dentro de la cadena completa.
+  \item En la Pi: \archivo{\textasciitilde/vision\_estereo/modelos/limon\_yolo26n\_ncnn\_model} (fuera de git). El \cod{.pt}
+        está en Drive.
+  \item Prueba (285 imágenes, 173 limones): precisión 0,953, recobrado 0,977, mAP50 0,978, mAP50-95 0,814. Son
+        números optimistas: las imágenes de prueba son de las mismas fuentes que las de entrenamiento.
+  \item Con un limón real en el laboratorio: confianza mediana 0,80.
+\end{itemize}
+
+\begin{pendiente}[Clases de la guía]
+La guía (B3) pide distinguir \textbf{cosechable / no cosechable / obstáculo u oclusión}. Hoy hay una sola clase.
+\end{pendiente}
+
+\section{El localizador: de la caja al punto 3D}
+
+YOLO da una caja; la disparidad da una profundidad por píxel. El problema es que dentro de la caja hay también hojas
+y ramas detrás del limón. El \cod{localizador\_node} (\archivo{yolo\_ros/localizar.py}) hace:
+
+\begin{enumerate}
+  \item Toma solo el \textbf{centro de la caja} (el 50~\% central de cada lado): los bordes suelen ser fondo.
+  \item Convierte cada disparidad válida a profundidad $Z = fB/d$ y descarta las que están fuera de 0,15--2~m.
+  \item \textbf{Ordena las profundidades} y corta donde hay un salto de más de 5~cm: eso separa el limón del fondo.
+  \item Toma el \textbf{primer grupo} (el más cercano) que tenga al menos 15 puntos (los grupitos sueltos son ruido).
+  \item Del grupo usa solo los primeros 8~cm de profundidad (un limón mide $\sim$6~cm).
+  \item Calcula $X$, $Y$, $Z$ con los píxeles de ese grupo y publica \topic{/limon/posicion}: el limón de mayor
+        confianza que se pudo localizar.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.4cm,y=1cm]
+  \draw[->] (0,0) -- (8.2,0) node[right]{profundidad $Z$ [m]};
+  \foreach \z in {0.52,0.53,0.53,0.54,0.54,0.55,0.55,0.56,0.57} \fill[naranja] ({(\z-0.45)*20},0.3) circle (2.5pt);
+  \foreach \z in {0.71,0.72,0.74,0.75,0.77,0.78} \fill[verde] ({(\z-0.45)*20},0.3) circle (2.5pt);
+  \fill[gris] ({(0.48-0.45)*20},0.3) circle (2.5pt);
+  \draw[decorate,decoration={brace,amplitude=4pt}] ({(0.52-0.45)*20},0.55) -- node[above=4pt,font=\small]{limón (grupo usado)} ({(0.57-0.45)*20},0.55);
+  \draw[decorate,decoration={brace,amplitude=4pt}] ({(0.71-0.45)*20},0.55) -- node[above=4pt,font=\small]{hojas detrás} ({(0.78-0.45)*20},0.55);
+  \draw[dashed,rojo] ({(0.64-0.45)*20},-0.2) -- ({(0.64-0.45)*20},1.4) node[above,font=\scriptsize,rojo]{salto $>$ 5 cm};
+  \node[font=\scriptsize,gris,below] at ({(0.48-0.45)*20},0.2) {ruido};
+  \foreach \z in {0.5,0.6,0.7,0.8} \draw ({(\z-0.45)*20},0.05) -- ({(\z-0.45)*20},-0.05) node[below,font=\scriptsize]{\z};
+\end{tikzpicture}
+\caption{Corte por saltos de profundidad. El punto suelto más cercano no llega a 15 puntos y se descarta.}
+\end{figure}
+
+\begin{nota}[{Superficie, no centro}]
+El punto publicado es la \textbf{superficie del limón que ve la cámara}. La misión le suma el radio del limón (3~cm)
+a lo largo del rayo de la cámara para obtener el centro.
+\end{nota}
+
+\begin{nota}[Marco rectificado]
+\topic{/limon/posicion} está en el marco óptico \textbf{rectificado} de la cámara izquierda (\cod{camera}): $x$ a la
+derecha, $y$ hacia abajo, $z$ hacia adelante. Difiere del marco físico de la cámara en unos pocos grados (la rotación
+de la rectificación). Como la TF cámara → brazo se mide contra la cinta, esa diferencia queda absorbida.
+\end{nota}
+
+\section{Resultados medidos}
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Cinta [mm]} & 400 & 550 & 700 & 900 \\
+\midrule
+Tablero (estéreo) & 387,5 & 536,2 & 702,7 & 898,7 \\
+Limón real, BM & 409,5 & 549,6 & 717,1 & 921,4 \\
+Limón real, SGBM & 409,3 & 554,3 & 712,5 & 914,6 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item Con SGBM en el eje: error de +4 a +15~mm, ruido de $\pm$0,3--0,9~mm.
+  \item Limón a los costados (6 puntos medidos con regla): error 3D máximo \textbf{17~mm}. La guía (B5) pide
+        $\leq 35$~mm: \textbf{cumple en el laboratorio}.
+  \item Queda $\sim$+1~cm de desfase en $Z$: el origen de la cinta (frente de la lente, no el centro óptico) más
+        $\sim$1~\% de escala.
+\end{itemize}
+
+\begin{pendiente}
+Prueba de campo (limón en un arbusto a 40--90~cm, \cod{guia\_limon.py --campo}) y prueba de las NoIR al sol.
+\end{pendiente}
+
+\section{Cómo se usa}
+
+\begin{lstlisting}[language=consola]
+# En la Pi: cámaras + rectificación + SGBM + YOLO + localizador
+MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh
+
+# En otra terminal:
+ros2 topic echo /limon/posicion          # posición del limón [m], marco camera
+ros2 topic hz /limon/posicion            # 2-4 Hz con un limón a la vista
+
+# Ver las imágenes desde la notebook (web_video_server en el puerto 8080):
+#   http://100.116.96.71:8080/stream?topic=/yolo/left/image_annotated
+\end{lstlisting}
+
+\begin{longtable}{@{}p{5.4cm} p{10.1cm}@{}}
+\toprule
+\textbf{Script} & \textbf{Qué hace} \\
+\midrule
+\endhead
+\cod{start\_cameras.sh} (alias \cod{camaras}) & Solo las dos cámaras, a 30~FPS \\
+\cod{start\_yolo\_web.sh} (alias \cod{yolo}) & Cámaras + YOLO + visor web \\
+\cod{start\_estereo.sh} (alias \cod{estereo}) & Estéreo completo con nube de puntos \cod{/points2} \\
+\cod{start\_limon.sh} & La cadena del limón (lo que usa el robot) \\
+\cod{probar\_camaras.sh} (en \archivo{\textasciitilde/scripts}) & Diagnóstico de las cámaras \\
+\bottomrule
+\end{longtable}
+
+\begin{nota}[Si una cámara falla]
+Síntomas de cinta CSI dañada: \cod{Failed to write reg}, \cod{stream on failed}, \cod{Camera frontend has timed out}.
+Se aísla intercambiando las cintas, \textbf{siempre con la Pi apagada}.
+\end{nota}

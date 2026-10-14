@@ -1,0 +1,289 @@
+\chapter{Firmware de los ESP32}\label{cap:firmware}
+
+\section{Organización del código}
+
+El firmware está en \archivo{firmware/} y se compila con \textbf{PlatformIO} (\cod{\textasciitilde/.platformio/penv/bin/pio}).
+Hay un proyecto por placa y una carpeta de bibliotecas compartidas:
+
+{\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Carpeta} & \textbf{Qué tiene} \\
+\midrule
+\archivo{firmware/lib/ControlArticulacion} & Control de un motor (cascada posición → velocidad), \textbf{sin Arduino} \\
+\archivo{firmware/lib/EnlaceMicroRos} & Sesión con el agente: ping, armado, reconexión \\
+\archivo{firmware/lib/BTS7960} & Driver del IBT-2 (dos PWM + EN) \\
+\archivo{firmware/lib/EncoderPCNT} & Encoder por el contador de pulsos del ESP32 \\
+\archivo{firmware/lib/HCSR04} & Los 3 ultrasonidos, sin bloquear (ECHO por interrupción) \\
+\archivo{firmware/lib/MPU9250} & IMU (sirve para la MPU-6500) \\
+\archivo{firmware/base/} & Proyecto de la S3: \archivo{src/}, \archivo{include/pins.h}, \archivo{include/base\_config.h} \\
+\archivo{firmware/base/lib/BaseLogica} & Cinemática diferencial, odometría y seguridad de la base, \textbf{sin Arduino} \\
+\archivo{firmware/brazo/} & Proyecto de la WROOM: \archivo{src/}, \archivo{include/pins.h}, \archivo{include/brazo\_config.h} \\
+\bottomrule
+\end{tabularx}}
+
+Reglas del código:
+\begin{itemize}
+  \item Los pines están \textbf{solo} en \archivo{include/pins.h}; los parámetros, en \archivo{base\_config.h} o
+        \archivo{brazo\_config.h}.
+  \item Los drivers compartidos se enlazan con \cod{symlink://../lib/X} (no se copian).
+  \item La lógica que no depende de Arduino (control, cinemática, seguridad) se prueba en la PC con
+        \cod{pio test -e native}, con un motor simulado con el modelo de la entrega E5.
+\end{itemize}
+
+\subsection{Entornos de compilación}
+Cada proyecto tiene tres entornos (\archivo{platformio.ini}):
+\begin{description}
+  \item[\cod{native}] Corre las pruebas en la PC. Base: 20 pruebas. Brazo: 17.
+  \item[\cod{esp32s3} / \cod{esp32dev}] Firmware con \textbf{comandos por el monitor serie}. Para probar a mano.
+  \item[\cod{ros}] El mismo firmware con \textbf{micro-ROS}: los comandos llegan por tópicos. Es el que se usa con la Pi.
+\end{description}
+
+\begin{lstlisting}[language=consola]
+PIO=~/.platformio/penv/bin/pio
+cd firmware/base                  # o firmware/brazo
+$PIO test -e native               # pruebas de la lógica en la PC
+$PIO run                          # compilar (modo serial)
+$PIO run -t upload -t monitor     # flashear y abrir el monitor (¡12 V APAGADOS!)
+$PIO run -e ros -t upload         # flashear la versión micro-ROS (detener antes el agente)
+\end{lstlisting}
+
+\section{Cómo corre el programa}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm]
+  \node[caja,text width=60mm,align=left] (c0) {\textbf{Núcleo 0: tarea de control (100 Hz)}\\\footnotesize
+    cada 10 ms: leer encoders → calcular velocidades → seguridad → control → escribir PWM. Si deja de correr
+    1~s, el watchdog de tareas \textbf{reinicia la placa}.};
+  \node[caja,text width=60mm,align=left,right=8mm of c0] (c1) {\textbf{Núcleo 1: comunicación}\\\footnotesize
+    leer comandos (serie o micro-ROS), validarlos y pasarlos a la tarea de control; publicar estado y sensores.};
+  \draw[<->,thick] (c0) -- node[topico,above]{variables}node[topico,below]{protegidas} (c1);
+\end{tikzpicture}
+\caption{Las dos mitades del firmware. El control nunca espera a la comunicación.}
+\end{figure}
+
+\section{El control de un motor: cascada posición → velocidad}
+
+La entrega E5 identificó cada motor como un \textbf{sistema de primer orden} de duty (\%) a velocidad (rpm):
+\[
+G(s) = \frac{\omega(s)}{u(s)} = \frac{K}{\tau s + 1}
+\qquad\text{(J1: } K = 1{,}58~\text{rpm}/\%,\ \tau = 0{,}065\text{ s)}
+\]
+Como el modelo es de \textbf{velocidad}, el control es en \textbf{cascada}: un lazo externo de posición genera la
+velocidad que tiene que seguir un lazo interno de velocidad.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[node distance=9mm,every node/.style={font=\small}]
+  \node (qref) {$q_\text{obj}$};
+  \node[circle,draw,right=6mm of qref,inner sep=1pt] (s1) {$\Sigma$};
+  \node[caja,right=of s1] (pp) {P posición\\$K_{pp}\,e_q$};
+  \node[caja,right=of pp] (sat) {saturación\\$v_\text{máx}$, $a_\text{máx}$};
+  \node[circle,draw,right=of sat,inner sep=1pt] (s2) {$\Sigma$};
+  \node[caja,right=of s2] (pi) {PI velocidad\\+ anti-windup};
+  \node[circle,draw,right=of pi,inner sep=1pt] (s3) {$+$};
+  \node[caja,above=7mm of s3] (ff) {feedforward\\zona muerta $u_0$ (+ $\omega/K$)};
+  \node[caja,right=of s3] (ibt) {límite\\duty};
+  \node[caja,right=of ibt] (mot) {IBT-2 +\\motor $\frac{K}{\tau s+1}$};
+  \node[right=7mm of mot] (q) {$q$};
+  \node[caja,below=9mm of pi] (enc) {encoder (PCNT)\\cuentas → $q$, $\omega$};
+  \draw[->] (qref) -- (s1); \draw[->] (s1) -- node[above]{$e_q$} (pp); \draw[->] (pp) -- (sat);
+  \draw[->] (sat) -- node[above]{$\omega_\text{ref}$} (s2); \draw[->] (s2) -- node[above]{$e_\omega$} (pi);
+  \draw[->] (pi) -- (s3); \draw[->] (ff) -- (s3); \draw[->] (s3) -- (ibt); \draw[->] (ibt) -- node[above]{$u$ [\%]} (mot);
+  \draw[->] (mot) -- (q);
+  \draw[->] (mot.south) |- (enc);
+  \draw[->] (enc.west) -| node[pos=0.8,left]{$\omega$} (s2.south);
+  \draw[->] ($(enc.west)+(0,-0.2)$) -| node[pos=0.85,left]{$q$} (s1.south);
+  \draw[->,gris] (sat.north) |- (ff.west);
+  \node[font=\scriptsize,gris,anchor=north west] at ($(qref.south)+(-0.2,-1.6)$) {lazo externo (solo brazo)};
+\end{tikzpicture}}
+\caption{Control en cascada de \archivo{ControlArticulacion}. Las ruedas usan solo el lazo interno (velocidad).}
+\label{fig:cascada}
+\end{figure}
+
+Lo que hace la tarea de control en cada paso (10~ms), para una articulación del brazo:
+
+\begin{enumerate}
+  \item \textbf{Error de posición}: $e_q = q_\text{obj} - q$.
+  \item \textbf{Llegada con histéresis}: si $|e_q| < $ tolerancia (0,3° en J1), se considera que llegó y el motor
+        queda frenado; recién se vuelve a mover si el error supera el doble (0,6°). Así no ``tiembla'' alrededor
+        del objetivo.
+  \item \textbf{Velocidad deseada}: $\omega_\text{des} = K_{pp}\, e_q$, saturada a $v_\text{máx}$ (30~°/s en J1) y con
+        un mínimo $v_\text{mín}$ (3~°/s) para que no se clave a 1° del objetivo.
+  \item \textbf{Rampa}: $\omega_\text{ref}$ se acerca a $\omega_\text{des}$ cambiando como mucho $a_\text{máx}\,\Delta t$
+        (60~°/s²). El resultado es un perfil de velocidad aproximadamente \textbf{trapezoidal}.
+  \item \textbf{Lazo de velocidad}: $e_\omega = \omega_\text{ref} - \omega$, y
+        \[
+          u = \underbrace{\operatorname{sgn}\cdot u_0 + \tfrac{\omega_\text{ref}}{K}}_{\text{feedforward}}
+              + K_p\, e_\omega + K_i \!\int\! e_\omega\, dt
+        \]
+        donde $u_0$ es la \textbf{zona muerta} (el duty mínimo para que el motor arranque: 17~\% en J1). En J1 se usa
+        solo la zona muerta como feedforward (\cod{ffSoloZonaMuerta}).
+  \item \textbf{Anti-windup condicional}: si $u$ ya está saturado en el sentido del error, el integrador no acumula.
+  \item \textbf{Límite de duty}: 40~\% en la puesta en marcha.
+\end{enumerate}
+
+\subsection{Parámetros de J1 (medidos el 02/10)}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} & \textbf{Significado} \\
+\midrule
+Cuentas por vuelta del motor & 3200 & 16 PPR × 4 × 50 \\
+Relación de la correa & 5 & 18 → 90 dientes \\
+Rango & 45° a 225° & marco de \cod{brazo\_ik} \\
+Modelo & $K = 1{,}58$, $\tau = 0{,}065$~s & E5 \\
+Zona muerta & 17~\% & medida con el brazo \\
+PI de velocidad & $K_p = 0{,}659$~\%/rpm, $K_i = 4{,}8$ & \\
+$K_{pp}$, $v_\text{máx}$, $a_\text{máx}$ & 2~1/s, 30~°/s, 60~°/s² & \\
+Tolerancia de llegada & 0,3° & \\
+Atasco & duty $\geq$ 35~\% y $<$ 1,7~rpm durante 0,3~s & → falla \\
+Signos & \cod{ENC\_INVERTIDO} y \cod{MOTOR\_INVERTIDO} en \cod{true} & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{pendiente}
+J2 y J3 arrancan con los parámetros de J1 llevados a 58~rpm ($K \times 58/160$; $K_p$ y $K_i \times 160/58$). Hay que
+medirlos con los motores nuevos: signos, zona muerta, $K$, $\tau$ y PI (pasos 0--3 de \archivo{pruebas-esp32/10}).
+\end{pendiente}
+
+\section{Firmware de la base (S3)}
+
+\subsection{Velocidad de las ruedas}
+\topic{/cmd\_vel} trae $(v, \omega)$. La S3 aplica la rampa, calcula las rpm de cada rueda con la cinemática
+diferencial (figura~\ref{fig:diferencial}) y cada rueda tiene su propio lazo PI de velocidad (el mismo
+\archivo{ControlArticulacion}, en modo velocidad). Si una rueda falla, las dos se frenan en el mismo paso.
+
+\subsection{Odometría}
+Con las cuentas de los encoders, cada 10~ms se calcula cuánto avanzó cada rueda ($\Delta s_i$, $\Delta s_d$) y se
+integra la pose $(x, y, \theta)$ en el marco \cod{odom}:
+\[
+\Delta s = \frac{\Delta s_d + \Delta s_i}{2}, \quad
+\Delta\theta = \frac{\Delta s_d - \Delta s_i}{b}, \quad
+x \mathrel{+}= \Delta s \cos\!\left(\theta + \tfrac{\Delta\theta}{2}\right), \quad
+y \mathrel{+}= \Delta s \sin\!\left(\theta + \tfrac{\Delta\theta}{2}\right), \quad
+\theta \mathrel{+}= \Delta\theta
+\]
+Se publica en \topic{/odom} a 25~Hz. Es buena para distancias cortas en línea recta; en giros cerrados las ruedas
+patinan y el ángulo se desvía. Por eso el recorrido autónomo toma el \textbf{rumbo del giróscopo} y solo el
+\textbf{avance} de las ruedas (capítulo~\ref{cap:mision}).
+
+\subsection{Seguridad de la base}
+Se decide en la S3, sin esperar a la Pi:
+
+\begin{longtable}{@{}p{5.2cm} p{5.6cm} p{4.4cm}@{}}
+\toprule
+\textbf{Causa} & \textbf{Qué hace} & \textbf{Cómo se sale} \\
+\midrule
+\endhead
+Seta apretada (o cable cortado) & EMERGENCIA: puentes deshabilitados (EN = 0) & Soltar la seta, \cod{r} y \cod{armar} \\
+Inclinación (roll o pitch) $> 25^\circ$ & VUELCO: frena & Nivelar la base y \cod{r} \\
+IMU sin muestras por más de 200~ms & No se mueve (no puede vigilar el vuelco) & Solo, al volver los datos \\
+Bumper del frente & No avanza; solo puede alejarse en línea recta & Solo, al soltarse \\
+Bumper lateral & No gira (el costado barrería el objeto) & Solo, al soltarse \\
+Ultrasonido del frente sin eco & No avanza; retroceder y girar sí & Solo, al volver el eco \\
+Obstáculo al frente $< 0{,}20$~m & No avanza & Solo \\
+Obstáculo entre 0,20 y 0,50~m & Tope de velocidad que baja linealmente a 0 & Solo \\
+Sin \topic{/cmd\_vel} por 300~ms & Frena y anula el comando vigente & Con un comando nuevo \\
+Batería $<$ 10,5~V & Aviso \cod{BATERIA\_BAJA} (no frena) & — \\
+Rueda atascada o encoder con saltos & Base detenida & \cod{r} \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1]
+  \fill[verde!20] (0,0) rectangle (2,2.5);
+  \fill[naranja!25] (2,0) -- (2,2.5) -- (5,2.5) -- cycle;
+  \fill[rojo!15] (0,0) rectangle (2,0.02);
+  \draw[->] (0,0) -- (6,0) node[right]{distancia al frente [m]};
+  \draw[->] (0,0) -- (0,3) node[above]{velocidad máxima de avance};
+  \draw[very thick,rojo] (0,0) -- (2,0);
+  \draw[very thick,acento] (2,0) -- (5,2.5) -- (5.8,2.5);
+  \node[below] at (2,0) {0,20}; \node[below] at (5,0) {0,50};
+  \node[left] at (0,2.5) {0,25 m/s};
+  \node[font=\small,rojo] at (1,0.4) {no avanza};
+  \node[font=\small,acento,rotate=40] at (3.3,1.5) {tope lineal};
+\end{tikzpicture}
+\caption{Tope de velocidad por cercanía de un obstáculo (HC-SR04 del frente). Retroceder y girar siempre se permite.}
+\end{figure}
+
+\subsection{Comandos por el monitor serie (base)}
+\begin{longtable}{@{}p{3.6cm} p{11.9cm}@{}}
+\toprule
+\textbf{Comando} & \textbf{Qué hace} \\
+\midrule
+\endhead
+\cod{e} & Estado: modo, seguridad, odometría y ruedas \\
+\cod{sens} & Sensores: IMU, distancias, bumpers, seta, batería \\
+\cod{v <v> <w> [s]} & Mover con rampa (m/s, rad/s) por \cod{s} segundos (por defecto 1, máximo 3). Ej.: \cod{v 0.1 0} \\
+\cod{w <izq> <der> [s]} & rpm de cada rueda (solo el lazo de velocidad). Ej.: \cod{w 20 20} \\
+\cod{d <izq> <der>} & Lazo abierto en \% (máximo 40); se corta a los 300~ms si no se repite \\
+\cod{s} & Detener (freno) \\
+\cod{l} & Liberar: puentes deshabilitados (rueda libre) \\
+\cod{r} & Rearmar tras seta o vuelco (con la causa despejada) y borrar fallas \\
+\cod{cal} & Calibrar el giróscopo (robot quieto, 2~s) \\
+\cod{odo0} & Odometría a cero \\
+\cod{log [hz]} & CSV para graficar (t, v, w, rpm de referencia y medidas, duty, x, y, θ); \cod{log 0} apaga \\
+\cod{wd <ms>} & Watchdog de comandos (0 = apagado; con la Pi, 300) \\
+\cod{?} & Ayuda \\
+\bottomrule
+\end{longtable}
+
+\section{Firmware del brazo (WROOM)}
+
+\subsection{El cero y el homing}
+El encoder solo cuenta \textbf{cuánto se movió}, no dónde está. Al encender, el firmware no sabe el ángulo de cada
+articulación y \textbf{rechaza todo movimiento en posición} hasta tener un cero. Hay dos formas:
+
+\begin{description}
+  \item[Cero manual (\cod{z})] Se lleva el brazo a mano (o con \cod{d}) a la pose de referencia
+        (\cod{POSE\_CERO} = 90°, 90°, 0°) y se manda \cod{z}: ``el brazo \textbf{está} en esa pose''.
+  \item[Homing (\cod{home <n>})] La articulación \cod{n} va despacio (10~rpm del motor) hacia su final de carrera.
+        Cuando lo toca (3 lecturas seguidas en bajo), fija su ángulo en \cod{HOME\_Q} (\textbf{MEDIR}). De a una
+        articulación. Se cancela si se pasa del recorrido máximo (rango + 10°), del tiempo (25~s) o si aparece una
+        falla. Rechaza empezar con el final de carrera ya apretado.
+\end{description}
+
+\subsection{Protecciones del brazo}
+\begin{itemize}
+  \item Sin cero, no acepta movimientos en posición.
+  \item Los objetivos se recortan a los límites de la E4. Fuera de los límites + 5° → falla y freno.
+  \item Atasco (duty alto sin avanzar) → falla y freno. También detecta un encoder desconectado.
+  \item Lecturas imposibles del encoder se descartan; 5 seguidas → falla.
+  \item \cod{s}, el fin de \cod{d}/\cod{v} y el watchdog \textbf{frenan hasta que el eje queda quieto} y recién ahí
+        sostienen la posición (no vuelven hacia atrás por la inercia).
+  \item \cod{d} limitado a 30~\% y se corta a los 300~ms si no se repite; \cod{v} hasta 30~rpm y 5~s.
+  \item Los servos no reciben pulsos hasta el primer \cod{pinza}/\cod{giro}.
+  \item Watchdog de tareas: si la tarea de control se cuelga 1~s, la placa se reinicia.
+\end{itemize}
+
+\subsection{Comandos por el monitor serie (brazo)}
+\begin{longtable}{@{}p{3.6cm} p{11.9cm}@{}}
+\toprule
+\textbf{Comando} & \textbf{Qué hace} \\
+\midrule
+\endhead
+\cod{e} & Estado de las articulaciones \\
+\cod{z [n]} & Cero manual: el brazo está en la pose de referencia (todas o la \cod{n}) \\
+\cod{home <n>} & Homing con final de carrera de la articulación \cod{n} \\
+\cod{m <q1> <q2> <q3>} & Mover las tres (grados). Ej.: \cod{m 90 90 0} \\
+\cod{j <n> <q>} & Mover una articulación. Ej.: \cod{j 2 45} \\
+\cod{v <n> <rpm> [s]} & Solo el lazo de velocidad (rpm del motor, máx. 30) por \cod{s} segundos \\
+\cod{d <n> <pct>} & Lazo abierto (máx. 30~\%); se corta a los 300~ms si no se repite \\
+\cod{s} & Detener: frena y, ya quieto, sostiene la posición \\
+\cod{l} & Liberar: puentes deshabilitados (rueda libre: \textbf{J2 y J3 caen}) \\
+\cod{r} & Borrar fallas (queda detenido) \\
+\cod{pinza <0-100>} & 0 = abierta, 100 = cerrada \\
+\cod{giro <grados>} & Giro de la pinza (J4), $-90$ a $90$ \\
+\cod{log <n> [hz]} & CSV de la articulación \cod{n} (t, q objetivo, q, ω ref, ω, duty) \\
+\cod{wd <ms>} & Watchdog de comandos \\
+\cod{?} & Ayuda \\
+\bottomrule
+\end{longtable}
+
+Con micro-ROS, \textbf{los mismos comandos} se mandan como texto por \topic{/base/comando} o \topic{/brazo/comando},
+con las mismas validaciones (capítulo~\ref{cap:microros}).

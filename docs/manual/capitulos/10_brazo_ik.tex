@@ -1,0 +1,122 @@
+\chapter{Cinemática del brazo}\label{cap:ik}
+
+\section{El problema}
+
+La visión dice \textbf{dónde} está el limón: un punto $(x, y, z)$ en metros. El firmware del brazo necesita
+\textbf{ángulos}: $q_1$, $q_2$, $q_3$. Pasar de uno a otro es la \textbf{cinemática inversa} (IK). El camino contrario,
+de ángulos a punto, es la \textbf{cinemática directa}. Las dos están en
+\archivo{ros2\_ws/src/brazo\_ik/brazo\_ik/cinematica.py}, portadas del cuaderno de la entrega R1~E4.
+
+\section{Cinemática directa}
+
+Con las medidas de la figura~\ref{fig:brazo} (en mm):
+
+\begin{enumerate}
+  \item \textbf{Cuatro barras}: el ángulo de entrada es $\gamma_4 = q_2 + q_3 - 90^\circ$. Del cierre del mecanismo
+        (balancines $L_{3,0}$, $L_{3,1}$ y acoplador $L_4$) sale el ángulo del antebrazo respecto de la prolongación de
+        $L_2$:
+        \begin{gather*}
+          \ell = \sqrt{L_2^2 + L_{3,0}^2 - 2 L_2 L_{3,0} \cos\gamma_4}, \qquad
+          \alpha_4 = \operatorname{atan2}\!\left(L_{3,0}\sin\gamma_4,\ L_2 - L_{3,0}\cos\gamma_4\right), \\
+          \beta_4 = \arccos\frac{\ell^2 + L_{3,1}^2 - L_4^2}{2 L_{3,1}\,\ell}
+        \end{gather*}
+        \[ q_{3O} = \alpha_4 - \beta_4 \]
+        Si el argumento del arccos se sale de $[-1, 1]$, el mecanismo no cierra: esa configuración no existe.
+  \item \textbf{Ángulo de transmisión} $\mu$ (entre $L_{3,1}$ y $L_4$): si se acerca a 0° o 180°, el mecanismo está
+        cerca de un punto muerto y no transmite fuerza. Se exige $15^\circ \leq \mu \leq 165^\circ$.
+  \item \textbf{Muñeca} $P_3$: con $\theta = q_2 + q_{3O}$,
+        \[
+          r = L_2\cos q_2 + L_3\cos\theta, \qquad
+          x = r\cos q_1, \quad y = r\sin q_1, \quad z = H_1 + L_2\sin q_2 + L_3\sin\theta
+        \]
+\end{enumerate}
+
+\textbf{Ejemplo de la E4}: $q = (0^\circ, 45^\circ, 0^\circ)$ da la muñeca en $(368{,}32;\ 0;\ 91{,}03)$~mm, con
+$q_{3O} = -113{,}5^\circ$. Con $q_1 = 90^\circ$, el mismo brazo apunta a la izquierda: $(0;\ 368{,}32;\ 91{,}03)$.
+
+\section{Cinemática inversa, paso a paso}
+
+Dado el objetivo de la muñeca $(x, y, z)$:
+
+\begin{enumerate}
+  \item \textbf{$q_1$}: la dirección horizontal, $q_1 = \operatorname{atan2}(y, x)$, llevada al rango
+        $[45^\circ, 225^\circ]$ (atan2 da $(-180^\circ, 180^\circ]$; un objetivo atrás a la derecha da $-150^\circ$, que es $210^\circ$).
+  \item \textbf{Problema plano}: $r = \sqrt{x^2 + y^2}$, $z' = z - H_1$. Queda un brazo de dos eslabones $L_2$, $L_3$ en
+        el plano $(r, z')$.
+  \item \textbf{Codo $q_{3O}$} por el teorema del coseno:
+        \[ \cos q_{3O} = \frac{r^2 + z'^2 - L_2^2 - L_3^2}{2 L_2 L_3} \]
+        Si $|\cos q_{3O}| > 1$: el punto está demasiado lejos ($> L_2 + L_3 = 679{,}7$~mm del hombro) o demasiado cerca.
+        Hay dos soluciones, $\pm q_{3O}$ (``codo arriba'' y ``codo abajo''): se prueban las dos.
+  \item \textbf{Hombro $q_2$}:
+        \[ q_2 = \operatorname{atan2}(z', r) - \operatorname{atan2}(L_3\sin q_{3O},\ L_2 + L_3\cos q_{3O}) \]
+  \item \textbf{Invertir el cuatro barras}: de $q_{3O}$ se obtienen hasta dos $\gamma_4$ candidatos, y
+        $q_3 = \gamma_4 - q_2 + 90^\circ$.
+  \item \textbf{Verificar con la directa}: cada candidato se pasa por la cinemática directa; si no vuelve al objetivo
+        (a menos de $10^{-4}$~mm), pertenece a la otra rama de ensamble y se descarta.
+  \item \textbf{Filtros}: límites de $q_1$, $q_2$, $q_3$; rama física $\gamma_4 \in (-180^\circ, 0^\circ)$ (la barra roja no cruza
+        la verde); ángulo de transmisión entre 15° y 165°.
+  \item De las soluciones que quedan, se elige la de menor $|q_3|$.
+\end{enumerate}
+
+Si no queda ninguna, la función devuelve los \textbf{motivos} (``q2 fuera de rango'', ``demasiado lejos'',
+``cerca de punto muerto''\ldots), que el nodo publica en \topic{/brazo/ik\_estado}.
+
+\section{Del punto de agarre a la muñeca}
+
+El brazo mantiene la herramienta horizontal y apuntando en la dirección de $q_1$. Entonces el \textbf{punto de agarre}
+(TCP, entre los dedos) está siempre a una distancia horizontal fija, \cod{largo\_herramienta}, más afuera que la
+muñeca, en el mismo plano vertical:
+\[
+  r_\text{muñeca} = r_\text{TCP} - \texttt{largo\_herramienta}, \qquad
+  (x, y)_\text{muñeca} = (x, y)_\text{TCP}\,\frac{r_\text{muñeca}}{r_\text{TCP}}, \qquad z_\text{muñeca} = z_\text{TCP}
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.1]
+  \draw[thick,acento] (0,0) -- (2.5,1) node[midway,above left]{antebrazo};
+  \fill (2.5,1) circle (2pt) node[above]{muñeca $P_3$};
+  \draw[line width=3pt,naranja] (2.5,1) -- (4,1);
+  \fill[rojo] (4,1) circle (2.5pt) node[above right]{TCP};
+  \draw[<->] (2.5,0.6) -- node[below]{\cod{largo\_herramienta}} (4,0.6);
+  \draw[fill=naranja!30] (4.35,1) circle (0.35) node{\scriptsize limón};
+\end{tikzpicture}
+\caption{\topic{/brazo/objetivo} es el TCP. \cod{brazo\_ik} lo pasa a la muñeca antes de resolver.}
+\end{figure}
+
+\begin{pendiente}
+\cod{largo\_herramienta} vale 0 por defecto (el objetivo es la muñeca). En la simulación, 0,075~m. Hay que
+\textbf{medirlo en el robot real} y pasarle el mismo valor a \cod{brazo\_ik} y a \cod{mision}. Si el centro del agarre no
+queda a la altura de la muñeca, falta además un desfase vertical (hoy no contemplado).
+\end{pendiente}
+
+\section{El nodo \cod{brazo\_ik}}
+
+{\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Tópico} & \textbf{Tipo} & \textbf{Qué} \\
+\midrule
+\topic{/brazo/objetivo} (entra) & \cod{PointStamped} & TCP en metros, marco \cod{brazo\_base} (otro marco se rechaza) \\
+\topic{/brazo/joint\_cmd} (sale) & \cod{JointState} & \cod{j1..j3} en radianes, \textbf{solo si es alcanzable} \\
+\topic{/brazo/ik\_estado} (sale) & \cod{String} & \cod{ok q=[\ldots]° mu=\ldots} o \cod{inalcanzable: <motivos>} \\
+\bottomrule
+\end{tabularx}}
+
+Parámetros: \cod{marco} (\cod{brazo\_base}) y \cod{largo\_herramienta} (m).
+
+\begin{lstlisting}[language=consola]
+ros2 run brazo_ik nodo_ik --ros-args -p largo_herramienta:=0.0
+ros2 topic echo /brazo/ik_estado --field data
+ros2 topic pub --once /brazo/objetivo geometry_msgs/msg/PointStamped \
+  "{header: {frame_id: brazo_base}, point: {x: 0.0, y: 0.36832, z: 0.09103}}"
+# -> ok q=[90.0, 45.0, 0.0]° mu=65.1° err=4.77e-13 mm
+\end{lstlisting}
+
+\begin{nota}[Límites en dos lugares]
+La geometría y los límites de \archivo{cinematica.py} \textbf{tienen que coincidir} con
+\archivo{firmware/brazo/include/brazo\_config.h} y con el URDF de la simulación. Si se cambia uno, cambiar los tres.
+\end{nota}
+
+Pruebas: \cod{colcon test --packages-select brazo\_ik} (ejemplo numérico de la E4, 2000 idas y vueltas
+directa → inversa → directa, casos inalcanzables).

@@ -31,3 +31,7 @@ ros2_ws/log/
 __pycache__/
 .pytest_cache/
 docs/html/todo.html
+docs/manual/*.aux
+docs/manual/*.log
+docs/manual/*.out
+docs/manual/*.toc

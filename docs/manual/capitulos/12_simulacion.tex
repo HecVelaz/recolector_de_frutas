@@ -1,0 +1,76 @@
+\chapter{Simulación en Gazebo}\label{cap:sim}
+
+El paquete \cod{simulacion} (\archivo{ros2\_ws/src/simulacion/}) arma en \textbf{Gazebo Harmonic} una hilera de
+limoneros y el robot, con \textbf{los mismos tópicos y marcos que los ESP32}. Así \cod{mision}, \cod{brazo\_ik} y la
+visión corren sin cambios, sin hardware.
+
+\section{Qué hay en el mundo}
+\begin{itemize}
+  \item Pasillo a lo largo de $+x$, robot en el origen, \textbf{4 limoneros por lado} en $x$ = 1,5 / 3 / 4,5 / 6~m,
+        $y = \pm 0{,}70$~m, con las medidas de R1.
+  \item \textbf{12 limones cosechables} (3 por árbol de la fila izquierda).
+  \item 2 obstáculos en el pasillo (una caja y un balde) que obligan a esquivar.
+  \item \textbf{Marcas de parada} blancas en $x$ = 1,19 / 2,70 / 4,17 / 5,69~m: frenando con el eje de las ruedas
+        sobre una marca, en el centro del pasillo, los 3 limones de ese árbol quedan a la vista y al alcance.
+\end{itemize}
+
+\section{Quién imita a quién}
+{\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Nodo de la simulación} & \textbf{Reemplaza a} & \textbf{Detalle} \\
+\midrule
+\cod{base\_sim} & firmware de la S3 & misma seguridad (\cod{SeguridadBase} portada), arranca DESARMADA \\
+\cod{brazo\_sim} & firmware de la WROOM & mismos tópicos, perfil trapezoidal, arranca DESARMADO \\
+\cod{limones\_sim} & visión & publica \topic{/limon/posicion} solo con el robot quieto y el limón en la zona útil \\
+3 \cod{gpu\_lidar} & HC-SR04 & 5 rayos en un abanico de 15° cada uno \\
+3 planchas con resorte & bumpers & apretado = hundida más de 3~mm \\
+\bottomrule
+\end{tabularx}}
+
+\section{Cómo se usa}
+
+\begin{lstlisting}[language=consola]
+cd ~/Documentos/recolector_de_frutas/ros2_ws && source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install --packages-select simulacion && source install/setup.bash
+export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST          # ¡en CADA terminal! (aislar de los ESP32 reales)
+
+ros2 launch simulacion sim.launch.py                    # robot y hilera (gui:=false: sin ventana)
+ros2 launch simulacion sim.launch.py mision:=true       # + misión (arrimar con el teclado a una marca)
+ros2 launch simulacion sim.launch.py mision:=true autonomo:=true   # cosecha sola toda la hilera
+
+# Manejar a mano (otra terminal, con el export):
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: armar}"
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0
+\end{lstlisting}
+
+\begin{nota}[\cod{repeat\_rate}]
+Sin \cod{repeat\_rate:=10.0}, el teclado publica solo al tocar una tecla y el watchdog de 300~ms frena la base entre
+tecla y tecla.
+\end{nota}
+
+\begin{peligro}[Aislar la simulación]
+Sin \cod{ROS\_AUTOMATIC\_DISCOVERY\_RANGE=LOCALHOST}, la simulación ve por la red los ESP32 reales conectados a la Pi:
+el 28/09 la misión simulada leyó el estado del brazo real y le mandó comandos.
+\end{peligro}
+
+Si algo queda colgado después de cortar:
+\begin{lstlisting}[language=consola]
+pkill -9 -f "[g]z sim"
+pkill -9 -f "[b]razo_sim|[b]ase_sim|[l]imones_sim|[p]arameter_bridge"
+\end{lstlisting}
+
+\section{Resultados}
+\begin{itemize}
+  \item Con \cod{mision:=true autonomo:=true}: recorre la hilera hasta $x = 7{,}32$~m en $\sim$9~min simulados y
+        cosecha \textbf{12 de 12} limones, esquivando la caja por la derecha y el balde por la izquierda, sin tocarlos.
+  \item El watchdog frena la base a los 300~ms (11--13~cm desde 0,2~m/s con la rampa).
+  \item Con la cadena de visión real (\cod{vision:=yolo}): el estéreo localiza, pero YOLO no reconoce los limones
+        sintéticos. No reentrenar con imágenes de Gazebo: arruinaría el modelo para los limones reales.
+\end{itemize}
+
+\begin{nota}[Trucos de la física]
+Las masas del brazo van al 5~\% (si no, los impulsos del brazo deslizaban la base con las ruedas frenadas), el limón
+agarrado se lleva con \cod{set\_pose} y \cod{limones\_sim} usa la pose real de Gazebo, no la odometría. Son cosas de la
+simulación: en el robot real no aplican.
+\end{nota}

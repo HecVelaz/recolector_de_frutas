@@ -1,0 +1,74 @@
+\chapter{Diagnóstico: qué hacer si algo no anda}\label{cap:diag}
+
+\section{Primero, mirar el estado}
+Casi todo problema aparece en el texto de estado de cada placa:
+\begin{lstlisting}[language=consola]
+ros2 topic echo /base/estado --field data       # modo, seguridad, bloqueos, IMU, fallas, enlace
+ros2 topic echo /brazo/estado --field data      # armado; por articulación: modo, cero, duty, falla, llego
+ros2 topic echo /base/respuesta --field data    # respuesta a cada comando (por qué se rechazó)
+ros2 topic echo /brazo/respuesta --field data
+ros2 topic echo /mision/estado --field data     # estado y motivo de la misión
+ros2 topic echo /brazo/ik_estado --field data   # por qué un punto es inalcanzable
+\end{lstlisting}
+
+\section{Tabla de síntomas}
+
+\begin{longtable}{@{}p{4.6cm} p{5.0cm} p{5.9cm}@{}}
+\toprule
+\textbf{Síntoma} & \textbf{Causa probable} & \textbf{Qué hacer} \\
+\midrule
+\endhead
+\multicolumn{3}{@{}l}{\textbf{Enlace y micro-ROS}} \\
+\topic{/odom} o \topic{/brazo/joint\_states} no aparecen & Agente no corriendo, puerto equivocado o placa sin hora &
+  Arrancar el agente con el puerto de \cod{/dev/serial/by-id/}; esperar unos segundos \\
+La S3 no abre sesión & Quedó en modo descarga & \cod{esptool --before no\_reset --after watchdog-reset read-mac} \\
+El brazo se reconecta cada $\sim$1~s & Baudios altos en el CH340 & Usar 115\,200 (el agente con \cod{-b 115200} si se cambió) \\
+\cod{pings\_fallidos} o \cod{cortes} suben & USB flojo o la Pi sin energía & Revisar cables; \cod{dmesg}; \cod{vcgencmd get\_throttled} \\
+No se puede flashear & El agente tiene el puerto & Detener el agente antes de \cod{pio run -t upload} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Base}} \\
+\topic{/cmd\_vel} no mueve nada & Base desarmada & \cod{armar} por \topic{/base/comando} \\
+Armada pero no se mueve & Seta, vuelco, IMU sin datos, sin eco al frente, obstáculo cerca & Leer \topic{/base/estado}; despejar la causa y \cod{r} \\
+Avanza a los tirones y frena & \cod{/cmd\_vel} publicado con \cod{--once} o teleop sin \cod{repeat\_rate} & Publicar a 10~Hz (\cod{-r 10}; \cod{repeat\_rate:=10.0}) \\
+Una rueda gira al revés & Signo del motor & \cod{MOTOR\_INVERTIDO} \\
+rpm negativas yendo adelante & Signo del encoder & \cod{ENC\_INVERTIDO} \\
+Avanza menos o más que lo pedido & Radio de rueda o cuentas por vuelta & Medir con cinta y corregir \cod{CFG\_DIF} \\
+Gira de más o de menos & Trocha & Medir y corregir \cod{trocha} \\
+Falla de rueda / atasco & Rueda trabada o encoder desconectado & Revisar; \cod{r} \\
+Encoder cuenta solo, quieto & Entrada al aire (falta pull-up) o ruido & Revisar cableado y pull-ups \\
+\cod{BATERIA\_BAJA} con la batería llena & Seta apretada (divisor en 0~V) o divisor mal & Normal con la seta; si no, medir el divisor \\
+Bumper o seta disparan solos & Ruido (no hay capacitores) & 100~nF de ese pin a GND \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Brazo}} \\
+Rechaza movimientos & Desarmado o sin cero & \cod{armar}; \cod{z} en la pose de referencia o \cod{home <n>} \\
+\cod{FueraDeLimites} & Se movió a mano o el cero está mal & \cod{r}; rehacer el cero \\
+Atasco & Obstáculo, correa floja o encoder desconectado & Revisar; \cod{r} \\
+Tiembla cerca del objetivo & PI o $v_\text{mín}$ mal ajustados & Bajar $K_p$; ajustar \cod{velMin} y tolerancia \\
+J2 o J3 caen & No se autobloquean & Apoyar el brazo; nunca \cod{l} con el brazo levantado \\
+\cod{inalcanzable} en \topic{/brazo/ik\_estado} & Punto fuera del espacio de trabajo o del rango de J1 & Leer el motivo; acercar la base \\
+Servo da un salto al encender & GPIO~14 pulsa al arrancar & Conectar los 6~V después de que arranque la WROOM, o pasar la señal al GPIO~13 \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Visión y misión}} \\
+Sin \topic{/limon/posicion} con el limón a la vista & Limón en la zona ciega, fuera de 0,38--0,96~m o robot en movimiento & Correr el robot; frenar \\
+Posiciones que saltan & Exposición sin sincronizar, robot moviéndose & Localizar quieto \\
+Cámara no arranca & Cinta CSI & Intercambiar cintas con la Pi apagada \\
+Colores rosados al sol & Cámaras NoIR & Pendiente: probar o sombrear \\
+Misión en FALLA & Ver el motivo en \topic{/mision/estado} & Corregir y reiniciar el nodo \\
+Misión se queda en ESPERAR & Limón inestable, brazo no quieto o fuera de alcance & Ver \topic{/mision/estado}; acercar la base \\
+La simulación mueve el robot real & Falta aislar & \cod{ROS\_AUTOMATIC\_DISCOVERY\_RANGE=}\allowbreak\cod{LOCALHOST} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Energía}} \\
+La Pi se reinicia o \cod{get\_throttled} $\neq$ \cod{0x0} & Power bank al límite o cable largo & Una sola salida, cable corto; bajar carga \\
+Salta el fusible & Cortocircuito & \textbf{No} reemplazar sin encontrar el corto \\
+\bottomrule
+\end{longtable}
+
+\section{Comandos útiles de la Pi}
+
+\begin{lstlisting}[language=consola]
+vcgencmd get_throttled                  # 0x0 = sin problemas de alimentación ni temperatura
+vcgencmd pmic_read_adc EXT5V_V          # tensión de entrada (>= 4,9 V)
+dmesg -w                                # desconexiones USB
+ls -l /dev/serial/by-id/                # qué placa está en qué puerto
+htop                                    # uso de CPU (YOLO + SGBM son lo más pesado)
+\end{lstlisting}

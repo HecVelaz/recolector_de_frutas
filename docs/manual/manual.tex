@@ -1,0 +1,176 @@
+% Manual de Arturito R2D2 — robot recolector de limones (Grupo 2, FIUNA Mecatrónica, 2026S2)
+% Compilar desde docs/manual:  pdflatex manual && pdflatex manual   (dos pasadas: índice y referencias)
+% Las figuras de los HTML se regeneran con:  python3 capturar.py
+\documentclass[11pt,a4paper,oneside]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{2190}{\ensuremath{\leftarrow}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+\DeclareUnicodeCharacter{03A9}{\ensuremath{\Omega}}
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+\DeclareUnicodeCharacter{03B3}{\ensuremath{\gamma}}
+\DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}
+\DeclareUnicodeCharacter{03B8}{\ensuremath{\theta}}
+\DeclareUnicodeCharacter{03C9}{\ensuremath{\omega}}
+\DeclareUnicodeCharacter{2026}{\ldots}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.3cm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{icomma}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs,tabularx,longtable,multirow,makecell}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{pifont}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shapes.misc,fit,calc,backgrounds,decorations.pathreplacing,matrix}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------- colores
+\definecolor{tinta}{HTML}{17231F}
+\definecolor{gris}{HTML}{56655F}
+\definecolor{suave}{HTML}{E4EBE7}
+\definecolor{acento}{HTML}{2A66AD}
+\definecolor{verde}{HTML}{237A4F}
+\definecolor{rojo}{HTML}{C2362C}
+\definecolor{naranja}{HTML}{CF7A12}
+\definecolor{violeta}{HTML}{8646B8}
+\definecolor{ocre}{HTML}{A8740A}
+\definecolor{fondocod}{HTML}{F4F6F5}
+
+% ---------------------------------------------------------------- títulos y encabezados
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{tinta}}
+  {\color{acento}\large\MakeUppercase{Capítulo}~\thechapter}{6pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-10pt}{24pt}
+\titleformat{\section}{\normalfont\Large\bfseries\color{tinta}}{\color{acento}\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{tinta}}{\color{acento}\thesubsection}{0.8em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gris}Arturito R2D2 · Manual del sistema}
+\fancyhead[R]{\small\color{gris}\nouppercase{\leftmark}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\emergencystretch}{3em}
+\setlist{itemsep=2pt,topsep=4pt}
+\captionsetup{font=small,labelfont=bf}
+
+% ---------------------------------------------------------------- código
+\lstdefinestyle{base}{
+  basicstyle=\ttfamily\footnotesize, backgroundcolor=\color{fondocod}, frame=single, rulecolor=\color{suave},
+  breaklines=true, breakatwhitespace=false, columns=fullflexible, keepspaces=true, showstringspaces=false,
+  commentstyle=\color{gris}\itshape, keywordstyle=\color{acento}\bfseries, stringstyle=\color{verde},
+  xleftmargin=4pt, xrightmargin=4pt, aboveskip=6pt, belowskip=6pt,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 {Á}{{\'A}}1 {É}{{\'E}}1
+           {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ñ}{{\~N}}1 {°}{{\textdegree}}1 {¿}{{?`}}1 {¡}{{!`}}1
+           {→}{{$\rightarrow$}}2 {←}{{$\leftarrow$}}2 {·}{{$\cdot$}}1 {≥}{{$\geq$}}1 {≤}{{$\leq$}}1 {×}{{$\times$}}1
+           {µ}{{$\mu$}}1 {²}{{$^2$}}1 {±}{{$\pm$}}1 {−}{{-}}1 {…}{{...}}3 {Ω}{{$\Omega$}}1 {—}{{---}}1 {–}{{--}}1 {ü}{{\"u}}1 {“}{{``}}1 {”}{{''}}1 {Δ}{{$\Delta$}}1 {≈}{{$\approx$}}1 {✓}{{v}}1
+}
+\lstset{style=base}
+\lstdefinelanguage{consola}{morekeywords={ros2,colcon,source,pio,ssh,cd,export,sudo,python3,rsync,git},sensitive=true,
+  morecomment=[l]\#}
+
+% ---------------------------------------------------------------- cajas
+\newtcolorbox{nota}[1][Nota]{colback=acento!5,colframe=acento,fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{peligro}[1][Cuidado]{colback=rojo!5,colframe=rojo,fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{idea}[1][En pocas palabras]{colback=verde!6,colframe=verde,fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{pendiente}[1][Pendiente de medir o probar]{colback=naranja!6,colframe=naranja,fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt,left=6pt,right=6pt}
+
+% ---------------------------------------------------------------- TikZ
+\tikzset{
+  >={Stealth[length=2.2mm]},
+  caja/.style={draw=tinta,rounded corners=2pt,fill=white,align=center,font=\small,minimum height=8mm,inner sep=4pt},
+  placa/.style={caja,fill=suave,font=\small\bfseries},
+  nodo/.style={draw=acento,fill=acento!8,rounded corners=6pt,align=center,font=\small,minimum height=8mm,inner sep=4pt},
+  topico/.style={font=\scriptsize\ttfamily,fill=white,inner sep=1pt},
+  estado/.style={draw=tinta,fill=white,rounded corners=8pt,align=center,font=\small\bfseries,minimum height=8mm,minimum width=20mm},
+  estadorojo/.style={estado,draw=rojo,fill=rojo!8},
+  grupo/.style={draw=gris,dashed,rounded corners=4pt,inner sep=7pt},
+  flecha/.style={->,thick,draw=tinta},
+  datos/.style={->,thick,draw=acento},
+  gpio/.style={->,thick,draw=verde},
+  pot/.style={->,very thick,draw=rojo},
+  logica/.style={->,very thick,draw=naranja},
+  seg/.style={->,thick,draw=violeta},
+}
+
+% En \cod, \topic y \archivo se puede cortar la línea después de "_" (rutas y nombres largos)
+\usepackage{xstring}
+\newcommand{\codus}{\textunderscore\allowbreak}
+\newcommand{\cortable}[1]{\let\_\codus\noexpandarg\StrSubstitute{#1}{/}{/\allowbreak}}
+\DeclareRobustCommand{\cod}[1]{\leavevmode{\ttfamily\cortable{#1}}}
+\DeclareRobustCommand{\topic}[1]{\leavevmode{\ttfamily\color{acento}\cortable{#1}}}
+\DeclareRobustCommand{\archivo}[1]{\leavevmode{\ttfamily\color{gris}\cortable{#1}}}
+\newcommand{\ok}{\textcolor{verde}{\ding{51}}}
+\newcommand{\no}{\textcolor{rojo}{\ding{55}}}
+
+\graphicspath{{figuras/}}
+
+\begin{document}
+
+% ================================================================ portada
+\begin{titlepage}
+  \thispagestyle{empty}
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[tinta] (current page.north west) rectangle ([yshift=-9cm]current page.north east);
+    \fill[acento] ([yshift=-9cm]current page.north west) rectangle ([yshift=-9.25cm]current page.north east);
+  \end{tikzpicture}
+  \vspace*{0.4cm}
+  {\color{white}\small\sffamily FACULTAD DE INGENIERÍA · UNIVERSIDAD NACIONAL DE ASUNCIÓN\\
+  Ingeniería Mecatrónica · Robótica I y Robótica II · 2026S2\par}
+  \vspace{1.6cm}
+  {\color{white}\fontsize{34}{40}\selectfont\bfseries Arturito R2D2\par}
+  \vspace{0.3cm}
+  {\color{white}\Large Robot móvil autónomo recolector de limones\par}
+  \vspace{0.2cm}
+  {\color{acento!40}\large Manual completo del sistema: hardware, electrónica, firmware, ROS 2, visión y operación\par}
+  \vspace{1.4cm}
+  \begin{center}
+    \includegraphics[height=7.2cm]{robot_limon.jpg}\hspace{3mm}%
+    \includegraphics[height=7.2cm]{robot2.jpg}
+  \end{center}
+  \vfill
+  {\large\bfseries Grupo 2\par}
+  {\color{gris} Versión 1.0 · 14 de octubre de 2026 · estado del proyecto a esa fecha\par}
+  {\color{gris}\small Repositorios: \texttt{HecVelaz/recolector\_de\_frutas} (robot) y \texttt{HecVelaz/vision\_estereo} (visión)\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\input{capitulos/01_introduccion}
+\input{capitulos/02_vision_general}
+\input{capitulos/03_mecanica}
+\input{capitulos/04_potencia}
+\input{capitulos/05_placas}
+\input{capitulos/06_firmware}
+\input{capitulos/07_ros2}
+\input{capitulos/08_microros}
+\input{capitulos/09_vision}
+\input{capitulos/10_brazo_ik}
+\input{capitulos/11_mision}
+\input{capitulos/12_simulacion}
+\input{capitulos/13_puesta_en_marcha}
+\input{capitulos/14_diagnostico}
+\input{capitulos/15_estado}
+\appendix
+\input{capitulos/a_referencia}
+
+\end{document}

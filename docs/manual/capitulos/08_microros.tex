@@ -1,0 +1,154 @@
+\chapter{micro-ROS: cómo hablan la Pi y los ESP32}\label{cap:microros}
+
+\section{Qué es micro-ROS}
+
+Un ESP32 no puede correr ROS~2 completo (no tiene sistema operativo ni red DDS). \textbf{micro-ROS} es una versión
+reducida que corre en el microcontrolador y habla con un \textbf{agente} en la Pi por un enlace simple (acá, el USB
+serie). El agente traduce: para el resto de ROS~2, el ESP32 es un nodo más.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[placa,text width=34mm] (esp) at (0,0) {ESP32-S3\\\footnotesize firmware con micro-ROS\\(nodo \cod{base})};
+  \node[caja,text width=36mm] (ag) at (6.2,0) {agente micro-ROS\\\footnotesize\cod{micro\_ros\_agent serial}};
+  \node[nodo,text width=36mm] (ros) at (11.6,0) {resto de ROS 2\\\footnotesize\cod{mision}, \cod{teleop}, \cod{ros2 topic}\ldots};
+  \draw[<->,thick,acento] (esp) -- node[topico,above=2pt]{USB serie} node[topico,below=2pt]{XRCE-DDS} (ag);
+  \draw[<->,thick,acento] (ag) -- node[topico,above=2pt]{DDS (red)} (ros);
+  \begin{scope}[on background layer]
+    \node[grupo,fit=(ag)(ros),label={[font=\small\bfseries]above:Raspberry Pi 5}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{El agente es el puente. Hay \textbf{un agente por placa}, cada uno en su puerto USB.}
+\end{figure}
+
+\subsection{Arrancar los agentes (en la Pi)}
+\begin{lstlisting}[language=consola]
+source /opt/ros/jazzy/setup.bash
+source ~/microros_ws/install/local_setup.bash
+# Base (ESP32-S3, USB nativo)
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_*-if00
+# Brazo (WROOM con CH340) — a 115200 baudios: a 921600 el CH340 pierde datos en la Pi
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
+\end{lstlisting}
+
+\begin{nota}[Flashear con el agente corriendo]
+El agente tiene abierto el puerto USB: hay que detenerlo antes de flashear (\cod{pio run -e ros -t upload}) y volver a
+arrancarlo después. Si la S3 no abre sesión, puede haber quedado en \textbf{modo descarga} (pasa si el puerto se abre con
+DTR/RTS bajos). Se saca con:
+\cod{\textasciitilde/venvs/esptool/bin/esptool --port <S3> --before no\_reset --after watchdog-reset read-mac}.
+\end{nota}
+
+\section{La sesión: conexión, hora y ping}
+
+\begin{enumerate}
+  \item Al arrancar, el ESP32 busca al agente. Mientras no lo encuentra, no publica nada.
+  \item Al conectarse, crea su nodo, sus publicadores y suscriptores, y \textbf{sincroniza la hora} con el agente
+        (todos los mensajes llevan la hora de la Pi). Sin hora, no publica.
+  \item Cada \textbf{100~ms} hace un \textbf{ping} al agente. Si fallan 3 seguidos ($\sim$1,5~s con los reintentos),
+        considera la sesión perdida: \textbf{detiene los motores apenas lo detecta} y queda \textbf{desarmado}.
+  \item Vuelve a buscar al agente y, al reconectar, arranca una sesión nueva, otra vez desarmada.
+\end{enumerate}
+
+\cod{/<parte>/estado} incluye los contadores \cod{enlace: pings\_fallidos cortes}: sirven para ver si el USB anda
+bien. En la prueba con la Pi a plena carga hubo 0 cortes.
+
+\section{Armar y desarmar}\label{sec:armar}
+
+\begin{idea}[Qué es armar]
+Cada ESP32 tiene un \textbf{seguro por sesión}. Al empezar cada sesión con el agente queda \textbf{DESARMADO}: ignora
+las órdenes de movimiento (\topic{/cmd\_vel} en la base; \topic{/brazo/joint\_cmd}, la pinza y los comandos que mueven
+en el brazo). Para habilitarlo se publica el texto \cod{armar} en \topic{/base/comando} o \topic{/brazo/comando}.
+\end{idea}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[estado] (sin) at (0,0) {SIN AGENTE};
+  \node[estado] (des) at (5.5,0) {DESARMADO};
+  \node[estado,draw=verde,fill=verde!8] (arm) at (11,0) {ARMADO};
+  \draw[flecha] (sin) -- node[topico,above]{conecta + hora} (des);
+  \draw[flecha] ([yshift=2mm]des.east) -- node[topico,above]{\cod{armar}} ([yshift=2mm]arm.west);
+  \draw[flecha] ([yshift=-2mm]arm.west) -- node[topico,below]{\cod{desarmar}} ([yshift=-2mm]des.east);
+  \draw[flecha,rojo] (arm.south) -- ++(0,-1.0) -| node[topico,pos=0.25,below,text=rojo]{3 pings perdidos ($\sim$1,5 s): frena los motores} (sin.south);
+  \draw[flecha,rojo] (des.north) -- ++(0,0.9) -| node[topico,pos=0.25,above,text=rojo]{se pierde el agente} (sin.north);
+\end{tikzpicture}
+\caption{Estados de la sesión micro-ROS de cada ESP32.}
+\label{fig:armar}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Desarmado acepta}: detener (\cod{s}), liberar (\cod{l}), borrar fallas (\cod{r}), cero (\cod{z}),
+        diagnóstico (\cod{e}, \cod{sens}), \cod{cal}, \cod{wd}.
+  \item \textbf{Desarmado rechaza}: \topic{/cmd\_vel}, \cod{v}, \cod{w}, \cod{d}, \cod{m}, \cod{j}, \cod{home},
+        \topic{/brazo/joint\_cmd}, \cod{pinza}, \cod{giro}.
+\end{itemize}
+
+\subsection{Por qué existe}
+Imaginá que el USB hace falso contacto y la placa se reconecta. Si un nodo seguía publicando ``avanzá a 0,1~m/s''
+(por ejemplo, el teclado que quedó abierto), sin el seguro el robot arrancaría solo al volver la conexión. Con el
+seguro, después de cada reconexión \textbf{alguien tiene que volver a decir \cod{armar} a propósito}.
+
+\subsection{Quién arma}
+\begin{itemize}
+  \item A mano: \cod{ros2 topic pub --once /base/comando std\_msgs/msg/String} \cod{"\{data: 'armar'\}"}.
+  \item \cod{mision} arma el brazo en su estado INICIO, reintentando cada segundo hasta ver \cod{ARMADO} en
+        \topic{/brazo/estado}. No lo vuelve a armar después de una reconexión: eso queda como falla.
+  \item \cod{recorrido} arma la base en su estado INICIO, igual.
+  \item \cod{mision} \textbf{desarma} el brazo si ve \cod{SETA} en \topic{/base/estado}.
+\end{itemize}
+
+\subsection{Armar no es todo}
+Estar armado solo significa ``acepto órdenes de esta sesión''. Las demás protecciones siguen activas: en la base, la
+seta, el vuelco, los bumpers, la distancia y el watchdog; en el brazo, el cero, los límites, el atasco. Por ejemplo,
+con la seta apretada la base puede estar armada pero no se mueve. Al soltar la seta hay que mandar \cod{r} (rearmar
+la seguridad) además de que esté armada.
+
+\section{Watchdog de comandos}
+
+En la base, con micro-ROS el watchdog de comandos \textbf{arranca en 300~ms y no se puede apagar} (se puede cambiar
+entre 50 y 1000~ms con \cod{wd}). Si \topic{/cmd\_vel} deja de llegar por más de ese tiempo, la base frena. Por eso
+\cod{ros2 topic pub} para moverse se usa con \cod{-r 10} (10 veces por segundo) y no con \cod{--once}.
+
+\begin{pendiente}
+Medir con las ruedas en el piso la distancia real de frenado por el watchdog. Estimación (revisión de Codex): a
+1~m/s, $\sim$30~cm antes de empezar a frenar; en la simulación, 11--13~cm desde 0,2~m/s.
+\end{pendiente}
+
+\section{Tópicos de la base}
+
+{\small\begin{longtable}{@{}p{3.6cm} p{3.9cm} p{1.5cm} p{5.9cm}@{}}
+\toprule
+\textbf{Tópico} & \textbf{Tipo} & \textbf{Sentido} & \textbf{Detalle} \\
+\midrule
+\endhead
+\topic{/odom} & \cod{nav\_msgs/Odometry} & sale, 25~Hz & \cod{odom} → \cod{base\_link} \\
+\topic{/imu/data\_raw} & \cod{sensor\_msgs/Imu} & sale, 50~Hz & m/s² y rad/s, sin orientación \\
+\topic{/range/frente}, \topic{/range/izq}, \topic{/range/der} & \cod{sensor\_msgs/Range} & sale, 10~Hz & cada sensor mide cada 120~ms; +Inf = nada al alcance; NaN = sin eco \\
+\topic{/bumpers} & \cod{std\_msgs/UInt8} & sale, 10~Hz & bits 0..2: frente, izquierda, derecha \\
+\topic{/battery} & \cod{sensor\_msgs/BatteryState} & sale, 1~Hz & tensión \\
+\topic{/base/estado} & \cod{std\_msgs/String} & sale, 2~Hz & armado, modo, seguridad, bloqueos, IMU, fallas, enlace \\
+\topic{/base/respuesta} & \cod{std\_msgs/String} & sale & lo que mostraría el monitor serie \\
+\topic{/cmd\_vel} & \cod{geometry\_msgs/Twist} & entra & \cod{linear.x} [m/s], \cod{angular.z} [rad/s] \\
+\topic{/base/comando} & \cod{std\_msgs/String} & entra & cualquier comando del monitor, más \cod{armar} y \cod{desarmar} \\
+\bottomrule
+\end{longtable}}
+
+\section{Tópicos del brazo}
+
+{\small\begin{longtable}{@{}p{3.6cm} p{3.9cm} p{1.5cm} p{5.9cm}@{}}
+\toprule
+\textbf{Tópico} & \textbf{Tipo} & \textbf{Sentido} & \textbf{Detalle} \\
+\midrule
+\endhead
+\topic{/brazo/joint\_states} & \cod{sensor\_msgs/JointState} & sale, 20~Hz & \cod{j1..j3}: posición [rad], velocidad [rad/s] \\
+\topic{/brazo/estado} & \cod{std\_msgs/String} & sale, 2~Hz & armado; modo, cero, duty, falla y \cod{llego} de cada articulación \\
+\topic{/brazo/respuesta} & \cod{std\_msgs/String} & sale & lo que mostraría el monitor serie \\
+\topic{/brazo/joint\_cmd} & \cod{sensor\_msgs/JointState} & entra & posiciones [rad] con nombres \cod{j1..j3} (o las 3 en orden). Se valida todo: se aplica todo o nada \\
+\topic{/pinza/cierre} & \cod{std\_msgs/Float32} & entra & 0 = abierta, 100 = cerrada \\
+\topic{/pinza/giro} & \cod{std\_msgs/Float32} & entra & grados, $-90$..$90$ \\
+\topic{/brazo/comando} & \cod{std\_msgs/String} & entra & cualquier comando del monitor (\cod{z}, \cod{home 2}, \cod{s}, \cod{r}\ldots), más \cod{armar} y \cod{desarmar} \\
+\bottomrule
+\end{longtable}}
+
+Si se pierde el agente, J1--J3 se detienen y el brazo queda desarmado; \textbf{los servos quedan donde están}, para
+no soltar el limón.

@@ -14,6 +14,7 @@ terceros quedan fuera de git (`.gitignore`).
 - `fotos/` — Hojas del vendedor y fotos: `motor_traccion/` (42GM-895H, 189:1, encoder 11 PPR), `pinza/` (servo RDS3218), `rueda/` (inflable 150 mm, 45 mm de ancho, 650 g), `bateria/` (YONGZHI 10S2P 36 V 4400 mAh, 135×90×60 mm, XT60), `bucks/` (los 4 buck disponibles; el 3, ×2). **Decisión:** opción 6 de la tabla R1 (RRR-Limón), con pinza con tracción+rotación en vez de succión. Al 27/09: solo pruebas preliminares; estéreo sin validar (falta soporte de cámaras).
 
 **Diseño**
+- `manual/manual.pdf` — **Manual completo del sistema** (14/10, LaTeX, 71 págs.): mecánica, potencia, placas, firmware, ROS 2 desde cero, micro-ROS y armado, visión, cinemática, misión y recorrido, simulación, puesta en marcha paso a paso, diagnóstico y referencia. Compilar con `pdflatex manual` (dos pasadas) en `docs/manual/`.
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
 - `CONEXIONES.md` — Conexionado v0.6 (08/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, prueba integrada mínima, circuito de potencia solo con lo que hay (LiPo 3S directa para motores, power bank para la Pi y los ESP32; la 10S guardada), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `html/conexiones.html`: lo mismo como diagrama.

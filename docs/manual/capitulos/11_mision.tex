@@ -1,0 +1,226 @@
+\chapter{Misión y recorrido autónomo}\label{cap:mision}
+
+El paquete \cod{mision} (\archivo{ros2\_ws/src/mision/}) tiene dos máquinas de estados que trabajan juntas:
+
+\begin{description}
+  \item[\cod{fsm.py} — la misión] Maneja el \textbf{brazo}: espera un limón estable, lo manda a agarrar, lo retira y
+        lo suelta.
+  \item[\cod{recorrido.py} — el recorrido] Maneja la \textbf{base}: avanza por el pasillo, frena cuando ve un limón,
+        se arrima si está fuera de alcance, esquiva obstáculos. Se activa con el parámetro \cod{autonomo:=true}.
+\end{description}
+
+Las dos son Python puro, sin ROS (se prueban con \cod{colcon test}: 30 pruebas de la misión). \archivo{nodo\_mision.py}
+es el nodo que las conecta con los tópicos.
+
+\section{La misión (brazo)}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[estado] (ini) at (0,0) {INICIO};
+  \node[estado] (esp) at (4,0) {ESPERAR};
+  \node[estado] (apr) at (8.5,0) {APROXIMAR};
+  \node[estado] (agr) at (8.5,-2.6) {AGARRAR};
+  \node[estado] (ret) at (4,-2.6) {RETIRAR};
+  \node[estado] (sol) at (0,-2.6) {SOLTAR};
+  \node[estadorojo] (fal) at (13,-2.6) {FALLA};
+  \draw[flecha] (ini) -- node[topico,above]{ARMADO} (esp);
+  \draw[flecha] (esp) -- node[font=\scriptsize\ttfamily,above=3pt,align=center]{5 muestras estables\\y alcanzable} (apr);
+  \draw[flecha] (apr) -- node[topico,right]{llegó} (agr);
+  \draw[flecha] (agr) -- node[topico,above]{1,5 s} (ret);
+  \draw[flecha] (ret) -- node[topico,above]{llegó} (sol);
+  \draw[flecha] (sol.north east) -- node[topico,right,pos=0.4]{1,5 s} (esp.south west);
+  \draw[flecha,rojo] (apr) -| (fal);
+  \node[font=\scriptsize,text=rojo,align=left,anchor=west] at (13.2,-1.1) {falla del brazo,\\desarmado, sin estado\\2 s, inalcanzable, no\\llega en 20 s, SETA};
+  \node[font=\scriptsize,above=1mm of ini,align=center] {manda \cod{armar} cada 1 s};
+  \node[font=\scriptsize,below=1mm of fal,align=center] {manda \cod{s} (y \cod{desarmar}\\si fue la seta); se queda\\ahí: reiniciar el nodo};
+\end{tikzpicture}
+\caption{Máquina de estados de la misión. Cualquier estado con el brazo moviéndose puede ir a FALLA.}
+\end{figure}
+
+\subsection{Cada estado}
+\begin{description}
+  \item[INICIO] Manda \cod{armar} al brazo cada segundo hasta ver \cod{ARMADO} en \topic{/brazo/estado}.
+  \item[ESPERAR] Junta posiciones de \topic{/limon/posicion}, pero \textbf{solo} si el brazo está armado, con cero,
+        sin falla, quieto y con un \topic{/brazo/estado} de hace menos de 2~s, y (con el recorrido) la base quieta. Cada
+        muestra se pasa al marco del brazo con TF y se le suma el radio del limón (3~cm) a lo largo del rayo de la
+        cámara. Descarta muestras de imágenes de más de 1~s y las repetidas. Cuando hay \textbf{5 seguidas a menos de
+        2~cm del promedio} (en una ventana de 3~s), pregunta si el promedio es alcanzable (la misma cuenta que
+        \cod{brazo\_ik}). Si sí, pasa a APROXIMAR; si no, avisa ``fuera de alcance'' al recorrido.
+  \item[APROXIMAR] Publica el punto en \topic{/brazo/objetivo}. Espera a que el brazo \textbf{llegue}.
+  \item[AGARRAR] Cierra la pinza (\topic{/pinza/cierre} = \cod{cierre}, 100~\% por defecto: \textbf{MEDIR} sin
+        aplastar) y espera 1,5~s.
+  \item[RETIRAR] Manda el brazo a la pose de reposo (TCP en (0,068; 0,253; 0,360)~m, $q = (75^\circ, 110^\circ, -30^\circ)$: no tapa
+        las cámaras ni toca el mástil).
+  \item[SOLTAR] Abre la pinza, espera 1,5~s y vuelve a ESPERAR.
+  \item[FALLA] Manda \cod{s} (detiene J1--J3; la pinza queda como está) y se queda ahí. Hay que reiniciar el nodo. Al
+        cerrar el nodo (Ctrl+C) también manda \cod{s}.
+\end{description}
+
+\subsection{Qué significa ``llegó''}
+No alcanza con que el firmware diga \cod{llego}: podría ser un estado viejo de un movimiento anterior. ``Llegó''
+exige las tres cosas a la vez:
+\begin{enumerate}
+  \item \topic{/brazo/joint\_states} a menos de 1° de los ángulos que calculó \cod{brazo\_ik} \textbf{para este
+        objetivo} (los de \topic{/brazo/joint\_cmd});
+  \item velocidad de las tres articulaciones $<$ 0,02~rad/s (quieto);
+  \item \cod{llego} en las tres en \topic{/brazo/estado}.
+\end{enumerate}
+
+\subsection{La seta y la misión}
+La WROOM no ve la seta (está conectada a la S3). Si la seta corta los 12~V y la WROOM sigue armada, al soltar la seta
+el brazo arrancaría de golpe con el error acumulado, mientras J2 y J3 caían. Por eso la misión escucha
+\topic{/base/estado}: si aparece \cod{SETA}, manda \cod{desarmar} al brazo y pasa a FALLA.
+
+\section{El recorrido (base)}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[lb/.style={font=\scriptsize\ttfamily}]
+  \node[estado] (ini) at (0,0) {INICIO};
+  \node[estado] (mir) at (4.5,0) {MIRAR};
+  \node[estado] (ava) at (11,0) {AVANZAR};
+  \node[estado] (arr) at (4.5,-2.8) {ARRIMAR};
+  \node[estado] (fin) at (0,-2.8) {FIN};
+  \node[estadorojo] (blo) at (11,-2.8) {BLOQUEADO};
+  \node[estado] (esq) at (4.5,2.8) {ESQUIVAR};
+  \node[estado] (pas) at (8.5,2.8) {PASAR};
+  \node[estado] (vol) at (12.5,2.8) {VOLVER};
+  \draw[flecha] (ini) -- node[lb,above]{ARMADA} (mir);
+  \draw[flecha] ([yshift=1.5mm]mir.east) -- node[lb,above]{libre} ([yshift=1.5mm]ava.west);
+  \draw[flecha] ([yshift=-1.5mm]ava.west) -- node[lb,below]{limón útil u obstáculo} ([yshift=-1.5mm]mir.east);
+  \draw[flecha] ([xshift=2mm]mir.south) -- node[lb,right]{fuera de alcance} ([xshift=2mm]arr.north);
+  \draw[flecha] ([xshift=-2mm]arr.north) -- node[lb,left]{llegó} ([xshift=-2mm]mir.south);
+  \draw[flecha] ([xshift=-2mm]mir.north) -- node[lb,left]{obstáculo} ([xshift=-2mm]esq.south);
+  \draw[flecha] (esq) -- (pas); \draw[flecha] (pas) -- (vol);
+  \draw[flecha] (vol.south) |- node[lb,pos=0.75,above]{de vuelta en el centro} ([xshift=6mm,yshift=12mm]mir.north) -- ([xshift=6mm]mir.north);
+  \draw[flecha,rojo] (mir.south east) -- node[lb,below,sloped,text=rojo]{sin lugar, bumper o FALLA} (blo.north west);
+  \draw[flecha] (mir.south west) -- node[lb,above,sloped]{$x \geq x_\text{fin}$} (fin.north east);
+\end{tikzpicture}
+\caption{Máquina de estados del recorrido. La base \textbf{solo se mueve con la misión en ESPERAR} (brazo en reposo).}
+\end{figure}
+
+\begin{description}
+  \item[INICIO] Frena y manda \cod{armar} a la base cada segundo hasta verla ARMADA.
+  \item[AVANZAR] Va a 0,10~m/s por el centro del pasillo ($y = 0$), corrigiendo el rumbo. Frena (pasa a MIRAR) si ve
+        un limón útil, si hay un obstáculo a menos de 0,30~m delante o al llegar al fin de la hilera (7,3~m).
+  \item[MIRAR] Quieto. Si desde que frenó vio un limón útil, le da 3~s a la misión; si no vio nada, sigue a los
+        0,5~s. Después decide: arrimar, retroceder por un limón que quedó atrás, avanzar, esquivar o terminar.
+  \item[ARRIMAR] Se mueve a lo largo del pasillo hasta una $x$ objetivo, con la odometría. Como mucho 3 arrimes
+        seguidos sin cosechar; después sigue de largo.
+  \item[ESQUIVAR, PASAR, VOLVER] Se corre a un carril lateral ($y = \pm 0{,}25$~m) del lado con lugar, pasa el
+        obstáculo y vuelve al centro, derecho.
+  \item[BLOQUEADO] No hay lugar para esquivar, un bumper está apretado o la misión está en FALLA: frena y reintenta.
+\end{description}
+
+\subsection{Cuándo frena por un limón}
+YOLO da cajas, no distancias. Pero un limón mide unos 6~cm, así que el \textbf{ancho de la caja} da una distancia
+aproximada:
+\[
+  Z \approx \frac{f \cdot 0{,}06\text{ m}}{\text{ancho [px]}}
+\]
+Un limón es \textbf{útil} si esa $Z$ está en la ventana del estéreo y si está a la derecha de la zona ciega
+($u \geq u_\text{mín}$). Un limón en la zona ciega ($u < u_\text{mín}$) con la cámara mirando de costado es un limón
+que \textbf{ya quedó atrás}: el recorrido retrocede de a 10~cm (como mucho 40~cm por tramo, porque atrás no hay
+sensores) hasta verlo en la zona útil.
+
+\begin{pendiente}[Parámetros del recorrido para el robot real]
+\cod{ParRecorrido} en \archivo{recorrido.py} usa la calibración vieja de la simulación: $f = 1076{,}5$~px,
+$u_\text{mín} = 271$~px, ventana 0,40--0,95~m. Con las cámaras reales (calibración del soporte) son $f = 654{,}3$~px y
+$u_\text{mín} \approx 163$~px. Hay que pasarlos por parámetro (\cod{f\_px}, \cod{u\_min}, \cod{z\_min}, \cod{z\_max}) al
+probar en el robot.
+\end{pendiente}
+
+\subsection{Cuánto avanzar para alcanzar el limón}\label{sec:arrimar}
+Esta es la respuesta a ``¿cómo sabe la rueda hasta dónde moverse?''. La rueda \textbf{no recibe las coordenadas del
+limón}. Pasa esto:
+
+\begin{enumerate}
+  \item La misión tiene el limón en el marco del brazo, $p = (p_x, p_y, p_z)$, y la cinemática inversa dice que no
+        se alcanza.
+  \item El recorrido prueba desplazamientos $\Delta x$ a lo largo del pasillo, de $-0{,}60$ a $+0{,}60$~m de a
+        1~cm. Mover la base $\Delta x$ hacia adelante equivale a que el limón quede en
+        $(p_x - \Delta x,\ p_y,\ p_z)$ respecto del brazo.
+  \item Se queda con los $\Delta x$ para los que el limón es alcanzable \textbf{con margen} (también corrido
+        $\pm 2$~cm), y de esos elige el \textbf{más chico}, para que el limón siga a la vista.
+  \item Pasa a ARRIMAR con $x_\text{obj} = x_\text{actual} + \Delta x$.
+  \item En ARRIMAR manda \topic{/cmd\_vel} lento, mira \topic{/odom} (cuánto avanzaron las ruedas) y frena al llegar a
+        $x_\text{obj}$ ($\pm 1$~cm).
+  \item Vuelve a MIRAR: el estéreo vuelve a medir y ahora la misión lo puede agarrar.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[scale=1.15]
+  \draw[gris,dashed] (-0.5,0) node[left,font=\scriptsize,align=right]{centro del\\pasillo} -- (6.2,0);
+  \fill[suave,draw=tinta] (0.6,-0.5) rectangle (2.2,0.5);
+  \fill[acento] (1.0,0.25) circle (3pt);
+  \draw[acento,dashed] (1.0,0.25) circle (1.25);
+  \fill[naranja] (3.0,1.5) circle (4pt) node[above,font=\scriptsize]{limón};
+  \draw[tinta,dashed] (2.9,-0.5) rectangle (4.5,0.5);
+  \fill[acento!60] (3.3,0.25) circle (3pt);
+  \draw[acento!60,dashed] (3.3,0.25) circle (1.25);
+  \draw[->,thick,rojo] (1.0,-1.65) -- node[below,font=\small]{$\Delta x = +0{,}23$ m} (3.3,-1.65);
+  \node[font=\scriptsize,anchor=west,align=left] at (7.0,1.2) {\textcolor{acento}{círculo lleno}: alcance antes;\\el limón queda afuera};
+  \node[font=\scriptsize,anchor=west,align=left] at (7.0,0.0) {\textcolor{acento!60}{círculo claro}: alcance después;\\queda adentro, con margen de 2 cm};
+  \node[font=\scriptsize,anchor=west,align=left] at (7.0,-1.2) {la distancia recorrida\\se mide con \topic{/odom}};
+\end{tikzpicture}}
+\caption{Arrimarse: el robot solo se mueve a lo largo del pasillo, lo justo para que el limón entre en el alcance
+del brazo.}
+\end{figure}
+
+\subsection{Rumbo: ruedas para avanzar, giróscopo para girar}
+La posición que usa el recorrido combina:
+\begin{itemize}
+  \item el \textbf{avance} medido por las ruedas (\topic{/odom});
+  \item el \textbf{rumbo} integrado del giróscopo (\topic{/imu/data\_raw}, eje $z$).
+\end{itemize}
+En los giros cerrados las ruedas patinan: en la simulación, solo con la odometría el robot quedaba 13~cm corrido sin
+enterarse. El giróscopo no patina. En el robot real hay que calibrar su sesgo en reposo (\cod{cal} de la base) y
+\textbf{arrancar en el centro del pasillo, mirando a lo largo} (el recorrido supone que $y = 0$ es el centro).
+
+\subsection{Esquivar}
+Los tres HC-SR04 miran al frente (0° y $\pm 15^\circ$). Con cada eco, y suponiendo que puede venir de cualquier punto del
+cono de $\pm 7{,}5^\circ$, el recorrido calcula qué parte del pasillo ocupa el obstáculo. Si hay lugar en un costado
+(ancho del robot + 5~cm de cada lado), se corre a ese carril, avanza el largo supuesto del obstáculo (0,30~m) más su
+propio largo y vuelve al centro.
+
+\section{Cómo se lanza}
+
+\begin{lstlisting}[language=consola]
+# En la Pi, con el agente del brazo y la visión (start_limon.sh) corriendo:
+ros2 launch mision mision.launch.py x:=-0.10 y:=0 z:=0.35 roll:=0 pitch:=0 yaw:=0   # TF medida (MEDIR)
+ros2 topic echo /mision/estado --field data
+
+# Con el recorrido autónomo (también el agente de la base), parámetros del nodo:
+ros2 run mision nodo_mision --ros-args -p autonomo:=true -p largo_herramienta:=0.075 \
+  -p f_px:=654.3 -p u_min:=163.0 -p z_min:=0.40 -p z_max:=0.95
+\end{lstlisting}
+
+\begin{nota}[La TF es obligatoria]
+\archivo{mision.launch.py} \textbf{no arranca} sin los 6 argumentos de la TF \cod{brazo\_base} → \cod{stereo\_camera\_link}
+(x, y, z, roll, pitch, yaw), para no mover el brazo con una TF inventada. Se miden con el soporte rígido de las
+cámaras ya montado: x, y, z con cinta; los ángulos se ajustan hasta que un limón medido a mano dé el mismo punto en
+\cod{brazo\_base}.
+\end{nota}
+
+{\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Por defecto} & \textbf{Qué es} \\
+\midrule
+\cod{n\_muestras} & 5 & posiciones seguidas que tienen que coincidir \\
+\cod{tol\_muestras} & 0,02~m & cada muestra a menos de esto del promedio \\
+\cod{ventana} & 3~s & muestras más viejas se descartan \\
+\cod{t\_mov\_max} & 20~s & tiempo máximo para llegar \\
+\cod{t\_pinza} & 1,5~s & para cerrar o abrir \\
+\cod{tol\_q}, \cod{tol\_v} & 1°, 0,02~rad/s & para considerar que llegó y está quieto \\
+\cod{cierre} & 100~\% & cierre para agarrar (\textbf{MEDIR}) \\
+\cod{reposo} & (0,068; 0,253; 0,360)~m & TCP de reposo \\
+\cod{largo\_herramienta} & 0~m & muñeca → TCP (\textbf{MEDIR}; el mismo que \cod{brazo\_ik}) \\
+\cod{radio\_limon} & 0,03~m & se suma a la superficie que da la visión \\
+\cod{edad\_max\_imagen} & 1~s & detecciones más viejas se ignoran \\
+\cod{autonomo} & \cod{false} & activa el recorrido \\
+\bottomrule
+\end{tabularx}}

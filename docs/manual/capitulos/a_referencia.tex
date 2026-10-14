@@ -1,0 +1,105 @@
+\chapter{Referencia rápida}\label{ap:ref}
+
+\section{Todos los tópicos}
+
+{\small\begin{longtable}{@{}p{4.0cm} p{4.6cm} p{3.4cm} p{3.4cm}@{}}
+\toprule
+\textbf{Tópico} & \textbf{Tipo} & \textbf{Publica} & \textbf{Suscribe} \\
+\midrule
+\endhead
+\topic{/cmd\_vel} & \cod{geometry\_msgs/Twist} & recorrido, teleop & S3 \\
+\topic{/odom} & \cod{nav\_msgs/Odometry} & S3 (25~Hz) & recorrido \\
+\topic{/imu/data\_raw} & \cod{sensor\_msgs/Imu} & S3 (50~Hz) & recorrido \\
+\topic{/range/frente|izq|der} & \cod{sensor\_msgs/Range} & S3 (10~Hz) & recorrido \\
+\topic{/bumpers} & \cod{std\_msgs/UInt8} & S3 (10~Hz) & recorrido \\
+\topic{/battery} & \cod{sensor\_msgs/BatteryState} & S3 (1~Hz) & — \\
+\topic{/base/estado} & \cod{std\_msgs/String} & S3 (2~Hz) & mision, recorrido \\
+\topic{/base/comando} & \cod{std\_msgs/String} & recorrido, a mano & S3 \\
+\topic{/base/respuesta} & \cod{std\_msgs/String} & S3 & — \\
+\topic{/gps/fix} & \cod{sensor\_msgs/NavSatFix} & \cod{nmea\_navsat\_driver} (Pi) & — \\
+\topic{/brazo/joint\_states} & \cod{sensor\_msgs/JointState} & WROOM (20~Hz) & mision \\
+\topic{/brazo/estado} & \cod{std\_msgs/String} & WROOM (2~Hz) & mision \\
+\topic{/brazo/comando} & \cod{std\_msgs/String} & mision, a mano & WROOM \\
+\topic{/brazo/respuesta} & \cod{std\_msgs/String} & WROOM & — \\
+\topic{/brazo/joint\_cmd} & \cod{sensor\_msgs/JointState} & \cod{brazo\_ik} & WROOM, mision \\
+\topic{/brazo/objetivo} & \cod{geometry\_msgs/PointStamped} & mision & \cod{brazo\_ik} \\
+\topic{/brazo/ik\_estado} & \cod{std\_msgs/String} & \cod{brazo\_ik} & mision \\
+\topic{/pinza/cierre} & \cod{std\_msgs/Float32} & mision & WROOM \\
+\topic{/pinza/giro} & \cod{std\_msgs/Float32} & a mano & WROOM \\
+\topic{/yolo/detecciones} & \cod{vision\_msgs/Detection2DArray} & \cod{detector\_node} & localizador, recorrido \\
+\topic{/limon/posicion} & \cod{geometry\_msgs/PointStamped} & \cod{localizador\_node} & mision \\
+\topic{/mision/estado} & \cod{std\_msgs/String} & mision & — \\
+\topic{/recorrido/estado} & \cod{std\_msgs/String} & recorrido & — \\
+\bottomrule
+\end{longtable}}
+
+\section{Comandos de todos los días}
+
+\begin{lstlisting}[language=consola]
+# --- Conectarse y preparar
+ssh r2d2@100.116.96.71
+source /opt/ros/jazzy/setup.bash
+
+# --- Agentes micro-ROS (una terminal cada uno)
+source ~/microros_ws/install/local_setup.bash
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_*-if00
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
+
+# --- Base
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 'armar'}"
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=10.0
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 's'}"
+
+# --- Brazo
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'z'}"
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'armar'}"
+ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j1], position: [1.57]}"
+ros2 topic pub --once /pinza/cierre std_msgs/msg/Float32 "{data: 50.0}"
+
+# --- Visión
+MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh
+
+# --- Misión
+ros2 launch mision mision.launch.py x:=... y:=... z:=... roll:=... pitch:=... yaw:=...
+
+# --- Firmware (en la notebook)
+cd firmware/base && ~/.platformio/penv/bin/pio test -e native && ~/.platformio/penv/bin/pio run -e ros
+
+# --- Grabar para la entrega
+ros2 bag record /cmd_vel /odom /imu/data_raw /range/frente /bumpers /base/estado /limon/posicion /mision/estado
+\end{lstlisting}
+
+\section{Estructura del repositorio}
+
+\begin{lstlisting}
+recolector_de_frutas/
+|-- CLAUDE.md                 estado y reglas del proyecto
+|-- docs/
+|   |-- INDICE.md             índice de documentos
+|   |-- ARQUITECTURA.md       arquitectura del objetivo mínimo
+|   |-- CONEXIONES.md         pines, potencia, autonomía, "antes de conectar"
+|   |-- BITACORA.md           bitácora por fecha
+|   |-- html/                 páginas interactivas (todo.html junta todas)
+|   |-- manual/               este manual (manual.tex)
+|   |-- fotos/                hojas de datos y fotos
+|   |-- TPF R1/, TPF R2/      entregas
+|-- firmware/
+|   |-- lib/                  drivers y control compartidos
+|   |-- base/                 ESP32-S3 (PlatformIO)
+|   `-- brazo/                ESP32-WROOM (PlatformIO)
+|-- ros2_ws/src/
+|   |-- brazo_ik/             cinemática inversa
+|   |-- mision/               misión + recorrido + TF cámara → brazo
+|   `-- simulacion/           Gazebo Harmonic
+`-- vision/entrenamiento_limon/   cuaderno de Colab del detector
+\end{lstlisting}
+
+\section{Documentos relacionados}
+\begin{itemize}
+  \item \archivo{docs/CONEXIONES.md}: la fuente de los pines, la potencia y la lista ``Antes de conectar''.
+  \item \archivo{docs/html/todo.html}: todas las páginas de cableado en una, con cajas clickeables.
+  \item \archivo{firmware/base/README.md}, \archivo{firmware/brazo/README.md}: detalle del firmware.
+  \item \archivo{ros2\_ws/src/*/README.md}: detalle de cada paquete.
+  \item \archivo{\textasciitilde/vision\_estereo/README.md}: detalle de la visión.
+  \item \archivo{docs/BITACORA.md}: por qué se tomó cada decisión.
+\end{itemize}

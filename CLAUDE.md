@@ -51,6 +51,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
   `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, bumpers, `llaves` (seta y selector), `conectores` (XT60), `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
   compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `html/` (páginas: conexiones, potencia, placas y seta; `html/fotos` es un enlace a `fotos/`),
+  `manual/` (manual completo en LaTeX: `manual.tex` + `capitulos/`, PDF compilado; `capturar.py` regenera las figuras de los HTML),
   inventario, bitácora.
 - `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.

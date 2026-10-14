@@ -1,0 +1,88 @@
+\chapter{Estado del proyecto y lo que falta}\label{cap:estado}
+
+\section{Qué está hecho y qué no (14/10/2026)}
+
+\begin{longtable}{@{}p{3.6cm} p{2.0cm} p{9.5cm}@{}}
+\toprule
+\textbf{Parte} & \textbf{Estado} & \textbf{Detalle} \\
+\midrule
+\endhead
+Firmware de la base & \ok\ código & 20 pruebas OK; micro-ROS probado con la placa sola (tasas nominales, armado,
+  reconexión). \textbf{Sin probar con motores ni sensores.} \\
+Firmware del brazo & \ok\ código & 17 pruebas OK; J1 medido en el banco (\cod{pruebas-esp32/10}). Pines v0.5 sin
+  flashear en la Pi. J2/J3 sin motores. \\
+\cod{brazo\_ik} & \ok & 7 pruebas OK; probado en la notebook. \\
+\cod{mision} y \cod{recorrido} & \ok\ sim & 30 pruebas OK; 12 de 12 limones en la simulación. Sin probar con el brazo real. \\
+Simulación & \ok & Gazebo Harmonic con base, brazo, sensores y hilera. \\
+Visión & \ok\ lab & Estéreo calibrado (RMS 0,36~px); limón real con error 3D $\leq$ 17~mm. Falta la prueba de campo. \\
+YOLO & parcial & Una clase (\cod{limon}); B3 pide tres. \\
+Potencia & armando & Diseño v0.7 revisado por Codex; faltan el portafusible y cambiar el Deans por XT60. \\
+Placas & armando & Diseño de las perforadas y los shields listo (\archivo{docs/html/}). \\
+Cableado general & $\sim$10~\% & \\
+GPS & configurado & Pi lista, falta conectar el módulo. \\
+App móvil, luz, buzzer & después & Después de la prueba integrada. \\
+\bottomrule
+\end{longtable}
+
+\section{Valores marcados MEDIR}
+
+\begin{longtable}{@{}p{4.8cm} p{4.2cm} p{6.5cm}@{}}
+\toprule
+\textbf{Valor} & \textbf{Dónde} & \textbf{Cómo} \\
+\midrule
+\endhead
+\cod{cuentasPorVuelta} (8316) & \archivo{base\_config.h} & 10 vueltas a mano (paso 2) \\
+Radio de rueda (0,075) y trocha (0,40) & \cod{CFG\_DIF} & cinta, avance y giro de 360° (paso 3) \\
+Signos de motores y encoders & \archivo{base\_config.h}, \archivo{brazo\_config.h} & \cod{d} y \cod{e} \\
+Modelo y PI de las ruedas & \cod{CFG\_RUEDA} & \cod{log} + \cod{d} \\
+J2/J3: $K$, $\tau$, zona muerta, PI & \cod{CFG\_ART} & pasos 0--3 de \archivo{pruebas-esp32/10} \\
+\cod{HOME\_Q}, \cod{POSE\_CERO} & \archivo{brazo\_config.h} & con la mecánica armada \\
+Pulsos de los servos & \archivo{brazo\_config.h} & sin forzar la pinza contra el tope \\
+Balancín del cuatro barras (40 o 60~mm) & \archivo{cinematica.py} & calibre \\
+\cod{largo\_herramienta} & \cod{brazo\_ik} y \cod{mision} & muñeca → centro del agarre \\
+\cod{cierre} & \cod{mision} & con un limón, sin aplastar \\
+TF \cod{brazo\_base} → \cod{stereo\_camera\_link} & \archivo{mision.launch.py} & cinta + limón medido \\
+Zona útil de la cámara real & \cod{ParRecorrido} & $f = 654{,}3$, $u_\text{mín} \approx 163$ \\
+Parada real por watchdog & — & cinta, a 0,25~m/s \\
+Peso del robot y autonomía real & — & balanza; pinza amperométrica \\
+\bottomrule
+\end{longtable}
+
+\section{Plan hasta la entrega (9/11/2026)}
+
+\begin{center}
+\begin{tabular}{@{}lp{12cm}@{}}
+\toprule
+\textbf{Semana} & \textbf{Objetivo} \\
+\midrule
+6--12/10 & Potencia + S3 + sensores + visión real \\
+13--19/10 & Base con teleop, GPS/IMU, soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados \\
+20--26/10 & Hilera real, app, TF \\
+27/10--2/11 & J2/J3 (partiendo de J1) y \cod{mision} real \\
+3--9/11 & Integración, 30 frutos, informes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Mantener la Pi al día}
+
+La Pi tiene una copia del repo por \cod{rsync} (sin \cod{.git}) en \archivo{\textasciitilde/recolector\_de\_frutas}. El
+comando \cod{/pi-sync} de Claude Code hace: \cod{rsync} del repo, \cod{colcon build} de los paquetes que cambiaron y, si
+cambió el firmware, compilar y flashear los ESP32 desde la Pi. Pendiente a la fecha: recompilar \cod{mision} (seta) y
+reflashear la base (LiPo, 08/10) y el brazo (pines v0.5, 12/10).
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{En la Pi} & \textbf{Qué hay} \\
+\midrule
+\archivo{\textasciitilde/recolector\_de\_frutas} & copia del repo \\
+\archivo{\textasciitilde/vision\_estereo} & repo de visión (clon de git) \\
+\archivo{\textasciitilde/microros\_ws} & agente micro-ROS \\
+\archivo{\textasciitilde/firmware/<base|brazo>} & binarios para flashear \\
+\archivo{\textasciitilde/venvs/esptool} & esptool \\
+\archivo{\textasciitilde/scripts}, \archivo{\textasciitilde/logs} & scripts y registros \\
+\archivo{\textasciitilde/ros/}, \archivo{\textasciitilde/venvs/} & workspaces y entornos de Python \\
+\bottomrule
+\end{tabular}
+\end{center}

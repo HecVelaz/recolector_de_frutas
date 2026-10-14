@@ -1,0 +1,302 @@
+\chapter{ROS 2 desde cero}\label{cap:ros2}
+
+Este capítulo explica ROS~2 con los ejemplos del propio robot. Al terminarlo se puede mirar qué pasa dentro del
+robot, mandarle órdenes a mano y escribir un nodo propio.
+
+\section{Los conceptos}
+
+\subsection{Nodos, tópicos y mensajes}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm and 18mm]
+  \node[nodo] (tel) {\cod{teleop\_twist\_keyboard}\\(publica)};
+  \node[draw=acento,thick,fill=white,rounded corners=10pt,right=of tel,font=\ttfamily\small] (top) {/cmd\_vel};
+  \node[nodo,right=of top] (base) {ESP32-S3 (micro-ROS)\\(suscribe)};
+  \node[nodo,below=of top] (bag) {\cod{ros2 bag record}\\(también suscribe)};
+  \draw[datos] (tel) -- node[topico,above]{Twist} (top);
+  \draw[datos] (top) -- node[topico,above]{Twist} (base);
+  \draw[datos] (top) -- (bag);
+  \node[font=\scriptsize,gris,below=1mm of top,xshift=22mm] {tipo: \cod{geometry\_msgs/msg/Twist}};
+\end{tikzpicture}
+\caption{Un tópico es un canal con nombre. Quien publica no sabe quién escucha, y puede haber varios de cada lado.}
+\end{figure}
+
+\begin{description}
+  \item[Nodo] Un programa que participa del sistema: \cod{brazo\_ik}, \cod{mision}, el detector YOLO, cada ESP32.
+  \item[Tópico] Un canal con nombre, como \topic{/cmd\_vel}. Cualquier nodo puede publicar en él o suscribirse.
+  \item[Mensaje] Lo que viaja por el tópico. Tiene un \textbf{tipo fijo} con campos definidos. Por ejemplo
+        \cod{geometry\_msgs/msg/Twist} tiene \cod{linear} (x, y, z) y \cod{angular} (x, y, z). En \topic{/cmd\_vel}
+        solo se usan \cod{linear.x} (avance, m/s) y \cod{angular.z} (giro, rad/s).
+  \item[Publicar / suscribir] Mandar mensajes / recibirlos. Es asincrónico: el que publica no espera respuesta.
+\end{description}
+
+\subsection{Otras piezas}
+\begin{description}
+  \item[Parámetros] Valores de configuración de un nodo (\cod{largo\_herramienta}, \cod{marco}\ldots). Se pasan al
+        arrancar (\cod{--ros-args -p nombre:=valor}) o desde un \textit{launch}.
+  \item[Launch] Un archivo Python que arranca varios nodos con sus parámetros de una vez
+        (\archivo{mision.launch.py}, \archivo{sim.launch.py}, \archivo{limon.launch.py}).
+  \item[TF] Árbol de marcos de coordenadas. Cada mensaje con posición dice en qué marco está (\cod{header.frame\_id}),
+        y TF sabe convertir de un marco a otro. Ej.: el limón llega en \cod{camera} y el brazo lo necesita en
+        \cod{brazo\_base}.
+  \item[Paquete] Carpeta con nodos, \textit{launch} y pruebas, que se compila con \cod{colcon}. En este repo:
+        \cod{brazo\_ik}, \cod{mision}, \cod{simulacion} (en \archivo{ros2\_ws/src/}); en el repo de visión,
+        \cod{yolo\_ros}.
+  \item[Workspace] Carpeta con un \archivo{src/} de paquetes. \cod{colcon build} crea \archivo{build/},
+        \archivo{install/} y \archivo{log/}.
+  \item[Descubrimiento (DDS)] Los nodos se encuentran solos por la red local. Todos los que estén en la misma LAN y el
+        mismo \cod{ROS\_DOMAIN\_ID} (0 por defecto) se ven entre sí.
+\end{description}
+
+\begin{peligro}[Cualquier computadora de la red puede mover el robot]
+Una notebook con ROS~2 en la misma red Wi-Fi que la Pi ve los tópicos de los ESP32 reales y los puede comandar. La
+simulación se aísla con \cod{export ROS\_AUTOMATIC\_DISCOVERY\_RANGE=LOCALHOST} en cada terminal (el \textit{launch}
+de la simulación ya lo pone). Con el robot real, no dejar nodos corriendo con el brazo armado si no se usan.
+\end{peligro}
+
+\section{Preparar una terminal}
+
+Cada terminal nueva necesita ``cargar'' ROS~2 y los workspaces que se vayan a usar:
+
+\begin{lstlisting}[language=consola]
+source /opt/ros/jazzy/setup.bash                    # ROS 2 base (siempre)
+source ~/microros_ws/install/local_setup.bash       # para correr el agente micro-ROS (en la Pi)
+source ~/recolector_de_frutas/ros2_ws/install/setup.bash   # brazo_ik, mision, simulacion
+source ~/yolo_ws/install/setup.bash                 # yolo_ros (visión, en la Pi)
+\end{lstlisting}
+
+Compilar los paquetes del robot (después de cambiar algo):
+
+\begin{lstlisting}[language=consola]
+cd ~/recolector_de_frutas/ros2_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install            # --symlink-install: los .py se enlazan, no hace falta recompilar al editarlos
+source install/setup.bash
+colcon test && colcon test-result --verbose   # correr las pruebas
+\end{lstlisting}
+
+Conectarse a la Pi:
+\begin{lstlisting}[language=consola]
+ssh r2d2@100.116.96.71          # por Tailscale (desde cualquier red); en la LAN del lab: 192.168.2.219
+\end{lstlisting}
+
+\section{Mirar qué está pasando}
+
+\begin{longtable}{@{}p{7.2cm} p{8.3cm}@{}}
+\toprule
+\textbf{Comando} & \textbf{Para qué} \\
+\midrule
+\endhead
+\cod{ros2 node list} & Qué nodos están corriendo \\
+\cod{ros2 topic list -t} & Qué tópicos existen y de qué tipo \\
+\cod{ros2 topic echo /base/estado --field data} & Ver los mensajes que llegan (\cod{--field} muestra un solo campo) \\
+\cod{ros2 topic echo /odom --once} & Ver un solo mensaje y salir \\
+\cod{ros2 topic hz /odom} & A qué frecuencia llega (debería ser 25~Hz) \\
+\cod{ros2 topic info -v /cmd\_vel} & Quién publica y quién está suscripto \\
+\cod{ros2 interface show geometry\_msgs/msg/Twist} & Qué campos tiene un tipo de mensaje \\
+\cod{ros2 param list /brazo\_ik} & Parámetros de un nodo \\
+\cod{ros2 param get /brazo\_ik largo\_herramienta} & Leer un parámetro \\
+\cod{rqt\_graph} & Dibujo del grafo de nodos y tópicos (pide entorno gráfico) \\
+\cod{ros2 run tf2\_ros tf2\_echo brazo\_base camera} & Transformación entre dos marcos \\
+\cod{ros2 bag record /odom /cmd\_vel /imu/data\_raw} & Grabar tópicos a un archivo (para analizar o para la entrega) \\
+\cod{ros2 bag play <carpeta>} & Reproducir una grabación \\
+\bottomrule
+\end{longtable}
+
+\section{Publicar a mano: \cod{ros2 topic pub}}
+
+La forma general es:
+\begin{lstlisting}[language=consola]
+ros2 topic pub [--once | -r <Hz>] <tópico> <tipo> "<mensaje en YAML>"
+\end{lstlisting}
+\begin{itemize}
+  \item \cod{--once}: publica una vez y sale (para comandos).
+  \item \cod{-r 10}: publica 10 veces por segundo hasta Ctrl+C (para \topic{/cmd\_vel}: el watchdog de la base frena
+        si deja de llegar por 300~ms).
+  \item El mensaje va en YAML: \cod{\{campo: valor, otro: \{sub: valor\}\}}. Los campos que no se escriben quedan en 0.
+\end{itemize}
+
+\subsection{Ejemplos con el robot}
+
+\textbf{Armar la base y avanzar} (con las ruedas en el aire la primera vez):
+\begin{lstlisting}[language=consola]
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 'armar'}"
+ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}, angular: {z: 0.0}}"
+# Ctrl+C: deja de publicar y en 300 ms la base frena sola (watchdog)
+\end{lstlisting}
+
+\textbf{Girar en el lugar} a 0,5~rad/s hacia la izquierda:
+\begin{lstlisting}[language=consola]
+ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.5}}"
+\end{lstlisting}
+
+\textbf{Manejar con el teclado} (más cómodo):
+\begin{lstlisting}[language=consola]
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+# i = adelante, , = atrás, j/l = girar, k = parar, q/z = más/menos velocidad
+\end{lstlisting}
+
+\textbf{Brazo}: fijar el cero, armar y mover J2 a 45° (0,79~rad):
+\begin{lstlisting}[language=consola]
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'z'}"
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'armar'}"
+ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], position: [0.79]}"
+ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j1, j2, j3], position: [1.57, 1.2, -0.3]}"
+\end{lstlisting}
+
+\textbf{Pinza}: cerrar al 60~\% y girar 45°:
+\begin{lstlisting}[language=consola]
+ros2 topic pub --once /pinza/cierre std_msgs/msg/Float32 "{data: 60.0}"
+ros2 topic pub --once /pinza/giro std_msgs/msg/Float32 "{data: 45.0}"
+\end{lstlisting}
+
+\textbf{Mandar el brazo a un punto} (con \cod{brazo\_ik} corriendo): el ejemplo de la E4 tiene que dar
+$q = (0^\circ, 45^\circ, 0^\circ)$. Ojo: $q_1 = 0$ está fuera del rango de J1, así que se usa un punto a la izquierda:
+\begin{lstlisting}[language=consola]
+ros2 run brazo_ik nodo_ik &
+ros2 topic echo /brazo/ik_estado --field data &
+ros2 topic pub --once /brazo/objetivo geometry_msgs/msg/PointStamped \
+  "{header: {frame_id: brazo_base}, point: {x: 0.0, y: 0.36832, z: 0.09103}}"
+# /brazo/ik_estado: "ok q=[90.0, 45.0, 0.0]°"
+\end{lstlisting}
+
+\textbf{Detener todo}:
+\begin{lstlisting}[language=consola]
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 's'}"
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 's'}"
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 'desarmar'}"
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'desarmar'}"
+\end{lstlisting}
+
+\section{Los tipos de mensaje que usa el robot}
+
+{\small\begin{longtable}{@{}p{4.7cm} p{4.4cm} p{6.4cm}@{}}
+\toprule
+\textbf{Tipo} & \textbf{Tópicos} & \textbf{Campos que importan} \\
+\midrule
+\endhead
+\cod{geometry\_msgs/Twist} & \topic{/cmd\_vel} & \cod{linear.x} [m/s], \cod{angular.z} [rad/s] \\
+\cod{nav\_msgs/Odometry} & \topic{/odom} & \cod{pose.pose.position.x/y}, \cod{pose.pose.orientation} (cuaternión), \cod{twist.twist} \\
+\cod{sensor\_msgs/Imu} & \topic{/imu/data\_raw} & \cod{linear\_acceleration} [m/s²], \cod{angular\_velocity} [rad/s] \\
+\cod{sensor\_msgs/Range} & \topic{/range/frente}, \cod{izq}, \cod{der} & \cod{range} [m]; +Inf = nada; NaN = sin eco \\
+\cod{std\_msgs/UInt8} & \topic{/bumpers} & bit 0 frente, bit 1 izquierda, bit 2 derecha \\
+\cod{sensor\_msgs/BatteryState} & \topic{/battery} & \cod{voltage} [V] \\
+\cod{std\_msgs/String} & \topic{/base/estado}, \topic{/base/comando}, \topic{/brazo/estado}\ldots & \cod{data}: texto \\
+\cod{sensor\_msgs/JointState} & \topic{/brazo/joint\_cmd}, \topic{/brazo/joint\_states} & \cod{name} (\cod{j1..j3}), \cod{position} [rad], \cod{velocity} [rad/s] \\
+\cod{std\_msgs/Float32} & \topic{/pinza/cierre}, \topic{/pinza/giro} & \cod{data}: \% o grados \\
+\cod{geometry\_msgs/PointStamped} & \topic{/limon/posicion}, \topic{/brazo/objetivo} & \cod{header.frame\_id}, \cod{point.x/y/z} [m] \\
+\cod{vision\_msgs/Detection2DArray} & \topic{/yolo/detecciones} & cajas (centro, tamaño) y confianza \\
+\cod{sensor\_msgs/NavSatFix} & \topic{/gps/fix} & \cod{latitude}, \cod{longitude} \\
+\bottomrule
+\end{longtable}}
+
+\section{Escribir un nodo propio}
+
+Ejemplo completo: un nodo que escucha \topic{/range/frente} y, si el robot está armado, avanza despacio hasta que
+haya algo a menos de 40~cm. Sirve como plantilla.
+
+\begin{lstlisting}[language=Python]
+# ros2_ws/src/mi_paquete/mi_paquete/avanzar_hasta.py
+import math
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Range
+
+
+class AvanzarHasta(Node):
+    def __init__(self):
+        super().__init__('avanzar_hasta')                       # nombre del nodo
+        self.declare_parameter('distancia', 0.40)               # parámetro con valor por defecto [m]
+        self.declare_parameter('velocidad', 0.08)               # [m/s]
+        self.pub = self.create_publisher(Twist, '/cmd_vel', 10)  # tópico, cola de 10
+        self.create_subscription(Range, '/range/frente', self.al_rango, 10)
+        self.create_timer(0.1, self.paso)                       # 10 Hz (el watchdog de la base es de 300 ms)
+        self.rango = None
+
+    def al_rango(self, msg):                                    # se llama con cada mensaje que llega
+        self.rango = msg.range
+
+    def paso(self):
+        cmd = Twist()                                           # todo en 0 = frenar
+        d = self.get_parameter('distancia').value
+        if self.rango is not None and not math.isnan(self.rango) and self.rango > d:
+            cmd.linear.x = self.get_parameter('velocidad').value
+        self.pub.publish(cmd)
+
+
+def main():
+    rclpy.init()
+    nodo = AvanzarHasta()
+    try:
+        rclpy.spin(nodo)                                        # atiende callbacks hasta Ctrl+C
+    except KeyboardInterrupt:
+        pass
+    nodo.pub.publish(Twist())                                   # frenar al salir
+    nodo.destroy_node()
+    rclpy.try_shutdown()
+\end{lstlisting}
+
+Para registrarlo, en el \archivo{setup.py} del paquete:
+\begin{lstlisting}[language=Python]
+entry_points={'console_scripts': ['avanzar_hasta = mi_paquete.avanzar_hasta:main']},
+\end{lstlisting}
+
+Y para correrlo:
+\begin{lstlisting}[language=consola]
+cd ~/recolector_de_frutas/ros2_ws && colcon build --symlink-install --packages-select mi_paquete
+source install/setup.bash
+ros2 topic pub --once /base/comando std_msgs/msg/String "{data: 'armar'}"
+ros2 run mi_paquete avanzar_hasta --ros-args -p distancia:=0.5 -p velocidad:=0.05
+\end{lstlisting}
+
+\begin{nota}[Cómo están hechos los nodos del robot]
+\cod{mision} y \cod{recorrido} separan la \textbf{lógica} (\archivo{fsm.py}, \archivo{recorrido.py}, sin ROS) del
+\textbf{nodo} (\archivo{nodo\_mision.py}, que solo traduce tópicos a llamadas). Así la lógica se prueba con
+\cod{pytest} sin ROS ni hardware. \cod{brazo\_ik} hace lo mismo con \archivo{cinematica.py}. Conviene seguir ese
+patrón en los nodos nuevos.
+\end{nota}
+
+\section{Un \textit{launch} mínimo}
+
+\begin{lstlisting}[language=Python]
+# launch/demo.launch.py
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package='brazo_ik', executable='nodo_ik', parameters=[{'largo_herramienta': 0.075}]),
+        Node(package='tf2_ros', executable='static_transform_publisher',
+             arguments=['--x', '-0.10', '--y', '0', '--z', '0.35',
+                        '--frame-id', 'brazo_base', '--child-frame-id', 'stereo_camera_link']),
+    ])
+\end{lstlisting}
+
+\begin{lstlisting}[language=consola]
+ros2 launch mi_paquete demo.launch.py
+\end{lstlisting}
+
+\section{Marcos de coordenadas (TF) del robot}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.append style={font=\small}]
+  \node[caja] (odom) at (0,0) {\cod{odom}};
+  \node[caja] (bl) at (4,0) {\cod{base\_link}};
+  \node[caja] (bb) at (9,0) {\cod{brazo\_base}};
+  \node[caja] (scl) at (9,-2.2) {\cod{stereo\_camera\_link}};
+  \node[caja] (cam) at (14,-2.2) {\cod{camera}};
+  \node[caja] (imu) at (2.5,-2.2) {\cod{imu\_link}};
+  \node[caja] (gps) at (5.5,-2.2) {\cod{gps\_link}};
+  \draw[flecha] (odom) -- node[topico,above]{/odom (S3)} (bl);
+  \draw[flecha,dashed] (bl) -- node[topico,above]{fija (MEDIR)} (bb);
+  \draw[flecha] (bb) -- node[topico,right]{\cod{mision.launch.py}} (scl);
+  \draw[flecha] (scl) -- node[topico,above]{\cod{limon.launch.py}} (cam);
+  \draw[flecha] (bl) -- (imu); \draw[flecha] (bl) -- (gps);
+\end{tikzpicture}
+\caption{Árbol de marcos. \cod{camera} es el marco óptico \textbf{rectificado} de la cámara izquierda ($x$ a la
+derecha, $y$ hacia abajo, $z$ hacia adelante). \topic{/limon/posicion} viene en \cod{camera};
+\topic{/brazo/objetivo} tiene que estar en \cod{brazo\_base}.}
+\end{figure}
