@@ -30,7 +30,7 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 > microinterruptores V-152-1C25 con rodillo, SPDT (1 NA + 1 NC), para bumpers y finales de carrera (`docs/fotos/bumpers/`);
 > 2 motores 36-555 de 58 rpm (139:1) para J2 y J3 (`docs/fotos/motor_j2/`).
 
-> **Agregado (08/10/2026):** power bank Xiaomi PB2030MI 20000 mAh, 33 W, 5 V 3 A, cable USB-C incorporado, para la Pi 5
+> **Agregado (08/10/2026):** power bank Xiaomi PB2020MI 20000 mAh, 22,5 W, 5 V 3 A, cable USB-C incorporado, para la Pi 5
 > (`docs/fotos/bateria 3/`); térmica CHINT NXB-63 C10 (`docs/fotos/llaves/llave.jpeg`; 10/10: sale, la reemplaza el selector WEG con 2 bloques NA BC10).
 > **Agregado (10/10/2026):** selector WEG con 2 bloques BC10 NA 3-4 (`docs/fotos/llaves/selector.jpeg`) y seta AdvanCon con
 > 2 bloques NC SIB2-BE102 (`docs/fotos/llaves/hongo.jpeg`); fusible de auto de 20 A.

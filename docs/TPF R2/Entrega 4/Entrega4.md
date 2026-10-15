@@ -245,11 +245,11 @@ El robot dura lo que dura la LiPo: **~2,1 h de cosecha**.
 
 <div align="center"><b>Figura 15.</b> Dimensiones de la LiPo: 138 × 47 × 36 mm, 493 g.</div>
 
-**Lógica: power bank Xiaomi PB2030MI.** 20000 mAh, 33 W, salida de 5 V 3 A por cable USB-C incorporado, con protecciones de cortocircuito, sobrecorriente, sobredescarga y temperatura. Alimenta la Pi 5, y la Pi a los dos ESP32 por USB. La Pi 5 pide 5 V 5 A para dar 1,6 A a sus USB; con 5 V 3 A funciona igual, pero limita a 600 mA el total de los USB y del ventilador [1]. Los dos ESP32 con sus sensores consumen ~400 mA, así que entran; se verifica con `vcgencmd get_throttled` = `0x0` con la visión corriendo.
+**Lógica: power bank Xiaomi PB2020MI.** 20000 mAh, 22,5 W, salida de 5 V 3 A por cable USB-C incorporado, con protecciones de cortocircuito, sobrecorriente, sobredescarga y temperatura. Alimenta la Pi 5, y la Pi a los dos ESP32 por USB. La Pi 5 pide 5 V 5 A para dar 1,6 A a sus USB; con 5 V 3 A funciona igual, pero limita a 600 mA el total de los USB y del ventilador [1]. Los dos ESP32 con sus sensores consumen ~400 mA, así que entran; se verifica con `vcgencmd get_throttled` = `0x0` con la visión corriendo.
 
 <div align="center"><img src="Imágenes/power_bank_xiaomi_pb2030mi.jpg" width="600"></div>
 
-<div align="center"><b>Figura 16.</b> Power bank Xiaomi PB2030MI (Pi 5 y ESP32).</div>
+<div align="center"><b>Figura 16.</b> Power bank Xiaomi PB2020MI (Pi 5 y ESP32).</div>
 
 ### 4.5 Circuito de potencia y protecciones
 

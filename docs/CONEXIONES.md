@@ -1,7 +1,7 @@
 # Conexiones del robot
 
 Versión 0.6 — 08/10/2026 (09/10: **la LiPo pasa a XT60** porque no hay Deans hembra, par de XT60 en `fotos/conectores/`; **la seta ya está**, `fotos/llaves/`): **los motores van con la LiPo 3S directa** (sin buck 1 ni Schottky; la 10S queda guardada) y
-**la Pi con el power bank Xiaomi PB2030MI**. Divisor de batería 100 k / 30 k (firmware cambiado). **Protección de la
+**la Pi con el power bank Xiaomi PB2020MI**. Divisor de batería 100 k / 30 k (firmware cambiado). **Protección de la
 LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `html/conexiones.html` y
 `html/placa_s3.html` ya están en la v0.6.
 10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
@@ -130,14 +130,14 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | USB | ESP32-WROOM (brazo) | micro-ROS |
 | USB | LiDAR | fuera del mínimo |
 | GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V |
-| USB-C | Power bank Xiaomi PB2030MI (5 V 3 A) | sin `usb_max_current_enable`: USB limitados a 600 mA (alcanza) |
+| USB-C | Power bank Xiaomi PB2020MI (5 V 3 A) | sin `usb_max_current_enable`: USB limitados a 600 mA (alcanza) |
 
 ## Alimentación (v0.6: LiPo 3S + power bank)
 
 - **Motores: LiPo Zeee 3S1P** 11,1 V (9,9-12,6 V), 8000 mAh (88,8 Wh), 100C, Deans (T) de fábrica **cambiado por XT60** (09/10: no hay Deans hembra), balanceo JST-XH, 493 g,
   **sin BMS** (`docs/fotos/bateria 2/`). Los motores son de 12 V y el IBT-2 acepta 5,5-27 V: van **directo, sin
   buck**. Hay cargador balanceador.
-- **Lógica: power bank Xiaomi PB2030MI** 20000 mAh (~74 Wh), 33 W, salida 5 V 3 A por cable USB-C incorporado,
+- **Lógica: power bank Xiaomi PB2020MI** 20000 mAh (~74 Wh), 22,5 W, salida 5 V 3 A por cable USB-C incorporado,
   12,7 × 7,5 × 3 cm (`docs/fotos/bateria 3/`). Trae protección de cortocircuito, sobrecorriente, sobredescarga y
   temperatura. Alimenta la Pi y, por sus USB, los dos ESP32.
 - **Guardada: YONGZHI 10S2P** de 18650, 36 V (30-42 V), 4400 mAh (158 Wh), XT60, con BMS (`docs/fotos/bateria 1/`).
@@ -167,7 +167,7 @@ LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pe
   └─ divisor 100 k / 30 k → S3 GPIO 1 (12,6 V → 2,91 V)
   indicador de barras (1S-8S) en el conector de balanceo, a la vista
 
-Power bank Xiaomi PB2030MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
+Power bank Xiaomi PB2020MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
   └─ USB → ESP32-S3 y WROOM (y de sus pines de 5 V/3V3: encoders, IMU, HC-SR04, lógica de los IBT-2)
 seta, bloque B NC → S3 GPIO 47 (el otro lado a GND; directo, sin capacitor). Nunca 12 V en este bloque.
 GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.

@@ -13,7 +13,7 @@ directa y la Pi con el power bank: no hace falta ningún buck nuevo.
 
 ## Potencia (v0.6, 08/10: solo con lo que hay)
 
-Ya está: LiPo 3S y su cargador balanceador (motores), selector WEG, par de XT60, seta, power bank Xiaomi PB2030MI (Pi y
+Ya está: LiPo 3S y su cargador balanceador (motores), selector WEG, par de XT60, seta, power bank Xiaomi PB2020MI (Pi y
 ESP32), cable grueso, borneras, capacitores, resistencias. La 10S queda guardada. **No se compra** lo de la v0.4 (Schottky ≥ 30 A, 2200 µF,
 TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0.6.
 
@@ -22,7 +22,7 @@ TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0
       Reemplaza a la térmica CHINT C10, que se saca
 - [x] **Fusible de auto de lámina de 20 A** (10/10: ya está; falta confirmar el portafusible), pegado al XT60 de la LiPo: la única protección real
       contra un corto (los de auto son para continua hasta 32 V). Buscar primero en el lab o en un auto viejo
-- [x] Power bank Xiaomi PB2030MI 20000 mAh, 5 V 3 A: alimenta la Pi (`fotos/bateria 3/`)
+- [x] Power bank Xiaomi PB2020MI 20000 mAh, 5 V 3 A: alimenta la Pi (`fotos/bateria 3/`)
 - [x] Seta (09/10, `fotos/llaves/hongo.jpeg`): hongo de 22 mm modular, giro para liberar, con 2 bloques NC (10/10): corte del
       + del bus de 12 V + aviso al GPIO 47
 - [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores
