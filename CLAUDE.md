@@ -199,6 +199,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
+0. **Power bank corregido (15/10):** es el **PB2020MI** (22,5 W), no el PB2030MI; corregido en docs, HTML, manual y Entrega 4 local,
+   y republicados `potencia`, `conexiones` y `todo` (que además seguían con el divisor de 27 k). Falta: a) la Entrega 4 en **Drive**
+   (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
+   b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar);
+   c) republicar `placa_s3` (Eh7aHHJxkqLbDRWDK8V4QC), que probablemente siga con 27 k.
 1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60;
    buscar los capacitores (≥ 25 V). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
