@@ -42,7 +42,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   chica de distribución (rieles 5 V, 3,3 V, EN, GND y 6 V). **Pines v0.5:** encoder J2 en 36/39 y FC J1/J2 en 32/33:
   la única resistencia es el 10 k del EN (23); sin 100 nF (el homing pide 3 lecturas). Pinouts en `docs/fotos/esp32 s3 wroom/` y
   `docs/fotos/esp32 wroom 32D/`. **Verificar en qué pin está el LED RGB de la S3**: en la DevKitC-1 v1.1 es el 38 (EN
-  de la tracción); `pins.h` supone el 48.
+  de la tracción); `pins.h` supone el 48. **Pines de la S3 vigentes = los de `bb9263d`** (los v0.8 "por lado" del
+  15/10 se revirtieron el 16/10 a pedido del usuario: no volver a proponerlos). Diagramas de cableado (16/10): cada
+  resistencia a GND dibujada con su símbolo de tierra y debajo del pin un "↳" con la perforada y la tira donde va
+  (campo `lugar` del pin). EN: R_EN y L_EN unidos directo, GPIO directo al nodo y el 10 k del nodo a GND (pull-down, no en serie).
 - Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
   20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
@@ -202,8 +205,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 0. **Power bank corregido (15/10):** es el **PB2020MI** (22,5 W), no el PB2030MI; corregido en docs, HTML, manual y Entrega 4 local,
    y republicados `potencia`, `conexiones` y `todo` (que además seguían con el divisor de 27 k). Falta: a) la Entrega 4 en **Drive**
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
-   b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar);
-   c) republicar `placa_s3` (Eh7aHHJxkqLbDRWDK8V4QC), que probablemente siga con 27 k.
+   b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
+   `placa_s3` ya está republicada con 30 k (16/10).
 1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60;
    buscar los capacitores (≥ 25 V). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
