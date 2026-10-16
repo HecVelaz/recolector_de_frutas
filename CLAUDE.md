@@ -31,7 +31,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
   Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; Pi configurada, falta conectar el GPS) por un HAT pasivo de borneras.
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
-  3 HC-SR04 (un TRIG cada uno: 17/15/10, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
+  3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
   2 servos. **J2/J3: 36-555 de 58 rpm (139:1; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y
   correa GT2 5:1 (poleas 20 → 100, correa de 240 mm, ~54 mm entre centros). Llegan entre el 19 y el 29/10**
   (por qué se cambió el sin fin 5840 y la versión de 98 rpm: `docs/BITACORA.md`); pines v0.5 en `firmware/brazo/include/pins.h` (12/10). Total: 5 IBT-2.
@@ -42,9 +42,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   chica de distribución (rieles 5 V, 3,3 V, EN, GND y 6 V). **Pines v0.5:** encoder J2 en 36/39 y FC J1/J2 en 32/33:
   la única resistencia es el 10 k del EN (23); sin 100 nF (el homing pide 3 lecturas). Pinouts en `docs/fotos/esp32 s3 wroom/` y
   `docs/fotos/esp32 wroom 32D/`. **Verificar en qué pin está el LED RGB de la S3**: en la DevKitC-1 v1.1 es el 38 (EN
-  de la tracción; si en la Freenove también, EN al 14); `pins.h` supone el 48. **Pines v0.8 de la S3 (15/10, revisado por
-  Codex): ordenados por lado de la Freenove**: rueda izq. (PWM 4/5, enc 6/7) en la columna izquierda y rueda der.
-  (PWM 42/41, enc 40/39) en la derecha (`docs/CONEXIONES.md`). Falta flashearlo en la Pi.
+  de la tracción); `pins.h` supone el 48.
 - Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
   20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
@@ -187,7 +185,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Cualquier nodo de ROS 2 en la misma LAN que la Pi ve y comanda los ESP32 reales (dominio 0): la simulación va
   aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`; con el robot real, no dejar agentes corriendo con el brazo
   armado si no se usa.
-- EN común de tracción y GPS en la Pi (luz y buzzer, cuando vuelvan, también: GPIO 17 y 27): la S3 solo tiene libre el GPIO 14 (reservado para un 4.º bumper).
+- EN común de tracción y GPS en la Pi (luz y buzzer, cuando vuelvan, también: GPIO 17 y 27): la S3 solo tiene libre el GPIO 40 (reservado para un 4.º bumper).
   GPS a la Pi (30/09) para dar un TRIG a cada HC-SR04: los 3 miran al frente y con TRIG común se pisaban los ecos.
 - Videos (~500 MB) y artículos de terceros fuera de git.
 - Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo tiene una zona ciega a la izquierda de la
@@ -222,7 +220,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
 5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).
-6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 14 de la S3.
+6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
 7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —
    luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta ya corta los 12 V de
    todos los motores. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).

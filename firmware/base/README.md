@@ -87,7 +87,7 @@ $PIO run -t upload -t monitor     # flashear (12 V de los motores APAGADOS) y ab
 ### GPS en la Pi (30/09)
 
 El UP501 va al UART del header de la Pi 5 (HAT de borneras): TX del GPS → GPIO 15 (RXD, pin 10), RX del GPS ←
-GPIO 14 (TXD, pin 8), 3,3 V y GND. Liberó los GPIO 41/42 de la S3 (hoy, PWM del IBT-2 derecho). Publica en el
+GPIO 14 (TXD, pin 8), 3,3 V y GND. Liberó los GPIO 41/42 de la S3, que ahora son TRIG de los HC-SR04. Publica en el
 mismo `/gps/fix` que antes publicaba la S3:
 
 ```bash
