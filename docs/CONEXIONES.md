@@ -9,6 +9,9 @@ la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable
 10/10 (v0.7): **la seta corta el + del bus de 12 V** (bloque A entre el selector y la bornera +12 V; decisión del grupo,
 más simple y corta también el brazo y los servos) y el bloque B avisa al GPIO 47. El EN de la tracción ya no pasa por
 la seta. Cable por cable: `html/seta.html`.
+15/10 (v0.8): **pines de la S3 reordenados por lado** (revisado por Codex): lo de la rueda izquierda (IBT-2 y encoder)
+va a la columna izquierda de la Freenove y lo de la derecha a la derecha, para que no se crucen cables. El reservado
+para el 4.º bumper pasa del 40 al 14.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
 fusibles. La Pi 5 pasa al power bank.
@@ -43,7 +46,7 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 - **Divisor de batería 100 k / 30 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
-- HC-SR04 **central** (TRIG 10, ECHO 11 con divisor 1 k / 2 k): sin su dato la base no avanza.
+- HC-SR04 **central** (TRIG 17, ECHO 18 con divisor 1 k / 2 k): sin su dato la base no avanza.
 - Power bank → Pi (cámaras) → S3 y WROOM por USB; GND de las dos placas a la bornera de GND de motores.
 - Brazo: J1 (J2 y J3 cuando lleguen), sus finales de carrera (el homing los usa), el servo de apertura y el buck 3.
   **Con J1 sola, la prueba es base + visión + J1 a mano** (`/brazo/comando`): `mision` mueve las tres articulaciones
@@ -64,24 +67,29 @@ Recorrido autónomo, luz, buzzer, habilitación del brazo, app y LiDAR: después
 
 ## ESP32-S3 · base
 
-Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa 22 GPIO; queda libre el 40 (reservado por si la
-cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRIG. Sin capacitores (13/10): bumpers
+Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa 22 GPIO; queda libre el 14 (reservado por si la
+cátedra pide el 4.º bumper). **v0.8 (15/10): columna izquierda de la Freenove = rueda izquierda, IMU, HC-SR04 y bumpers
+izq./frente; columna derecha = rueda derecha, EN, seta, bumper der. y batería.** Solo el EN común (38) va de un lado
+al otro: llevarlo rodeando la placa. Verificar que el LED RGB de la Freenove no esté en el 38 (si está, EN al 14). El GPS pasó a la Pi (30/09) para liberar dos TRIG. Sin capacitores (13/10): bumpers
 y seta van directo con el pull-up interno. Quedan las resistencias que no se pueden sacar: divisores 1 k / 2 k de los
 ECHO (salen a 5 V), 20 k de los encoders (salen a 5 V y piden Vcc ≥ 5 V), 10 k del EN (38) y el divisor de batería.
 
-| GPIO | Conecta a | Nota |
-|---|---|---|
-| 4 · 5 | IBT-2 izquierdo RPWM · LPWM | 20 kHz |
-| 6 · 7 | IBT-2 derecho RPWM · LPWM | 20 kHz |
-| 38 | R_EN + L_EN de los dos IBT-2 | pull-down 10 kΩ |
-| 15 · 16 | Encoder izquierdo A · B | amarillo · blanco; ver "Antes de conectar" |
-| 17 · 18 | Encoder derecho A · B | amarillo · blanco |
-| 8 · 9 | IMU SDA · SCL | 400 kHz, 0x68 |
-| 10 · 41 · 42 | TRIG del HC-SR04 central · esquina izq. · esquina der. | de a uno, cada 40 ms |
-| 11 · 12 · 13 | ECHO frente · izquierda · derecha | divisor 1 k / 2 k |
-| 14 · 21 · 39 | Bumpers frente · izquierda · derecha | NA a GND, pull-up interno (GPIO 40 queda libre) |
-| 47 | Bloque B (**NC**) de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
-| 1 | Divisor de batería 100 k / 30 k (LiPo 3S) | ADC1 canal 0 (12,6 V → 2,91 V) |
+| GPIO | Lado | Conecta a | Nota |
+|---|---|---|---|
+| 4 · 5 | izq. | IBT-2 izquierdo RPWM · LPWM | 20 kHz |
+| 6 · 7 | izq. | Encoder izquierdo A · B | amarillo · blanco, 20 k a GND; ver "Antes de conectar" |
+| 15 · 16 | izq. | HC-SR04 esquina izq.: TRIG · ECHO | ECHO con divisor 1 k / 2 k |
+| 17 · 18 | izq. | HC-SR04 central: TRIG · ECHO | ídem; de a uno, cada 40 ms |
+| 8 · 9 | izq. | IMU SDA · SCL | 400 kHz, 0x68 |
+| 10 · 11 | izq. | HC-SR04 esquina der.: TRIG · ECHO | ídem (no entra en la columna derecha) |
+| 12 · 13 | izq. | Bumpers izquierdo · frente | NA a GND, pull-up interno |
+| 14 | izq. | Libre: 4.º bumper | |
+| 42 · 41 | der. | IBT-2 derecho RPWM · LPWM | 20 kHz |
+| 40 · 39 | der. | Encoder derecho A · B | amarillo · blanco, 20 k a GND |
+| 38 | der. | R_EN + L_EN de los dos IBT-2 | pull-down 10 kΩ; el cable al IBT-2 izq. rodea la placa |
+| 21 | der. | Bumper derecho | NA a GND, pull-up interno |
+| 47 | der. | Bloque B (**NC**) de la seta | a GND, pull-up: HIGH = apretada o cable cortado |
+| 1 | der. | Divisor de batería 100 k / 30 k (LiPo 3S) | ADC1 canal 0 (12,6 V → 2,91 V) |
 
 ## ESP32-WROOM-32D · brazo (v0.5)
 
@@ -293,7 +301,7 @@ de J2/J3). Con la 10S serían ~3,2 h.
       bajo el tornillo).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
 - [ ] GPIO de reserva: S3 40 (sin ADC) y WROOM 13.
-- [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son bumpers.
+- [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son la reserva del 4.º bumper y el bumper derecho.
 
 ## Decisiones de esta propuesta
 
