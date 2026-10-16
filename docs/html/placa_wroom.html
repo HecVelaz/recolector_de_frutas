@@ -119,7 +119,7 @@
     <div class="cb-leer">
       <p><b>Cada cable de color</b> va del pin del periférico (a los costados) al pin de la ESP32 (en el centro), o sea a su bornera del shield.</p>
       <p><b>Las etiquetas 5V, GND, 3V3</b> no son cables dibujados: van al riel con ese nombre de la perforada de distribución. Todos los GND están unidos.</p>
-      <p><b>"+ 10 kΩ a GND"</b>: de ese cable sale una resistencia a GND. Es la única de la placa y va en la perforada, entre el riel EN y el GND.</p>
+      <p><b>Resistencia con el símbolo de tierra</b> ("10 kΩ a GND"): de ese cable sale esa resistencia a GND. Es la única de la placa y va en la perforada, entre el riel EN y el GND.</p>
     </div>
   </section>
 
@@ -365,15 +365,18 @@ function cableado(svg, filtros, D) {
   var usado = {};
   D.blocks.forEach(function (b) { b.pins.forEach(function (p) { if (p.to) usado[p.to] = b.g; }); });
 
+  // Alto de cada fila de pin: las que llevan una resistencia a GND dejan lugar para dibujarla debajo del cable
+  function altoFila(p) { return p.shunt ? ROW + 30 : ROW; }
+  function desde(b, k) { var a = 0; for (var i = 0; i < k; i++) a += altoFila(b.pins[i]); return a; }
   // ---- Ubicación de los bloques ----
   ['L', 'R'].forEach(function (s) {
     var bs = D.blocks.filter(function (b) { return b.side === s; });
     bs.forEach(function (b) {
-      b.h = HEAD + b.pins.length * ROW + 8;
+      b.h = HEAD + desde(b, b.pins.length) + 8;
       var ys = b.pins.filter(function (p) { return p.to && PIN[p.to].s === s; }).map(function (p) { return PIN[p.to].y; });
       if (!ys.length) ys = b.pins.filter(function (p) { return p.to; }).map(function (p) { return PIN[p.to].y; });
       var m = ys.reduce(function (a, c) { return a + c; }, 0) / ys.length;
-      b.want = m - HEAD - b.pins.length * ROW / 2;
+      b.want = m - HEAD - desde(b, b.pins.length) / 2;
     });
     bs.sort(function (a, c) { return a.want - c.want; });
     var prev = 16;
@@ -436,7 +439,7 @@ function cableado(svg, filtros, D) {
     el('text', { x: bx + 12, y: b.y + 22, class: 'cb-title' }, gb, b.title);
     if (b.sub) el('text', { x: bx + 12, y: b.y + 36, class: 'cb-sub' }, gb, b.sub);
     b.pins.forEach(function (p, k) {
-      var y = b.y + HEAD + k * ROW + ROW / 2, edge = L ? bx + BLW : bx;
+      var y = b.y + HEAD + desde(b, k) + ROW / 2, edge = L ? bx + BLW : bx;
       el('text', { x: L ? edge - 12 : edge + 12, y: y + 4, 'text-anchor': L ? 'end' : 'start', class: 'cb-pn' }, gb, p.n);
       if (p.color) el('text', { x: L ? bx + 12 : bx + BLW - 12, y: y + 4, 'text-anchor': L ? 'start' : 'end', class: 'cb-col' }, gb, p.color);
       el('circle', { cx: edge, cy: y, r: 4.5, fill: p.pwr ? PWR[p.pwr] : p.to ? g.color : '#ffffff', stroke: p.to || p.pwr ? 'none' : '#9aa5a5' }, gb);
@@ -461,8 +464,14 @@ function cableado(svg, filtros, D) {
       }
       if (p.shunt) {
         var sx = s1 - dir * 14;
-        el('circle', { cx: sx, cy: y, r: 3, fill: col }, wg);
-        el('text', { x: L ? s0 + 8 : s0 - 8, y: y + 15, 'text-anchor': L ? 'start' : 'end', class: 'cb-val' }, wg, '+ ' + p.shunt);
+        // derivación dibujada: punto en el cable, resistencia vertical y símbolo de GND
+        el('circle', { cx: sx, cy: y, r: 3.5, fill: col }, wg);
+        el('line', { x1: sx, y1: y, x2: sx, y2: y + 30, stroke: '#263238', 'stroke-width': 1.6 }, wg);
+        el('rect', { x: sx - 5, y: y + 7, width: 10, height: 17, rx: 2, fill: '#f6efd9', stroke: '#5b4a1e', 'stroke-width': 1.3 }, wg);
+        [[30, 9], [34, 6], [38, 2.5]].forEach(function (g) {
+          el('line', { x1: sx - g[1], y1: y + g[0], x2: sx + g[1], y2: y + g[0], stroke: '#263238', 'stroke-width': 1.6 }, wg);
+        });
+        el('text', { x: sx - dir * 10, y: y + 20, 'text-anchor': L ? 'end' : 'start', class: 'cb-val' }, wg, p.shunt);
       }
       // cable hasta el pin de la ESP32
       var d;
