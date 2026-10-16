@@ -70,6 +70,7 @@
   #cb .cb-usb { font: 500 11px var(--mono); fill: #56655f; }
   #cb [data-g] { transition: opacity .15s; }
   #cb .dim { opacity: .1; }
+  #cb .cb-lugar { font: italic 600 11px var(--sans); fill: #8a5a00; }
   #cb .cb-blk { cursor: pointer; }
   @media (prefers-reduced-motion: reduce) { #cb [data-g] { transition: none; } }
   .cb-filtros { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -105,7 +106,7 @@
     <div class="cb-leer">
       <p><b>Cada cable de color</b> va del pin del periférico (a los costados) al pin de la ESP32 (en el centro).</p>
       <p><b>Las etiquetas 5V, GND, 3V3</b> no son cables dibujados: van a cualquier bornera con ese nombre. Todos los GND están unidos.</p>
-      <p><b>"1 kΩ en serie"</b>: la resistencia va en el medio del cable. <b>"+ 2 kΩ a GND"</b>: de ese cable sale una resistencia a GND. Todos los componentes van en la perforada.</p>
+      <p><b>"1 kΩ en serie"</b>: la resistencia va en el medio del cable. <b>Resistencia con el símbolo de tierra</b> (por ejemplo "2 kΩ a GND"): de ese cable sale esa resistencia a GND. <b>"↳ perf. …"</b> debajo del pin dice en qué perforada y en qué tira van sus resistencias (ver "Cómo va montado").</p>
     </div>
   </section>
 
@@ -184,15 +185,18 @@ function cableado(svg, filtros, D) {
   var usado = {};
   D.blocks.forEach(function (b) { b.pins.forEach(function (p) { if (p.to) usado[p.to] = b.g; }); });
 
+  // Alto de cada fila de pin: las que llevan una resistencia a GND dejan lugar para dibujarla debajo del cable
+  function altoFila(p) { return p.shunt ? ROW + 30 : p.lugar ? ROW + 14 : ROW; }
+  function desde(b, k) { var a = 0; for (var i = 0; i < k; i++) a += altoFila(b.pins[i]); return a; }
   // ---- Ubicación de los bloques ----
   ['L', 'R'].forEach(function (s) {
     var bs = D.blocks.filter(function (b) { return b.side === s; });
     bs.forEach(function (b) {
-      b.h = HEAD + b.pins.length * ROW + 8;
+      b.h = HEAD + desde(b, b.pins.length) + 8;
       var ys = b.pins.filter(function (p) { return p.to && PIN[p.to].s === s; }).map(function (p) { return PIN[p.to].y; });
       if (!ys.length) ys = b.pins.filter(function (p) { return p.to; }).map(function (p) { return PIN[p.to].y; });
       var m = ys.reduce(function (a, c) { return a + c; }, 0) / ys.length;
-      b.want = m - HEAD - b.pins.length * ROW / 2;
+      b.want = m - HEAD - desde(b, b.pins.length) / 2;
     });
     bs.sort(function (a, c) { return a.want - c.want; });
     var prev = 16;
@@ -255,8 +259,10 @@ function cableado(svg, filtros, D) {
     el('text', { x: bx + 12, y: b.y + 22, class: 'cb-title' }, gb, b.title);
     if (b.sub) el('text', { x: bx + 12, y: b.y + 36, class: 'cb-sub' }, gb, b.sub);
     b.pins.forEach(function (p, k) {
-      var y = b.y + HEAD + k * ROW + ROW / 2, edge = L ? bx + BLW : bx;
+      var y = b.y + HEAD + desde(b, k) + ROW / 2, edge = L ? bx + BLW : bx;
       el('text', { x: L ? edge - 12 : edge + 12, y: y + 4, 'text-anchor': L ? 'end' : 'start', class: 'cb-pn' }, gb, p.n);
+      // dónde va su resistencia (perforada y tira)
+      if (p.lugar) el('text', { x: L ? bx + 12 : bx + BLW - 12, y: y + 22, 'text-anchor': L ? 'start' : 'end', class: 'cb-lugar' }, gb, '↳ ' + p.lugar);
       if (p.color) el('text', { x: L ? bx + 12 : bx + BLW - 12, y: y + 4, 'text-anchor': L ? 'start' : 'end', class: 'cb-col' }, gb, p.color);
       el('circle', { cx: edge, cy: y, r: 4.5, fill: p.pwr ? PWR[p.pwr] : p.to ? g.color : '#ffffff', stroke: p.to || p.pwr ? 'none' : '#9aa5a5' }, gb);
       var dir = L ? 1 : -1, s0 = edge, s1 = L ? wireL : wireR;
@@ -280,8 +286,14 @@ function cableado(svg, filtros, D) {
       }
       if (p.shunt) {
         var sx = s1 - dir * 14;
-        el('circle', { cx: sx, cy: y, r: 3, fill: col }, wg);
-        el('text', { x: L ? s0 + 8 : s0 - 8, y: y + 15, 'text-anchor': L ? 'start' : 'end', class: 'cb-val' }, wg, '+ ' + p.shunt);
+        // derivación dibujada: punto en el cable, resistencia vertical y símbolo de GND
+        el('circle', { cx: sx, cy: y, r: 3.5, fill: col }, wg);
+        el('line', { x1: sx, y1: y, x2: sx, y2: y + 30, stroke: '#263238', 'stroke-width': 1.6 }, wg);
+        el('rect', { x: sx - 5, y: y + 7, width: 10, height: 17, rx: 2, fill: '#f6efd9', stroke: '#5b4a1e', 'stroke-width': 1.3 }, wg);
+        [[30, 9], [34, 6], [38, 2.5]].forEach(function (g) {
+          el('line', { x1: sx - g[1], y1: y + g[0], x2: sx + g[1], y2: y + g[0], stroke: '#263238', 'stroke-width': 1.6 }, wg);
+        });
+        el('text', { x: sx - dir * 10, y: y + 20, 'text-anchor': L ? 'end' : 'start', class: 'cb-val' }, wg, p.shunt);
       }
       // cable hasta el pin de la ESP32
       var d;
@@ -322,7 +334,7 @@ function cableado(svg, filtros, D) {
   });
 }
 
-cableado(document.getElementById('cb'), document.getElementById('cb-f'), {"y0": 120, "pitch": 46, "modulo": "ESP32-S3-WROOM-1", "placa": "Freenove N16R8", "usb": "bottom", "usbs": [610, 690], "usbTxt": "USB nativo → Pi (/dev/ttyACM0)", "left": ["3V3", "3V3", "RST", "4", "5", "6", "7", "15", "16", "17", "18", "8", "3", "46", "9", "10", "11", "12", "13", "14", "5V", "GND"], "right": ["GND", "TX", "RX", "1", "2", "42", "41", "40", "39", "38", "37", "36", "35", "0", "45", "48", "47", "21", "20", "19", "GND", "GND"], "groups": [{"id": "mot", "name": "Motores (IBT-2)", "color": "#2e7d32"}, {"id": "enc", "name": "Encoders", "color": "#7b1fa2"}, {"id": "i2c", "name": "IMU (I²C)", "color": "#1565c0"}, {"id": "us", "name": "Ultrasonido", "color": "#00897b"}, {"id": "bump", "name": "Bumpers y seta", "color": "#8d5524"}, {"id": "bat", "name": "Batería", "color": "#b07d00"}], "blocks": [{"g": "mot", "side": "L", "title": "IBT-2 izquierdo", "sub": "motor de tracción izquierdo", "pins": [{"n": "RPWM", "to": "4"}, {"n": "LPWM", "to": "5"}, {"n": "R_EN", "to": "38", "shunt": "10 kΩ a GND"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "mot", "side": "L", "title": "IBT-2 derecho", "sub": "motor de tracción derecho", "pins": [{"n": "RPWM", "to": "6"}, {"n": "LPWM", "to": "7"}, {"n": "R_EN", "note": "unido al EN del izquierdo"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "enc", "side": "L", "title": "Encoder izquierdo", "sub": "del motor 42GM-895H", "pins": [{"n": "Vcc", "pwr": "5V", "color": "azul"}, {"n": "GND", "pwr": "GND", "color": "verde"}, {"n": "A", "to": "15", "shunt": "20 kΩ a GND", "color": "amarillo"}, {"n": "B", "to": "16", "shunt": "20 kΩ a GND", "color": "blanco"}]}, {"g": "enc", "side": "L", "title": "Encoder derecho", "sub": "del motor 42GM-895H", "pins": [{"n": "Vcc", "pwr": "5V", "color": "azul"}, {"n": "GND", "pwr": "GND", "color": "verde"}, {"n": "A", "to": "17", "shunt": "20 kΩ a GND", "color": "amarillo"}, {"n": "B", "to": "18", "shunt": "20 kΩ a GND", "color": "blanco"}]}, {"g": "i2c", "side": "L", "title": "IMU MPU-6500", "sub": "I²C 0x68", "pins": [{"n": "VCC", "pwr": "3V3"}, {"n": "GND", "pwr": "GND"}, {"n": "SCL", "to": "9"}, {"n": "SDA", "to": "8"}]}, {"g": "us", "side": "L", "title": "HC-SR04 frente", "sub": "ultrasonido del centro", "pins": [{"n": "VCC", "pwr": "5V"}, {"n": "TRIG", "to": "10"}, {"n": "ECHO", "to": "11", "serie": "1 kΩ", "shunt": "2 kΩ a GND"}, {"n": "GND", "pwr": "GND"}]}, {"g": "us", "side": "L", "title": "HC-SR04 esq. izq.", "sub": "ultrasonido izquierdo", "pins": [{"n": "VCC", "pwr": "5V"}, {"n": "TRIG", "to": "41"}, {"n": "ECHO", "to": "12", "serie": "1 kΩ", "shunt": "2 kΩ a GND"}, {"n": "GND", "pwr": "GND"}]}, {"g": "us", "side": "L", "title": "HC-SR04 esq. der.", "sub": "ultrasonido derecho", "pins": [{"n": "VCC", "pwr": "5V"}, {"n": "TRIG", "to": "42"}, {"n": "ECHO", "to": "13", "serie": "1 kΩ", "shunt": "2 kΩ a GND"}, {"n": "GND", "pwr": "GND"}]}, {"g": "bump", "side": "L", "title": "Bumper frente", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "14"}, {"n": "C", "pwr": "GND"}]}, {"g": "bat", "side": "R", "title": "Batería LiPo 3S (12 V)", "sub": "+ después del selector", "pins": [{"n": "+12 V", "to": "1", "serie": "100 kΩ", "shunt": "30 kΩ a GND"}, {"n": "−", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Reserva (4.º bumper)", "sub": "solo si la cátedra lo pide", "opt": true, "pins": [{"n": "NA", "to": "40"}, {"n": "C", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Bumper derecho", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "39"}, {"n": "C", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Seta de emergencia", "sub": "bloque B (el A corta los 12 V)", "pins": [{"n": "NC", "to": "47"}, {"n": "NC", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Bumper izquierdo", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "21"}, {"n": "C", "pwr": "GND"}]}]});
+cableado(document.getElementById('cb'), document.getElementById('cb-f'), {"y0": 120, "pitch": 46, "modulo": "ESP32-S3-WROOM-1", "placa": "Freenove N16R8", "usb": "bottom", "usbs": [610, 690], "usbTxt": "USB nativo → Pi (/dev/ttyACM0)", "left": ["3V3", "3V3", "RST", "4", "5", "6", "7", "15", "16", "17", "18", "8", "3", "46", "9", "10", "11", "12", "13", "14", "5V", "GND"], "right": ["GND", "TX", "RX", "1", "2", "42", "41", "40", "39", "38", "37", "36", "35", "0", "45", "48", "47", "21", "20", "19", "GND", "GND"], "groups": [{"id": "mot", "name": "Motores (IBT-2)", "color": "#2e7d32"}, {"id": "enc", "name": "Encoders", "color": "#7b1fa2"}, {"id": "i2c", "name": "IMU (I²C)", "color": "#1565c0"}, {"id": "us", "name": "Ultrasonido", "color": "#00897b"}, {"id": "bump", "name": "Bumpers y seta", "color": "#8d5524"}, {"id": "bat", "name": "Batería", "color": "#b07d00"}], "blocks": [{"g": "mot", "side": "L", "title": "IBT-2 izquierdo", "sub": "motor de tracción izquierdo", "pins": [{"n": "RPWM", "to": "4"}, {"n": "LPWM", "to": "5"}, {"n": "R_EN", "to": "38", "shunt": "10 kΩ a GND", "lugar": "perf. abajo · tira EN-T"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "mot", "side": "L", "title": "IBT-2 derecho", "sub": "motor de tracción derecho", "pins": [{"n": "RPWM", "to": "6"}, {"n": "LPWM", "to": "7"}, {"n": "R_EN", "note": "unido al EN del izquierdo"}, {"n": "L_EN", "note": "unido a R_EN"}, {"n": "R_IS", "note": "sin conectar"}, {"n": "L_IS", "note": "sin conectar"}, {"n": "VCC", "pwr": "5V"}, {"n": "GND", "pwr": "GND"}]}, {"g": "enc", "side": "L", "title": "Encoder izquierdo", "sub": "del motor 42GM-895H", "pins": [{"n": "Vcc", "pwr": "5V", "color": "azul"}, {"n": "GND", "pwr": "GND", "color": "verde"}, {"n": "A", "to": "15", "shunt": "20 kΩ a GND", "color": "amarillo", "lugar": "perf. arriba · tira enc. izq. A"}, {"n": "B", "to": "16", "shunt": "20 kΩ a GND", "color": "blanco", "lugar": "perf. arriba · tira enc. izq. B"}]}, {"g": "enc", "side": "L", "title": "Encoder derecho", "sub": "del motor 42GM-895H", "pins": [{"n": "Vcc", "pwr": "5V", "color": "azul"}, {"n": "GND", "pwr": "GND", "color": "verde"}, {"n": "A", "to": "17", "shunt": "20 kΩ a GND", "color": "amarillo", "lugar": "perf. arriba · tira enc. der. A"}, {"n": "B", "to": "18", "shunt": "20 kΩ a GND", "color": "blanco", "lugar": "perf. arriba · tira enc. der. B"}]}, {"g": "i2c", "side": "L", "title": "IMU MPU-6500", "sub": "I²C 0x68", "pins": [{"n": "VCC", "pwr": "3V3"}, {"n": "GND", "pwr": "GND"}, {"n": "SCL", "to": "9"}, {"n": "SDA", "to": "8"}]}, {"g": "us", "side": "L", "title": "HC-SR04 frente", "sub": "ultrasonido del centro", "pins": [{"n": "VCC", "pwr": "5V"}, {"n": "TRIG", "to": "10"}, {"n": "ECHO", "to": "11", "serie": "1 kΩ", "shunt": "2 kΩ a GND", "lugar": "perf. arriba · tira ECHO frente"}, {"n": "GND", "pwr": "GND"}]}, {"g": "us", "side": "L", "title": "HC-SR04 esq. izq.", "sub": "ultrasonido izquierdo", "pins": [{"n": "VCC", "pwr": "5V"}, {"n": "TRIG", "to": "41"}, {"n": "ECHO", "to": "12", "serie": "1 kΩ", "shunt": "2 kΩ a GND", "lugar": "perf. arriba · tira ECHO izq."}, {"n": "GND", "pwr": "GND"}]}, {"g": "us", "side": "L", "title": "HC-SR04 esq. der.", "sub": "ultrasonido derecho", "pins": [{"n": "VCC", "pwr": "5V"}, {"n": "TRIG", "to": "42"}, {"n": "ECHO", "to": "13", "serie": "1 kΩ", "shunt": "2 kΩ a GND", "lugar": "perf. arriba · tira ECHO der."}, {"n": "GND", "pwr": "GND"}]}, {"g": "bump", "side": "L", "title": "Bumper frente", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "14"}, {"n": "C", "pwr": "GND"}]}, {"g": "bat", "side": "R", "title": "Batería LiPo 3S (12 V)", "sub": "+ después del selector", "pins": [{"n": "+12 V", "to": "1", "serie": "100 kΩ", "shunt": "30 kΩ a GND", "lugar": "perf. abajo · tira +12 V"}, {"n": "−", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Reserva (4.º bumper)", "sub": "solo si la cátedra lo pide", "opt": true, "pins": [{"n": "NA", "to": "40"}, {"n": "C", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Bumper derecho", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "39"}, {"n": "C", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Seta de emergencia", "sub": "bloque B (el A corta los 12 V)", "pins": [{"n": "NC", "to": "47"}, {"n": "NC", "pwr": "GND"}]}, {"g": "bump", "side": "R", "title": "Bumper izquierdo", "sub": "microinterruptor", "pins": [{"n": "NA", "to": "21"}, {"n": "C", "pwr": "GND"}]}]});
 </script>
 
 <script>
