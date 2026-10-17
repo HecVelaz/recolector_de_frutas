@@ -296,7 +296,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 ## 2026-10-17: Entrega 7 de R1 (diseño final y demo) y transmisión de J2/J3
 - `docs/TPF R1/Entrega 7/`: `Entrega7.md` (con links de Drive) y `Entrega7.ipynb` (las imágenes locales van incrustadas
   en base64; se arma desde el `.md`). Diagramas draw.io en `Diagramas/`, fotos y pesos de las piezas en `Partes_del_brazo/`.
-  Revisado con Codex (`Entrega 7/AGENTS.md`) y corregido.
+  Revisado con Codex y corregido (sus aclaraciones son las de esta entrada).
 - **J2/J3 no usan correa: engranajes helicoidales 15 → 75 (5:1).** La correa GT2 5:1 es solo de J1. En el firmware la
   relación ya era 5: solo cambiaron comentarios (17 pruebas OK, compila sin warnings).
 - Historia del 5840-31ZY (8 kgf·cm, descartado): con L298N no levantaba el brazo; con IBT-2 tampoco; con resorte subía
