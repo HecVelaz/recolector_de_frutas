@@ -42,3 +42,5 @@ docs/**/Partes_del_brazo/*.pdf
 docs/**/Archivos CAD/
 # Copia del cuaderno bajada de Drive (queda igual a Entrega7_.ipynb)
 docs/**/version_drive/
+# Aclaraciones de la revisión de Codex de la Entrega 7: solo en local
+docs/TPF R1/Entrega 7/AGENTS.md
