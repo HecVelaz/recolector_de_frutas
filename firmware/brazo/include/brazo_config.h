@@ -33,13 +33,13 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
         3.0f,                  // velMin °/s: sin esto se trababa a 0,8° del objetivo
         true,                  // feedforward solo con la zona muerta, como en las pruebas
     },
-    // J2 y J3: 36-555 de 58 rpm (139:1) con IBT-2 y correa, el mismo encoder SCX-555 que J1. Sin caracterizar: arrancan
+    // J2 y J3: 36-555 de 58 rpm (139:1) con IBT-2 y engranajes helicoidales 15 -> 75, el mismo encoder SCX-555 que J1. Sin caracterizar: arrancan
     // con los parámetros de J1 llevados a 58 rpm (K x 58/160; Kp y Ki x 160/58 para el mismo lazo en %). MEDIR con
     // los pasos 0-3 de pruebas-esp32/10. NO se autobloquean (planetarios): con el puente en rueda libre el brazo cae.
     {
         "J2",
         8896.0f,  // 16 PPR x4 x reductora 139:1
-        5.0f,     // correa GT2 motor -> hombro: poleas 20 -> 100, 240 mm
+        5.0f,     // engranajes helicoidales motor -> hombro: 15 -> 75 dientes (confirmado 17/10)
         58.0f,
         -25.0f, 135.0f,
         0.57f, 0.065f, 17.0f,  // MEDIR: K, tau y zona muerta (de J1)
@@ -55,7 +55,7 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
         "J3",
         8896.0f,
-        5.0f,  // correa GT2 motor -> codo: poleas 20 -> 100, 240 mm
+        5.0f,  // engranajes helicoidales motor -> codo: 15 -> 75 dientes (confirmado 17/10)
         58.0f,
         -50.0f, 50.0f,
         0.57f, 0.065f, 17.0f,  // MEDIR (mismo motor que J2)

@@ -33,8 +33,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
   3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
   2 servos. **J2/J3: 36-555 de 58 rpm (139:1; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y
-  correa GT2 5:1 (poleas 20 → 100, correa de 240 mm, ~54 mm entre centros). Llegan entre el 19 y el 29/10**
-  (por qué se cambió el sin fin 5840 y la versión de 98 rpm: `docs/BITACORA.md`); pines v0.5 en `firmware/brazo/include/pins.h` (12/10). Total: 5 IBT-2.
+  engranajes helicoidales 15 → 75 (5:1; NO correa: la correa GT2 5:1 es solo de J1). Llegan entre el 19 y el 29/10**
+  (5840 descartado, 8 kgf·cm: no levantaba el brazo ni con IBT-2; con resorte oscilaba. El motor de J1 en J2 con los
+  helicoidales sí lo levantó (prueba hecha). Detalle en `docs/BITACORA.md` 17/10); pines v0.5 en `firmware/brazo/include/pins.h` (12/10). Total: 5 IBT-2.
 - Placas (05/10, `docs/html/placa_s3.html` y `docs/html/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
   expansión Freenove** (bornera por pin) y sus componentes (divisores de ECHO, 20 k de encoders, pull-down
   del EN, divisor de batería; **sin capacitores** desde el 13/10: bumpers y seta directo a su bornera) en dos perforadas chicas, una sobre cada fila de borneras. La **WROOM es una HW-394 de
@@ -72,6 +73,13 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   copiar. Imágenes por link `lh3.googleusercontent.com/d/<ID>=w2400`: al cambiar una, subir nueva versión en Drive (mismo
   ID) y cambiar el `=w` para saltear la caché. Diagramas: `.drawio` → PNG con Firefox headless + visor de diagrams.net
   (no hay draw.io instalado; el snap de Firefox no ve `/tmp`: usar `~/snap/firefox/common/render/`).
+  **Formato desde la E7 de R1 (17/10):** el `.md` es la fuente; el cuaderno se arma desde él (una celda por cada
+  `<!-- celda -->`). El que va a Colab es `Entrega7_.ipynb`, con links `lh3` (no incrustar imágenes en base64: la celda
+  queda ilegible en Colab). Diagramas `.drawio` + PNG en `Diagramas/`, figuras en `Imagenes/FigN_*`; tablas y figuras
+  grandes (diagramas con letra de 16-20 pt), párrafos cortos, sin emojis. Los IDs que pasa el usuario se verifican
+  bajando cada `lh3` y comparando el tamaño con el archivo local. El conector de Drive no tiene permiso de escritura:
+  el usuario sube todo a mano. **Si el usuario edita en Colab, manda su versión:** bajar el `.ipynb` de Drive y
+  reconstruir el `.md` desde él antes de tocar nada.
 - Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
 - Plugins: **codex** (revisor con `-s read-only`; sandbox arreglado el 28/09 con el perfil AppArmor `/etc/apparmor.d/bwrap`;
   lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
@@ -90,12 +98,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
   la alternativa más simple y barata, sin listas largas de piezas nuevas.
 
-## 5. Estado actual (al 2026-10-12)
+## 5. Estado actual (al 2026-10-17)
 - **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
   conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
   soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
   (partiendo de J1) y `mision` real; 3-9/11 integración, 30 frutos, informes.
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK. **Pines v0.4 (05/10; v0.5 el 12/10, ver §2): J1-J3 con IBT-2 (J2 25/26, J3 16/17), EN común 23 (rueda libre solo de las tres juntas: si una se mueve, las otras quedan frenadas), FC J3 en 27 con pull-up interno, sin L298N; J2/J3 con 139:1 (8896 cuentas) y parámetros de J1 a 58 rpm, correa 5:1 (06/10) y signos sin medir.** **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s, feedforward solo con la zona muerta (`ffSoloZonaMuerta`), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Definido en `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]) y el urdf; reposo por defecto de `fsm.py`: q = 75°/110°/−30°, el de la simulación. Pruebas OK: firmware 17, brazo_ik 7, mision 30, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
+- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 17 pruebas OK. **Pines v0.4 (05/10; v0.5 el 12/10, ver §2): J1-J3 con IBT-2 (J2 25/26, J3 16/17), EN común 23 (rueda libre solo de las tres juntas: si una se mueve, las otras quedan frenadas), FC J3 en 27 con pull-up interno, sin L298N; J2/J3 con 139:1 (8896 cuentas) y parámetros de J1 a 58 rpm, relación 5 = engranajes helicoidales 15 → 75 (confirmado 17/10) y signos sin medir.** **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s, feedforward solo con la zona muerta (`ffSoloZonaMuerta`), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Definido en `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]) y el urdf; reposo por defecto de `fsm.py`: q = 75°/110°/−30°, el de la simulación. Pruebas OK: firmware 17, brazo_ik 7, mision 30, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
@@ -202,6 +210,12 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
 ## 7. Próximos pasos
+00. **Entrega 7 de R1 (diseño final y demo, 17/10)** en `docs/TPF R1/Entrega 7/`, revisada con Codex (`AGENTS.md` local) y
+   con todos los IDs de Drive puestos. El usuario la siguió editando en Colab (Figs. 19a-c, servo, videos): el repo quedó
+   igual a su versión de Drive (18:23). Falta: el video de la demo (lo agrega el usuario); confirmar los rodamientos (bridados 4×13×5 y axial 51105) y la clasificación de las 18 piezas por
+   tipo. Propuesto y sin aplicar: sumar a Sensores el potenciómetro interno de los servos y la seta. Los PDF de
+   `Partes_del_brazo/` (30 MB) y el `.rar` del CAD (121 MB, en Drive) quedan fuera de git. **Todavía dicen "correa" para J2/J3:** `docs/CONEXIONES.md`,
+   `docs/manual/capitulos/03_mecanica.tex`, `docs/html/conexiones.html` y `todo.html` (corregir y republicar).
 0. **Power bank corregido (15/10):** es el **PB2020MI** (22,5 W), no el PB2030MI; corregido en docs, HTML, manual y Entrega 4 local,
    y republicados `potencia`, `conexiones` y `todo` (que además seguían con el divisor de 27 k). Falta: a) la Entrega 4 en **Drive**
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
@@ -219,7 +233,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
 4. Brazo: **reflashear con los pines v0.5** (12/10; el binario de la Pi tiene los v0.4) y armar el shield y la perforada
    de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
-   si falta, 10 k a 3V3). Probar el firmware con el motor de J1 en el lugar de J2; con los motores nuevos, pasos 0-3 de
+   si falta, 10 k a 3V3). El motor de J1 en J2 ya se probó (levantó el brazo, 17/10); con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
    `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
 5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).

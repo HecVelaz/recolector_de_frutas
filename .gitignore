@@ -35,3 +35,10 @@ docs/manual/*.aux
 docs/manual/*.log
 docs/manual/*.out
 docs/manual/*.toc
+
+# Fotos y pesos de las piezas en PDF (30 MB): están en Drive; las fotos van en Imagenes/Fig18a de la Entrega 7
+docs/**/Partes_del_brazo/*.pdf
+# Archivos CAD de la Entrega 7 (.rar de 121 MB, más que el límite de 100 MB de GitHub): están en Drive
+docs/**/Archivos CAD/
+# Copia del cuaderno bajada de Drive (queda igual a Entrega7_.ipynb)
+docs/**/version_drive/

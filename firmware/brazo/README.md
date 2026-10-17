@@ -28,8 +28,8 @@ ahí como `09-brazo-control` (commits `cd8b420` y `f408f4e`).
 | Articulación | Motor / driver | Driver | Encoder |
 |---|---|---|---|
 | J1 base | 36GP-555 160 rpm (50:1) + IBT-2 | RPWM 21, LPWM 22 | A 34, B 35 (SCX-555 a 3V3; 10 kΩ externos opcionales) |
-| J2 hombro | 36-555 58 rpm (139:1) + IBT-2 + correa | RPWM 25, LPWM 26 | A 32, B 33 (SCX-555 a 3V3) |
-| J3 codo | 36-555 58 rpm (139:1) + IBT-2 + correa | RPWM 16, LPWM 17 | A 18, B 19 (SCX-555 a 3V3) |
+| J2 hombro | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 25, LPWM 26 | A 32, B 33 (SCX-555 a 3V3) |
+| J3 codo | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 16, LPWM 17 | A 18, B 19 (SCX-555 a 3V3) |
 
 Los tres IBT-2 comparten el EN (R_EN + L_EN de los tres al GPIO 23, pull-down de 10 kΩ). Por eso la rueda libre es
 de las tres a la vez: si una se mueve, las demás quedan frenadas (duty 0 con el puente habilitado).

@@ -292,3 +292,20 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Decisión del usuario: está bien así, con pruebas acotadas y vigiladas. Reglas en "Antes de conectar" de
   `CONEXIONES.md`. HTML sin cambios.
 - `docs/html/todo.html` (`armar_todo.py`): las 5 páginas en una, con cajas clickeables que llevan al detalle.
+
+## 2026-10-17: Entrega 7 de R1 (diseño final y demo) y transmisión de J2/J3
+- `docs/TPF R1/Entrega 7/`: `Entrega7.md` (con links de Drive) y `Entrega7.ipynb` (las imágenes locales van incrustadas
+  en base64; se arma desde el `.md`). Diagramas draw.io en `Diagramas/`, fotos y pesos de las piezas en `Partes_del_brazo/`.
+  Revisado con Codex (`Entrega 7/AGENTS.md`) y corregido.
+- **J2/J3 no usan correa: engranajes helicoidales 15 → 75 (5:1).** La correa GT2 5:1 es solo de J1. En el firmware la
+  relación ya era 5: solo cambiaron comentarios (17 pruebas OK, compila sin warnings).
+- Historia del 5840-31ZY (8 kgf·cm, descartado): con L298N no levantaba el brazo; con IBT-2 tampoco; con resorte subía
+  pero oscilaba mucho, aunque las gráficas de la E6 parecían cumplir (no tomarlas como validación mecánica de J2/J3).
+  El motor de J1 (36GP-555, 160 rpm) en J2 con los helicoidales **sí levantó el brazo** (prueba hecha). Por eso se
+  compraron 2 × 36-555 de 58 rpm + 2 IBT-2 (llegan 19-29/10).
+- Pinza pesada armada (dedos, mecanismo, soporte y los 2 servos): **246 g** (la E6 estimaba 322 g). Cotas estáticas con
+  ese valor: J2 8,00 N·m, J3 3,45 N·m; disponible 22 kgf·cm × 5 = 10,8 N·m (nominal, sin pérdidas: cálculo, no ensayo).
+- Los 2 servos RDS3218 probados por separado: funcionan. Impresora: Elegoo Neptune 4 (PLA-CF negro 1,75 mm); los demás
+  parámetros de impresión no quedaron registrados. 17 piezas impresas = 1177 g.
+- Homing: el final de carrera asigna un ángulo conocido (`HOME_Q`), no 0°; distinto de la marca de J1 a 90° (cero manual).
+  Finales de carrera sin montar ni probar.
