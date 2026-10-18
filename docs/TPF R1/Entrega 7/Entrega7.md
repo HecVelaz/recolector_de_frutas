@@ -150,7 +150,7 @@ Resultado: el codo ahora recorre unos 147°, contra 113° con el balancín de 40
 
 El cambio trajo tres consecuencias:
 
-* **J2 y J3 se mueven juntas.** El cuatro barras depende de la suma de los dos ángulos, así que no se puede mover una sin mirar la otra. El software rechaza las posiciones donde el mecanismo se trabaría.
+* **Los límites de J2 y J3 dependen uno del otro.** Cada motor se mueve por separado: J2 levanta la barra verde y J3 gira el balancín rojo. Pero el cuatro barras depende del ángulo entre esas dos piezas. Si J2 sube o baja mucho con J3 quieto, el mecanismo puede llegar a un punto muerto. Por ejemplo, con J3 en −50°, J2 solo puede ir de 28° a 110°. El software rechaza las combinaciones donde el mecanismo se trabaría.
 * **Cambió la pose de reposo.** La anterior quedaba en una posición imposible con 60 mm. La nueva es $q = (75°, 94°, -50°)$, provisoria hasta medir el brazo real.
 * **J3 necesita más fuerza.** Con balancines de distinto largo, el codo gira más que el balancín: entre 1,4 y 5 veces, según la posición. Por eso el motor de J3 tiene que hacer más torque. La sección 4 lo calcula.
 
