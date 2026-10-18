@@ -2,8 +2,8 @@
 
 import math
 
-from mision.fsm import (AGARRAR, APROXIMAR, centro_desde_superficie, ESPERAR, FALLA, leer_estado_brazo, Mision,
-                        Parametros, RETIRAR, SOLTAR)
+from mision.fsm import (AGARRAR, alcanzable, APROXIMAR, centro_desde_superficie, ESPERAR, FALLA, leer_estado_brazo,
+                        Mision, Parametros, RETIRAR, SOLTAR)
 
 # Al costado izquierdo, del lado de la fila: J1 va de 45° a 225° (q1 = 0 al frente quedó fuera de rango)
 LIMON = (0.05, 0.45, 0.25)  # m, alcanzable
@@ -229,3 +229,11 @@ def test_estado_de_base_sin_seta_no_hace_nada():
     m, r = lista()
     m.al_estado_base('ARMADA modo=vel seguridad=OK imu=ok', 1.5)
     assert m.estado == ESPERAR and r.de('comando') == ['armar']
+
+
+def test_reposo_por_defecto_alcanzable():
+    # brazo_ik tiene que resolver el reposo (con el largo por defecto y con el de la simulación, 0,075 m): con el
+    # balancín de 60 mm el de antes (q = 75°, 110°, -30°) no cerraba el cuatro barras y nadie lo notó
+    p = Parametros()
+    assert alcanzable(p.reposo, p.largo_herramienta)
+    assert alcanzable(p.reposo, 0.075)

@@ -6,7 +6,7 @@ con el modelo de la Entrega 5) → duty. Corre a 100 Hz en una tarea del núcleo
 monitor serial. Más adelante la capa de comandos se cambia por micro-ROS (`/brazo/joint_cmd`,
 `/brazo/joint_states`, ver `docs/ARQUITECTURA.md` del proyecto), sin tocar el control.
 
-**Estado:** compila y las 17 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
+**Estado:** compila y las 18 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
 Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valores marcados `MEDIR` en `include/brazo_config.h` son estimaciones.
 
 ## Estructura
@@ -17,7 +17,7 @@ Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valor
 | `include/brazo_config.h` | Parámetros por articulación (encoder, transmisión, límites de la E4, modelo y PI de la E5), pose de cero, servos |
 | `include/pins.h` | Pines del conexionado v0.4 (queda libre el GPIO 13) |
 | `src/main.cpp` | Drivers, tarea de control, comandos serie, homing, watchdog, CSV |
-| `test/test_control/` | 17 pruebas con el modelo de la E5 simulado |
+| `test/test_control/` | 18 pruebas con el modelo de la E5 simulado |
 
 Drivers compartidos en `firmware/lib/` (enlazados por `symlink://`): `BTS7960` y `EncoderPCNT`. Vienen del
 repo de pruebas `~/pruebas-esp32` (proyectos 06 y 08, donde se caracterizaron los motores); este proyecto empezó
@@ -30,6 +30,11 @@ ahí como `09-brazo-control` (commits `cd8b420` y `f408f4e`).
 | J1 base | 36GP-555 160 rpm (50:1) + IBT-2 | RPWM 21, LPWM 22 | A 34, B 35 (SCX-555 a 3V3; 10 kΩ externos opcionales) |
 | J2 hombro | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 25, LPWM 26 | A 36, B 39 (SCX-555 a 3V3; pull-up de su placa) |
 | J3 codo | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 16, LPWM 17 | A 18, B 19 (SCX-555 a 3V3) |
+
+J2 y J3 no son independientes: el cuatro barras solo cierra con γ₄ = q2 + q3 − 90° entre −112° y −30° (balancín
+rojo de 60 mm). `m` y `j` rechazan el objetivo que lo saque de ahí (`cuatroBarrasOk()` en `brazo_config.h`), aunque
+cada articulación esté dentro de sus límites. Se verifica el objetivo, no el camino, y `d`/`v` (manuales, cortos) no
+se verifican: moverlos con cuidado.
 
 Los tres IBT-2 comparten el EN (R_EN + L_EN de los tres al GPIO 23, pull-down de 10 kΩ). Por eso la rueda libre es
 de las tres a la vez: si una se mueve, las demás quedan frenadas (duty 0 con el puente habilitado).

@@ -223,6 +223,16 @@ void test_cero_con_ultima_lectura_validada() {
   TEST_ASSERT_EQUAL(ControlArticulacion::Falla::Ninguna, k.falla());
 }
 
+void test_cuatro_barras() {
+  TEST_ASSERT_TRUE(cuatroBarrasOk(94.0f, -50.0f));    // reposo de mision: gamma4 = -46°
+  TEST_ASSERT_TRUE(cuatroBarrasOk(60.0f, 0.0f));      // -30°, justo el borde
+  TEST_ASSERT_TRUE(cuatroBarrasOk(0.0f, -22.0f));     // -112°, el otro borde
+  TEST_ASSERT_FALSE(cuatroBarrasOk(110.0f, -30.0f));  // reposo viejo: -10°, no cierra con el balancín de 60 mm
+  TEST_ASSERT_FALSE(cuatroBarrasOk(-25.0f, -50.0f));  // HOME_Q de hoy: -165°
+  // Se recorta a los límites como irA(): q3 = -80 cuenta como -50 (-46° con q2 = 94)
+  TEST_ASSERT_TRUE(cuatroBarrasOk(94.0f, -80.0f));
+}
+
 void test_quitar_cero_para_homing() {
   ControlArticulacion k;
   k.configurar(CFG_ART[0]);
@@ -255,5 +265,6 @@ int main() {
   RUN_TEST(test_detener_no_vuelve_atras);
   RUN_TEST(test_cero_con_ultima_lectura_validada);
   RUN_TEST(test_quitar_cero_para_homing);
+  RUN_TEST(test_cuatro_barras);
   return UNITY_END();
 }

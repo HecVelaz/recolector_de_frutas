@@ -78,6 +78,20 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
 constexpr bool ENC_INVERTIDO[N_ART] = {true, false, false};
 constexpr bool MOTOR_INVERTIDO[N_ART] = {true, false, false};
 
+// Cuatro barras: J2 y J3 no son independientes. El mecanismo solo cierra con gamma4 = q2 + q3 - 90° en este rango
+// (balancín rojo de 60 mm; es el que da MU_MIN = 15° en brazo_ik/cinematica.py). Los límites de cada articulación
+// juntos dejan pasar -165..95°: m y j rechazan el objetivo que lo saque de acá.
+constexpr float GAMMA4_MIN = -112.0f;
+constexpr float GAMMA4_MAX = -30.0f;
+
+// q2 y q3 en grados, recortados a sus límites como hace irA()
+inline bool cuatroBarrasOk(float q2, float q3) {
+  q2 = q2 < CFG_ART[1].qMin ? CFG_ART[1].qMin : q2 > CFG_ART[1].qMax ? CFG_ART[1].qMax : q2;
+  q3 = q3 < CFG_ART[2].qMin ? CFG_ART[2].qMin : q3 > CFG_ART[2].qMax ? CFG_ART[2].qMax : q3;
+  const float g = q2 + q3 - 90.0f;
+  return g >= GAMMA4_MIN && g <= GAMMA4_MAX;
+}
+
 // Pose de referencia para el cero manual (comando z) [°]. MEDIR/definir con la mecánica:
 // una pose fácil de reproducir a ojo o con una plantilla (por ejemplo, base al frente y brazo vertical).
 // J1: la marca del banco de pruebas (brazo hacia el costado izquierdo del robot) = 90° en el marco de brazo_ik.

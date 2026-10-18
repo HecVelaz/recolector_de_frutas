@@ -392,6 +392,11 @@ void ejecutar(char *linea) {
       out->println(">> Uso: m <q1> <q2> <q3>");
       return;
     }
+    if (!cuatroBarrasOk(v2, v3)) {
+      out->printf(">> m: gamma4 = q2 + q3 - 90 = %.1f°, fuera de %.0f..%.0f° (el cuatro barras no cierra). No se movió nada.\n",
+                  v2 + v3 - 90.0f, GAMMA4_MIN, GAMMA4_MAX);
+      return;
+    }
     // Todo o nada: si una articulación no puede moverse (sin cero o con falla), no se mueve ninguna
     const float q[N_ART] = {v1, v2, v3};
     int noPuede = -1;
@@ -414,15 +419,28 @@ void ejecutar(char *linea) {
       out->println(">> Uso: j <n> <grados>");
       return;
     }
+    // J2 o J3: el cuatro barras se verifica contra donde va a quedar la otra (su objetivo si está en posición; si no,
+    // donde está). Sin cero en la otra no se sabe dónde está: no se verifica (puesta en marcha de una sola).
+    // ponytail: solo el objetivo; J2 y J3 con perfiles distintos en un m podrían salir un instante en el camino.
+    const int otra = i == 1 ? 2 : 1;
+    bool cierra = true;
+    float qOtra = 0.0f;
     portENTER_CRITICAL(&mux);
-    ok = ctl[i].irA(v2);
+    if (i > 0 && ctl[otra].conCero()) {
+      qOtra = ctl[otra].modo() == ControlArticulacion::Modo::Posicion ? ctl[otra].qObjetivo() : ctl[otra].q();
+      cierra = i == 1 ? cuatroBarrasOk(v2, qOtra) : cuatroBarrasOk(qOtra, v2);
+    }
+    ok = cierra && ctl[i].irA(v2);
     if (ok) {
       cancelarPendientes(i);
       ruedaLibre[i] = false;
       alimentarWatchdog();
     }
     portEXIT_CRITICAL(&mux);
-    if (!ok) rechazo(i, "j");
+    if (!cierra)
+      out->printf(">> J%d no acepta 'j': con J%d en %.1f°, gamma4 = %.1f°, fuera de %.0f..%.0f° (el cuatro barras no cierra).\n",
+                  i + 1, otra + 1, qOtra, v2 + qOtra - 90.0f, GAMMA4_MIN, GAMMA4_MAX);
+    else if (!ok) rechazo(i, "j");
   } else if (!strcmp(cmd, "v")) {
     if (!leerArt(a1, i)) return;
     v3 = VEL_CMD_S_DEF;
