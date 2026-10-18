@@ -83,7 +83,11 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
 - Plugins: **codex** (revisor con `-s read-only`; sandbox arreglado el 28/09 con el perfil AppArmor `/etc/apparmor.d/bwrap`;
   lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
-  sesión); **graphify** (grafo del repo); **ponytail**
+  sesión); **graphify** (grafo del repo, rehecho el 17/10: usarlo con `graphify query` para preguntas
+  amplias, como dónde se usa algo o qué conecta dos partes, y para buscar inconsistencias; para editar, leer igual el
+  archivo real. Sus aristas INFERRED pueden estar mal: confirmar en el archivo. **Actualizarlo de vez en cuando**, una vez
+  por semana o antes de una entrega o revisión grande, no después de cada commit: el código es gratis (AST), pero cada
+  tanda de documentos cuesta ~75-115 k tokens y el armado completo ~450 k); **ponytail**
   (instalado, sin usar todavía); **anatomy** (figuras isométricas, en `~/.claude/skills/`; para informes, no antes del 3/11).
   Locales (`.claude/`, fuera de git): **`/pi-sync`** (rsync a la Pi, `colcon build` y flasheo de los ESP32;
   sin probar con la Pi), un hook que pide confirmar los 12 V apagados antes de `pio ... -t upload` o `esptool`, y otro
