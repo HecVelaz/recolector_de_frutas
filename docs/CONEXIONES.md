@@ -12,7 +12,7 @@ la seta. Cable por cable: `html/seta.html`.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
 (hay, falta buscarlos) y resistencias; seta y Schottky todavía no están, se consiguen). Sin relé, TVS, Schottky ≥ 30 A ni
 fusibles. La Pi 5 pasa al power bank.
-v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa; lógica desde la LiPo 3S; consumo
+v0.4 — 05/10/2026 (J2 y J3 pasan a 36GP-555 58 rpm con IBT-2 y correa, cambiada el 17/10 por engranajes helicoidales 15 → 75; lógica desde la LiPo 3S; consumo
 y autonomía. v0.3: GPS en la Pi, un TRIG por HC-SR04). Diagrama interactivo, circuito de potencia y autonomía:
 `docs/html/conexiones.html` (abrir en el navegador). Los pines de la S3 salen de `firmware/base/include/pins.h`. Los de la
 WROOM (v0.4) están en `firmware/brazo/include/pins.h` desde el 05/10 (J2/J3 sin probar hasta que lleguen los
@@ -29,7 +29,7 @@ flowchart LR
   S3 --> SEN[IMU · 3 × HC-SR04 · 3 bumpers]
   S3 --> SEG[Seta · batería]
   WR --> J1[J1: IBT-2 + 36GP-555 160 rpm]
-  WR --> J23[J2, J3: IBT-2 + 36GP-555 58 rpm, correa]
+  WR --> J23[J2, J3: IBT-2 + 36-555 58 rpm, engranajes 5:1]
   WR --> PZ[Pinza: 2 servos]
 ```
 
@@ -106,7 +106,7 @@ solo EN; queda libre el GPIO 13. v0.5 (12/10): encoder de J2 a 36/39 y finales d
 Motores 36GP-555 (J1, J2, J3), encoder SCX-555 de 16 PPR (64 cuentas por vuelta del motor), salida de colector abierto
 (pull-ups de 5,1 kΩ en la placa), 3,3-5 V, alimentado aparte del motor: blanco = motor +,
 amarillo = motor −, verde = encoder + (**3V3**), azul = GND, negro = A, rojo = B. J1 160 rpm (50:1) con correa
-18 → 90; J2 y J3 58 rpm (139:1; 22 kgf·cm nominal, 75 trabado) con correa GT2 5:1 (poleas 20 → 100, correa cerrada de 240 mm, ~54 mm entre centros). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
+18 → 90; J2 y J3 58 rpm (139:1; 22 kgf·cm nominal, 75 trabado) con engranajes helicoidales 15 → 75 (5:1; 17/10: la correa GT2 quedó solo para J1). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
 trabado. **No se autobloquean** (planetarios): sin corriente el brazo cae.
 
 ## Raspberry Pi 5 (propuesta)

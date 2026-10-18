@@ -8,8 +8,8 @@ directa y la Pi con el power bank: no hace falta ningún buck nuevo.
 
 - [ ] 2 × motor 36-555 de 58 rpm (139:1), 12 V, eje de 8 mm, con encoder: J2 y J3 (`fotos/motor_j2/`)
 - [ ] 2 × driver IBT-2 (BTS7960): J2 y J3 (hay 3: dos de tracción y J1)
-- [ ] 2 juegos de transmisión 5:1: polea GT2 de 20 dientes con agujero de 8 mm + polea GT2 de 100 dientes + correa
-      cerrada GT2 de 240 mm y 6 mm de ancho (~54 mm entre centros; con 18 → 90 harían falta ~62 mm)
+- ~~2 juegos de transmisión 5:1: polea GT2 de 20 dientes con agujero de 8 mm + polea GT2 de 100 dientes + correa
+      cerrada GT2 de 240 mm y 6 mm de ancho~~ (no hace falta: el 17/10 J2/J3 pasan a engranajes helicoidales 15 → 75)
 
 ## Potencia (v0.6, 08/10: solo con lo que hay)
 

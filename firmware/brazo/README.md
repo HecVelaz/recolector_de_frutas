@@ -6,7 +6,7 @@ con el modelo de la Entrega 5) → duty. Corre a 100 Hz en una tarea del núcleo
 monitor serial. Más adelante la capa de comandos se cambia por micro-ROS (`/brazo/joint_cmd`,
 `/brazo/joint_states`, ver `docs/ARQUITECTURA.md` del proyecto), sin tocar el control.
 
-**Estado:** compila y las 16 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
+**Estado:** compila y las 17 pruebas del control pasan en la PC (`pio test -e native`, motor simulado).
 Revisado por Codex (10 hallazgos, aplicados). **No probado en placa.** Los valores marcados `MEDIR` en `include/brazo_config.h` son estimaciones.
 
 ## Estructura
@@ -28,7 +28,7 @@ ahí como `09-brazo-control` (commits `cd8b420` y `f408f4e`).
 | Articulación | Motor / driver | Driver | Encoder |
 |---|---|---|---|
 | J1 base | 36GP-555 160 rpm (50:1) + IBT-2 | RPWM 21, LPWM 22 | A 34, B 35 (SCX-555 a 3V3; 10 kΩ externos opcionales) |
-| J2 hombro | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 25, LPWM 26 | A 32, B 33 (SCX-555 a 3V3) |
+| J2 hombro | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 25, LPWM 26 | A 36, B 39 (SCX-555 a 3V3; pull-up de su placa) |
 | J3 codo | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 16, LPWM 17 | A 18, B 19 (SCX-555 a 3V3) |
 
 Los tres IBT-2 comparten el EN (R_EN + L_EN de los tres al GPIO 23, pull-down de 10 kΩ). Por eso la rueda libre es
@@ -38,7 +38,7 @@ de las tres a la vez: si una se mueve, las demás quedan frenadas (duty 0 con el
 |---|---|
 | Servo pinza (apertura) | 4 |
 | Servo giro J4 | 14 (pulsa durante el arranque: el servo puede moverse un instante) |
-| Final de carrera J1 / J2 / J3 | 36 / 39 (NA a GND, pull-up externo 10 kΩ) / 27 (pull-up interno); 100 nF a GND en cada uno |
+| Final de carrera J1 / J2 / J3 | 32 / 33 / 27 (NA a GND, pull-up interno; sin resistencias ni 100 nF: el homing pide 3 lecturas seguidas) |
 
 - Servos alimentados con 6 V **aparte** (buck 3, no del ESP32), GND común.
 - Pull-down de 10 kΩ en el EN común (sin él: **apagar los 12 V antes de flashear o pulsar EN**).

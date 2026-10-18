@@ -130,7 +130,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Robot recolector de limones · 2026S2</div>
     <h1>Cableado de Arturito R2D2</h1>
-    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.6 (08/10/2026): motores con la LiPo 3S directa (sin buck) y la Pi con un power bank. v0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1, y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
+    <p class="lede">Qué va conectado a qué, con el número de GPIO en cada cable. La Raspberry Pi 5 corre ROS 2 y habla por USB con dos ESP32: la S3 maneja la base y la seguridad; la WROOM, el brazo. Versión 0.6 (08/10/2026): motores con la LiPo 3S directa (sin buck) y la Pi con un power bank. v0.4 (05/10/2026): J2 y J3 pasan a 36GP-555 de 58 rpm con IBT-2 y correa 5:1 (el 17/10, engranajes helicoidales 15 → 75 en lugar de la correa), y la lógica se alimenta de la LiPo 3S. Los pines de la S3 salen de <code>firmware/base/include/pins.h</code>; los de la WROOM, de <code>firmware/brazo/include/pins.h</code> (J2 y J3 sin probar hasta que lleguen los motores). La conexión de la Pi es una <b>propuesta</b>.</p>
   </header>
 
   <section aria-labelledby="h-general">
@@ -265,19 +265,19 @@
             <text class="t-title" x="986" y="230">J1 base</text>
             <text class="t-sub" x="986" y="250">IBT-2 · 36GP-555 160 rpm</text>
             <path class="w gpio" d="M820 236 H974"></path>
-            <g class="lbl gpio"><text class="t-pin" x="897" y="229" text-anchor="middle">PWM 21/22 · EN 23</text><text class="t-pin" x="897" y="251" text-anchor="middle">enc 34/35 ↑ext</text></g>
+            <g class="lbl gpio"><text class="t-pin" x="897" y="229" text-anchor="middle">PWM 21/22 · EN 23</text><text class="t-pin" x="897" y="251" text-anchor="middle">enc 34/35</text></g>
           </g>
           <g>
             <rect class="box" x="974" y="282" width="210" height="56" rx="4"></rect>
             <text class="t-title" x="986" y="304">J2 hombro</text>
-            <text class="t-sub" x="986" y="324">IBT-2 · 58 rpm · correa 5:1</text>
+            <text class="t-sub" x="986" y="324">IBT-2 · 58 rpm · engranajes 5:1</text>
             <path class="w gpio" d="M820 310 H974"></path>
             <g class="lbl gpio"><text class="t-pin" x="897" y="303" text-anchor="middle">PWM 25/26 · EN 23</text><text class="t-pin" x="897" y="325" text-anchor="middle">enc 36/39</text></g>
           </g>
           <g>
             <rect class="box" x="974" y="356" width="210" height="56" rx="4"></rect>
             <text class="t-title" x="986" y="378">J3 codo</text>
-            <text class="t-sub" x="986" y="398">IBT-2 · 58 rpm · correa 5:1</text>
+            <text class="t-sub" x="986" y="398">IBT-2 · 58 rpm · engranajes 5:1</text>
             <path class="w gpio" d="M820 384 H974"></path>
             <g class="lbl gpio"><text class="t-pin" x="897" y="377" text-anchor="middle">PWM 16/17 · EN 23</text><text class="t-pin" x="897" y="399" text-anchor="middle">enc 18/19</text></g>
           </g>
@@ -298,7 +298,7 @@
 
           <!-- Notas de lectura -->
           <text class="t-sub" x="670" y="612">÷  divisor 5 V → 3,3 V en cada ECHO (1 k / 2 k)</text>
-          <text class="t-sub" x="670" y="632">↑ext  pull-up externo de 10 kΩ a 3V3 (GPIO 34–39 no tienen interno)</text>
+          <text class="t-sub" x="670" y="632">GPIO 34–39 sin pull-up interno: lo trae la placa del encoder</text>
           <text class="t-sub" x="670" y="652">EN  un solo EN por placa (S3 38, WROOM 23) con pull-down de 10 kΩ</text>
           <text class="t-sub" x="670" y="672">Trazo cortado: fuera del objetivo mínimo</text>
           <text class="t-sub" x="670" y="692">La potencia de 12 V de los drivers está en el esquema de alimentación</text>
@@ -527,7 +527,7 @@
     <div class="boards">
       <article class="boardcard">
         <h3>36GP-555 · J1, J2 y J3 (encoder SCX-555)</h3>
-        <div class="meta">16 PPR × 4 = 64 cuentas por vuelta del motor · salida de colector abierto (la placa trae los pull-ups) · J1 160 rpm (50:1), J2 y J3 58 rpm (139:1) con correa GT2 5:1 (poleas 20 → 100, 240 mm), eje de 8 mm</div>
+        <div class="meta">16 PPR × 4 = 64 cuentas por vuelta del motor · salida de colector abierto (la placa trae los pull-ups) · J1 160 rpm (50:1), J2 y J3 58 rpm (139:1) con engranajes helicoidales 15 → 75 (5:1), eje de 8 mm</div>
         <div class="tablewrap"><table>
           <thead><tr><th>Color</th><th>Función</th><th>Va a</th></tr></thead>
           <tbody>
@@ -535,8 +535,8 @@
             <tr><td>amarillo</td><td>Motor −</td><td>IBT-2 M−</td></tr>
             <tr><td>verde</td><td>Encoder + (3,3–5 V)</td><td><b>3V3</b> de la WROOM</td></tr>
             <tr><td>azul</td><td>Encoder −</td><td>GND</td></tr>
-            <tr><td>negro</td><td>Señal A</td><td>J1 34 · J2 32 · J3 18</td></tr>
-            <tr><td>rojo</td><td>Señal B</td><td>J1 35 · J2 33 · J3 19</td></tr>
+            <tr><td>negro</td><td>Señal A</td><td>J1 34 · J2 36 · J3 18</td></tr>
+            <tr><td>rojo</td><td>Señal B</td><td>J1 35 · J2 39 · J3 19</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -571,7 +571,7 @@
       <li><span><b>Pi 5 con el power bank</b>: sin <span class="mono">usb_max_current_enable</span>; los 600 mA son para los USB y el ventilador juntos. Probar con el ventilador al máximo y mirar <span class="mono">dmesg</span> por desconexiones USB.</span></li>
       <li><span><b>Pull-down de 10 kΩ</b> en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo). Sin ellos los puentes flotan al arrancar o flashear.</span></li>
       <li><span><b>Divisor en cada ECHO</b> del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V y los GPIO son de 3,3 V.</span></li>
-      <li><span><b>Pull-ups externos de 10 kΩ</b> en WROOM 34, 35, 36 y 39: esos pines no tienen pull-up interno.</span></li>
+      <li><span><b>Encoders en WROOM 34, 35, 36 y 39</b>: esos pines no tienen pull-up interno; lo trae la placa del encoder (5,1 kΩ). Medir que A y B den 0 o 3,3 V, nunca a mitad; si no, 10 kΩ a 3V3.</span></li>
       <li><span><b>Encoders de J1, J2 y J3 a 3V3.</b> La SCX-555 trae pull-ups de 5,1 kΩ a su Vcc: alimentada a 5 V, sus salidas quedarían a 5 V.</span></li>
       <li><span><b>Bumpers y finales de carrera:</b> microinterruptores V-152-1C25 (SPDT). Común (C) a GND y NA al GPIO; no necesitan alimentación, pull-up interno y sin capacitor: si alguno dispara sin tocarlo, 100 nF de su pin a GND.</span></li>
       <li><span><b>Servos con su propio buck</b> (buck 3, CC en 5 A) y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
