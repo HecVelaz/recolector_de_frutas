@@ -80,27 +80,35 @@ constexpr bool MOTOR_INVERTIDO[N_ART] = {true, false, false};
 
 // Cuatro barras: J2 y J3 no son independientes. El mecanismo solo cierra con gamma4 = q2 + q3 - 90° en este rango
 // (balancín rojo de 60 mm; es el que da MU_MIN = 15° en brazo_ik/cinematica.py). Los límites de cada articulación
-// juntos dejan pasar -165..95°: m y j rechazan el objetivo que lo saque de acá.
-constexpr float GAMMA4_MIN = -112.0f;
+// juntos dejan pasar -165..95°: m y j rechazan el objetivo que lo saque de acá. El exacto es -111,95..-29,64°:
+// los dos bordes van un poco hacia adentro.
+constexpr float GAMMA4_MIN = -111.9f;
 constexpr float GAMMA4_MAX = -30.0f;
 
-// q2 y q3 en grados, recortados a sus límites como hace irA()
-inline bool cuatroBarrasOk(float q2, float q3) {
-  q2 = q2 < CFG_ART[1].qMin ? CFG_ART[1].qMin : q2 > CFG_ART[1].qMax ? CFG_ART[1].qMax : q2;
-  q3 = q3 < CFG_ART[2].qMin ? CFG_ART[2].qMin : q3 > CFG_ART[2].qMax ? CFG_ART[2].qMax : q3;
-  const float g = q2 + q3 - 90.0f;
-  return g >= GAMMA4_MIN && g <= GAMMA4_MAX;
+// Recorta un objetivo a los límites de la articulación, como hace irA()
+constexpr float recortar(int i, float q) {
+  return q < CFG_ART[i].qMin ? CFG_ART[i].qMin : q > CFG_ART[i].qMax ? CFG_ART[i].qMax : q;
+}
+constexpr float gamma4(float q2, float q3) { return q2 + q3 - 90.0f; }
+// q2 y q3 en grados, tal cual (recortar antes el objetivo que se manda, nunca la posición de la otra)
+constexpr bool cuatroBarrasOk(float q2, float q3) {
+  return gamma4(q2, q3) >= GAMMA4_MIN && gamma4(q2, q3) <= GAMMA4_MAX;
 }
 
 // Pose de referencia para el cero manual (comando z) [°]. MEDIR/definir con la mecánica:
 // una pose fácil de reproducir a ojo o con una plantilla (por ejemplo, base al frente y brazo vertical).
 // J1: la marca del banco de pruebas (brazo hacia el costado izquierdo del robot) = 90° en el marco de brazo_ik.
-constexpr float POSE_CERO[N_ART] = {90.0f, 90.0f, 0.0f};
+// J3: -40° (provisorio, 18/10) para que la pose cierre el cuatro barras; el 0° de antes daba gamma4 = 0°.
+constexpr float POSE_CERO[N_ART] = {90.0f, 90.0f, -40.0f};
+static_assert(cuatroBarrasOk(POSE_CERO[1], POSE_CERO[2]), "POSE_CERO de J2/J3 no cierra el cuatro barras");
 
 // Homing con final de carrera: velocidad (rpm del motor, con signo hacia el final de carrera),
 // ángulo que vale la articulación al tocarlo y tiempo máximo.
 constexpr float HOME_RPM[N_ART] = {-10.0f, -10.0f, -10.0f};
 constexpr float HOME_Q[N_ART] = {45.0f, -25.0f, -50.0f};  // MEDIR con la mecánica (finales de carrera: 32, 33 y 27)
+// El homing de J2 o J3 mueve una sola en velocidad, sin mirar el cuatro barras, y HOME_Q de hoy (gamma4 = -165°) no
+// cierra: home 2 y home 3 quedan bloqueados hasta medir HOME_Q y el orden seguro con el brazo armado (usar z).
+constexpr bool HOME_J23_VERIFICADO = false;
 // J1 con la correa 5:1: -10 rpm = 12 °/s de la base, 180° de recorrido son 15 s (más arranque y confirmación)
 constexpr float HOME_TIMEOUT_S = 25.0f;
 // Recorrido máximo del homing: el rango de la articulación más este margen [°]. Corta aunque no venza el tiempo.

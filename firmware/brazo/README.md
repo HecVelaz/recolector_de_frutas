@@ -31,10 +31,18 @@ ahí como `09-brazo-control` (commits `cd8b420` y `f408f4e`).
 | J2 hombro | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 25, LPWM 26 | A 36, B 39 (SCX-555 a 3V3; pull-up de su placa) |
 | J3 codo | 36-555 58 rpm (139:1) + IBT-2 + engranajes helicoidales 15 → 75 | RPWM 16, LPWM 17 | A 18, B 19 (SCX-555 a 3V3) |
 
-J2 y J3 no son independientes: el cuatro barras solo cierra con γ₄ = q2 + q3 − 90° entre −112° y −30° (balancín
-rojo de 60 mm). `m` y `j` rechazan el objetivo que lo saque de ahí (`cuatroBarrasOk()` en `brazo_config.h`), aunque
-cada articulación esté dentro de sus límites. Se verifica el objetivo, no el camino, y `d`/`v` (manuales, cortos) no
-se verifican: moverlos con cuidado.
+J2 y J3 no son independientes: el cuatro barras solo cierra con γ₄ = q2 + q3 − 90° entre −111,9° y −30° (balancín
+rojo de 60 mm). Protecciones (revisadas por Codex el 18/10):
+- `m` y `j` rechazan el objetivo (recortado a los límites, como `irA()`) que saque γ₄ de ahí, aunque cada
+  articulación esté dentro de sus límites. `j 2`/`j 3` comparan contra el objetivo de la otra (o su posición sin
+  recortar) y se rechazan si la otra se mueve en `v`, `d` u homing. Sin cero en la otra no se verifica (puesta en
+  marcha de una sola).
+- Si J2 o J3 entra en falla a mitad de camino, la otra se detiene.
+- `home 2` y `home 3` están bloqueados (`HOME_J23_VERIFICADO = false`): el homing mueve una sola sin mirar el cuatro
+  barras y `HOME_Q` de hoy no cierra. Usar `z` en `POSE_CERO` = (90°, 90°, −40°) (provisoria; `static_assert` de
+  que cierra).
+- No cubierto: el camino entre dos objetivos válidos (J2 y J3 con perfiles distintos podrían salir un instante) y
+  `d`/`v` (manuales y cortos): mirar el brazo al moverlo.
 
 Los tres IBT-2 comparten el EN (R_EN + L_EN de los tres al GPIO 23, pull-down de 10 kΩ). Por eso la rueda libre es
 de las tres a la vez: si una se mueve, las demás quedan frenadas (duty 0 con el puente habilitado).
@@ -129,7 +137,8 @@ ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j2], 
 - [ ] J2 y J3 con los motores nuevos (llegan entre el 19 y el 29/10): signos (`ENC_INVERTIDO`, `MOTOR_INVERTIDO`),
       modelo y PI con los pasos 0-3 de `pruebas-esp32/10` (hoy, los de J1 llevados a 58 rpm).
 - [ ] Sostener J2/J3 contra la gravedad (no se autobloquean): compensación o freno.
-- [ ] Pose de referencia (`POSE_CERO`) y ángulos de los finales de carrera (`HOME_Q`).
+- [ ] Pose de referencia (`POSE_CERO`, hoy provisoria) y ángulos de los finales de carrera (`HOME_Q`), con γ₄ en
+  rango; después, `HOME_J23_VERIFICADO = true` para habilitar `home 2` y `home 3`.
 - [ ] Pulsos de los servos (`PINZA_US_*`, `GIRO_US_*`).
 - [ ] Ajustar `kpPos`, `velMax`, `accMax` con el brazo armado y con carga.
 - [ ] Probar la capa micro-ROS con el brazo armado (en la placa sola ya anda; ver Resultados).

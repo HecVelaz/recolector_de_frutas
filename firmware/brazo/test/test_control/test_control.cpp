@@ -226,11 +226,14 @@ void test_cero_con_ultima_lectura_validada() {
 void test_cuatro_barras() {
   TEST_ASSERT_TRUE(cuatroBarrasOk(94.0f, -50.0f));    // reposo de mision: gamma4 = -46°
   TEST_ASSERT_TRUE(cuatroBarrasOk(60.0f, 0.0f));      // -30°, justo el borde
-  TEST_ASSERT_TRUE(cuatroBarrasOk(0.0f, -22.0f));     // -112°, el otro borde
+  TEST_ASSERT_TRUE(cuatroBarrasOk(0.1f, -22.0f));     // -111,9°, el otro borde
+  TEST_ASSERT_FALSE(cuatroBarrasOk(0.0f, -22.0f));    // -112°: μ = 165,3°, fuera de MU_MIN
   TEST_ASSERT_FALSE(cuatroBarrasOk(110.0f, -30.0f));  // reposo viejo: -10°, no cierra con el balancín de 60 mm
   TEST_ASSERT_FALSE(cuatroBarrasOk(-25.0f, -50.0f));  // HOME_Q de hoy: -165°
-  // Se recorta a los límites como irA(): q3 = -80 cuenta como -50 (-46° con q2 = 94)
-  TEST_ASSERT_TRUE(cuatroBarrasOk(94.0f, -80.0f));
+  // El objetivo se recorta antes, como en irA(): q3 = -80 queda en -50 (-46° con q2 = 94)
+  TEST_ASSERT_TRUE(cuatroBarrasOk(recortar(1, 94.0f), recortar(2, -80.0f)));
+  // La posición de la otra no se recorta: J3 sosteniendo -52° (dentro del margen) y q2 = 28 da -114°
+  TEST_ASSERT_FALSE(cuatroBarrasOk(28.0f, -52.0f));
 }
 
 void test_quitar_cero_para_homing() {

@@ -49,3 +49,4 @@ ros2 topic pub --once /brazo/objetivo geometry_msgs/msg/PointStamped \
 |---|---|---|
 | 2026-09-27 | `colcon test` (5 pruebas) | OK |
 | 2026-09-27 | Nodo en la notebook: ejemplo E4 → q = (0.00°, 45.00°, 0.00°), err 5e-13 mm; punto lejano, q1 = 108° y marco equivocado → rechazados con su motivo | OK |
+| 2026-10-18 | Balancín rojo de 60 mm (`L30`): `colcon test` (9 pruebas; el ejemplo de la E4 fija 40 mm adentro). `test_limites_firmware.py` compara `Q*_LIM` y el rango de γ₄ de `MU_MIN` con `firmware/brazo/include/brazo_config.h` | OK |

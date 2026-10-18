@@ -211,6 +211,13 @@ void tareaControl(void *) {
       }
       libre[i] = ruedaLibre[i] && ctl[i].modo() == ControlArticulacion::Modo::Libre;
     }
+    // Cuatro barras: si J2 o J3 queda en falla a mitad de camino, la otra no sigue sola (sacaría gamma4 del rango)
+    for (int i = 1; i < N_ART; i++) {
+      const int otra = i == 1 ? 2 : 1;
+      if (ctl[i].falla() != ControlArticulacion::Falla::Ninguna && ctl[otra].modo() == ControlArticulacion::Modo::Posicion &&
+          !ctl[otra].llego() && !ctl[otra].frenando())
+        ctl[otra].detener();
+    }
     if (logArt >= 0 && tick % logCadaTicks == 0) {
       const ControlArticulacion &k = ctl[logArt];
       m = {ahora, k.qObjetivo(), k.q(), k.wRef(), k.w(), k.u()};
@@ -363,6 +370,10 @@ void ejecutar(char *linea) {
   } else if (!strcmp(cmd, "home")) {
     // De a una: si un final de carrera falla, solo se mueve esa articulación
     if (!leerArt(a1, i)) return;
+    if (i > 0 && !HOME_J23_VERIFICADO) {
+      out->printf(">> J%d: homing bloqueado hasta medir HOME_Q con el brazo (cuatro barras). Usar z.\n", i + 1);
+      return;
+    }
     if (PIN_FC[i] < 0) {
       out->printf(">> J%d no tiene final de carrera: usar z en la pose de referencia.\n", i + 1);
       return;
@@ -392,9 +403,11 @@ void ejecutar(char *linea) {
       out->println(">> Uso: m <q1> <q2> <q3>");
       return;
     }
-    if (!cuatroBarrasOk(v2, v3)) {
-      out->printf(">> m: gamma4 = q2 + q3 - 90 = %.1f°, fuera de %.0f..%.0f° (el cuatro barras no cierra). No se movió nada.\n",
-                  v2 + v3 - 90.0f, GAMMA4_MIN, GAMMA4_MAX);
+    // Con los objetivos ya recortados, como los va a usar irA()
+    const float q2r = recortar(1, v2), q3r = recortar(2, v3);
+    if (!cuatroBarrasOk(q2r, q3r)) {
+      out->printf(">> m: gamma4 = q2 + q3 - 90 = %.1f° (q2 %.1f°, q3 %.1f°), fuera de %.1f..%.1f° (el cuatro barras no "
+                  "cierra). No se movió nada.\n", gamma4(q2r, q3r), q2r, q3r, GAMMA4_MIN, GAMMA4_MAX);
       return;
     }
     // Todo o nada: si una articulación no puede moverse (sin cero o con falla), no se mueve ninguna
@@ -420,15 +433,19 @@ void ejecutar(char *linea) {
       return;
     }
     // J2 o J3: el cuatro barras se verifica contra donde va a quedar la otra (su objetivo si está en posición; si no,
-    // donde está). Sin cero en la otra no se sabe dónde está: no se verifica (puesta en marcha de una sola).
+    // donde está, sin recortar). Si la otra se mueve en velocidad o duty (v, d o homing) no se sabe: se rechaza.
+    // Sin cero en la otra no se sabe dónde está: no se verifica (puesta en marcha de una sola).
     // ponytail: solo el objetivo; J2 y J3 con perfiles distintos en un m podrían salir un instante en el camino.
     const int otra = i == 1 ? 2 : 1;
-    bool cierra = true;
+    const float qr = i > 0 ? recortar(i, v2) : v2;
+    bool cierra = true, otraMoviendo = false;
     float qOtra = 0.0f;
     portENTER_CRITICAL(&mux);
     if (i > 0 && ctl[otra].conCero()) {
-      qOtra = ctl[otra].modo() == ControlArticulacion::Modo::Posicion ? ctl[otra].qObjetivo() : ctl[otra].q();
-      cierra = i == 1 ? cuatroBarrasOk(v2, qOtra) : cuatroBarrasOk(qOtra, v2);
+      const ControlArticulacion::Modo mo = ctl[otra].modo();
+      otraMoviendo = mo == ControlArticulacion::Modo::Velocidad || mo == ControlArticulacion::Modo::Duty;
+      qOtra = mo == ControlArticulacion::Modo::Posicion ? ctl[otra].qObjetivo() : ctl[otra].q();
+      cierra = !otraMoviendo && (i == 1 ? cuatroBarrasOk(qr, qOtra) : cuatroBarrasOk(qOtra, qr));
     }
     ok = cierra && ctl[i].irA(v2);
     if (ok) {
@@ -437,9 +454,12 @@ void ejecutar(char *linea) {
       alimentarWatchdog();
     }
     portEXIT_CRITICAL(&mux);
-    if (!cierra)
-      out->printf(">> J%d no acepta 'j': con J%d en %.1f°, gamma4 = %.1f°, fuera de %.0f..%.0f° (el cuatro barras no cierra).\n",
-                  i + 1, otra + 1, qOtra, v2 + qOtra - 90.0f, GAMMA4_MIN, GAMMA4_MAX);
+    if (otraMoviendo)
+      out->printf(">> J%d no acepta 'j': J%d se está moviendo en velocidad o duty (detenerla con s).\n", i + 1, otra + 1);
+    else if (!cierra)
+      out->printf(">> J%d no acepta 'j': con J%d en %.1f°, gamma4 = %.1f°, fuera de %.1f..%.1f° (el cuatro barras no "
+                  "cierra).\n", i + 1, otra + 1, qOtra, i == 1 ? gamma4(qr, qOtra) : gamma4(qOtra, qr), GAMMA4_MIN,
+                  GAMMA4_MAX);
     else if (!ok) rechazo(i, "j");
   } else if (!strcmp(cmd, "v")) {
     if (!leerArt(a1, i)) return;
