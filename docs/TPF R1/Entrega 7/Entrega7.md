@@ -657,6 +657,10 @@ En la Entrega 6 se repitió la medición de la zona muerta con el **5840 montado
 
 [![Ver lista de reproducción de lazo cerrado](https://img.youtube.com/vi/N8ZAt2xnw8k/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLQCLakFxinI0)
 
+**Simulación en Gazebo:** el robot completo en una hilera virtual de limoneros. Avanza por el pasillo, se detiene frente a cada limón, y el brazo lo agarra, lo retira y lo suelta. En la simulación se cosecharon los 12 limones de la hilera. Usa la misma cinemática inversa y la misma lógica de la misión que el robot real. La posición de cada limón la entrega el simulador, porque el detector YOLO no reconoce los limones dibujados en Gazebo. Es una simulación, no un ensayo del brazo físico.
+
+[![Ver simulación en Gazebo](https://img.youtube.com/vi/1bYreQDusFI/hqdefault.jpg)](https://youtu.be/1bYreQDusFI)
+
 **Lazo abierto:** pruebas del motor 36GP-555 de J1 y del 5840 que se usó en J2 y J3, ya descartado.
 
 [![Ver lista de reproducción de lazo abierto](https://img.youtube.com/vi/RdY4UUS9w7Y/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLWtzqMv9awVo)
