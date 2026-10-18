@@ -86,7 +86,7 @@ constexpr float POSE_CERO[N_ART] = {90.0f, 90.0f, 0.0f};
 // Homing con final de carrera: velocidad (rpm del motor, con signo hacia el final de carrera),
 // ángulo que vale la articulación al tocarlo y tiempo máximo.
 constexpr float HOME_RPM[N_ART] = {-10.0f, -10.0f, -10.0f};
-constexpr float HOME_Q[N_ART] = {45.0f, -25.0f, -50.0f};  // MEDIR con la mecánica (finales de carrera: 36, 39 y 27)
+constexpr float HOME_Q[N_ART] = {45.0f, -25.0f, -50.0f};  // MEDIR con la mecánica (finales de carrera: 32, 33 y 27)
 // J1 con la correa 5:1: -10 rpm = 12 °/s de la base, 180° de recorrido son 15 s (más arranque y confirmación)
 constexpr float HOME_TIMEOUT_S = 25.0f;
 // Recorrido máximo del homing: el rango de la articulación más este margen [°]. Corta aunque no venza el tiempo.

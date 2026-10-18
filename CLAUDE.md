@@ -113,7 +113,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
   S3: flashear con reset por watchdog (ya en `platformio.ini`); abrir el puerto con DTR/RTS bajos la deja en
   modo descarga. Usar `/dev/serial/by-id/` porque el puerto pasa de ACM0 a ACM1.
-- `brazo_ik`: 6 pruebas OK. `/brazo/objetivo` es el punto de agarre (TCP); con la herramienta horizontal, la muñeca
+- `brazo_ik`: 7 pruebas OK. `/brazo/objetivo` es el punto de agarre (TCP); con la herramienta horizontal, la muñeca
   está `largo_herramienta` más adentro en horizontal (parámetro; 0 por defecto, MEDIR en el real).
 - Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
   en `~/recolector_de_frutas` (por rsync, sin `.git`), esptool en `~/venvs/esptool`. Binarios para flashear en
@@ -235,7 +235,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
    si falta, 10 k a 3V3). El motor de J1 en J2 ya se probó (levantó el brazo, 17/10); con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
-   `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean).
+   `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean) y definir los límites articulares reales (hoy provisorios: q1 45°/225°, q2 −25…135°, q3 ±50°).
 5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).
 6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
 7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —

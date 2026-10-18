@@ -111,7 +111,7 @@ posición ref ──► [P posición, 50 Hz] ──► velocidad ref ──► [
 - **Lazo interno** (velocidad, `Ts = 10 ms`): PI con `Ti = τ`, anti-windup, feedforward de zona muerta. Ganancias iniciales de la E5: base `Kp ≈ 0,41`, `Ki ≈ 6,3`; articulación `Kp ≈ 0,44`, `Ki ≈ 7,5`.
 - **Lazo externo** (posición, solo brazo): P con saturación de velocidad y perfil trapezoidal.
 - **Homing** al encender: cada articulación va lento hacia un final de carrera y fija el cero. Sin homing el brazo no acepta comandos.
-- **Límites** articulares de E4 aplicados en el firmware (q1 ±75°, q2 −25…135°, q3 ±50°), además de en la IK.
+- **Límites** articulares aplicados en el firmware (`brazo_config.h`) y en la IK (`cinematica.py` y el urdf): q1 45°…225° en el marco de `brazo_ik` (q1 = 0 al frente; −45/+135 desde el costado izquierdo, por atrás, sin cruzar el mástil; 02/10), q2 −25…135° y q3 ±50° (los de la E4). **Provisorios:** se definen con la mecánica real de J2/J3.
 - Detección de **atasco** (ya existe en la E5) → freno y estado de error.
 - Las ruedas usan solo el lazo interno; `/cmd_vel` → velocidades de rueda en el ESP32-S3 (cinemática diferencial).
 

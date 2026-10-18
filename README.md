@@ -23,9 +23,9 @@ recolector_de_frutas/
 
 | Parte | Placa | Estado |
 |---|---|---|
-| `firmware/brazo` | ESP32-WROOM-32D | Compila (serial y micro-ROS); 14 pruebas del control OK en la PC. **Sin probar en placa** |
-| `firmware/base` | ESP32-S3 | Compila (serial y micro-ROS); 19 pruebas de la lógica OK en la PC. **Sin probar en placa** |
-| `ros2_ws/src/brazo_ik` | Pi 5 / notebook (Ubuntu 24.04, ROS 2 Jazzy) | 5 pruebas OK; nodo probado en la notebook |
+| `firmware/brazo` | ESP32-WROOM-32D | Compila (serial y micro-ROS); 17 pruebas del control OK en la PC. **Sin probar en placa** |
+| `firmware/base` | ESP32-S3 | Compila (serial y micro-ROS); 20 pruebas de la lógica OK en la PC. **Sin probar en placa** |
+| `ros2_ws/src/brazo_ik` | Pi 5 / notebook (Ubuntu 24.04, ROS 2 Jazzy) | 7 pruebas OK; nodo probado en la notebook |
 | resto de `ros2_ws` | Raspberry Pi 5 | Pendiente (cámaras, YOLO, estéreo, misión, seguridad) |
 
 ## Comandos
