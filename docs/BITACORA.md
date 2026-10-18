@@ -309,3 +309,34 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   parámetros de impresión no quedaron registrados. 17 piezas impresas = 1177 g.
 - Homing: el final de carrera asigna un ángulo conocido (`HOME_Q`), no 0°; distinto de la marca de J1 a 90° (cero manual).
   Finales de carrera sin montar ni probar.
+
+## 2026-10-17/18: grafo del repo, documentos al día y cuatro barras con el balancín de 60 mm
+- **Grafo de graphify rehecho** (el anterior era del 27/09; `graphify-out/`, fuera de git) y usado para buscar
+  inconsistencias. Corregidos: README del brazo (encoder J2 en 36/39, finales de carrera 32/33/27 sin 100 nF, 17
+  pruebas), `conexiones.html` (encoder J2 en 32/33 y pull-ups externos que la v0.5 sacó; republicada con `todo.html`),
+  "correa" para J2/J3 en `CONEXIONES.md`, `COMPRAS.md`, el manual y los HTML (son helicoidales 15 → 75), conteos de
+  pruebas del README raíz y `ARQUITECTURA.md` a la v0.6 (J2/J3 no se autobloquean: el brazo cae al cortar; sin
+  `supervisor_seguridad` en la Pi: la seguridad la deciden la S3 y `mision`). Las entregas no se tocan.
+- Borrados: la librería `L298N` (sin uso desde la v0.4; queda en el historial y en `pruebas-esp32/08`) y `docs/llave.jpeg`.
+- **Balancín rojo del cuatro barras: 60 mm** (medido por el usuario; la E4 tenía 40 y proponía 60 para que fuera
+  Grashof). `L30 = 60` en `cinematica.py`. El cuatro barras cierra con γ₄ = q2 + q3 − 90° entre −111,95° y −29,64°
+  (lo impone `MU_MIN` = 15°); con 40 mm era −129…0°. Las 2 pruebas del ejemplo de la E4 fijan 40 mm adentro.
+- **Reposo provisorio q = (75°, 94°, −50°)**: el de antes (110°, −30°) daba γ₄ = −10° y no cierra con 60 mm. q3 = −50°
+  es el borde de `Q3_LIM` (de la E4): revisar con los límites reales. Simulación autónoma sin ventana: **12 de 12**.
+  Prueba nueva en `mision`: el reposo por defecto tiene que ser alcanzable.
+- **J2 y J3 no son independientes**: los límites de cada una juntos dejan pasar γ₄ entre −165° y +95°, y con 60 mm solo
+  cierra entre −112° y −30°. Achicar los límites individuales para cubrirlo dejaría al hombro con ~32° de recorrido.
+  Firmware: `cuatroBarrasOk()` en `brazo_config.h`; `m` y `j` rechazan el objetivo (recortado como `irA()`) que lo
+  saque del rango. Revisado por Codex y aplicado: se recorta solo el objetivo, no la posición de la otra; `j 2/3` se
+  rechaza si la otra se mueve en `v`, `d` u homing; una falla en J2 o J3 detiene la otra; `home 2/3` bloqueados
+  (`HOME_J23_VERIFICADO = false`) hasta medir `HOME_Q` (hoy γ₄ = −165°); `POSE_CERO` de J3 a −40° (provisoria,
+  con `static_assert`); borde inferior −111,9° (−112° dejaba μ en 165,3°). Sin cubrir: el camino entre dos objetivos
+  (perfiles distintos de J2 y J3) y `d`/`v`. `brazo_ik`: `test_limites_firmware.py` compara `Q*_LIM` y el rango de γ₄
+  con `brazo_config.h`. Pruebas: firmware 18, `colcon` 53.
+- **Reposo y cámaras** (cuenta con la geometría del urdf; mástil y cámara son MEDIR): en reposo solo la pinza entra en
+  la imagen izquierda, a ~0,6 m de la lente y contra el borde izquierdo. Con la cámara real (f = 654 px) llega hasta
+  u ≈ 200 px con el reposo nuevo (177 px con el viejo), un poco fuera de la zona ciega del estéreo (u < 163): puede
+  tapar un limón en ese borde. Con la cámara simulada (f = 1076 px) queda en u < 122 px. Brazo al mástil en reposo:
+  37 cm (33 cm el viejo). Los "17 cm de la vista" del 29/09 no se reproducen con este método.
+- Prueba del LED RGB de la S3 armada en `pruebas-esp32/11-led-rgb-s3` (¿GPIO 48 o 38, el EN de la tracción?): el
+  diagrama dice 38 en la DevKitC-1 v1.1 y la foto del clon no muestra la versión. Se prueba el 19/10.

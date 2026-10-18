@@ -124,8 +124,9 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
 - Reposo del brazo: q = (75°, 94°, -50°) (**provisorio**, 18/10), girado a la izquierda: J1 nunca cruza el mástil al
   ir a un limón y volver (con el reposo girado a la derecha, a -75°, el brazo pasaba a 2 mm del eje del mástil). El de
   antes, (75°, 110°, -30°), no cierra el cuatro barras con el balancín real de 60 mm; q3 = -50° es el borde de
-  `Q3_LIM`: revisarlo con los límites reales. Las distancias al mástil (33 cm) y a la vista de las cámaras (17 cm) son
-  del reposo viejo: no se volvieron a medir.
+  `Q3_LIM`: revisarlo con los límites reales. En reposo el brazo queda a 37 cm del mástil, y solo la pinza entra en la
+  imagen izquierda, contra el borde (u < 122 px con esta cámara; con la real, f = 654 px, hasta ~200 px: un poco
+  fuera de la zona ciega del estéreo). Cuenta del 18/10 en `docs/BITACORA.md`.
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
   izquierda: con el eje de las ruedas (atrás) sobre una **marca de parada** (x = 1,19 / 2,70 / 4,17 / 5,69 m), y
   frenar (`k`). Después la
