@@ -119,8 +119,33 @@ El diseño se hizo en SolidWorks, a partir de las medidas de la Entrega 4. El br
 | $L_2$ | Barra principal (hombro → codo) | 350,22 |
 | $L_3$ | Antebrazo (codo → muñeca) | 329,51 |
 | $L_4$ | Acoplador del cuatro barras | 338,00 |
-| $L_{3,0} = L_{3,1}$ | Balancines del cuatro barras | 40,00 |
+| $L_{3,0}$ | Balancín de entrada (rojo), movido por J3 | **60,00** (40,00 en la E4) |
+| $L_{3,1}$ | Balancín de salida (tramo corto del antebrazo) | 40,00 |
 | $L_p$ | Pinza | 190,00 |
+
+#### Cuatro barras: balancín rojo de 60 mm
+
+En la Entrega 4 los dos balancines medían 40 mm y el cuatro barras **no cumplía el criterio de Grashof**. Con la barra más corta $s$, la más larga $\ell$ y las otras dos $p$ y $q$:
+
+| Balancín rojo $L_{3,0}$ | $s + \ell$ | $p + q$ | ¿Grashof? | Consecuencia |
+| :---: | :---: | :---: | :---: | :--- |
+| 40 mm (E4) | 40 + 350,22 = 390,22 | 40 + 338 = 378 | No: 390,22 > 378 | Triple balancín: ningún eslabón da la vuelta completa y los puntos muertos recortan el rango |
+| **60 mm (final)** | 40 + 350,22 = 390,22 | 60 + 338 = **398** | **Sí: 390,22 ≤ 398** | Manivela-balancín, accionado por el balancín rojo: el eslabón de salida (el más corto, junto al fijo) podría dar la vuelta completa en el mecanismo ideal |
+
+En un punto muerto, el acoplador y el eslabón de salida quedan alineados: la transmisión se vuelve singular (el torque que haría falta en el balancín rojo para sostener la carga tiende a infinito) y no se puede atravesar ese punto de forma controlada. La Entrega 4 propuso alargar el balancín rojo a 60 mm, y así se fabricó. Con 60 mm, los puntos muertos quedan en los extremos del giro del balancín rojo, y con los mismos márgenes el codo recorre **146,8°** en lugar de 113,5°.
+
+El cuatro barras no depende solo de J3, sino del ángulo $\gamma_4 = q_2 + q_3 - 90°$ entre la barra verde y el balancín rojo. Para alejarse de los puntos muertos, se exige un ángulo de transmisión $\mu$ (entre el acoplador y el eslabón de salida) entre 15° y 165°. La relación de la última columna es la del giro del codo respecto del giro del balancín rojo: cambia con la pose, no es una proporción fija.
+
+| Balancín rojo | Rango útil de $\gamma_4$ ($15° \le \mu \le 165°$) | Recorrido del codo | Relación instantánea $\lvert dq_{3,0}/d\gamma_4 \rvert$, con J2 fijo |
+| :---: | :---: | :---: | :---: |
+| 40 mm | −129,2° a 0° | 113,5° | 0 a 2,86 |
+| **60 mm** | **−111,9° a −29,7°** | **146,8°** | **1,44 a 5,08** |
+
+Esto tiene tres consecuencias:
+
+* **J2 y J3 tienen límites acoplados.** Además de su propio rango, cada pose tiene que cumplir $-111,9° \le q_2 + q_3 - 90° \le -29,7°$. La cinemática inversa aplica el criterio de $\mu$, y el firmware del brazo rechaza los objetivos de posición fuera de $-111,9°$ a $-30°$. Esto controla el objetivo, no todo el camino entre dos posiciones.
+* **Se cambió la pose de reposo.** La anterior ($q_2 = 110°$, $q_3 = -30°$) daba $\gamma_4 = -10°$: con 60 mm, el cuatro barras ahí no cierra. La nueva es $q = (75°, 94°, -50°)$, con $\gamma_4 = -46°$. Es provisoria hasta medir los límites reales.
+* **La transmisión de J3 al codo no es 1:1.** El codo gira entre 1,44 y 5,08 veces lo que gira el balancín. Por eso el balancín necesita más torque que el codo (sección 4).
 
 #### Masas
 
@@ -217,25 +242,39 @@ Las tres articulaciones usan motores DC con reductora y encoder, con una reducci
 | Reductora del motor | Planetaria 50:1 | 139:1 (vendedor) | 139:1 (vendedor) | Engranajes |
 | Velocidad del motor | 160 rpm | 58 rpm | 58 rpm | 0,17 s/60° |
 | Transmisión externa | Correa GT2 18 → 90 (5:1) | Engranajes helicoidales 15 → 75 (5:1) | Engranajes helicoidales 15 → 75 (5:1) | — |
-| Velocidad de la articulación (calculada) | 192 °/s | 70 °/s | 70 °/s | — |
+| Velocidad de la articulación (calculada) | 192 °/s | 70 °/s | 70 °/s en el balancín (el codo gira 1,44 a 5,08 veces más) | — |
 | Torque del motor | — | 22 kgf·cm nominal (vendedor) | 22 kgf·cm nominal (vendedor) | 20 kgf·cm |
 | Estado | Montado y probado | Pendiente de llegada | Pendiente de llegada | Montados y probados |
 
 Los dos servos se probaron por separado: el de apertura abre y cierra los dedos, y el de giro rota la pinza. Los dos funcionan bien.
 
+#### Engranajes helicoidales de J2 y J3
+
+| Parámetro | Valor |
+| :--- | :---: |
+| Piñón helicoidal (en el motor) | 15 dientes |
+| Engranaje helicoidal (en la articulación) | 75 dientes |
+| Relación | 5:1 |
+| Ancho de cara | 15 mm |
+| Ángulo de hélice | 25° |
+| Ángulo de presión normal | 20° |
+
+Se eligieron engranajes helicoidales y no rectos porque los dientes engranan de forma progresiva, con menos ruido y vibración. Como contrapartida, generan un **empuje axial** sobre los ejes de $F_a = F_t \tan 25° \approx 0,47\,F_t$, donde $F_t$ es la fuerza tangencial en el diente. El piñón y el engranaje tienen hélices de sentido contrario (ejes paralelos). Falta indicar el módulo, los diámetros primitivos y la distancia entre centros (a tomar del CAD): sin el diámetro no se puede calcular $F_t = 2T/d$ ni el valor del empuje axial que tienen que absorber los rodamientos.
+
 #### Torque requerido contra torque disponible
 
-Se usa la cota estática de la Entrega 6, con el brazo extendido en horizontal y el limón en la pinza, ahora con la pinza pesada de 246 g. Los engranajes 15 → 75 multiplican por 5 el torque del motor:
+Se usa la cota estática de la Entrega 6, con el tramo correspondiente del brazo en horizontal y el limón en la pinza, ahora con la pinza pesada de 246 g. Los engranajes 15 → 75 multiplican por 5 el torque del motor; los torques de la tabla son a la salida de los engranajes:
 
 | Articulación | Torque requerido (cota) | Torque disponible (22 kgf·cm × 5) | Margen |
 | :--- | :---: | :---: | :---: |
 | J2 (hombro) | 8,00 N·m | 10,8 N·m | 1,35 |
-| J3 (codo) | 3,45 N·m | 10,8 N·m | 3,1 |
+| J3 (balancín rojo) | 3,45 N·m en el codo → 5,0 a 17,5 N·m en el balancín (×1,44 a ×5,08) | 10,8 N·m | 2,2 a 0,62 |
 
 Esta comparación es un cálculo, no un ensayo:
 
 * El torque disponible es el nominal del vendedor por la reducción, sin descontar las pérdidas de los engranajes.
-* En J3, el motor mueve el balancín y el cuatro barras lleva el giro hasta el codo. Con balancines iguales (40 mm) se tomó una transmisión 1:1, que no se verificó en todo el rango.
+* En J3, el motor mueve el balancín rojo y el cuatro barras lleva el giro hasta el codo. Con 60 / 40 mm la transmisión no es 1:1: el torque que pide el balancín es el del codo multiplicado por la relación $\lvert dq_{3,0}/d\gamma_4 \rvert$. En la mitad del rango ($\gamma_4 \approx -65°$) la relación es 1,44: el margen frente a la cota conservadora es 2,2.
+* Cerca del borde inferior, **el motor no alcanza**. Con $\gamma_4 = -111°$ ($q_2 = 26°$, $q_3 = -47°$, antebrazo horizontal y limón) la relación es 3,96 y se piden 13,7 N·m (margen 0,79). En el borde, $\gamma_4 = -111,9°$, la relación llega a 5,08 y la cota a 17,5 N·m (margen 0,62). Hay que evitar esa zona con la carga o achicar el rango útil de $\gamma_4$.
 * La capacidad real se va a comprobar cuando lleguen los motores.
 
 J1 gira en el plano horizontal: la gravedad no le pide torque, solo la inercia y la fricción.
@@ -317,7 +356,7 @@ Cada motor trae un encoder Hall de **16 pulsos por vuelta**, con dos canales en 
 | Articulación | Cuentas por vuelta | Resolución |
 | :--- | :---: | :---: |
 | J1 (correa 18 → 90) | 16 × 4 × 50 × 5 = 16 000 | 0,023° (verificada en la E6) |
-| J2 y J3 (engranajes 15 → 75) | 16 × 4 × 139 × 5 = 44 480 | 0,008° (calculada; sin medir) |
+| J2 y J3 (engranajes 15 → 75) | 16 × 4 × 139 × 5 = 44 480 | 0,008° (calculada; sin medir; en J3, del balancín) |
 
 <p align="center">
   <img src="https://lh3.googleusercontent.com/d/1DtKXAiR-xmWliY_SiW1RXKpvLsRmcdRu=w2400" width="550" alt="Encoder" />
@@ -329,7 +368,7 @@ Cada motor trae un encoder Hall de **16 pulsos por vuelta**, con dos canales en 
 
 El encoder es incremental: al apagar el robot pierde la posición. Para recuperarla, al encender cada articulación gira despacio hasta tocar su final de carrera. El firmware asigna a ese punto un ángulo conocido, que no es necesariamente 0°: el extremo del rango de cada articulación (J1 45°, J2 −25°, J3 −50°, a confirmar con la mecánica). Para evitar falsos disparos, pide 3 lecturas seguidas del contacto.
 
-Son microinterruptores con palanca de rodillo, conectados a GND y leídos con el pull-up interno del ESP32. El homing está programado, pero todavía no se probó.
+Son microinterruptores con palanca de rodillo, conectados a GND y leídos con el pull-up interno del ESP32. El homing está programado, pero todavía no se probó. En J2 y J3 está bloqueado hasta medir sus posiciones de referencia: tomadas juntas, J2 = −25° y J3 = −50° dan $\gamma_4 = -165°$, fuera del rango en que cierra el cuatro barras.
 
 **Marca de referencia de J1.** Es otra cosa: una marca en la base, con J1 a 90° (brazo hacia la izquierda). En los ensayos de la E6, el cero se fijó a mano en esa marca, sin final de carrera.
 
@@ -477,7 +516,7 @@ El brazo se arma de abajo hacia arriba, probando cada articulación antes de mon
 | 7 | Se cablea: shield del ESP32, IBT-2, encoders y servos | J1 y servos hechos; J2 y J3 al llegar los motores |
 | 8 | Se fija la referencia de cada articulación | J1: marca de 90° (hecho). J2 y J3: homing con final de carrera (pendiente) |
 
-**Seguridad:** los motores planetarios previstos para J2 y J3 no se autobloquean. Sin corriente, el brazo baja por su peso. Por eso el brazo queda en reposo apoyado en un tope y nunca se ponen las manos debajo.
+**Seguridad:** los motores planetarios previstos para J2 y J3 no se autobloquean. Sin corriente, el brazo baja por su peso. Por eso, sin corriente, el brazo queda apoyado en un tope mecánico (no necesariamente en la pose de reposo del software) y nunca se ponen las manos debajo.
 <p align="center">
   <img src="https://lh3.googleusercontent.com/d/1u3gF2g76K8jLCoQNvhEgt_7o8tkBsWAk" width="550" alt="Cuatro barras" />
   <br>
@@ -494,6 +533,12 @@ El brazo se arma de abajo hacia arriba, probando cada articulación antes de mon
   <img src="https://lh3.googleusercontent.com/d/1v_UOCUFZcUkiQWg-O_NUcCsHj1GHqF6I" width="550" alt="Cuatro barras" />
   <br>
   <b>Fig. 19c.</b> brazo parcialmente armado ,fijo sobre el robot movil.
+</p>
+
+<p align="center">
+  <img src="https://lh3.googleusercontent.com/d/1EZPMEAh6mL63r4pmhRwYT68sGi8LU8I4" width="550" alt="Cuatro barras" />
+  <br>
+  <b>Fig. 19d.</b> Ajustando conexiones de los drivers.
 </p>
 
 <p align="center">
@@ -591,11 +636,14 @@ En la Entrega 6 se repitió la medición de la zona muerta con el **5840 montado
 ## **10. Videos**
 
 <!-- celda -->
-**Demo del brazo:** pendiente; el grupo lo agrega más adelante.
+**Demo del brazo:** pendiente; el grupo lo agrega más adelante en la siguiente version en cuanto se tengan los lazos abiertos y lazos cerrados de los motores nuevos para j2 y j3.
 
 Se adjunta la lista de reproduccion de las pruebas de lazo abierto de los motores j1 que es el motor 36GP-555 y el motor 5840 para j2 y j3 que son las que reemplazaremos.
 
 [![Ver lista de reproducción](https://img.youtube.com/vi/RdY4UUS9w7Y/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLWtzqMv9awVo)
+
+
+
 
 <!-- celda -->
 ---
