@@ -66,10 +66,10 @@ Criterio: **un ESP32 por subsistema** (base y brazo), no "motores en uno y senso
 
 | | **ESP32-S3 → BASE** | **ESP32-WROOM-32D → BRAZO** | **Raspberry Pi 5** |
 |---|---|---|---|
-| Motores | 2× DC 895 planetario 53 rpm con encoder (tracción) con 2× IBT-2 | J1: 36GP-555 160 rpm + IBT-2 · J2, J3: 2× 5840-31ZY + L298N | — |
-| Encoders | 2 (Hall de rueda) → 2 de 4 PCNT | 3 (Hall J1 + 2 ópticos 1000 PPR) → 3 de 8 PCNT | — |
-| Actuadores extra | luz, buzzer | 2 servos (apertura, giro J4) | — |
-| Sensores | IMU MPU-6500 (I²C), 3 bumpers (frente y laterales), 3 HC-SR04, GPS UP501 (UART, ya probado en E1), monitor de batería, estado de seta | — | 2 cámaras NoIR (CSI), LiDAR (USB, fuera del mínimo) |
+| Motores | 2× 42GM-895H planetario 53 rpm con encoder (tracción) con 2× IBT-2 | J1: 36GP-555 160 rpm + IBT-2 + correa 5:1 · J2, J3: 2× 36-555 58 rpm + IBT-2 + engranajes helicoidales 15 → 75 | — |
+| Encoders | 2 (Hall de rueda) → 2 de 4 PCNT | 3 (SCX-555 de J1, J2 y J3) → 3 de 8 PCNT | — |
+| Actuadores extra | — | 2 servos (apertura, giro J4) | luz y buzzer (GPIO 17 y 27, después de la prueba integrada) |
+| Sensores | IMU MPU-6500 (I²C), 3 bumpers (frente y laterales), 3 HC-SR04 (un TRIG cada uno), monitor de batería, estado de seta | finales de carrera de J1-J3 | 2 cámaras NoIR (CSI), GPS UP501 (UART, GPIO 14/15), LiDAR (USB, fuera del mínimo) |
 | Enlace | USB nativo → micro-ROS | USB (CH340) → micro-ROS | — |
 | Watchdog | sin `/cmd_vel` por 300 ms → freno | sin comando por 300 ms → mantiene posición y frena | — |
 
@@ -165,24 +165,24 @@ Los nombres coinciden con los estados de la guía R2 (INACTIVO, NAVEGANDO, BUSCA
 ## 8. Seguridad mínima
 
 1. **Hardware:** la seta corta la potencia de motores (su bloque NC A en el + del bus de 12 V, sin relé) sin pasar por software; los ESP32 y la Pi siguen encendidos y leen su estado. Rearme manual explícito, sin reinicio automático.
-2. **Habilitación del brazo** con llave/relé separado (H8).
+2. **Habilitación física del brazo** con estado visible (H8): queda para después de la prueba integrada; hoy el selector WEG es el ON/OFF de todos los motores y `mision` desarma el brazo al ver la seta.
 3. **ESP32:** watchdog de comandos, bumper → freno inmediato en la base, detección de atasco, límites articulares.
 4. **Pi:** `supervisor_seguridad` lleva la misión a EMERGENCIA ante bumper, inclinación (IMU) o pérdida de heartbeat de cualquier ESP32.
 
-J2 y J3 son de tornillo sin fin (irreversibles): al cortar potencia el brazo no cae. El riesgo es que la pinza suelte el limón; es aceptable.
+**J2 y J3 no se autobloquean** (36-555 planetarios, desde el 17/10; el 5840 de sin fin se descartó): al cortar la potencia, con la seta o al desarmar, el brazo cae. Dejarlo apoyado en un tope o en el reposo; falta resolver cómo sostenerlo contra la gravedad.
 
 ---
 
-## 9. Alimentación (a dimensionar)
+## 9. Alimentación (v0.6, 08/10)
 
-- Rama **potencia 12 V**: IBT-2 ×3 + L298N, con fusible por rama.
-- Rama **lógica**: Buck 5 V/5 A dedicado a la Pi 5 (fuente oficial o equivalente), Buck 5–6 V separado para los servos.
+- Rama **potencia 12 V**: LiPo 3S directa (sin buck) → XT60 → fusible de auto 20 A → selector WEG → seta (bloque A) → bus de 12 V con los 5 IBT-2 (2 de tracción, J1, J2, J3) y el buck 3 (12 → 6 V) de los servos.
+- Rama **lógica**: power bank Xiaomi PB2020MI (5 V 3 A) → Pi 5 → los dos ESP32 por USB.
 - Masa común en un único punto. Medir corriente pico con todos los motores arrancando.
 - Para el mínimo se puede usar **fuente de laboratorio** (la guía permite no depender de batería).
 - Batería (v0.6, 08/10): LiPo 3S directa para los motores y power bank de 5 V para la Pi y los ESP32; la 10S de
   36 V queda guardada (ver `CONEXIONES.md`).
 
-⚠ **L298N:** cae ~2,4–3 V (en E5, 9,6 V efectivos, ~140 rpm máx.). Medir corriente y temperatura con el brazo cargado; si calienta o no alcanza par, reemplazar por un segundo IBT-2 o un puente MOSFET pequeño.
+Detalle cable por cable en `CONEXIONES.md` y `html/potencia.html`. El L298N de la E5 (caía ~2,4 V) se reemplazó por IBT-2 en J2 y J3.
 
 ---
 
