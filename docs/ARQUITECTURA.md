@@ -75,7 +75,7 @@ Criterio: **un ESP32 por subsistema** (base y brazo), no "motores en uno y senso
 
 Notas:
 - Los HC-SR04 dan eco a 5 V: **divisor resistivo** a 3,3 V. Dispararlos en secuencia y sin `pulseIn` bloqueante.
-- Las bibliotecas `BTS7960`, `L298N` y `EncoderPCNT` de la E5 no tienen pines fijos: se reutilizan tal cual en ambos ESP32.
+- Las bibliotecas `BTS7960` y `EncoderPCNT` de la E5 no tienen pines fijos: se reutilizan tal cual en ambos ESP32.
 - J1 cambia de placa respecto de la E5 (S3 → WROOM). Es solo reasignar pines.
 
 ---

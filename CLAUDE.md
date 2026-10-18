@@ -57,7 +57,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `html/` (páginas: conexiones, potencia, placas y seta; `html/fotos` es un enlace a `fotos/`),
   `manual/` (manual completo en LaTeX: `manual.tex` + `capitulos/`, PDF compilado; `capturar.py` regenera las figuras de los HTML),
   inventario, bitácora.
-- `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960, L298N,
+- `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960,
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
 - `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
   detector. `graphify-out/`: grafo del repo (local, fuera de git).

@@ -12,7 +12,7 @@ recolector_de_frutas/
 │   ├── INDICE.md         qué hay en cada documento (empezar por acá)
 │   └── ARQUITECTURA.md   arquitectura del objetivo mínimo, plan y decisiones abiertas
 ├── firmware/
-│   ├── lib/              compartido: BTS7960, L298N, EncoderPCNT, HCSR04, MPU9250, UP501, ControlArticulacion,
+│   ├── lib/              compartido: BTS7960, EncoderPCNT, HCSR04, MPU9250, UP501, ControlArticulacion,
 │   │                     EnlaceMicroRos (conexión con el agente)
 │   ├── brazo/            ESP32-WROOM-32D: J1-J3 en lazo cerrado + pinza (PlatformIO)
 │   └── base/             ESP32-S3: tracción diferencial, odometría, sensores y seguridad (PlatformIO)
