@@ -208,5 +208,5 @@ Después del mínimo, en este orden: 2 cajones por tamaño → seguimiento de hi
 2. ~~**Herramienta:** confirmar que se acepta **pinza + tracción + giro** en lugar de succión.~~ **Aprobado por el profesor** (28/09/2026): agarre y tracción con giro de la pinza, 2 servos RDS3218 de 20 kg·cm.
 3. **GDL en R2:** B1 pide ≥4 GDL sin contar apertura (3R + J4 = 4 ✔), pero H6 dice "4 GDL + rotación". Confirmar que 3R + J4 alcanza.
 4. **Cajones por tamaño:** ¿son obligatorios para el mínimo?
-5. **Balancín rojo del cuatro barras: ¿40 o 60 mm?** La E4 propuso pasarlo a 60 mm para que el mecanismo sea Grashof; `cinematica.py` sigue con `L30 = 40` y no hay registro del cambio: **MEDIR** en el brazo armado. El límite de γ₄ no necesita código aparte: `MU_MIN` (μ entre 15° y 165°) ya lo impone, y da γ₄ entre −129° y 0° con 40 mm, o entre −112° y −30° con 60 mm (cuenta del 17/10). Si mide 60, cambiar `L30` y volver a correr las pruebas de `brazo_ik`.
+5. ~~**Balancín rojo: ¿40 o 60 mm?**~~ Mide **60 mm** (18/10): `L30 = 60` en `cinematica.py`, y el mecanismo es Grashof. El límite de γ₄ lo impone `MU_MIN` (μ entre 15° y 165°): γ₄ entre −112° y −30°. Por eso el reposo pasó a (75°, 94°, −50°) (provisorio; la simulación cosecha 12 de 12) y falta llevar `HOME_Q` del firmware a ese rango.
 6. **Cámaras NoIR:** ver §6.

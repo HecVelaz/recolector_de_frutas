@@ -33,7 +33,8 @@ TS = 0.02             # 50 Hz
 # esa pose intermedia como consigna. Levantado y girado a la izquierda, del lado de la fila: J1 nunca cruza el mástil
 # (adelante a la derecha) al ir a un limón y volver (girado a la derecha, a -75°, lo atravesaba). Buscado simulando
 # los recorridos a los 12 limones: ninguno pasa a menos de 33 cm del mástil, y queda a 17 cm de la vista de las cámaras
-REPOSO = [math.radians(75.0), math.radians(110.0), math.radians(-30.0)]
+# 17/10: q2/q3 pasan de (110°, -30°) a (94°, -50°) porque con el balancín de 60 mm el de antes no cierra (provisorio)
+REPOSO = [math.radians(75.0), math.radians(94.0), math.radians(-50.0)]
 K_POS = 5.0  # 1/s: velocidad = la de la consigna + K_POS * error (K_POS * TS << 1: estable a 50 Hz)
 V_LIM = 1.0  # rad/s, límite de las articulaciones en el urdf
 

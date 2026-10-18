@@ -3,12 +3,14 @@
 import math
 import random
 
+from brazo_ik import cinematica
 from brazo_ik.cinematica import cinematica_directa, config_valida, L2, L3, H1
 from simulacion.brazo_sim import actuador_a_serie, perfil, serie_a_actuador
 
 
-def test_ejemplo_e4():
-    # q = (0°, 45°, 0°) -> q3O = -113,516° (E4 §9)
+def test_ejemplo_e4(monkeypatch):
+    # q = (0°, 45°, 0°) -> q3O = -113,516° (E4 §9, con el balancín de la E4: 40 mm; el real mide 60)
+    monkeypatch.setattr(cinematica, 'L30', 40.0)
     assert abs(math.degrees(actuador_a_serie(math.radians(45), 0.0)) + 113.516) < 0.01
 
 

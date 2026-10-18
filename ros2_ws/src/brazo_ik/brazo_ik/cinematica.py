@@ -24,7 +24,7 @@ H1 = 150.00   # altura del hombro
 L2 = 350.22   # barra verde
 L3 = 329.51   # barra azul (articulación superior B -> muñeca P3)
 L4 = 338.00   # barra amarilla (acoplador)
-L30 = 40.00   # balancín de entrada (rojo)
+L30 = 60.00   # balancín de entrada (rojo): 60 mm medido el 17/10 (en la E4 era 40; con 60 el mecanismo es Grashof)
 L31 = 40.00   # balancín de salida (tramo corto del azul)
 
 # Límites [°]

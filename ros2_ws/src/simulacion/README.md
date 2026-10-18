@@ -121,9 +121,11 @@ límites de `CFG_DIF` (0,25 m/s, 1 rad/s, 0,3 m/s², 1,5 rad/s²).
   posición, altura y ángulos para que desde cada marca los 3 limones se vean y estén al alcance de J1 (±75°).
 - 12 limones cosechables (3 por árbol de la fila izquierda, `limon_1..12` en el mundo); la fila derecha tiene limones
   fijos de decoración.
-- Reposo del brazo: q = (75°, 110°, -30°), levantado y girado a la izquierda: J1 nunca cruza el mástil al ir a un
-  limón y volver (con el reposo girado a la derecha, a -75°, el brazo pasaba a 2 mm del eje del mástil). Simulando los
-  recorridos a los 12 limones, ninguno pasa a menos de 33 cm del mástil; queda a 17 cm de la vista de las cámaras.
+- Reposo del brazo: q = (75°, 94°, -50°) (**provisorio**, 18/10), girado a la izquierda: J1 nunca cruza el mástil al
+  ir a un limón y volver (con el reposo girado a la derecha, a -75°, el brazo pasaba a 2 mm del eje del mástil). El de
+  antes, (75°, 110°, -30°), no cierra el cuatro barras con el balancín real de 60 mm; q3 = -50° es el borde de
+  `Q3_LIM`: revisarlo con los límites reales. Las distancias al mástil (33 cm) y a la vista de las cámaras (17 cm) son
+  del reposo viejo: no se volvieron a medir.
 - Con `mision:=true` corre `mision` sin cambios. Arrimar el robot con el teleop hasta que el limón quede adelante a la
   izquierda: con el eje de las ruedas (atrás) sobre una **marca de parada** (x = 1,19 / 2,70 / 4,17 / 5,69 m), y
   frenar (`k`). Después la
@@ -193,6 +195,7 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 | 2026-09-29 | **Recorrido autónomo** (`mision:=true autonomo:=true`), sin ventana: recorre la hilera sola hasta x = 7,32 m en ~9 min simulados y cosecha **12 de 12**; esquiva la caja por la derecha y el balde por la izquierda sin tocarlos; vuelve al centro (±1 cm) y retrocede a buscar los limones que quedaron atrás (árboles 2 y 3). Antes: 5/12 (la odometría de ruedas se desviaba 13 cm en los giros: ahora rumbo del giróscopo), 8/12 (árbol 3 pasado de largo) y 11/12 (terminaba el corrimiento torcido). `limones_sim` publica `/yolo/detecciones` (también en movimiento) y `/limon/posicion` solo con el robot quieto; HC-SR04 los 3 al frente; cono sacado. 46 pruebas `colcon test` (mision, simulacion, brazo_ik) | OK |
 | 2026-09-29 | Etapa 5 (`base_sim`, 3 HC-SR04, 3 bumpers con resorte): frena a 0,20 m de la caja; bumper contra un escalón de 8 cm (el ultrasonido no lo ve): no avanza ni gira, retrocede y se suelta; watchdog 300 ms (11,5 cm con la rampa); seta enclavada hasta `r`. Misión en las 4 marcas: **12 de 12**. Tiempo real 0,3-0,75 (antes 0,8-0,95: los 3 `gpu_lidar` y `base_sim`). 36 pruebas `colcon test` | OK |
 | 2026-09-29 | Reposo girado a la izquierda (75°, 110°, -30°): el de la derecha atravesaba el mástil (2 mm del eje). 12 de 12 | OK |
+| 2026-10-18 | Balancín rojo de 60 mm (`L30`, medido) y reposo provisorio (75°, 94°, -50°): recorrido autónomo sin ventana, **12 de 12**, fin de la hilera en x = 7,33 m. 50 pruebas `colcon test` | OK |
 | 2026-09-29 | Brazo atrás sobre el eje, mástil adelante a la derecha (dibujado), marcas y reposo nuevos; control por velocidad (`JointController`) y `/joint_states` a 50 Hz. Notebook, sin ventana, robot puesto en cada marca con `set_pose`: **12 de 12 limones cosechados**, TCP a 0,0-0,1 cm; 0 inversiones de velocidad en J1-J3 y el nivelador (antes 84 en J1 en una parada: el temblor); tiempo real 0,8-0,95 (antes 0,17-0,75). 30 pruebas `colcon test` | OK |
 | 2026-09-29 | Usuario con teleop: en la parada 2 el brazo quedó quieto. El robot había frenado 27 cm a la derecha del centro del pasillo (tras esquivar la caja): veía el limón 4 pero fuera de alcance, `mision` en ESPERAR. No es falla | — |
 | 2026-09-29 | Base real de la R2 E3 (T de 40 cm, ruedas de 150 mm, trocha 0,40, brazo adelante a la izquierda a 6 cm de los bordes, mástil atrás a la izquierda) y marcas recalculadas: **12 de 12 limones cosechados** en las 4 paradas, TCP a 0,0-0,1 cm, base quieta. 30 pruebas `colcon test` | OK |

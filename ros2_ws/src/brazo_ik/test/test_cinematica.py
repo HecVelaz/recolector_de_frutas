@@ -3,15 +3,18 @@
 import math
 import random
 
+from brazo_ik import cinematica
 from brazo_ik.cinematica import (cinematica_directa, cinematica_inversa, config_valida, Q1_LIM, Q2_LIM,
                                  Q3_LIM)
 from brazo_ik.cinematica import cinematica_directa as directa, muneca_desde_herramienta
 from brazo_ik.nodo_ik import resolver
 
 
-def test_ejemplo_numerico_de_la_e4():
+def test_ejemplo_numerico_de_la_e4(monkeypatch):
     # E4 §9: P_d = (368.32, 0, 91.03) mm -> q = (0°, 45°, 0°), q3O = -113.516°. Con el rango nuevo de J1 (45..225°) el
-    # frente queda afuera: el mismo punto girado 90° (al costado izquierdo) da q1 = 90° y el resto igual
+    # frente queda afuera: el mismo punto girado 90° (al costado izquierdo) da q1 = 90° y el resto igual.
+    # El ejemplo es con el balancín de la E4 (40 mm); el real mide 60
+    monkeypatch.setattr(cinematica, 'L30', 40.0)
     sols, _ = cinematica_inversa(0.0, 368.32, 91.03)
     assert sols
     s = sols[0]
