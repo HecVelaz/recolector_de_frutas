@@ -50,19 +50,21 @@ Esta entrega presenta el diseño final del brazo recolector de limones, su fabri
 
 El informe distingue tres cosas: el diseño final previsto, lo que muestran las fotos del montaje y lo que efectivamente se probó.
 
-| Parte | Diseño final previsto | Montaje en las fotos | Probado |
+| Parte | Diseño final | En las fotos | Probado |
 | :--- | :--- | :--- | :--- |
-| J1 (base) | 36GP-555 + correa GT2 18 → 90 (5:1) + IBT-2 | El mismo | Lazo abierto (E5) y lazo cerrado montado en el brazo (E6) |
-| J2 (hombro) | 36-555 de 58 rpm + engranajes helicoidales 15 → 75 (5:1) + IBT-2 | 5840-31ZY, ya descartado | El 5840 no sirvió (sección 4.1). El motor de J1 puesto en J2 levantó el brazo. El 36-555 todavía no llegó |
-| J3 (codo) | 36-555 de 58 rpm + engranajes helicoidales 15 → 75 (5:1) + IBT-2 | 5840-31ZY, ya descartado | El 5840 oscilaba (sección 4.1). El 36-555 todavía no llegó |
-| Pinza | 2 servos RDS3218: apertura y giro (J4) | Montada | Cada servo, por separado: funcionan bien |
-| Finales de carrera | 3, para el homing | — | Sin probar |
-| Cámaras | Par estéreo + YOLO en la Raspberry Pi 5 | — | En laboratorio (sección 5) |
+| J1 (base) | 36GP-555 + correa 5:1 + IBT-2 | El mismo | Lazo abierto y lazo cerrado |
+| J2 (hombro) | 36-555 + engranajes 5:1 + IBT-2 | 5840, descartado | Pendiente: motor en camino |
+| J3 (codo) | 36-555 + engranajes 5:1 + IBT-2 | 5840, descartado | Pendiente: motor en camino |
+| Pinza | 2 servos RDS3218 | Montada | Sí, cada servo por separado |
+| Finales de carrera | 3, para el homing | — | No |
+| Cámaras | Estéreo + YOLO en la Raspberry Pi 5 | — | En laboratorio |
+
+Los motores 5840 que aparecen en las fotos se descartaron. Como prueba, el motor de J1 se montó en J2 y levantó el brazo. La sección 4.1 cuenta esos ensayos.
 
 <p align="center">
   <img src="https://lh3.googleusercontent.com/d/106iN-Yo390xJS2KZNlywJeFAigkwcI13=w2400" width="650" alt="Robot completo" />
   <br>
-  <b>Fig. 1.</b> Robot "Arturito R2D2": brazo RRR montado sobre la base móvil, sujetando un limón (04/10, con los motores 5840 en J2 y J3, ya descartados).
+  <b>Fig. 1.</b> Robot "Arturito R2D2" con el brazo montado sobre la base móvil, sujetando un limón. Foto del 04/10, todavía con los motores 5840 en J2 y J3.
 </p>
 
 <!-- celda -->
@@ -72,9 +74,11 @@ El informe distingue tres cosas: el diseño final previsto, lo que muestran las 
 <!-- celda -->
 El robot tiene dos partes. La base móvil (de madera, con tracción diferencial) recorre la hilera de limoneros; corresponde a Robótica II. El brazo cosecha el limón; es lo que evalúa Robótica I y lo que se describe en este informe.
 
+La consigna general pide montar el brazo sobre una plataforma con recorrido lineal de 1,20 m, cosechar con succión y torsión, y dejar los limones en dos cajones según su tamaño. En este robot, la base móvil hace de plataforma y recorre la hilera completa; falta confirmar con la cátedra que cumple ese papel. La herramienta es una pinza que agarra y gira, en lugar de succión: el cambio lo aprobó el profesor el 28/09. Los cajones y la prueba en la zona de cosecha de 30 cm se presentan con el robot completo.
+
 El brazo es un manipulador RRR articulado, del mismo tipo que el uArm Swift y el Dobot Magician [5]. Tiene tres articulaciones rotativas motorizadas que posicionan la pinza en el espacio.
 
-La orientación de la pinza no necesita motores. Un paralelogramo la mantiene siempre horizontal y apuntando en la dirección de J1. Así, tres motores alcanzan para llevar la pinza hasta el limón.
+Un paralelogramo mantiene la pinza siempre horizontal y apuntando en la dirección de J1. Así, tres motores alcanzan para llevarla hasta el limón. Aparte, dos servos giran la pinza sobre su eje (J4) y la abren y cierran.
 
 <p align="center">
   <img src="https://lh3.googleusercontent.com/d/1n2a3QFC-G6gsRmoV6bSt8o49scDKhVzS=w2400" width="950" alt="Morfología del brazo" />
@@ -95,7 +99,7 @@ La orientación de la pinza no necesita motores. Un paralelogramo la mantiene si
 #### Por qué esta morfología
 
 * **El motor del codo va abajo.** J3 mueve un balancín junto al hombro, y un acoplador lleva ese giro hasta el codo. El antebrazo no carga el peso de un motor, y el brazo resulta más liviano y rígido [4], [6].
-* **La pinza no necesita muñeca motorizada.** El paralelogramo la mantiene horizontal, que es la posición útil para tomar un limón colgado de la rama. El mismo recurso usan otros robots de campo con paralelogramo [4].
+* **La pinza se mantiene horizontal sin un motor de muñeca.** El paralelogramo la deja en la posición útil para tomar un limón colgado de la rama. Solo se suma el servo J4, que gira la pinza para retorcer el pedúnculo. El mismo recurso usan otros robots de campo con paralelogramo [4].
 * **El espacio de trabajo es amplio.** Una cadena RRR articulada alcanza un volumen esférico alrededor de J1, adecuado para frutos a distintas alturas y distancias [1], [3].
 
 <p align="center">
@@ -138,6 +142,12 @@ Para corregirlo, el balancín rojo se alargó a 60 mm. El criterio se cumple cua
 
 Resultado: el codo ahora recorre unos 147°, contra 113° con el balancín de 40 mm.
 
+<p align="center">
+  <img src="https://lh3.googleusercontent.com/d/ID_FIG3B=w2400" width="650" alt="Cuatro barras con balancín de 60 mm" />
+  <br>
+  <b>Fig. 3b.</b> Cuatro barras del codo con el balancín rojo de 60 mm, dibujado a escala en la pose de reposo. Diagrama propio (draw.io).
+</p>
+
 El cambio trajo tres consecuencias:
 
 * **J2 y J3 se mueven juntas.** El cuatro barras depende de la suma de los dos ángulos, así que no se puede mover una sin mirar la otra. El software rechaza las posiciones donde el mecanismo se trabaría.
@@ -152,13 +162,13 @@ El cambio trajo tres consecuencias:
 | Eslabón 2 (antebrazo, sin pinza) | 362,6 | Estimación de la E6 |
 | Pinza armada | **246** | **Pesada (sección 7)** |
 | **Masa móvil del brazo** | **≈ 1125** | |
-| Limón (carga máxima) | 200 | Consigna |
+| Limón (carga de diseño) | 200 | Supuesto del grupo: un limón pesa entre 150 y 200 g |
 
 La pinza se pesó armada: dedos, mecanismo, soporte trasero, los dos servos y su tornillería. Pesa 246 g, menos que los 322 g estimados en la Entrega 6; los cálculos de torque de este informe usan el valor pesado.
 
 #### Rangos de diseño y recorridos ensayados
 
-Los rangos de diseño son los que permite la mecánica y usa la cinemática inversa. Los recorridos ensayados son los que se movieron realmente en las pruebas.
+Los rangos de diseño son límites provisorios de cada articulación. Además, J2 y J3 tienen que combinarse de forma que el cuatro barras se pueda armar, como se explicó arriba, y el recorrido con carga se va a validar con los motores nuevos. Los recorridos ensayados son los que se movieron realmente en las pruebas.
 
 | Articulación | Rango de diseño | Recorrido ensayado |
 | :--- | :---: | :--- |
@@ -239,9 +249,11 @@ Las tres articulaciones usan motores DC con reductora y encoder, con una reducci
 | Reductora del motor | Planetaria 50:1 | 139:1 (vendedor) | 139:1 (vendedor) | Engranajes |
 | Velocidad del motor | 160 rpm | 58 rpm | 58 rpm | 0,17 s/60° |
 | Transmisión externa | Correa GT2 18 → 90 (5:1) | Engranajes helicoidales 15 → 75 (5:1) | Engranajes helicoidales 15 → 75 (5:1) | — |
-| Velocidad de la articulación (calculada) | 192 °/s | 70 °/s | 70 °/s en el balancín (el codo gira 1,44 a 5,08 veces más) | — |
+| Velocidad de la articulación (calculada) | 192 °/s | 70 °/s | 70 °/s en el balancín | — |
 | Torque del motor | — | 22 kgf·cm nominal (vendedor) | 22 kgf·cm nominal (vendedor) | 20 kgf·cm |
 | Estado | Montado y probado | Pendiente de llegada | Pendiente de llegada | Montados y probados |
+
+En J3, la velocidad es la del balancín rojo; la del codo cambia con la posición del cuatro barras.
 
 Los dos servos se probaron por separado: el de apertura abre y cierra los dedos, y el de giro rota la pinza. Los dos funcionan bien.
 
@@ -256,23 +268,27 @@ Los dos servos se probaron por separado: el de apertura abre y cierra los dedos,
 | Ángulo de hélice | 25° |
 | Ángulo de presión normal | 20° |
 
-Se eligieron engranajes helicoidales y no rectos porque los dientes engranan de forma progresiva, con menos ruido y vibración. Como contrapartida, generan un **empuje axial** sobre los ejes de $F_a = F_t \tan 25° \approx 0,47\,F_t$, donde $F_t$ es la fuerza tangencial en el diente. El piñón y el engranaje tienen hélices de sentido contrario (ejes paralelos). Falta indicar el módulo, los diámetros primitivos y la distancia entre centros (a tomar del CAD): sin el diámetro no se puede calcular $F_t = 2T/d$ ni el valor del empuje axial que tienen que absorber los rodamientos.
+Se eligieron engranajes helicoidales porque los dientes entran en contacto de a poco: hacen menos ruido y vibran menos que los rectos. A cambio, empujan los ejes a lo largo, y ese esfuerzo lo tienen que absorber los apoyos. El piñón y la rueda tienen hélices de sentido contrario.
+
+Falta completar con el CAD el módulo, los diámetros y la distancia entre ejes. Con esos datos se puede calcular el empuje sobre los apoyos: $F_a = F_t \tan 25° \approx 0,47\,F_t$, con $F_t = 2T/d$.
 
 #### Torque requerido contra torque disponible
 
-Se usa la cota estática de la Entrega 6, con el tramo correspondiente del brazo en horizontal y el limón en la pinza, ahora con la pinza pesada de 246 g. Los engranajes 15 → 75 multiplican por 5 el torque del motor; los torques de la tabla son a la salida de los engranajes:
+Para estimar el torque se toma el caso más exigente: el brazo en horizontal con un limón de 200 g en la pinza. Se usa el peso medido de la pinza, 246 g.
 
-| Articulación | Torque requerido (cota) | Torque disponible (22 kgf·cm × 5) | Margen |
+En J2, el torque del motor pasa solo por los engranajes, que lo multiplican por 5. En J3 hay una etapa más, el cuatro barras: según la posición, el balancín tiene que hacer entre 1,4 y 5 veces el torque que necesita el codo (sección 2).
+
+| Articulación | Torque requerido | Torque disponible | Margen |
 | :--- | :---: | :---: | :---: |
-| J2 (hombro) | 8,00 N·m | 10,8 N·m | 1,35 |
-| J3 (balancín rojo) | 3,45 N·m en el codo → 5,0 a 17,5 N·m en el balancín (×1,44 a ×5,08) | 10,8 N·m | 2,2 a 0,62 |
+| J2 (hombro) | 8,0 N·m | 10,8 N·m | 1,35 |
+| J3, mitad del rango | 5,0 N·m | 10,8 N·m | 2,2 |
+| J3, cerca del borde inferior | 13,7 N·m | 10,8 N·m | **0,79** |
 
-Esta comparación es un cálculo, no un ensayo:
+Los torques son los del eje de cada articulación, después de los engranajes. El disponible es 22 kgf·cm × 5. El margen es el disponible dividido por el requerido: si es menor que 1, el motor no alcanza.
 
-* El torque disponible es el nominal del vendedor por la reducción, sin descontar las pérdidas de los engranajes.
-* En J3, el motor mueve el balancín rojo y el cuatro barras lleva el giro hasta el codo. Con 60 / 40 mm la transmisión no es 1:1: el torque que pide el balancín es el del codo multiplicado por cuánto más gira el codo que el balancín (sección 2). Se usa el ángulo $\gamma_4 = q_2 + q_3 - 90°$, entre la barra verde y el balancín rojo. En la mitad del rango ($\gamma_4 \approx -65°$) la relación es 1,44: el margen frente a la cota conservadora es 2,2.
-* Cerca del borde inferior, **el motor no alcanza**. Con $\gamma_4 = -111°$ ($q_2 = 26°$, $q_3 = -47°$, antebrazo horizontal y limón) la relación es 3,96 y se piden 13,7 N·m (margen 0,79). En el borde, $\gamma_4 = -111,9°$, la relación llega a 5,08 y la cota a 17,5 N·m (margen 0,62). Hay que evitar esa zona con la carga o achicar el rango útil de $\gamma_4$.
-* La capacidad real se va a comprobar cuando lleguen los motores.
+* **J2** tiene margen, aunque justo.
+* **J3** alcanza en la mayor parte del rango, pero no cerca del borde inferior. Ese caso es con $q_2 = 26°$ y $q_3 = -47°$, el antebrazo horizontal y el limón en la pinza. En el extremo mismo del rango, la cuenta llega a 17,5 N·m. Falta definir qué recorrido se va a usar con carga y probarlo con los motores nuevos.
+* Es un cálculo, no un ensayo: usa el torque nominal del vendedor y no descuenta las pérdidas de los engranajes.
 
 J1 gira en el plano horizontal: la gravedad no le pide torque, solo la inercia y la fricción.
 
@@ -319,7 +335,7 @@ Los motores de J2 y J3 se están cambiando. Esta sección explica qué se probó
 | Reducción | Tornillo sin fin | Reductora 139:1 + engranajes helicoidales 15 → 75 |
 | Torque del motor | 8 kgf·cm | 22 kgf·cm nominal (vendedor) |
 | Driver | L298N, después IBT-2 | IBT-2 (BTS7960) |
-| Encoder | Óptico externo, 1000 PPR | Hall incluido, 16 PPR (44 480 cuentas por vuelta de la articulación, calculadas) |
+| Encoder | Óptico externo, 1000 PPR | Hall incluido, 16 PPR |
 | Resultado | Sin resorte no levantó el brazo; con resorte, oscilaba | Sin probar: los motores todavía no llegaron |
 
 #### Estado
@@ -365,7 +381,7 @@ Cada motor trae un encoder Hall de **16 pulsos por vuelta**, con dos canales en 
 
 El encoder es incremental: al apagar el robot pierde la posición. Para recuperarla, al encender cada articulación gira despacio hasta tocar su final de carrera. El firmware asigna a ese punto un ángulo conocido, que no es necesariamente 0°: el extremo del rango de cada articulación (J1 45°, J2 −25°, J3 −50°, a confirmar con la mecánica). Para evitar falsos disparos, pide 3 lecturas seguidas del contacto.
 
-Son microinterruptores con palanca de rodillo, conectados a GND y leídos con el pull-up interno del ESP32. El homing está programado, pero todavía no se probó. En J2 y J3 está bloqueado hasta medir sus posiciones de referencia: tomadas juntas, J2 = −25° y J3 = −50° dan $\gamma_4 = -165°$, fuera del rango en que cierra el cuatro barras.
+Son microinterruptores con palanca de rodillo, conectados a GND y leídos con el pull-up interno del ESP32. El homing está programado, pero todavía no se probó. En J2 y J3 está bloqueado hasta medir sus posiciones de referencia: J2 en −25° y J3 en −50° forman una combinación en la que el cuatro barras no se puede armar.
 
 **Marca de referencia de J1.** Es otra cosa: una marca en la base, con J1 a 90° (brazo hacia la izquierda). En los ensayos de la E6, el cero se fijó a mano en esa marca, sin final de carrera.
 
@@ -402,11 +418,13 @@ Cada motor del brazo tiene su propio **IBT-2**, un puente H completo basado en d
 
 | Parámetro | Valor |
 | :--- | :--- |
-| Frecuencia de PWM | 20 kHz en el firmware del brazo (fuera del rango audible). En la E6, el J3 con el 5840 se usó a 1 kHz. Con los 36-555, 20 kHz queda sin probar |
+| Frecuencia de PWM | 20 kHz |
 | Señales por motor | RPWM (un sentido) y LPWM (el otro) |
-| Habilitación | R_EN y L_EN de los tres IBT-2 unidos al GPIO 23, con 10 kΩ a GND: si el ESP32 se reinicia, los motores quedan deshabilitados |
+| Habilitación | GPIO 23, común a los tres drivers |
 | Lógica | 3,3 V, compatible con el ESP32 |
 | Potencia | Bus de 12 V: LiPo 3S → fusible de 20 A → selector → seta de emergencia |
+
+A 20 kHz el PWM queda fuera del rango audible. Todavía no se probó con los motores nuevos: el ensayo anterior de J3 se hizo a 1 kHz. Los pines R_EN y L_EN de los tres IBT-2 van unidos al GPIO 23, con una resistencia de 10 kΩ a GND que mantiene los motores apagados mientras el ESP32 se reinicia.
 
 Los servos no necesitan driver: reciben la señal PWM de 50 Hz directo del ESP32. Su alimentación de 6 V sale de un convertidor buck de 12 a 6 V, aparte de la del ESP32.
 
@@ -633,11 +651,15 @@ En la Entrega 6 se repitió la medición de la zona muerta con el **5840 montado
 ## **10. Videos**
 
 <!-- celda -->
-**Demo del brazo:** pendiente; el grupo lo agrega más adelante en la siguiente version en cuanto se tengan los lazos abiertos y lazos cerrados de los motores nuevos para j2 y j3.
+**Demo del brazo:** pendiente. Se agrega cuando estén montados y probados los motores nuevos de J2 y J3.
 
-Se adjunta la lista de reproduccion de las pruebas de lazo abierto de los motores j1 que es el motor 36GP-555 y el motor 5840 para j2 y j3 que son las que reemplazaremos.
+**Lazo cerrado:** pruebas del control de cada articulación por separado.
 
-[![Ver lista de reproducción](https://img.youtube.com/vi/RdY4UUS9w7Y/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLWtzqMv9awVo)
+[![Ver lista de reproducción de lazo cerrado](https://img.youtube.com/vi/N8ZAt2xnw8k/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLQCLakFxinI0)
+
+**Lazo abierto:** pruebas del motor 36GP-555 de J1 y del 5840 que se usó en J2 y J3, ya descartado.
+
+[![Ver lista de reproducción de lazo abierto](https://img.youtube.com/vi/RdY4UUS9w7Y/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLWtzqMv9awVo)
 
 
 
