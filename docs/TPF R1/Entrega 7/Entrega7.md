@@ -125,27 +125,24 @@ El diseño se hizo en SolidWorks, a partir de las medidas de la Entrega 4. El br
 
 #### Cuatro barras: balancín rojo de 60 mm
 
-En la Entrega 4 los dos balancines medían 40 mm y el cuatro barras **no cumplía el criterio de Grashof**. Con la barra más corta $s$, la más larga $\ell$ y las otras dos $p$ y $q$:
+El codo se mueve con un cuatro barras: el motor de J3 gira el balancín rojo y el acoplador lleva ese giro hasta el antebrazo.
 
-| Balancín rojo $L_{3,0}$ | $s + \ell$ | $p + q$ | ¿Grashof? | Consecuencia |
-| :---: | :---: | :---: | :---: | :--- |
-| 40 mm (E4) | 40 + 350,22 = 390,22 | 40 + 338 = 378 | No: 390,22 > 378 | Triple balancín: ningún eslabón da la vuelta completa y los puntos muertos recortan el rango |
-| **60 mm (final)** | 40 + 350,22 = 390,22 | 60 + 338 = **398** | **Sí: 390,22 ≤ 398** | Manivela-balancín, accionado por el balancín rojo: el eslabón de salida (el más corto, junto al fijo) podría dar la vuelta completa en el mecanismo ideal |
+En la Entrega 4 el balancín rojo medía 40 mm y el mecanismo no cumplía el criterio de Grashof. En la práctica, eso significa que tenía posiciones donde se trababa, llamadas puntos muertos, y que el codo se movía poco.
 
-En un punto muerto, el acoplador y el eslabón de salida quedan alineados: la transmisión se vuelve singular (el torque que haría falta en el balancín rojo para sostener la carga tiende a infinito) y no se puede atravesar ese punto de forma controlada. La Entrega 4 propuso alargar el balancín rojo a 60 mm, y así se fabricó. Con 60 mm, los puntos muertos quedan en los extremos del giro del balancín rojo, y con los mismos márgenes el codo recorre **146,8°** en lugar de 113,5°.
+Para corregirlo, el balancín rojo se alargó a 60 mm. El criterio se cumple cuando la barra más corta más la más larga no superan a las otras dos sumadas:
 
-El cuatro barras no depende solo de J3, sino del ángulo $\gamma_4 = q_2 + q_3 - 90°$ entre la barra verde y el balancín rojo. Para alejarse de los puntos muertos, se exige un ángulo de transmisión $\mu$ (entre el acoplador y el eslabón de salida) entre 15° y 165°. La relación de la última columna es la del giro del codo respecto del giro del balancín rojo: cambia con la pose, no es una proporción fija.
-
-| Balancín rojo | Rango útil de $\gamma_4$ ($15° \le \mu \le 165°$) | Recorrido del codo | Relación instantánea $\lvert dq_{3,0}/d\gamma_4 \rvert$, con J2 fijo |
+| Balancín rojo | Más corta + más larga | Las otras dos | ¿Cumple Grashof? |
 | :---: | :---: | :---: | :---: |
-| 40 mm | −129,2° a 0° | 113,5° | 0 a 2,86 |
-| **60 mm** | **−111,9° a −29,7°** | **146,8°** | **1,44 a 5,08** |
+| 40 mm | 40 + 350,22 = 390,22 | 40 + 338 = 378 | No |
+| **60 mm** | 40 + 350,22 = 390,22 | 60 + 338 = 398 | **Sí** |
 
-Esto tiene tres consecuencias:
+Resultado: el codo ahora recorre unos 147°, contra 113° con el balancín de 40 mm.
 
-* **J2 y J3 tienen límites acoplados.** Además de su propio rango, cada pose tiene que cumplir $-111,9° \le q_2 + q_3 - 90° \le -29,7°$. La cinemática inversa aplica el criterio de $\mu$, y el firmware del brazo rechaza los objetivos de posición fuera de $-111,9°$ a $-30°$. Esto controla el objetivo, no todo el camino entre dos posiciones.
-* **Se cambió la pose de reposo.** La anterior ($q_2 = 110°$, $q_3 = -30°$) daba $\gamma_4 = -10°$: con 60 mm, el cuatro barras ahí no cierra. La nueva es $q = (75°, 94°, -50°)$, con $\gamma_4 = -46°$. Es provisoria hasta medir los límites reales.
-* **La transmisión de J3 al codo no es 1:1.** El codo gira entre 1,44 y 5,08 veces lo que gira el balancín. Por eso el balancín necesita más torque que el codo (sección 4).
+El cambio trajo tres consecuencias:
+
+* **J2 y J3 se mueven juntas.** El cuatro barras depende de la suma de los dos ángulos, así que no se puede mover una sin mirar la otra. El software rechaza las posiciones donde el mecanismo se trabaría.
+* **Cambió la pose de reposo.** La anterior quedaba en una posición imposible con 60 mm. La nueva es $q = (75°, 94°, -50°)$, provisoria hasta medir el brazo real.
+* **J3 necesita más fuerza.** Con balancines de distinto largo, el codo gira más que el balancín: entre 1,4 y 5 veces, según la posición. Por eso el motor de J3 tiene que hacer más torque. La sección 4 lo calcula.
 
 #### Masas
 
@@ -273,7 +270,7 @@ Se usa la cota estática de la Entrega 6, con el tramo correspondiente del brazo
 Esta comparación es un cálculo, no un ensayo:
 
 * El torque disponible es el nominal del vendedor por la reducción, sin descontar las pérdidas de los engranajes.
-* En J3, el motor mueve el balancín rojo y el cuatro barras lleva el giro hasta el codo. Con 60 / 40 mm la transmisión no es 1:1: el torque que pide el balancín es el del codo multiplicado por la relación $\lvert dq_{3,0}/d\gamma_4 \rvert$. En la mitad del rango ($\gamma_4 \approx -65°$) la relación es 1,44: el margen frente a la cota conservadora es 2,2.
+* En J3, el motor mueve el balancín rojo y el cuatro barras lleva el giro hasta el codo. Con 60 / 40 mm la transmisión no es 1:1: el torque que pide el balancín es el del codo multiplicado por cuánto más gira el codo que el balancín (sección 2). Se usa el ángulo $\gamma_4 = q_2 + q_3 - 90°$, entre la barra verde y el balancín rojo. En la mitad del rango ($\gamma_4 \approx -65°$) la relación es 1,44: el margen frente a la cota conservadora es 2,2.
 * Cerca del borde inferior, **el motor no alcanza**. Con $\gamma_4 = -111°$ ($q_2 = 26°$, $q_3 = -47°$, antebrazo horizontal y limón) la relación es 3,96 y se piden 13,7 N·m (margen 0,79). En el borde, $\gamma_4 = -111,9°$, la relación llega a 5,08 y la cota a 17,5 N·m (margen 0,62). Hay que evitar esa zona con la carga o achicar el rango útil de $\gamma_4$.
 * La capacidad real se va a comprobar cuando lleguen los motores.
 
