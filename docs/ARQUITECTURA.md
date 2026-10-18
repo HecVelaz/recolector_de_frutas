@@ -167,7 +167,7 @@ Los nombres coinciden con los estados de la guía R2 (INACTIVO, NAVEGANDO, BUSCA
 1. **Hardware:** la seta corta la potencia de motores (su bloque NC A en el + del bus de 12 V, sin relé) sin pasar por software; los ESP32 y la Pi siguen encendidos y leen su estado. Rearme manual explícito, sin reinicio automático.
 2. **Habilitación física del brazo** con estado visible (H8): queda para después de la prueba integrada; hoy el selector WEG es el ON/OFF de todos los motores y `mision` desarma el brazo al ver la seta.
 3. **ESP32:** watchdog de comandos, bumper → freno inmediato en la base, detección de atasco, límites articulares.
-4. **Pi:** `supervisor_seguridad` lleva la misión a EMERGENCIA ante bumper, inclinación (IMU) o pérdida de heartbeat de cualquier ESP32.
+4. **Pi:** no hay un nodo supervisor aparte: la S3 ya decide sola (bumpers, vuelco, seta, distancia, watchdog) y publica el motivo en `/base/estado`; `mision` pasa a FALLA y desarma el brazo al ver la seta, y cada ESP32 se detiene solo si pierde el enlace. Si la cátedra pide un supervisor en la Pi, se agrega después.
 
 **J2 y J3 no se autobloquean** (36-555 planetarios, desde el 17/10; el 5840 de sin fin se descartó): al cortar la potencia, con la seta o al desarmar, el brazo cae. Dejarlo apoyado en un tope o en el reposo; falta resolver cómo sostenerlo contra la gravedad.
 
@@ -208,5 +208,5 @@ Después del mínimo, en este orden: 2 cajones por tamaño → seguimiento de hi
 2. ~~**Herramienta:** confirmar que se acepta **pinza + tracción + giro** en lugar de succión.~~ **Aprobado por el profesor** (28/09/2026): agarre y tracción con giro de la pinza, 2 servos RDS3218 de 20 kg·cm.
 3. **GDL en R2:** B1 pide ≥4 GDL sin contar apertura (3R + J4 = 4 ✔), pero H6 dice "4 GDL + rotación". Confirmar que 3R + J4 alcanza.
 4. **Cajones por tamaño:** ¿son obligatorios para el mínimo?
-5. ~~**Mecanismo no Grashof** (E4)~~: el balancín rojo ya es de **60 mm** (2026-10-03) y el mecanismo es Grashof. Queda limitar γ₄ = q2 + q3 − 90° a −112°…−30° (μ entre 15° y 165°) en `brazo_ik` y en los límites de J2/J3.
+5. **Balancín rojo del cuatro barras: ¿40 o 60 mm?** La E4 propuso pasarlo a 60 mm para que el mecanismo sea Grashof; `cinematica.py` sigue con `L30 = 40` y no hay registro del cambio: **MEDIR** en el brazo armado. El límite de γ₄ no necesita código aparte: `MU_MIN` (μ entre 15° y 165°) ya lo impone, y da γ₄ entre −129° y 0° con 40 mm, o entre −112° y −30° con 60 mm (cuenta del 17/10). Si mide 60, cambiar `L30` y volver a correr las pruebas de `brazo_ik`.
 6. **Cámaras NoIR:** ver §6.
