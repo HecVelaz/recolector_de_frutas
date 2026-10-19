@@ -310,7 +310,7 @@
 
   <section aria-labelledby="h-alim">
     <h2 id="h-alim">Circuito de potencia</h2>
-    <p class="lede">Dos fuentes separadas: la LiPo 3S mueve los motores (directa, sin buck) y un power bank de 5 V alimenta la Pi y los ESP32. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.6 (08/10/2026): <b>solo con lo que hay</b>, sin relé, TVS ni fusibles; la 10S y el buck 1 quedan guardados. En trazo cortado, lo que todavía no está pero se consigue.</p>
+    <p class="lede">Dos fuentes separadas: la LiPo 3S mueve los motores (directa, sin buck) y un power bank de 5 V alimenta la Pi y los ESP32. Un motor trabado no puede hacer caer la tensión de la Pi. Versión 0.6 (08/10/2026): <b>solo con lo que hay</b>, sin relé ni TVS (la única protección es el fusible de 20 A); la 10S y el buck 1 quedan guardados. En trazo cortado, lo que todavía no está pero se consigue.</p>
     <figure>
       <div class="scroll">
         <svg viewBox="0 0 1200 500" role="img" aria-label="Circuito de potencia v0.6. Arriba, la LiPo 3S, con su indicador de barras en el balanceo, pasa por un fusible de auto de 20 A, que la protege contra cortos, y por el selector WEG (dos contactos NA en paralelo), que es el ON/OFF de motores, directo al bus de 12 V de motores, sin buck: brazo, buck de los servos, capacitores y tracción. Un divisor de 100 k y 30 k lleva la tensión de la LiPo a la S3. La seta corta con su bloque NC A el + del bus de motores, después del selector, y avisa a la S3 con el bloque B. Abajo, el power bank Xiaomi de 5 V 3 A alimenta la Pi 5, y la Pi a los dos ESP32 por USB.">
