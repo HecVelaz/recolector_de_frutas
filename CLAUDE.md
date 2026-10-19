@@ -42,8 +42,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   30 pines** (USB-C, CH340) **en un shield de borneras** (12/10, foto en `docs/fotos/esp32 wroom 32D/`) + una perforada
   chica de distribución (rieles 5 V, 3,3 V, EN, GND y 6 V). **Pines v0.5:** encoder J2 en 36/39 y FC J1/J2 en 32/33:
   la única resistencia es el 10 k del EN (23); sin 100 nF (el homing pide 3 lecturas). Pinouts en `docs/fotos/esp32 s3 wroom/` y
-  `docs/fotos/esp32 wroom 32D/`. **Verificar en qué pin está el LED RGB de la S3**: en la DevKitC-1 v1.1 es el 38 (EN
-  de la tracción); `pins.h` supone el 48. **Pines de la S3 vigentes = los de `bb9263d`** (los v0.8 "por lado" del
+  `docs/fotos/esp32 wroom 32D/`. LED RGB de la S3 en el **GPIO 48** (probado el 19/10:
+  el 38, EN de la tracción, queda libre). **Pines de la S3 vigentes = los de `bb9263d`** (los v0.8 "por lado" del
   15/10 se revirtieron el 16/10 a pedido del usuario: no volver a proponerlos). Diagramas de cableado (16/10): cada
   resistencia a GND dibujada con su símbolo de tierra y debajo del pin un "↳" con la perforada y la tira donde va
   (campo `lugar` del pin). EN: R_EN y L_EN unidos directo, GPIO directo al nodo y el 10 k del nodo a GND (pull-down, no en serie).

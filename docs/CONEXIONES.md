@@ -275,8 +275,8 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **IBT-2 a 3,3 V:** leer el integrado de entrada de los 5 módulos. Con 74HC244 a 5 V el alto mínimo es
       3,5 V y los 3,3 V del ESP32 quedan fuera de hoja (suele andar, sin margen): probar cada uno a 20 kHz y, si
       falla, alimentar su VCC a 4,5 V o menos o usar un 74HCT si aparece en el inventario.
-- [ ] **LED RGB de la S3:** ver la revisión de la DevKitC-1. En la v1.1 el RGB está en el GPIO 38 (EN de la
-      tracción): nunca usar el RGB en el firmware (`pins.h` lo supone en el 48) o pasar el EN a otro pin.
+- [x] **LED RGB de la S3:** está en el GPIO 48 (probado el 19/10 con `pruebas-esp32/11-led-rgb-s3`): el 38 (EN de
+      la tracción) no lo toca.
 - [ ] **Servo de giro (WROOM 14):** el GPIO 14 saca pulsos al arrancar; conectar los 6 V de los servos después de
       que la WROOM arrancó, o pasar la señal al GPIO 13 (libre).
 - [ ] **LEDs de la Freenove:** además de bumpers y seta, medir si cargan el GPIO 1 (divisor de 7,7 kΩ: un LED

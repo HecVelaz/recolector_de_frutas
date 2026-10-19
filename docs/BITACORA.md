@@ -340,3 +340,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   37 cm (33 cm el viejo). Los "17 cm de la vista" del 29/09 no se reproducen con este método.
 - Prueba del LED RGB de la S3 armada en `pruebas-esp32/11-led-rgb-s3` (¿GPIO 48 o 38, el EN de la tracción?): el
   diagrama dice 38 en la DevKitC-1 v1.1 y la foto del clon no muestra la versión. Se prueba el 19/10.
+
+## 2026-10-19
+- LED RGB de la S3 (`pruebas-esp32/11-led-rgb-s3`): **está en el GPIO 48**. Solo el 48 en verde: parpadea; solo el 38:
+  nada. En la primera prueba (48 y 38 alternados) también se veía rojo: el núcleo deja el canal RMT ruteado al 48, así
+  que lo escrito "por el 38" también salía por el 48. Probar cada pin en un programa aparte. El EN de la tracción
+  (38) queda sin conflicto; `pins.h` ya lo suponía en el 48.
