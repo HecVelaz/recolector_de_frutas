@@ -359,3 +359,14 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   de la foto citada en el pie (texto). Ahora solo reemplaza rutas dentro de atributos. Republicado.
 - **Sin capacitores en el bus de 12 V (decisión del usuario):** salen los electrolíticos ≥ 25 V que iban cerca de los
   IBT-2 (estaban desde la v0.6). Sacados de `potencia`, `conexiones`, `CONEXIONES.md`, `COMPRAS.md` y el manual.
+
+## 2026-10-20: informe de visión y prueba de carga del power bank
+- Informe resumido de visión (YOLO + estéreo) en `docs/TPF R2/Entrega 5/Informe_vision/` (LaTeX y PDF, 4 páginas).
+- Las cámaras no estaban conectadas (por eso `probar_camaras.sh` daba "Ninguna"); conectadas sin el soporte rígido:
+  las dos a 30 FPS. **Sin el soporte la calibración no vale** (distancias inválidas); la detección sí.
+- **Prueba de carga del PB2020MI:** Pi 5 solo con el power bank, dos cámaras y `start_limon.sh` (SGBM ~3 Hz, YOLO
+  ~5 Hz, CPU ~250 %) + `web_video_server`, 15 min (90 lecturas cada 10 s): EXT5V 5,03-5,13 V (medio 5,07),
+  `throttled` = 0x0 en todas, temperatura máxima 65,9 °C, CPU a 2400 MHz (una lectura a 2000: ajuste normal, no
+  recorte). **El power bank alcanza.** Sin probar: con los dos ESP32 por USB (~1 W más), con el power bank casi
+  descargado y con calor dentro del robot o al sol. Registro en la Pi: `~/logs/carga_powerbank_20261020_1302.csv`
+  (el voltaje quedó partido en dos líneas: el `grep` agarró también el "5V" de `EXT5V_V`).
