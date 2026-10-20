@@ -422,3 +422,6 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   desarmaba cuando `mision` lo pedía (seta o FALLA, `fsm.py`). La simulación no lo veía (`brazo_sim.py` compara el
   texto entero). Corregido a `[16]`/`%15s` en las dos; compila sin warnings. Binarios copiados a la Pi
   (`base_motores`, `base`, `brazo`); **sin flashear**.
+- **`cuentasPorVuelta` (rueda izquierda, a mano, base en modo libre):** una vuelta marcada dio 0,994 vueltas
+  (1,655 → 2,649): 8316 de la hoja confirmado (0,6 % = 2° de marca). Girarla a mano cuesta mucho (189:1): el ajuste
+  fino va con la odometría contra cinta en el piso (corrige también radio y trocha). Derecha: después del prisionero.
