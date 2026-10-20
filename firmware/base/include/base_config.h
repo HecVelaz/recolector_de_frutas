@@ -15,16 +15,17 @@ constexpr float TS = 0.01f;  // periodo del control: 10 ms (100 Hz)
 // motor (hoja del vendedor en docs/fotos/motor_traccion/; 12 V: 2,6 A en vacío, 5,5 A nominal, 10 A bloqueado).
 // Modelo: rpm = K·(duty − zona muerta). 20/10, ruedas en el aire con la LiPo (~12 V): al 25 % la izquierda da 8,5 rpm
 // y la derecha 7,6; arrancan recién con 20 % (desde parado). Con los 53 rpm de la hoja al 100 %: K ≈ 0,6 rpm/% y
-// zona muerta girando ≈ 11 %. τ sigue escalada de la E5 (65 ms): identificar con log + w. PI con Ti = τ y lazo
-// cerrado de 0,15 s: Kp = τ/(K·0,15), Ki = Kp/τ.
+// zona muerta girando ≈ 11 %. τ = 80 ms en las dos ruedas (escalón de 0 a 25 % con log a 100 Hz, env
+// serial_motores, scripts/escalon_tau.py; ~10 ms de retardo). PI con Ti = τ y lazo cerrado de 0,15 s:
+// Kp = τ/(K·0,15), Ki = Kp/τ.
 constexpr ConfigArticulacion CFG_RUEDA = {
     "rueda",
     8316.0f,  // 11 PPR x4 x 189 (hoja); verificar girando la rueda a mano, ver README
     1.0f,     // la rueda va directo al eje del motor
     60.0f,    // rpm máximas (para descartar saltos del encoder)
     -1e9f, 1e9f,          // sin límites de posición (una rueda gira sin fin)
-    0.6f, 0.065f, 11.0f,  // K rpm/% y zona muerta girando % (20/10, ver arriba); tau MEDIR
-    0.72f, 11.1f,         // PI de velocidad
+    0.6f, 0.08f, 11.0f,  // K rpm/%, tau s y zona muerta girando % (medidos el 20/10, ver arriba)
+    0.89f, 11.1f,        // PI de velocidad
     1.0f, 1.0f, 1.0f,     // lazo de posición: no se usa
     1.0f,
     85.0f,              // duty máx % (arriba de ~85 % el IBT-2 deja de ser lineal)

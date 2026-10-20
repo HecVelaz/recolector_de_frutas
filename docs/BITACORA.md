@@ -406,3 +406,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - **La rueda derecha patina sobre el eje** (el motor gira y la rueda no siempre): ajustar el prisionero sobre la cara
   plana del eje antes de apoyar el robot. Explica que al principio "no giraba".
 - Pendiente: `cuentasPorVuelta` con 10 vueltas marcadas, τ con `log`, prueba con IMU y HC-SR04 y el firmware normal.
+- **τ de las ruedas:** env `serial_motores` (como `ros_motores`, pero por serial para tener `log`) y
+  `firmware/base/scripts/escalon_tau.py` (escalón de 0 a 25 % en las dos ruedas, log a 100 Hz). Resultado
+  (`firmware/base/datos/escalon_25_20261020.csv`): **τ = 80 ms en las dos**, ~10 ms de retardo, finales 8,5 y 7,9 rpm.
+  En `base_config.h`: τ 0,065 → 0,08 y Kp 0,72 → 0,89 (Ki queda en 11,1). Antes, `w 8 8` con micro-ROS: las dos
+  ruedas en 7,9 rpm (izquierda con 24,4 %, derecha con 25,5 %). Con micro-ROS un comando de movimiento hay que
+  repetirlo a ≥ 10 Hz (watchdog de 300 ms). Abrir el puerto con el script reinicia la S3 (el log arranca en t ≈ 1,6 s).
