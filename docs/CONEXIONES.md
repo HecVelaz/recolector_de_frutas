@@ -39,7 +39,7 @@ Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía
 entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
 
 **Se conecta:**
-- LiPo → XT60 → fusible de auto 20 A → seta (bloque A) → selector WEG → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- LiPo → XT60 → fusible de auto 20 A → seta (bloque A) → selector WEG → bus 12 V → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
 - **Divisor de batería 100 k / 30 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
@@ -160,7 +160,6 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 ```
 LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → seta, bloque A NC (corte de
   emergencia, cable grueso) → selector WEG, 1 bloque NA (ON/OFF de motores, H8) → bus 12 V de motores
-  │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → R_EN + L_EN (10 kΩ a GND)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
   ├─ Buck 3 (12 → 6 V, CC 5 A) → 2 servos RDS3218 (GND común con la WROOM)
@@ -253,7 +252,7 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **Divisor de batería 100 k / 30 k** (12,6 V → 2,91 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /
       8,2 k antes de conectarla**: con 42 V, el de 100 k / 30 k pondría ~10 V en el GPIO y lo quema.
 - [ ] **Ajustar el buck 3 sin carga y con el multímetro** (6 V, CC 5 A) antes de conectar los servos.
-- [ ] Capacitores de ≥ 25 V en el bus de 12 V de motores, cerca de los IBT-2.
+- [x] ~~Capacitores de ≥ 25 V en el bus de 12 V de motores~~: salen (19/10, decisión del usuario). Sin capacitores en el bus.
 - [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; bloque A en el + del bus (fusible →
       selector, cable grueso) y bloque B al GPIO 47. Con la seta apretada, 0 V en la bornera +12 V y `armar`
       tiene que fallar; al soltarla, las ruedas no arrancan solas.

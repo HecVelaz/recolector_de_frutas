@@ -357,3 +357,5 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   borne por borne sobre la fila de borneras de la Freenove. Aclaración: el bloque B nunca va al GPIO 1.
 - `todo.html` se veía con la pestaña Seta de 5316 px de ancho: `armar_todo.py` cambiaba por base64 también la ruta
   de la foto citada en el pie (texto). Ahora solo reemplaza rutas dentro de atributos. Republicado.
+- **Sin capacitores en el bus de 12 V (decisión del usuario):** salen los electrolíticos ≥ 25 V que iban cerca de los
+  IBT-2 (estaban desde la v0.6). Sacados de `potencia`, `conexiones`, `CONEXIONES.md`, `COMPRAS.md` y el manual.

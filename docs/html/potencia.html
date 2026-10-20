@@ -99,7 +99,7 @@
     </div>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1400 980" role="img" aria-label="Cableado de potencia: LiPo, XT60, fusible de 20 A, el bloque A de la seta y el selector WEG hasta la bornera de +12 V; el negativo directo a la bornera GND. Desde las dos borneras, en estrella, cinco IBT-2 con sus motores, el buck de los servos, los capacitores, el voltímetro y el divisor de batería. Abajo a la izquierda, el power bank alimenta la Pi y la Pi a las dos ESP32 por USB; la S3 manda el EN de la tracción y lee el bloque B de la seta en el GPIO 47; la WROOM manda el EN del brazo; los GND de las ESP32 van a la bornera GND.">
+        <svg viewBox="0 0 1400 980" role="img" aria-label="Cableado de potencia: LiPo, XT60, fusible de 20 A, el bloque A de la seta y el selector WEG hasta la bornera de +12 V; el negativo directo a la bornera GND. Desde las dos borneras, en estrella, cinco IBT-2 con sus motores, el buck de los servos, el voltímetro y el divisor de batería. Abajo a la izquierda, el power bank alimenta la Pi y la Pi a las dos ESP32 por USB; la S3 manda el EN de la tracción y lee el bloque B de la seta en el GPIO 47; la WROOM manda el EN del brazo; los GND de las ESP32 van a la bornera GND.">
           <rect class="box" x="20" y="40" width="210" height="200" rx="6"></rect>
           <image href="fotos/potencia/lipo.jpg" x="30" y="50" width="190" height="130" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="32" y="200">1 · LiPo Zeee 3S 8000 mAh</text>
@@ -286,13 +286,6 @@
           <text class="t-title" x="1220" y="750">2 servos RDS3218</text>
           <text class="t-sub" x="1220" y="766">apertura y giro de la pinza</text>
           <text class="t-sub" x="1220" y="781">señal: WROOM (riel de 6 V)</text>
-          <circle class="dot power" cx="840" cy="848" r="4.5"></circle><circle class="dot gnd" cx="800" cy="872" r="4.5"></circle>
-          <path class="w power" d="M840 848 H900"></path><path class="w gnd" d="M800 872 H833 a7 7 0 0 1 14 0 H900"></path>
-          <rect class="box" x="900" y="830" width="480" height="60" rx="6"></rect>
-          <path class="w power" d="M900 848 H930 V856"></path><path class="w gnd" d="M900 872 H930 V864"></path>
-          <path d="M918 856 H942 M918 864 H942" stroke="var(--ink)" stroke-width="2.4"></path>
-          <text class="t-title" x="956" y="854">11 · Capacitores electrolíticos ≥ 25 V (los del inventario)</text>
-          <text class="t-sub" x="956" y="872">uno en el B+/B− de cada IBT-2 o, si no alcanzan, en la bornera · banda (−) al GND</text>
           <rect class="box" x="560" y="235" width="180" height="80" rx="6"></rect>
           <image href="fotos/potencia/voltimetro.jpg" x="566" y="245" width="62" height="54" preserveAspectRatio="xMidYMid meet"></image>
           <text class="t-title" x="636" y="262">12 · Voltímetro LED</text>
@@ -456,7 +449,7 @@
         <li>Armar el tronco <b>sin</b> la LiPo: XT60 macho → fusible → seta (bloque A) → selector (3-4) → bornera +; negro → bornera GND.</li>
         <li>Con el tester en continuidad: selector en OFF, + y GND de la bornera abiertos; en ON, la bornera + tiene continuidad con el + del XT60; en ON con la seta apretada, abierto otra vez. Entre + y GND, nunca continuidad.</li>
         <li>Ajustar el buck 3 a 6,0 V sin carga (con una fuente de laboratorio o con la LiPo y nada más conectado).</li>
-        <li>Conectar voltímetro, capacitores (banda − al GND) y el divisor. Selector en OFF, enchufar la LiPo: el voltímetro apagado. ON: tiene que marcar la tensión de la LiPo. Medir el GPIO 1 del divisor: ≤ 2,7 V.</li>
+        <li>Conectar voltímetro y divisor. Selector en OFF, enchufar la LiPo: el voltímetro apagado. ON: tiene que marcar la tensión de la LiPo. Medir el GPIO 1 del divisor: ≤ 2,7 V.</li>
         <li>Selector en OFF. Conectar los IBT-2 de tracción y sus motores; GND de la S3 a la bornera; EN desde el GPIO 38 (tira EN-T); bloque B de la seta al GPIO 47.</li>
         <li>Power bank → Pi → S3. Ruedas en el aire, selector en ON, <code>armar</code> y velocidad baja. Apretar la seta: el voltímetro se apaga y las ruedas se sueltan.</li>
         <li>Después, uno por vez: IBT-2 del brazo, buck 3 y servos.</li>
@@ -468,9 +461,8 @@
     <h2 id="h-pend">Pendiente</h2>
     <ul class="steps">
       <li>Portafusible para el fusible de 20 A, si no vino con él.</li>
-      <li>Buscar los capacitores de ≥ 25 V del inventario.</li>
     </ul>
   </section>
 
-  <footer>19/10/2026: la seta pasa a ir entre el fusible y el selector. Generado el 10/10/2026 a partir de <code>CONEXIONES.md</code> v0.6, con la térmica CHINT reemplazada por el selector WEG. Fotos recortadas en <code>docs/fotos/potencia/</code>.</footer>
+  <footer>19/10/2026: la seta pasa a ir entre el fusible y el selector, el selector usa un solo bloque y salen los capacitores del bus. Generado el 10/10/2026 a partir de <code>CONEXIONES.md</code> v0.6, con la térmica CHINT reemplazada por el selector WEG. Fotos recortadas en <code>docs/fotos/potencia/</code>.</footer>
 </div>

@@ -225,8 +225,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
    b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
    `placa_s3` ya está republicada con 30 k (16/10).
-1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60;
-   buscar los capacitores (≥ 25 V). Armar el divisor
+1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60
+   (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
 2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → seta → selector WEG → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,

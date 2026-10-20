@@ -25,7 +25,7 @@ TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0
 - [x] Power bank Xiaomi PB2020MI 20000 mAh, 5 V 3 A: alimenta la Pi (`fotos/bateria 3/`)
 - [x] Seta (09/10, `fotos/llaves/hongo.jpeg`): hongo de 22 mm modular, giro para liberar, con 2 bloques NC (10/10): corte del
       + del bus de 12 V + aviso al GPIO 47
-- [ ] Capacitores (08/10: hay, falta buscarlos): todos los de ≥ 25 V van al bus de 12 V de motores
+- [x] ~~Capacitores para el bus de 12 V~~: no van (19/10)
 - [x] Cinta CSI de 22 a 15 pines para la Pi 5 (reemplazada el 05/10)
 
 ## Placas de las ESP32 (`html/placa_s3.html`, `html/placa_wroom.html`)
