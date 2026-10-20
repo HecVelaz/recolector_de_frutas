@@ -351,3 +351,5 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   después de los dos (con la seta apretada o el selector en OFF marcan 0 V). Cable 1 de la seta: fusible → A1; cable 2:
   A2 → borne 3 del selector. Actualizados `seta`, `potencia`, `conexiones` y `todo` (republicados), `CONEXIONES.md`,
   `ARQUITECTURA.md`, el manual (cap. 2 y 4, figuras regeneradas) y `CLAUDE.md`. La Entrega 4 de R2 no se tocó.
+- **Selector con un solo bloque (decisión del grupo):** de los 2 BC10 NA se usa uno (10 A térmicos; promedio ~3 A,
+  picos ~15 A cortos); el otro queda libre. Si calienta con el uso, sumar el segundo en paralelo.

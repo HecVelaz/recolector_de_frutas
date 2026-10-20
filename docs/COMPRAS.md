@@ -18,7 +18,7 @@ ESP32), cable grueso, borneras, capacitores, resistencias. La 10S queda guardada
 TVS, relé, interruptores, ventilador, fusibles de 58 V): ver `CONEXIONES.md` v0.6.
 
 - [x] Par de XT60 con cable (`fotos/conectores/`): reemplaza el Deans de la LiPo (09/10: no hay Deans hembra)
-- [x] Selector WEG con 2 bloques BC10 NA (10/10, `fotos/llaves/selector.jpeg`): ON/OFF de los motores, los 2 NA en paralelo.
+- [x] Selector WEG con 2 bloques BC10 NA (10/10, `fotos/llaves/selector.jpeg`): ON/OFF de los motores; se usa un solo NA (19/10).
       Reemplaza a la térmica CHINT C10, que se saca
 - [x] **Fusible de auto de lámina de 20 A** (10/10: ya está; falta confirmar el portafusible), pegado al XT60 de la LiPo: la única protección real
       contra un corto (los de auto son para continua hasta 32 V). Buscar primero en el lab o en un auto viejo

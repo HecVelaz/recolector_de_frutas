@@ -4,7 +4,7 @@ Versión 0.6 — 08/10/2026 (09/10: **la LiPo pasa a XT60** porque no hay Deans 
 **la Pi con el power bank Xiaomi PB2020MI**. Divisor de batería 100 k / 30 k (firmware cambiado). **Protección de la
 LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo como interruptor (no está certificada en DC). `html/conexiones.html` y
 `html/placa_s3.html` ya están en la v0.6.
-10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
+10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (trae 2 bloques BC10 NA 3-4; **desde el 19/10 se usa uno solo**) y
 la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable por cable, con fotos: `html/potencia.html`.
 10/10 (v0.7): **la seta corta el + del bus de 12 V** (bloque A entre el selector y la bornera +12 V; decisión del grupo; **19/10: el bloque A pasa a ir entre el fusible y el selector**,
 más simple y corta también el brazo y los servos) y el bloque B avisa al GPIO 47. El EN de la tracción ya no pasa por
@@ -159,7 +159,7 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 
 ```
 LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → seta, bloque A NC (corte de
-  emergencia, cable grueso) → selector WEG, 2 NA en paralelo (ON/OFF de motores, H8) → bus 12 V de motores
+  emergencia, cable grueso) → selector WEG, 1 bloque NA (ON/OFF de motores, H8) → bus 12 V de motores
   │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → R_EN + L_EN (10 kΩ a GND)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
@@ -180,10 +180,10 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   protegido. Cable del bus de al menos 14 AWG (aguanta los 20 A). Es la única compra de la potencia: sin ella, un
   corto en una LiPo sin BMS es riesgo de incendio (antes de comprar, buscar uno en el lab).
 - **Selector WEG, después de la seta: interruptor ON/OFF de los motores (H8; reemplaza a la térmica CHINT, 10/10).**
-  Trae 2 bloques BC10 con contacto NA 3-4 (10 A térmicos cada uno): van **en paralelo** (puente 3-3 y 4-4 con el
-  mismo cable grueso) para conducir hasta ~20 A cerrados. No es protección: la protección es el fusible. Accionarlo
-  con los motores quietos (pasan pocos cientos de mA: a 12 V el arco es mínimo; en paralelo no corta mejor que uno
-  solo); no abrirlo con motores en marcha salvo emergencia (para eso está la seta). La Pi y los ESP32 siguen encendidos con el power bank.
+  Trae 2 bloques BC10 con contacto NA 3-4 (10 A térmicos cada uno): **se usa uno solo** (19/10, decisión del grupo;
+  antes iban los dos en paralelo). Alcanza para el promedio (~3 A) y los picos cortos (~15 A); si después de un rato
+  de uso el bloque calienta, sumar el segundo en paralelo (puente 3-3 y 4-4). No es protección: la protección es el
+  fusible. Accionarlo con los motores quietos (pasan pocos cientos de mA: a 12 V el arco es mínimo); no abrirlo con motores en marcha salvo emergencia (para eso está la seta). La Pi y los ESP32 siguen encendidos con el power bank.
 - **Sin buck ni Schottky:** la corriente de frenado vuelve a la LiPo, que la absorbe. La velocidad de los motores
   sigue a la tensión (12,6 → 10,5 V, −17 %): el lazo de velocidad lo compensa; tope ~0,35 m/s, sobra para 0,25.
 - **LiPo sin BMS:** nada corta por descarga. `/base/estado` avisa `BATERIA_BAJA` a 10,5 V (3,5 V por celda) pero
@@ -212,8 +212,7 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   `vcgencmd pmic_read_adc EXT5V_V` ≥ 4,9 V.
 - **Corriente:** tracción (42GM-895H a 12 V): 2,6 A en vacío, 5,5 A nominal y 10 A trabado cada uno; brazo
   (36GP-555): 0,5 / 1,3 / 10 A cada uno; servos ~1-3 A a 6 V. Promedio de cosecha ~3 A, lejos de los 20 A del
-  fusible. Los 2 NA del selector en paralelo conducen hasta ~20 A (reparto desigual: no mover tracción y brazo a la
-  vez a plena carga mucho rato).
+  fusible. El NA del selector aguanta 10 A térmicos: no mover tracción y brazo a la vez a plena carga mucho rato.
 
 ### Consumo y autonomía (estimados; medir con una pinza)
 
@@ -285,8 +284,8 @@ de J2/J3). Con la 10S serían ~3,2 h.
       al GPIO 1 por 100 kΩ (≤ 0,1 mA). Enchufar primero el power bank y pasar el selector a OFF antes de desenchufarlo.
 - [ ] Servos con su propio buck (buck 3, CC en 5 A) y GND común con la WROOM. Son RDS3218 de 20 kg·cm: el de
       apertura queda bloqueado apretando el limón y cada uno puede pedir del orden de 2-3 A trabado (confirmar).
-- [ ] **Pruebas acotadas y vigiladas (revisión de Codex, 14/10):** la seta (contacto de alterna), el selector (2 BC10
-      en paralelo no suman 20 A) y el fusible (no salta con 2 motores trabados: solo cortos) no están garantizados
+- [ ] **Pruebas acotadas y vigiladas (revisión de Codex, 14/10):** la seta (contacto de alterna), el selector (un BC10,
+      10 A térmicos) y el fusible (no salta con 2 motores trabados: solo cortos) no están garantizados
       para cortar con carga en continua. Por eso: mover el selector **solo con los motores quietos**; con la seta
       apretada, **mandar `desarmar` y confirmar el brazo desarmado antes de soltarla**; **nada de pruebas de motores
       trabados con la LiPo**; cables a las borneras con **cobre pelado y retorcido, sin estañar** (el estaño cede

@@ -28,7 +28,7 @@ fusible, batería baja), la Pi y los ESP32 siguen encendidos y saben lo que pas�
   \node[caja,right=of lipo] (xt) {XT60};
   \node[caja,right=of xt,draw=rojo] (fus) {fusible de\\auto 20 A};
   \node[caja,right=of fus,draw=violeta,thick] (seta) {seta\\bloque A (NC)};
-  \node[caja,right=of seta] (sel) {selector WEG\\2 NA en paralelo\\(ON/OFF)};
+  \node[caja,right=of seta] (sel) {selector WEG\\1 bloque NA\\(ON/OFF)};
   \node[caja,right=12mm of sel,minimum height=58mm,text width=18mm,fill=rojo!8] (bus) {bornera\\+12 V\\[18mm]bornera\\GND};
   \draw[pot] (lipo) -- (xt); \draw[pot] (xt) -- (fus); \draw[pot] (fus) -- (seta); \draw[pot] (seta) -- (sel); \draw[pot] (sel) -- (bus);
   \node[caja,right=14mm of bus,yshift=22mm] (t) {2 × IBT-2 de tracción};
@@ -89,8 +89,8 @@ XT60 & Conector de la batería. Se enchufa \textbf{con el selector en OFF} y res
 Fusible de auto 20~A & Lámina ATO/ATC, apto para continua hasta 32~V. Va \textbf{pegado al XT60}: el cable antes
   del fusible no está protegido. \textbf{Protege contra cortocircuitos}; no salta con dos motores trabados
   ($2 \times 10$~A es justo su nominal). Cable del bus de al menos 14~AWG. \\
-Selector WEG & ON/OFF diario de los motores. Dos bloques BC10 normalmente abiertos en paralelo. \textbf{Moverlo solo
-  con los motores quietos}: dos contactos en paralelo no suman 20~A al abrir (el último en separarse corta todo). \\
+Selector WEG & ON/OFF diario de los motores. Un bloque BC10 normalmente abierto (10~A térmicos; el otro queda libre). \textbf{Moverlo solo
+  con los motores quietos}: el contacto no está pensado para cortar carga en continua. \\
 Seta (bloque A) & Contacto normalmente cerrado en serie con el + del bus de 12~V, entre el fusible y el selector. Al apretarla,
   los cinco IBT-2 y el buck quedan sin tensión. Los motores quedan en rueda libre: \textbf{no frena}. Está pensada
   para alterna (\cod{10(6)A 400V\textasciitilde}): solo para emergencias. \\
