@@ -370,3 +370,39 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   recorte). **El power bank alcanza.** Sin probar: con los dos ESP32 por USB (~1 W más), con el power bank casi
   descargado y con calor dentro del robot o al sol. Registro en la Pi: `~/logs/carga_powerbank_20261020_1302.csv`
   (el voltaje quedó partido en dos líneas: el `grep` agarró también el "5V" de `EXT5V_V`).
+
+## 2026-10-20: primera prueba de la tracción (ruedas en el aire)
+- Continuidad sin energizar (`checklist_traccion.html`), valores con todo conectado: GPIO 38 ↔ GND ≈ 5 kΩ (el 10 k en
+  paralelo con los EN de los IBT-2 y la S3 sin alimentar), GPIO 15-18 ↔ GND ≈ 10 kΩ (el 20 k en paralelo con el
+  pull-up de 10 k del encoder), divisor de batería ≈ 23 kΩ que sube de a poco (los capacitores de los IBT-2 ponen el
+  100 k en paralelo con el 30 k mientras se cargan). M+/M− pitan los dos contra el rojo del motor: es el bobinado.
+  Checklist corregida.
+- Divisor de batería: 0,6 V en el GPIO 1 con la S3 **apagada** (el diodo de protección del pin a 3V3); con la S3
+  encendida, 2,8 V (= 12 V × 30/130). Arrancar primero la lógica (power bank) y después los 12 V.
+- **Firmware de prueba `ros_motores`** (`-DPRUEBA_MOTORES`): ignora la IMU y la distancia al frente, que no estaban
+  conectadas (con el firmware normal la base no se mueve sin IMU). Tope de `d` bajado de 40 a 25 %. **Solo con las
+  ruedas en el aire**; está flasheado en la S3: volver al env `ros` cuando estén la IMU y el HC-SR04 del frente.
+- La Pi perdió el USB dos veces (`xHCI host controller not responding, assume dead`; la segunda, con `usb2-port2:
+  disabled by hub (EMI?)`): solo se recupera reiniciando la Pi. La segunda pasó con la Freenove alimentada por el jack.
+  Después se midió **0 V en el VBUS** del cable USB suelto con la Freenove encendida (sin retorno) y no se repitió.
+  Causa sin confirmar. Al reconectar la S3, a veces queda en modo descarga: `esptool read-mac` con `--before no_reset
+  --after watchdog-reset` (un reset con los 12 V prendidos es seguro: el 10 k del EN deja los IBT-2 deshabilitados;
+  flashear, con los 12 V apagados). Por ssh, `pkill -f micro_ros_agent` mata la propia sesión: usar
+  `pkill -f "[m]icro_ros_agent serial"`.
+- **La tira de 5 V de la Freenove (y la "V" de cada G-V-S) no tiene tensión con solo el USB:** sale del regulador de
+  la expansión, alimentado por el jack de 7-12 V. Medido: 2,3 / 0,5 V (nodo flotante) con el 3V3 a 3,3 V. Los encoders
+  no contaban y la lógica del IBT-2 derecho andaba a medias. **Solución (decisión del usuario):** plug de la bornera
+  +12 V al jack de la Freenove. Consecuencias: con la seta o el selector en OFF se apagan los encoders y la lógica de
+  los IBT-2 (los puentes quedan sin mando: no mueven); la LiPo llena (12,6 V) supera un 5 % los 12 V del rótulo.
+  La alternativa era el 5 V de la Pi (pin 2) al header 5V, descartada por la distancia Pi-S3.
+- **Resultados con `d` (lazo abierto), LiPo ~12 V, ruedas en el aire:** las dos ruedas arrancan recién con 20 %
+  (a 10 y 15 no); la izquierda gira hacia adelante (antihorario vista desde la izquierda). Al 25 %, las dos juntas:
+  izquierda +8,5 rpm, derecha +7,6 rpm, encoders positivos y sin saltos: **`MOTOR_INVERTIDO` y `ENC_INVERTIDO`
+  correctos**. Corriente: izquierda 0,6-0,7 A, derecha 0,8-0,9 A, las dos juntas 1,4 A (la derecha tiene más
+  fricción). Encoder izquierdo a mano: +0,139 vueltas al girarla hacia adelante.
+- Modelo de la rueda en `base_config.h`: K 0,52 → **0,6 rpm/%**, zona muerta girando 8 → **11 %** (de 25 % → 8,5 rpm y
+  los 53 rpm de la hoja al 100 %), PI recalculado con la misma regla (Kp 0,72, Ki 11,1). τ sigue sin medir.
+  **Sin flashear todavía** (no cambia `d`; sí `w`, `v` y `/cmd_vel`).
+- **La rueda derecha patina sobre el eje** (el motor gira y la rueda no siempre): ajustar el prisionero sobre la cara
+  plana del eje antes de apoyar el robot. Explica que al principio "no giraba".
+- Pendiente: `cuentasPorVuelta` con 10 vueltas marcadas, τ con `log`, prueba con IMU y HC-SR04 y el firmware normal.

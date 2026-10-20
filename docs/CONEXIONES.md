@@ -68,6 +68,9 @@ Freenove N16R8, USB nativo `/dev/ttyACM0`. Usa 22 GPIO; queda libre el 40 (reser
 cátedra pide el 4.º bumper). El GPS pasó a la Pi (30/09) para liberar dos TRIG. Sin capacitores (13/10): bumpers
 y seta van directo con el pull-up interno. Quedan las resistencias que no se pueden sacar: divisores 1 k / 2 k de los
 ECHO (salen a 5 V), 20 k de los encoders (salen a 5 V y piden Vcc ≥ 5 V), 10 k del EN (38) y el divisor de batería.
+**5 V de la Freenove (20/10):** con solo el USB, la tira de 5 V y la "V" de cada G-V-S quedan sin tensión (salen
+del regulador de la expansión). Van alimentadas con un plug de la bornera +12 V al jack de 7-12 V. Con la seta o el
+selector en OFF se apagan los encoders y la lógica de los IBT-2.
 
 | GPIO | Conecta a | Nota |
 |---|---|---|
@@ -168,6 +171,7 @@ LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pe
 
 Power bank Xiaomi PB2020MI (5 V 3 A, cable USB-C incorporado), arriba al lado de la Pi → Pi 5 (USB-C)
   └─ USB → ESP32-S3 y WROOM (y de sus pines de 5 V/3V3: encoders, IMU, HC-SR04, lógica de los IBT-2)
+  (S3: los 5 V de la Freenove salen de su regulador, por el jack de 7-12 V ← bornera +12 V: ver abajo)
 seta, bloque B NC → S3 GPIO 47 (el otro lado a GND; directo, sin capacitor). Nunca 12 V en este bloque.
 GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND del bus de motores.
 ```

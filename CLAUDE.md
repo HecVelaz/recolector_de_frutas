@@ -120,7 +120,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
   LiPo 3S (aviso a 10,5 V, divisor 100 k / 30 k; 08/10).
-  Probado en la placa sola (sin motores ni sensores).
+  **20/10, primera prueba de tracción (ruedas en el aire, bitácora):** motores y encoders con los sentidos correctos,
+  arrancan con 20 %, al 25 % ~8 rpm; K 0,6 y zona muerta 11 % en `base_config.h` (sin flashear). En la S3 está el
+  env de prueba **`ros_motores`** (sin IMU ni distancia al frente; tope de `d` 25 %): nunca en el piso. Los 5 V de la
+  Freenove salen de su jack (plug desde la bornera +12 V; el USB no los da). La rueda derecha patina en el eje.
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
   S3: flashear con reset por watchdog (ya en `platformio.ini`); abrir el puerto con DTR/RTS bajos la deja en

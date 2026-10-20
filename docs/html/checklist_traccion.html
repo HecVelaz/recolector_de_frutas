@@ -310,7 +310,7 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
     <li><label><input type="checkbox"><span class="t"><b>GPIO 4</b> ↔ <b>RPWM der.</b><small>izquierdo y derecho no están cruzados</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 38</b> ↔ <b>R_EN y L_EN de los dos IBT-2</b><small>cuatro mediciones, una por pin</small></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 38</b> ↔ <b>GND</b><small>en Ω. Con todo conectado da menos que 10 k (los EN de los IBT-2 y la S3 sin alimentar quedan en paralelo): medido ≈ 5 kΩ el 20/10. Si pita: corto a GND. Si da abierto: falta el 10 k.</small></span><span class="esp ohm">≈ 5 kΩ</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>VCC de cada IBT-2</b> ↔ <b>5 V de la S3</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>VCC de cada IBT-2</b> ↔ <b>5 V de la Freenove</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GND lógica de cada IBT-2</b> ↔ <b>GND de la S3</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 4, 5, 6, 7 y 38</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t">R_IS y L_IS sueltos y sin tocar nada.</span></label></li>
@@ -321,7 +321,7 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
   <h2><span class="paso">3</span>Encoders de los motores (Hall, 11 PPR)</h2>
   <div class="tabla"><table>
     <tr><th>Cable</th><th>Va a</th><th>Izquierdo</th><th>Derecho</th></tr>
-    <tr><td>Azul</td><td>Vcc del encoder</td><td colspan="2">5 V de la S3</td></tr>
+    <tr><td>Azul</td><td>Vcc del encoder</td><td colspan="2">5 V de la Freenove</td></tr>
     <tr><td>Verde</td><td>GND</td><td colspan="2">GND de la S3</td></tr>
     <tr><td>Amarillo</td><td>A</td><td>GPIO <b>15</b></td><td>GPIO <b>17</b></td></tr>
     <tr><td>Blanco</td><td>B</td><td>GPIO <b>16</b></td><td>GPIO <b>18</b></td></tr>
@@ -355,7 +355,7 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
     <text x="410" y="286" text-anchor="middle" class="ch">5 V × 20 k / (10 k + 20 k) = 3,3 V · una resistencia de 20 k en cada salida: 4 en total</text>
   </svg></div>
   <ul>
-    <li><label><input type="checkbox"><span class="t"><b>azul (izq. y der.)</b> ↔ <b>5 V de la S3</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>azul (izq. y der.)</b> ↔ <b>5 V de la Freenove</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>verde (izq. y der.)</b> ↔ <b>GND de la S3</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>amarillo izq.</b> ↔ <b>GPIO 15</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>blanco izq.</b> ↔ <b>GPIO 16</b></span><span class="esp si">pita</span></label></li>
@@ -409,9 +409,9 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
   <ul>
     <li><label><input type="checkbox"><span class="t"><b>GND de la S3</b> ↔ <b>bornera GND</b><small>GND común</small></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GND de la S3</b> ↔ <b>XT60 − del robot</b></span><span class="esp si">pita</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>5 V de la S3</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>5 V de la Freenove</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>3V3 de la S3</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>5 V de la S3</b> ↔ <b>GND de la S3</b><small>si pita seguido: corto en la lógica</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>5 V de la Freenove</b> ↔ <b>GND de la S3</b><small>si pita seguido: corto en la lógica</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>3V3 de la S3</b> ↔ <b>GND de la S3</b></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t">Cada cable en la bornera de la Freenove del pin correcto: 4, 5, 6, 7, 38, 15, 16, 17, 18, 47.</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 1</b> ↔ <b>bornera +12 V / GND</b><small>solo si ya armaste el divisor de batería; si no, saltear. Arranca en ≈ 23 k las dos (los capacitores descargados de los IBT-2 ponen el 100 k en paralelo con el 30 k) y sube de a poco mientras el multímetro los carga: es normal.</small></span><span class="esp ohm">≈ 100 k / 30 k</span></label></li>
