@@ -183,8 +183,8 @@ void alRecibirComando(const void *m) {
   memcpy(linea, s->data.data, n);
   linea[n] = '\0';
   // Primera palabra: armar / desarmar, o un comando de movimiento con el brazo desarmado
-  char primera[8] = {0};
-  sscanf(linea, "%7s", primera);
+  char primera[16] = {0};  // cabe "desarmar" (con [8] quedaba "desarma" y no desarmaba)
+  sscanf(linea, "%15s", primera);
   if (!strcmp(primera, "armar")) {
     armado = true;
     out->println(">> Brazo ARMADO: se aceptan movimientos.");

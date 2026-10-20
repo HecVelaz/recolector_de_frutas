@@ -417,3 +417,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   al final: 1,655 y 1,650 (0,3 % de diferencia). Frenaron por el watchdog al cortar el comando; sin fallas ni saltos.
   **Tracción en el aire probada** (sentidos, encoders, lazo abierto y de velocidad). Falta: prisionero de la rueda
   derecha, `cuentasPorVuelta` con 10 vueltas, y en el piso con la IMU, el HC-SR04 y el firmware normal.
+- **Bug: `desarmar` no funcionaba por micro-ROS** en ninguna de las dos placas: `capa_ros.cpp` leía la primera palabra
+  en `char primera[8]` con `%7s` y "desarmar" (8 letras) quedaba "desarma". La S3 seguía ARMADA, y el brazo no se
+  desarmaba cuando `mision` lo pedía (seta o FALLA, `fsm.py`). La simulación no lo veía (`brazo_sim.py` compara el
+  texto entero). Corregido a `[16]`/`%15s` en las dos; compila sin warnings. Binarios copiados a la Pi
+  (`base_motores`, `base`, `brazo`); **sin flashear**.

@@ -129,8 +129,8 @@ void alRecibirComando(const void *m) {
   const size_t n = s->data.size < sizeof(linea) - 1 ? s->data.size : sizeof(linea) - 1;
   memcpy(linea, s->data.data, n);
   linea[n] = '\0';
-  char primera[8] = {0};
-  sscanf(linea, "%7s", primera);
+  char primera[16] = {0};  // cabe "desarmar" (con [8] quedaba "desarma" y no desarmaba)
+  sscanf(linea, "%15s", primera);
   if (!strcmp(primera, "armar")) {
     armado = true;
     out->println(">> Base ARMADA: se acepta /cmd_vel.");
