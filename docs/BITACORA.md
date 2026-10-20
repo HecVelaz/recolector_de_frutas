@@ -434,3 +434,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   giros. Con `u` a velocidad máxima pasa de 4 A (esperable: 2,6 A en vacío por motor a 12 V, con la rueda de afuera
   cerca de 50 rpm y ~85 % de PWM). El "fuse 3 A" de atrás de la fuente es el de 220 V, no el límite de salida. Para
   las pruebas, bajar la velocidad con `z`; la máxima, con la LiPo.
+- **Teleop web** (`firmware/base/scripts/teleop_web.py`): página con joystick táctil servida desde la Pi (puerto 8000,
+  solo biblioteca estándar + rclpy, sin rosbridge); manda `/cmd_vel` cada 100 ms mientras se toca (si se corta, la S3
+  frena por su watchdog) y botones ARMAR / DESARMAR / r / PARAR, con `/base/estado` en pantalla. Probado en la Pi con
+  la base desarmada: `/cmd?v=0.5&w=-0.2` publica 0,125 m/s y −0,2 rad/s; comandos fuera de la lista, 400. Desde el
+  celular: `http://100.116.96.71:8000` con Tailscale. Base de la app de la E7 de R2.
