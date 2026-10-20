@@ -102,11 +102,19 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
   la alternativa más simple y barata, sin listas largas de piezas nuevas.
 
-## 5. Estado actual (al 2026-10-17)
+## 5. Estado actual (al 2026-10-20)
 - **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
   conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
   soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
   (partiendo de J1) y `mision` real; 3-9/11 integración, 30 frutos, informes.
+- **19/10 (potencia, decisión del grupo):** orden LiPo → XT60 → fusible 20 A → **seta (bloque A) → selector WEG** →
+  bornera +12 V (cable 1 de la seta: fusible → A1; cable 2: A2 → borne 3 del selector); el selector usa **un solo
+  bloque NA** (3-4; si calienta, sumar el otro en paralelo); **sin capacitores en el bus de 12 V**. El divisor del GPIO 1
+  toma los 12 V de la bornera (después de seta y selector). El bloque B de la seta va al **GPIO 47, nunca al 1**:
+  detalle borne por borne en el Paso 2b de `seta.html`. Bumpers: microinterruptor con C (abajo) a GND y NO (borne 3)
+  al GPIO; NC (2) libre (`docs/fotos/bumpers/circuito.jpeg`). `armar_todo.py` solo reemplaza por base64 rutas dentro
+  de atributos (una ruta en el texto estiraba la pestaña Seta a 5000 px). Pi sincronizada el 19/10 (repo, `brazo_ik`
+  y `mision` compilados, binarios copiados); sin flashear: no había ESP32 enchufados.
 - `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 18 pruebas OK; `m` y `j` rechazan J2/J3 con γ₄ = q2 + q3 − 90° fuera de −111,9…−30° (`cuatroBarrasOk()`, 18/10, revisado por Codex): una falla en J2 o J3 detiene la otra; `home 2`/`home 3` bloqueados (`HOME_J23_VERIFICADO`) hasta medir `HOME_Q`; `POSE_CERO` provisoria (90°, 90°, −40°). Sin cubrir: el camino entre objetivos y `d`/`v`. **Pines v0.4 (05/10; v0.5 el 12/10, ver §2): J1-J3 con IBT-2 (J2 25/26, J3 16/17), EN común 23 (rueda libre solo de las tres juntas: si una se mueve, las otras quedan frenadas), FC J3 en 27 con pull-up interno, sin L298N; J2/J3 con 139:1 (8896 cuentas) y parámetros de J1 a 58 rpm, relación 5 = engranajes helicoidales 15 → 75 (confirmado 17/10) y signos sin medir.** **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s, feedforward solo con la zona muerta (`ffSoloZonaMuerta`), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Definido en `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]) y el urdf; reposo por defecto de `fsm.py`: q = 75°/94°/−50°, el de la simulación (provisorio desde el 18/10: con el balancín de 60 mm el de 110°/−30° no cierra el cuatro barras). Pruebas OK: firmware 18, brazo_ik 9, mision 31, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
   Probado en la placa sola (sin motores ni sensores).
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
@@ -235,7 +243,8 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
    hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
-4. Brazo: **reflashear con los pines v0.5** (12/10; el binario de la Pi tiene los v0.4) y armar el shield y la perforada
+4. Brazo: **reflashear con los pines v0.5** (los binarios de la Pi están al día desde el 19/10, commit e338e08: falta enchufar
+   las dos placas por USB a la Pi y correr `/pi-sync base` y `/pi-sync brazo` con los 12 V apagados) y armar el shield y la perforada
    de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
    si falta, 10 k a 3V3). El motor de J1 en J2 ya se probó (levantó el brazo, 17/10); con los motores nuevos, pasos 0-3 de
    `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
