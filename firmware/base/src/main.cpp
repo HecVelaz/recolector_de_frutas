@@ -162,6 +162,12 @@ void tareaControl(void *) {
     sens.roll = roll;
     sens.pitch = pitch;
     sens.imuValida = hayImu && ahora - imuUltimaMs < IMU_VALIDA_MS;
+#ifdef PRUEBA_MOTORES
+    // Solo la prueba de tracción con las ruedas en el aire (env ros_motores): sin IMU ni HC-SR04 conectados.
+    // Seta, bumpers, watchdog y el tope de d siguen activos
+    sens.imuValida = true;
+    sens.dist[0] = INFINITY;
+#endif
     if (imuNueva) {
       sens.acc = acc;
       sens.gyro = gyro;
@@ -595,6 +601,9 @@ void setup() {
   if (!okEnc) out->println("ERROR: no se pudo configurar el PCNT de los encoders.");
   if (!okUs) out->println("ERROR: no se pudieron configurar los HC-SR04.");
   out->printf("IMU: %s (%s)\n", MPU9250::statusName(stImu), imu.modelName());
+#ifdef PRUEBA_MOTORES
+  out->println("PRUEBA_MOTORES: sin vigilancia de IMU ni distancia al frente. Solo con las ruedas en el aire.");
+#endif
   if (!hwOk) {
     out->println("Comandos DESHABILITADOS hasta corregir el error y reiniciar.");
     return;
