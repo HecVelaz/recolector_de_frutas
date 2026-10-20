@@ -428,3 +428,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - **`cuentasPorVuelta` (rueda izquierda, a mano, base en modo libre):** una vuelta marcada dio 0,994 vueltas
   (1,655 → 2,649): 8316 de la hoja confirmado (0,6 % = 2° de marca). Girarla a mano cuesta mucho (189:1): el ajuste
   fino va con la odometría contra cinta en el piso (corrige también radio y trocha). Derecha: después del prisionero.
+- **Teleoperado desde Android (ruedas en el aire, fuente de laboratorio):** Termux en el celular → ssh a la Pi →
+  `armar` + `teleop_twist_keyboard --ros-args -p repeat_rate:=10.0`. Por la IP del Wi-Fi FIUNA (172.16.240.92) daba
+  time out: la red aísla los clientes; con Tailscale en el celular (100.116.96.71) anda. Funciona: adelante, atrás y
+  giros. Con `u` a velocidad máxima pasa de 4 A (esperable: 2,6 A en vacío por motor a 12 V, con la rueda de afuera
+  cerca de 50 rpm y ~85 % de PWM). El "fuse 3 A" de atrás de la fuente es el de 220 V, no el límite de salida. Para
+  las pruebas, bajar la velocidad con `z`; la máxima, con la LiPo.

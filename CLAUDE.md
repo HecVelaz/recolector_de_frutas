@@ -120,17 +120,22 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
 - `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
   Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
   LiPo 3S (aviso a 10,5 V, divisor 100 k / 30 k; 08/10).
-  **20/10, primera prueba de tracción (ruedas en el aire, bitácora):** motores y encoders con los sentidos correctos,
-  arrancan con 20 %, al 25 % ~8 rpm; K 0,6 y zona muerta 11 % en `base_config.h` (sin flashear). En la S3 está el
-  env de prueba **`ros_motores`** (sin IMU ni distancia al frente; tope de `d` 25 %): nunca en el piso. Los 5 V de la
-  Freenove salen de su jack (plug desde la bornera +12 V; el USB no los da). La rueda derecha patina en el eje.
+  **20/10, tracción probada con las ruedas en el aire (bitácora):** sentidos de motores y encoders correctos,
+  arrancan con 20 %; medidos K 0,6 rpm/%, zona muerta 11 % y τ 80 ms (`scripts/escalon_tau.py`, env `serial_motores`
+  para tener `log`), PI 0,89/11,1: `w 8 8` → las dos en 8 ± 0,1 rpm. 8316 cuentas confirmadas (rueda izq., 1 vuelta).
+  **Teleop desde Android:** Termux + Tailscale → ssh → `teleop_twist_keyboard` (`repeat_rate:=10.0`); anda. Con `u` a
+  velocidad máxima, > 4 A (normal: 2,6 A en vacío por motor). En la S3 está el env de prueba **`ros_motores`** (sin IMU
+  ni distancia al frente; tope de `d` 25 %): nunca en el piso. Los 5 V de la Freenove salen de su jack (plug desde la
+  bornera +12 V; el USB no los da). La rueda derecha patina en el eje (prisionero). `desarmar` por micro-ROS no
+  funcionaba en ninguna placa (palabra cortada a 7 letras): corregido y flasheado en las dos.
 - Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
   Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
   S3: flashear con reset por watchdog (ya en `platformio.ini`); abrir el puerto con DTR/RTS bajos la deja en
   modo descarga. Usar `/dev/serial/by-id/` porque el puerto pasa de ACM0 a ACM1.
 - `brazo_ik`: 9 pruebas OK (2 comparan sus límites y el rango de γ₄ con `brazo_config.h`). `/brazo/objetivo` es el punto de agarre (TCP); con la herramienta horizontal, la muñeca
   está `largo_herramienta` más adentro en horizontal (parámetro; 0 por defecto, MEDIR en el real).
-- Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
+- Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`; en el lab, Wi-Fi FIUNA 172.16.240.92 al 20/10: aísla los
+  clientes, el celular entra solo por Tailscale): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
   en `~/recolector_de_frutas` (por rsync, sin `.git`), esptool en `~/venvs/esptool`. Binarios para flashear en
   `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en `~/logs`, workspaces de ROS en `~/ros/` y venvs en
   `~/venvs/` (ordenado el 01/10; `~/microros_ws`, `~/camera_ws`, `~/yolo_ws`, `~/yolo_env` y `~/keepon_env` quedan
@@ -240,8 +245,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
    (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
 2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → seta → selector WEG → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
-   "Antes de conectar". Primera prueba de la base con ruedas en el aire (README): sentidos, `cuentasPorVuelta` = 8316,
-   radio, trocha y parada real por watchdog. Probar sensores en ROS (hoy nada probado con periféricos).
+   "Antes de conectar". Base con ruedas en el aire: hecha el 20/10. Falta, en el piso y con la IMU, el HC-SR04 del
+   frente y el env `ros`: odometría contra cinta (radio, trocha, cuentas), parada real por watchdog y corriente con
+   peso; antes, el prisionero de la rueda derecha. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
