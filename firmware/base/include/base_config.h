@@ -75,7 +75,7 @@ constexpr uint8_t PWM_BITS = 10;
 constexpr float CMD_S_DEF = 1.0f;     // duración por defecto de v y w [s]
 constexpr float CMD_S_MAX = 3.0f;  // también acota cuánto sigue andando si se corta el USB sin watchdog
 constexpr uint32_t JOG_MS = 300;      // d se corta solo si no se repite
-constexpr float JOG_DUTY_MAX = 40.0f;
+constexpr float JOG_DUTY_MAX = 25.0f;  // primera prueba de tracción (20/10); antes 40
 
 // Si la tarea de control deja de correr este tiempo, el watchdog de tareas reinicia la placa
 constexpr uint32_t TWDT_S = 1;
