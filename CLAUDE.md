@@ -123,7 +123,9 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   **20/10, tracción probada con las ruedas en el aire (bitácora):** sentidos de motores y encoders correctos,
   arrancan con 20 %; medidos K 0,6 rpm/%, zona muerta 11 % y τ 80 ms (`scripts/escalon_tau.py`, env `serial_motores`
   para tener `log`), PI 0,89/11,1: `w 8 8` → las dos en 8 ± 0,1 rpm. 8316 cuentas confirmadas (rueda izq., 1 vuelta).
-  **Teleop desde Android:** Termux + Tailscale → ssh → `teleop_twist_keyboard` (`repeat_rate:=10.0`); anda. Con `u` a
+  **Teleop desde Android:** Termux + Tailscale → ssh → `teleop_twist_keyboard` (`repeat_rate:=10.0`); anda. Y una
+  página con joystick, `firmware/base/scripts/teleop_web.py` (puerto 8000, sin rosbridge; base de la app de la E7):
+  `http://100.116.96.71:8000` con Tailscale (probada en la Pi, falta manejar desde el celular). Con `u` a
   velocidad máxima, > 4 A (normal: 2,6 A en vacío por motor). En la S3 está el env de prueba **`ros_motores`** (sin IMU
   ni distancia al frente; tope de `d` 25 %): nunca en el piso. Los 5 V de la Freenove salen de su jack (plug desde la
   bornera +12 V; el USB no los da). La rueda derecha patina en el eje (prisionero). `desarmar` por micro-ROS no
