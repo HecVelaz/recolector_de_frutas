@@ -412,3 +412,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   En `base_config.h`: τ 0,065 → 0,08 y Kp 0,72 → 0,89 (Ki queda en 11,1). Antes, `w 8 8` con micro-ROS: las dos
   ruedas en 7,9 rpm (izquierda con 24,4 %, derecha con 25,5 %). Con micro-ROS un comando de movimiento hay que
   repetirlo a ≥ 10 Hz (watchdog de 300 ms). Abrir el puerto con el script reinicia la S3 (el log arranca en t ≈ 1,6 s).
+- **`w 8 8` con el PI nuevo** (τ 0,08, Kp 0,89; micro-ROS, `ros_motores`, ruedas en el aire): tres lecturas
+  mientras giraban, izquierda 8,0-8,1 rpm con 24,4-24,5 %, derecha 7,9-8,1 rpm con 25,3-25,8 %; sin oscilación. Vueltas
+  al final: 1,655 y 1,650 (0,3 % de diferencia). Frenaron por el watchdog al cortar el comando; sin fallas ni saltos.
+  **Tracción en el aire probada** (sentidos, encoders, lazo abierto y de velocidad). Falta: prisionero de la rueda
+  derecha, `cuentasPorVuelta` con 10 vueltas, y en el piso con la IMU, el HC-SR04 y el firmware normal.
