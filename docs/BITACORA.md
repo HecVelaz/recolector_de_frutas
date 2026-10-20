@@ -353,3 +353,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   `ARQUITECTURA.md`, el manual (cap. 2 y 4, figuras regeneradas) y `CLAUDE.md`. La Entrega 4 de R2 no se tocó.
 - **Selector con un solo bloque (decisión del grupo):** de los 2 BC10 NA se usa uno (10 A térmicos; promedio ~3 A,
   picos ~15 A cortos); el otro queda libre. Si calienta con el uso, sumar el segundo en paralelo.
+- `seta.html`: nuevo **Paso 2b**, el bloque B (GPIO 47, directo) y el divisor de batería (GPIO 1, perforada de abajo)
+  borne por borne sobre la fila de borneras de la Freenove. Aclaración: el bloque B nunca va al GPIO 1.
+- `todo.html` se veía con la pestaña Seta de 5316 px de ancho: `armar_todo.py` cambiaba por base64 también la ruta
+  de la foto citada en el pie (texto). Ahora solo reemplaza rutas dentro de atributos. Republicado.

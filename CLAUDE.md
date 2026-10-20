@@ -19,7 +19,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   cortos) → **seta (bloque A)** → **selector WEG** (ON/OFF de motores: 1 bloque NA BC10, el otro libre (19/10); la térmica CHINT salió el 10/10); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2020MI** (el mismo que usa Keepon: nunca a la vez)
   5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W: verificar `vcgencmd get_throttled` = 0x0). Divisor de batería
   **100 k / 30 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`): **bloque A corta el + del bus de 12 V** (entre fusible y selector desde el 19/10; 10/10,
-  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/html/seta.html`; directo, sin 100 nF:
+  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/html/seta.html`, con el detalle borne por borne del 47 y del GPIO 1 en el Paso 2b; directo, sin 100 nF:
   ponerlo si aparecen paradas por `SETA` sin tocarla); sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
   (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 30 k quema el GPIO).
   Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/html/conexiones.html` y `docs/html/potencia.html` (potencia cable por cable, con fotos;
