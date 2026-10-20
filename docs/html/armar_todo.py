@@ -136,9 +136,11 @@ SHELL = """<!doctype html>
 
 def pagina(archivo):
     s = (AQUI / archivo).read_text()
-    for foto in sorted(set(re.findall(r'fotos/[^"\']+\.jpe?g', s))):
+    # Solo rutas dentro de un atributo (src="fotos/..."): una ruta citada en el texto quedaría como un base64 sin
+    # espacios que estira la página a miles de px de ancho.
+    for foto in sorted(set(re.findall(r'(?<=["\'])fotos/[^"\']+\.jpe?g', s))):
         b64 = base64.b64encode((AQUI / foto).read_bytes()).decode()
-        s = s.replace(foto, "data:image/jpeg;base64," + b64)
+        s = re.sub(r'(?<=["\'])' + re.escape(foto), "data:image/jpeg;base64," + b64, s)
     hijo = HIJO % json.dumps(REGLAS, ensure_ascii=False)
     return s.replace("</body>", hijo + "</body>") if "</body>" in s else s + hijo
 
