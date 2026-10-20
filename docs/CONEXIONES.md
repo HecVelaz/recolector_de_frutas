@@ -233,16 +233,22 @@ se mueve), directo de la LiPo (sin buck). Energía útil: 80 % de la nominal.
 | LiPo, avanzando sin parar | 71 Wh | ~48 W | ~1,5 h |
 | LiPo, terreno malo sin parar | 71 Wh | ~73 W | ~1 h |
 | Power bank, lógica | ~55 Wh (74 Wh × ~75 % a 5 V) | 11 W | **~5 h** |
+| Power bank, Pi + visión (medido 20/10) + ESP32 | ~55 Wh | ~8 W + ~1 W | ~6 h |
 
 El robot dura lo que dura la LiPo, **~2,1 h de cosecha** (la guía pide ≥ 45 min; estimación hasta medir el sostén real
 de J2/J3). Con la 10S serían ~3,2 h.
+
+Medido el 20/10 (Pi 5 solo con el power bank, dos cámaras y `start_limon.sh` completo): rieles internos del PMIC
+6,7 W de promedio (4,3-8,9 W en 30 lecturas); con cámaras y pérdidas de conversión, ~7,5-8 W en la entrada
+(estimado: falta un medidor USB). En 15 min, 5,03-5,13 V y `throttled` = `0x0`. Los 11 W de la tabla quedan como
+margen (calor, ESP32, picos).
 
 ## Antes de conectar
 
 - [ ] **GND común:** GND de la S3 y de la WROOM a la bornera de GND del bus de motores (sin él, los PWM no tienen
       referencia en los IBT-2). Los positivos de la LiPo y del power bank nunca se tocan.
 - [ ] **Power bank:** cable incorporado (corto), una sola salida, sin cargarlo mientras alimenta la Pi; verificar
-      `vcgencmd get_throttled` = `0x0` con la visión corriendo.
+      `vcgencmd get_throttled` = `0x0` con la visión corriendo (hecho el 20/10 sin los ESP32: repetir con ellos).
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Conector de la LiPo:** cortar el Deans **de a un cable** (los dos juntos con la pinza hacen un corto), soldar el
       **XT60 hembra** del lado de la batería (rojo al +) con termocontraíble, con la LiPo a media carga. El macho va al portafusible.
