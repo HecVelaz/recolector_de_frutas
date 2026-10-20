@@ -300,8 +300,8 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
     <li><label><input type="checkbox"><span class="t"><b>B+ IBT-2 der.</b> ↔ <b>bornera +12 V</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>B− IBT-2 izq.</b> ↔ <b>bornera GND</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>B− IBT-2 der.</b> ↔ <b>bornera GND</b></span><span class="esp si">pita</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>M+ / M− izq.</b> ↔ <b>rojo / negro del motor izq.</b></span><span class="esp si">pita</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>M+ / M− der.</b> ↔ <b>rojo / negro del motor der.</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>M+ / M− izq.</b> ↔ <b>rojo / negro del motor izq.</b><small>rojo con M− también pita: el bobinado del motor une rojo y negro (pocos Ω). Para confirmar que no están cruzados, soltar el negro de M−: entonces solo pita rojo ↔ M+.</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>M+ / M− der.</b> ↔ <b>rojo / negro del motor der.</b><small>rojo con M− también pita: el bobinado del motor une rojo y negro (pocos Ω). Para confirmar que no están cruzados, soltar el negro de M−: entonces solo pita rojo ↔ M+.</small></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 4</b> ↔ <b>RPWM izq.</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 5</b> ↔ <b>LPWM izq.</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 6</b> ↔ <b>RPWM der.</b></span><span class="esp si">pita</span></label></li>
@@ -309,7 +309,7 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
     <li><label><input type="checkbox"><span class="t"><b>GPIO 4</b> ↔ <b>GPIO 5 · y 6 ↔ 7</b><small>los PWM de un mismo driver no están puenteados</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 4</b> ↔ <b>RPWM der.</b><small>izquierdo y derecho no están cruzados</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 38</b> ↔ <b>R_EN y L_EN de los dos IBT-2</b><small>cuatro mediciones, una por pin</small></span><span class="esp si">pita</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>GPIO 38</b> ↔ <b>GND</b><small>en Ω. Si pita: corto a GND. Si da abierto: falta el 10 k.</small></span><span class="esp ohm">≈ 10 kΩ</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 38</b> ↔ <b>GND</b><small>en Ω. Con todo conectado da menos que 10 k (los EN de los IBT-2 y la S3 sin alimentar quedan en paralelo): medido ≈ 5 kΩ el 20/10. Si pita: corto a GND. Si da abierto: falta el 10 k.</small></span><span class="esp ohm">≈ 5 kΩ</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>VCC de cada IBT-2</b> ↔ <b>5 V de la S3</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GND lógica de cada IBT-2</b> ↔ <b>GND de la S3</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 4, 5, 6, 7 y 38</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
@@ -361,7 +361,7 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
     <li><label><input type="checkbox"><span class="t"><b>blanco izq.</b> ↔ <b>GPIO 16</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>amarillo der.</b> ↔ <b>GPIO 17</b></span><span class="esp si">pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>blanco der.</b> ↔ <b>GPIO 18</b></span><span class="esp si">pita</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>GPIO 15, 16, 17 y 18</b> ↔ <b>GND</b><small>en Ω, uno por uno. Puede dar algo menos (en paralelo con el encoder). Abierto: falta el 20 k. Pita: corto.</small></span><span class="esp ohm">≈ 20 kΩ</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 15, 16, 17 y 18</b> ↔ <b>GND</b><small>en Ω, uno por uno. Con el encoder conectado da ≈ 10 k: su pull-up de 10 k queda en paralelo (medido el 20/10). Abierto: falta el 20 k. Pita: corto.</small></span><span class="esp ohm">≈ 10-20 kΩ</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 15</b> ↔ <b>GPIO 16 · y 17 ↔ 18</b><small>A y B no puenteados</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>GPIO 15</b> ↔ <b>GPIO 17</b><small>los dos motores no cruzados</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>rojo / negro del motor</b> ↔ <b>azul, amarillo o blanco del encoder</b><small>el cable del motor no toca la señal</small></span><span class="esp no">no pita</span></label></li>
@@ -414,7 +414,7 @@ Pines de <code>firmware/base/include/pins.h</code>; potencia de <code>docs/CONEX
     <li><label><input type="checkbox"><span class="t"><b>5 V de la S3</b> ↔ <b>GND de la S3</b><small>si pita seguido: corto en la lógica</small></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t"><b>3V3 de la S3</b> ↔ <b>GND de la S3</b></span><span class="esp no">no pita</span></label></li>
     <li><label><input type="checkbox"><span class="t">Cada cable en la bornera de la Freenove del pin correcto: 4, 5, 6, 7, 38, 15, 16, 17, 18, 47.</span></label></li>
-    <li><label><input type="checkbox"><span class="t"><b>GPIO 1</b> ↔ <b>bornera +12 V / GND</b><small>solo si ya armaste el divisor de batería; si no, saltear</small></span><span class="esp ohm">≈ 100 k / 30 k</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 1</b> ↔ <b>bornera +12 V / GND</b><small>solo si ya armaste el divisor de batería; si no, saltear. Arranca en ≈ 23 k las dos (los capacitores descargados de los IBT-2 ponen el 100 k en paralelo con el 30 k) y sube de a poco mientras el multímetro los carga: es normal.</small></span><span class="esp ohm">≈ 100 k / 30 k</span></label></li>
   </ul>
 </section>
 
