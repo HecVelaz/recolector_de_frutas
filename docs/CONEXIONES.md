@@ -6,7 +6,7 @@ LiPo: fusible de auto de 20 A** pegado al XT60; la térmica CHINT queda solo com
 `html/placa_s3.html` ya están en la v0.6.
 10/10: **sale la térmica CHINT**: el ON/OFF de los motores es el **selector WEG** (2 bloques BC10 NA 3-4 en paralelo) y
 la **seta trae 2 bloques NC** (fotos traseras en `fotos/llaves/`). Detalle cable por cable, con fotos: `html/potencia.html`.
-10/10 (v0.7): **la seta corta el + del bus de 12 V** (bloque A entre el selector y la bornera +12 V; decisión del grupo,
+10/10 (v0.7): **la seta corta el + del bus de 12 V** (bloque A entre el selector y la bornera +12 V; decisión del grupo; **19/10: el bloque A pasa a ir entre el fusible y el selector**,
 más simple y corta también el brazo y los servos) y el bloque B avisa al GPIO 47. El EN de la tracción ya no pasa por
 la seta. Cable por cable: `html/seta.html`.
 v0.5 — 08/10/2026: **potencia solo con lo que hay** (térmica CHINT C10, XT60, cable, borneras, capacitores
@@ -39,7 +39,7 @@ Primero probar la arquitectura completa con lo mínimo; lo que falta de la guía
 entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **Sin cambios de firmware.**
 
 **Se conecta:**
-- LiPo → XT60 → fusible de auto 20 A → selector WEG → (seta, cuando esté) → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
+- LiPo → XT60 → fusible de auto 20 A → seta (bloque A) → selector WEG → bus 12 V (con capacitores) → 2 IBT-2 de tracción; EN de la S3 (GPIO 38) con su 10 k a GND.
 - **Divisor de batería 100 k / 30 k** (GPIO 1): la LiPo no tiene BMS y es lo único que avisa que hay que parar.
 - Encoders de tracción con sus 20 k a GND (odometría y control de velocidad).
 - IMU (sin ella la base no se mueve ni se rearma).
@@ -58,7 +58,7 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 | Bumpers ×3 | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en el selector |
 | HC-SR04 izquierdo y derecho | `/range/izq` y `/range/der` en NaN | Sin esquivar: la prueba va con teleop + `mision` |
 | Servo de giro (J4) | Queda quieto | Agarrar solo con la apertura |
-| Seta | **Cable grueso del selector a la bornera +12 V y otro del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sin parada de emergencia: alguien en el selector. Sacar los puentes al poner la seta |
+| Seta | **Cable grueso del fusible al selector (borne 3) y otro del GPIO 47 a GND** (si no, la S3 queda en EMERGENCIA) | Sin parada de emergencia: alguien en el selector. Sacar los puentes al poner la seta |
 
 Recorrido autónomo, luz, buzzer, habilitación del brazo, app y LiDAR: después.
 
@@ -158,8 +158,8 @@ Separadas, un motor trabado no puede hacer caer la tensión de la Pi.
 ### Circuito v0.6
 
 ```
-LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → selector WEG, 2 NA en
-  paralelo (ON/OFF de motores, H8) → seta, bloque A NC (corte de emergencia, cable grueso) → bus 12 V de motores
+LiPo 3S (9,9-12,6 V, sin BMS) → XT60 → fusible de auto 20 A (portafusible pegado al XT60) → seta, bloque A NC (corte de
+  emergencia, cable grueso) → selector WEG, 2 NA en paralelo (ON/OFF de motores, H8) → bus 12 V de motores
   │   (capacitores del inventario, ≥ 25 V, cerca de los IBT-2)
   ├─ IBT-2 de tracción ×2 ── EN: S3 GPIO 38 → R_EN + L_EN (10 kΩ a GND)
   ├─ IBT-2 J1 + J2 + J3 ──── EN: WROOM GPIO 23 (lo desarma `mision` al ver SETA)
@@ -179,7 +179,7 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   motores trabados. El portafusible va lo más cerca posible del conector: el cable antes del fusible no está
   protegido. Cable del bus de al menos 14 AWG (aguanta los 20 A). Es la única compra de la potencia: sin ella, un
   corto en una LiPo sin BMS es riesgo de incendio (antes de comprar, buscar uno en el lab).
-- **Selector WEG, después del fusible: interruptor ON/OFF de los motores (H8; reemplaza a la térmica CHINT, 10/10).**
+- **Selector WEG, después de la seta: interruptor ON/OFF de los motores (H8; reemplaza a la térmica CHINT, 10/10).**
   Trae 2 bloques BC10 con contacto NA 3-4 (10 A térmicos cada uno): van **en paralelo** (puente 3-3 y 4-4 con el
   mismo cable grueso) para conducir hasta ~20 A cerrados. No es protección: la protección es el fusible. Accionarlo
   con los motores quietos (pasan pocos cientos de mA: a 12 V el arco es mínimo; en paralelo no corta mejor que uno
@@ -192,7 +192,7 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
   automático. Medir cada celda con el balanceador o el tester antes y después de cada prueba, y calibrar la lectura
   del ADC contra el tester. Cargar solo con el balanceador; guardada varios días, a ~11,4 V (3,8 V por celda).
 - **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 bloques NC 1-2 apilados (AdvanCon SIB2-BE102, `hongo.jpeg`):** el bloque A (arriba) corta el + del bus de 12 V,
-  después del fusible y del selector: los cinco IBT-2 y el buck de los servos quedan sin tensión (corte por hardware,
+  entre el fusible y el selector (19/10): los cinco IBT-2 y el buck de los servos quedan sin tensión (corte por hardware,
   aunque se cuelgue el firmware; los motores quedan en rueda libre: no frena). El bloque B (abajo) avisa a la S3 por el
   GPIO 47 (HIGH = apretada o cable cortado): la S3 pasa a EMERGENCIA y no rearranca sola al soltarla (`r` y `armar`).
   **El bloque está pensado para alterna (`10(6)A 400V~`), sin dato para continua:** a 12 V corta una emergencia, pero
@@ -248,15 +248,15 @@ de J2/J3). Con la 10S serían ~3,2 h.
 - [ ] **J2 y J3 no se sostienen solos:** al desarmar o con la seta el brazo cae; reposo apoyado en un tope.
 - [ ] **Conector de la LiPo:** cortar el Deans **de a un cable** (los dos juntos con la pinza hacen un corto), soldar el
       **XT60 hembra** del lado de la batería (rojo al +) con termocontraíble, con la LiPo a media carga. El macho va al portafusible.
-- [ ] **LiPo:** fusible de auto de 20 A pegado al XT60 (antes del selector), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
+- [ ] **LiPo:** fusible de auto de 20 A pegado al XT60 (antes de la seta y del selector), cable de ≥ 14 AWG, indicador de barras a la vista, parar a 10,5 V (`BATERIA_BAJA` no
       frena), cargar solo con el balanceador y fuera del robot. Enchufar el XT60 con el selector en OFF y
       respetar la polaridad (los IBT-2 al revés se rompen).
 - [ ] **Divisor de batería 100 k / 30 k** (12,6 V → 2,91 V en el GPIO 1). **Si vuelve la 10S, cambiarlo a 120 k /
       8,2 k antes de conectarla**: con 42 V, el de 100 k / 30 k pondría ~10 V en el GPIO y lo quema.
 - [ ] **Ajustar el buck 3 sin carga y con el multímetro** (6 V, CC 5 A) antes de conectar los servos.
 - [ ] Capacitores de ≥ 25 V en el bus de 12 V de motores, cerca de los IBT-2.
-- [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; bloque A en el + del bus (selector →
-      bornera +12 V, cable grueso) y bloque B al GPIO 47. Con la seta apretada, 0 V en la bornera +12 V y `armar`
+- [ ] **Seta:** probar con el multímetro qué contactos son NC antes de cablearla; bloque A en el + del bus (fusible →
+      selector, cable grueso) y bloque B al GPIO 47. Con la seta apretada, 0 V en la bornera +12 V y `armar`
       tiene que fallar; al soltarla, las ruedas no arrancan solas.
 - [ ] Pull-down de 10 kΩ en cada EN: S3 GPIO 38 y WROOM 23 (un EN para los 3 IBT-2 del brazo).
 - [ ] Divisor en cada ECHO del HC-SR04 (1 k arriba, 2 k abajo): el ECHO sale a 5 V.

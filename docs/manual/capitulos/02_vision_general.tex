@@ -72,7 +72,7 @@ más que publica y se suscribe a tópicos.
   \node[caja,draw=rojo,thick] (lipo) at (0,-12.2) {LiPo 3S\\11,1 V};
   \node[caja,draw=naranja,thick] (pb) at (0,-9.6) {Power bank\\5 V 3 A};
   \draw[pot] (lipo) -- node[t,above]{12 V} (tr);
-  \draw[pot] (lipo.south) -- ++(0,-0.5) -| node[t,pos=0.25,below]{12 V (pasa por fusible, selector y seta)} (art.south);
+  \draw[pot] (lipo.south) -- ++(0,-0.5) -| node[t,pos=0.25,below]{12 V (pasa por fusible, seta y selector)} (art.south);
   \draw[logica] (pb) -- node[t,left]{5 V} (pb |- pi.south);
 \end{tikzpicture}}
 \caption{Arquitectura del sistema. Azul: nodos de ROS~2 en la Pi. Gris: placas. Las flechas llevan el nombre del

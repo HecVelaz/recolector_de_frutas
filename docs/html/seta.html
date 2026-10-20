@@ -87,7 +87,7 @@
   <header>
     <div class="eyebrow">Grupo 2 · Arturito R2D2 · seta de emergencia · 10/10/2026</div>
     <h1>La seta, cable por cable</h1>
-    <p class="lede">La seta va <b>después del fusible y del selector</b>: su bloque A corta el + de los 12 V de todos los motores y su bloque B le avisa a la S3. <b>No tiene ningún cable a la Pi.</b> Son <b>4 cables</b>: 2 gruesos de potencia y 2 finos de señal, directo a las borneras de la S3, sin componentes. La Pi, el power bank y las ESP32 no pasan por la seta: siguen encendidos.</p>
+    <p class="lede">La seta va <b>después del fusible y antes del selector</b>: su bloque A corta el + de los 12 V de todos los motores y su bloque B le avisa a la S3. <b>No tiene ningún cable a la Pi.</b> Son <b>4 cables</b>: 2 gruesos de potencia y 2 finos de señal, directo a las borneras de la S3, sin componentes. La Pi, el power bank y las ESP32 no pasan por la seta: siguen encendidos.</p>
   </header>
 
   <section aria-labelledby="h-idea">
@@ -95,7 +95,7 @@
     <div class="ideas">
       <div class="idea" style="--c: var(--w-power)">
         <h3>Bloque A (el de arriba): corta los 12 V</h3>
-        <p>Va en serie con el + del bus, entre el selector y la bornera +12 V. Al apretar la seta se quedan sin tensión los <b>cinco IBT-2</b> (tracción y brazo) y el <b>buck de los servos</b>. No depende de ningún programa.</p>
+        <p>Va en serie con el + del bus, entre el fusible y el selector. Al apretar la seta se quedan sin tensión los <b>cinco IBT-2</b> (tracción y brazo) y el <b>buck de los servos</b>. No depende de ningún programa.</p>
         <p class="tag">cables 1 y 2 · gruesos · rojo</p>
       </div>
       <div class="idea" style="--c: var(--w-aviso)">
@@ -133,12 +133,12 @@
           <g transform="translate(445,108)">
             <g class="num power"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">1</text></g>
             <text class="t-title" x="30" y="17">A1 · arriba a la derecha</text>
-            <text class="t-sub" x="30" y="34">cable grueso 1, desde el selector (borne 4)</text>
+            <text class="t-sub" x="30" y="34">cable grueso 1, desde el fusible</text>
           </g>
           <g transform="translate(445,150)">
             <g class="num power"><circle cx="11" cy="12" r="11"></circle><text x="11" y="12">2</text></g>
             <text class="t-title" x="30" y="17">A2 · arriba a la izquierda</text>
-            <text class="t-sub" x="30" y="34">cable grueso 2, a la bornera +12 V</text>
+            <text class="t-sub" x="30" y="34">cable grueso 2, al selector (borne 3)</text>
             <text class="t-sub" x="30" y="50">(da lo mismo cuál de los dos es 1 o 2)</text>
           </g>
           <g transform="translate(445,236)">
@@ -167,32 +167,33 @@
     </div>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1100 600" style="min-width: 980px" role="img" aria-label="Circuito de la seta. Arriba: LiPo, XT60 y fusible de 20 A al selector WEG; cable grueso 1 del borne 4 del selector al bloque A de la seta; cable grueso 2 del bloque A a la bornera +12 V, de donde salen los cinco IBT-2, el buck de los servos, el voltímetro y el divisor. Abajo: cable 3 del tornillo B1 a la bornera 47 de la S3; cable 4 del tornillo B2 a una bornera GND. Una línea punteada une los dos bloques: es el mismo botón. A la derecha, el EN de la tracción sale del GPIO 38 a la tira EN-T con 10 kilohm a GND y de ahí a los dos IBT-2, sin pasar por la seta.">
+        <svg viewBox="0 0 1100 600" style="min-width: 980px" role="img" aria-label="Circuito de la seta. Arriba: LiPo, XT60 y fusible de 20 A; cable grueso 1 del fusible al bloque A de la seta; cable grueso 2 del bloque A al borne 3 del selector WEG; del borne 4 del selector a la bornera +12 V, de donde salen los cinco IBT-2, el buck de los servos, el voltímetro y el divisor. Abajo: cable 3 del tornillo B1 a la bornera 47 de la S3; cable 4 del tornillo B2 a una bornera GND. Una línea punteada une los dos bloques: es el mismo botón. A la derecha, el EN de la tracción sale del GPIO 38 a la tira EN-T con 10 kilohm a GND y de ahí a los dos IBT-2, sin pasar por la seta.">
           <!-- Fila de potencia -->
           <rect class="box" x="20" y="60" width="170" height="80" rx="6"></rect>
           <text class="t-title" x="34" y="86">LiPo → XT60</text>
           <text class="t-title" x="34" y="106">→ fusible 20 A</text>
           <text class="t-sub" x="34" y="126">el fusible siempre primero</text>
           <path class="w power" d="M190 100 H240"></path>
-          <rect class="box" x="240" y="60" width="170" height="80" rx="6"></rect>
-          <text class="t-title" x="325" y="86" text-anchor="middle">Selector WEG</text>
-          <text class="t-sub" x="325" y="104" text-anchor="middle">ON/OFF de todos los días</text>
-          <text class="t-sub" x="325" y="120" text-anchor="middle">(2 NA en paralelo)</text>
-          <rect class="term power" x="235" y="95" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="252" y="134">3</text>
-          <rect class="term power" x="405" y="95" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="398" y="134" text-anchor="end">4</text>
-          <path class="w power" d="M410 100 H540"></path>
 
-          <rect class="box seta" x="540" y="50" width="200" height="100" rx="6"></rect>
-          <text class="t-title" x="640" y="74" text-anchor="middle">Seta · bloque A (arriba)</text>
-          <path d="M575 120 H607 L637 104 M645 120 H705" fill="none" stroke="var(--ink)" stroke-width="2"></path>
-          <path d="M637 112 V128" stroke="var(--ink)" stroke-width="2"></path>
+          <rect class="box seta" x="240" y="50" width="200" height="100" rx="6"></rect>
+          <text class="t-title" x="340" y="74" text-anchor="middle">Seta · bloque A (arriba)</text>
+          <path d="M275 120 H307 L337 104 M345 120 H405" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+          <path d="M337 112 V128" stroke="var(--ink)" stroke-width="2"></path>
+          <rect class="term power" x="235" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="252" y="144">A1</text>
+          <rect class="term power" x="435" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="428" y="144" text-anchor="end">A2</text>
+          <path class="w power" d="M440 100 H540"></path>
+
+          <rect class="box" x="540" y="60" width="170" height="80" rx="6"></rect>
+          <text class="t-title" x="625" y="86" text-anchor="middle">Selector WEG</text>
+          <text class="t-sub" x="625" y="104" text-anchor="middle">ON/OFF de todos los días</text>
+          <text class="t-sub" x="625" y="120" text-anchor="middle">(2 NA en paralelo)</text>
           <rect class="term power" x="535" y="95" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="552" y="144">A1</text>
-          <rect class="term power" x="735" y="95" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="728" y="144" text-anchor="end">A2</text>
-          <path class="w power" d="M740 100 H860"></path>
+          <text class="t-term" x="552" y="134">3</text>
+          <rect class="term power" x="705" y="95" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="698" y="134" text-anchor="end">4</text>
+          <path class="w power" d="M710 100 H860"></path>
 
           <!-- Bornera +12 V -->
           <path d="M860 60 V260" stroke="var(--w-power)" stroke-width="10" stroke-linecap="round"></path>
@@ -204,9 +205,9 @@
           <text class="t-sub" x="876" y="282">todo esto se apaga con la seta</text>
 
           <!-- Mismo botón -->
-          <path d="M637 150 V330" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="6 5" fill="none"></path>
-          <text class="t-sub" x="648" y="244">mismo botón: los dos</text>
-          <text class="t-sub" x="648" y="260">bloques se abren juntos</text>
+          <path d="M337 150 V330" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="6 5" fill="none"></path>
+          <text class="t-sub" x="348" y="244">mismo botón: los dos</text>
+          <text class="t-sub" x="348" y="260">bloques se abren juntos</text>
 
           <!-- S3 -->
           <rect class="box" x="20" y="330" width="180" height="240" rx="6"></rect>
@@ -221,19 +222,19 @@
           <text class="t-term" x="188" y="535" text-anchor="end">GND</text>
 
           <!-- Seta B -->
-          <rect class="box seta" x="540" y="330" width="200" height="100" rx="6"></rect>
-          <text class="t-title" x="640" y="354" text-anchor="middle">Seta · bloque B (abajo)</text>
-          <path d="M575 400 H607 L637 384 M645 400 H705" fill="none" stroke="var(--ink)" stroke-width="2"></path>
-          <path d="M637 392 V408" stroke="var(--ink)" stroke-width="2"></path>
-          <rect class="term aviso" x="535" y="375" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="552" y="424">B1</text>
-          <rect class="term gnd" x="735" y="375" width="10" height="10" rx="2"></rect>
-          <text class="t-term" x="728" y="424" text-anchor="end">B2</text>
+          <rect class="box seta" x="240" y="330" width="200" height="100" rx="6"></rect>
+          <text class="t-title" x="340" y="354" text-anchor="middle">Seta · bloque B (abajo)</text>
+          <path d="M275 400 H307 L337 384 M345 400 H405" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+          <path d="M337 392 V408" stroke="var(--ink)" stroke-width="2"></path>
+          <rect class="term aviso" x="235" y="375" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="252" y="424">B1</text>
+          <rect class="term gnd" x="435" y="375" width="10" height="10" rx="2"></rect>
+          <text class="t-term" x="428" y="424" text-anchor="end">B2</text>
 
           <!-- Cable 3: B1 → bornera 47 -->
-          <path class="w aviso" d="M535 380 H460 V430 H205"></path>
+          <path class="w aviso" d="M235 380 H220 V430 H205"></path>
           <!-- Cable 4: B2 → bornera GND -->
-          <path class="w gnd" d="M745 380 H775 V550 H240 V530 H205"></path>
+          <path class="w gnd" d="M445 380 H475 V550 H240 V530 H205"></path>
 
           <!-- EN, aparte -->
           <rect class="box" x="820" y="330" width="260" height="240" rx="6" stroke-dasharray="5 4"></rect>
@@ -254,10 +255,10 @@
           <text class="t-sub" x="836" y="566">detalle: placa_s3.html</text>
 
           <!-- Números de cable -->
-          <g class="num power"><circle cx="475" cy="100" r="12"></circle><text x="475" y="100">1</text></g>
-          <g class="num power"><circle cx="800" cy="100" r="12"></circle><text x="800" y="100">2</text></g>
-          <g class="num aviso"><circle cx="490" cy="380" r="12"></circle><text x="490" y="380">3</text></g>
-          <g class="num gnd"><circle cx="775" cy="470" r="12"></circle><text x="775" y="470">4</text></g>
+          <g class="num power"><circle cx="215" cy="100" r="12"></circle><text x="215" y="100">1</text></g>
+          <g class="num power"><circle cx="490" cy="100" r="12"></circle><text x="490" y="100">2</text></g>
+          <g class="num aviso"><circle cx="220" cy="405" r="12"></circle><text x="220" y="405">3</text></g>
+          <g class="num gnd"><circle cx="475" cy="470" r="12"></circle><text x="475" y="470">4</text></g>
         </svg>
       </div>
       <figcaption>El voltímetro y el divisor de la batería quedan después de la seta: con la seta apretada marcan 0 V y <code>/base/estado</code> muestra <code>BATERIA_BAJA</code>. Es normal, no frena nada: la lectura vuelve al soltarla.</figcaption>
@@ -269,8 +270,8 @@
     <div class="tablewrap"><table>
       <thead><tr><th></th><th>Cable</th><th>Desde</th><th>Hasta</th><th>Tipo</th></tr></thead>
       <tbody>
-        <tr><td><input type="checkbox" aria-label="cable 1 puesto"></td><td><span class="n power">1</span></td><td>Selector WEG, borne <b>4</b></td><td>Seta <b>A1</b> (arriba)</td><td>Grueso, como el del bus (12-14 AWG). Ida y vuelta juntos y cortos.</td></tr>
-        <tr><td><input type="checkbox" aria-label="cable 2 puesto"></td><td><span class="n power">2</span></td><td>Seta <b>A2</b> (arriba)</td><td><b>Bornera +12 V</b></td><td>Grueso, igual que el 1.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 1 puesto"></td><td><span class="n power">1</span></td><td><b>Fusible</b> de 20 A (la salida)</td><td>Seta <b>A1</b> (arriba)</td><td>Grueso, como el del bus (12-14 AWG). Ida y vuelta juntos y cortos.</td></tr>
+        <tr><td><input type="checkbox" aria-label="cable 2 puesto"></td><td><span class="n power">2</span></td><td>Seta <b>A2</b> (arriba)</td><td>Selector WEG, borne <b>3</b></td><td>Grueso, igual que el 1.</td></tr>
         <tr><td><input type="checkbox" aria-label="cable 3 puesto"></td><td><span class="n aviso">3</span></td><td>Seta <b>B1</b> (abajo a la izquierda)</td><td><b>Bornera 47</b> de la Freenove</td><td>Fino (22-26 AWG). Trenzado con el 4.</td></tr>
         <tr><td><input type="checkbox" aria-label="cable 4 puesto"></td><td><span class="n gnd">4</span></td><td>Seta <b>B2</b> (abajo a la derecha)</td><td>Cualquier <b>bornera GND</b> de la Freenove</td><td>Fino, trenzado con el 3.</td></tr>
       </tbody>
@@ -338,11 +339,11 @@
   <section aria-labelledby="h-sin">
     <h2 id="h-sin">Si todavía no ponés la seta (prueba integrada)</h2>
     <ul class="steps">
-      <li>Un cable grueso del borne 4 del selector directo a la bornera +12 V, en lugar de los cables 1 y 2.</li>
+      <li>Un cable grueso del fusible directo al borne 3 del selector, en lugar de los cables 1 y 2.</li>
       <li>Un puente de la bornera 47 a GND; si no, la S3 queda en EMERGENCIA y no arma.</li>
       <li>Sin seta no hay parada de emergencia: alguien con la mano en el selector. Sacar los dos puentes cuando se ponga la seta.</li>
     </ul>
   </section>
 
-  <footer>Actualizado el 10/10/2026: la seta corta el + del bus de 12 V (decisión del grupo; antes cortaba el EN de la tracción). Fuentes: <code>CONEXIONES.md</code> v0.7, <code>potencia.html</code>, <code>placa_s3.html</code>, <code>firmware/base/include/pins.h</code> (seta en el 47, EN en el 38) y <code>mision/fsm.py</code>. Foto: <code>docs/fotos/potencia/hongo_atras.jpg</code>.</footer>
+  <footer>Actualizado el 19/10/2026: la seta pasa a ir entre el fusible y el selector (decisión del grupo). 10/10: la seta corta el + del bus de 12 V (decisión del grupo; antes cortaba el EN de la tracción). Fuentes: <code>CONEXIONES.md</code> v0.7, <code>potencia.html</code>, <code>placa_s3.html</code>, <code>firmware/base/include/pins.h</code> (seta en el 47, EN en el 38) y <code>mision/fsm.py</code>. Foto: <code>docs/fotos/potencia/hongo_atras.jpg</code>.</footer>
 </div>

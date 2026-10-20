@@ -27,10 +27,10 @@ fusible, batería baja), la Pi y los ESP32 siguen encendidos y saben lo que pas�
   \node[caja,draw=rojo,thick] (lipo) {LiPo 3S\\8000 mAh\\sin BMS};
   \node[caja,right=of lipo] (xt) {XT60};
   \node[caja,right=of xt,draw=rojo] (fus) {fusible de\\auto 20 A};
-  \node[caja,right=of fus] (sel) {selector WEG\\2 NA en paralelo\\(ON/OFF)};
-  \node[caja,right=of sel,draw=violeta,thick] (seta) {seta\\bloque A (NC)};
-  \node[caja,right=12mm of seta,minimum height=58mm,text width=18mm,fill=rojo!8] (bus) {bornera\\+12 V\\[18mm]bornera\\GND};
-  \draw[pot] (lipo) -- (xt); \draw[pot] (xt) -- (fus); \draw[pot] (fus) -- (sel); \draw[pot] (sel) -- (seta); \draw[pot] (seta) -- (bus);
+  \node[caja,right=of fus,draw=violeta,thick] (seta) {seta\\bloque A (NC)};
+  \node[caja,right=of seta] (sel) {selector WEG\\2 NA en paralelo\\(ON/OFF)};
+  \node[caja,right=12mm of sel,minimum height=58mm,text width=18mm,fill=rojo!8] (bus) {bornera\\+12 V\\[18mm]bornera\\GND};
+  \draw[pot] (lipo) -- (xt); \draw[pot] (xt) -- (fus); \draw[pot] (fus) -- (seta); \draw[pot] (seta) -- (sel); \draw[pot] (sel) -- (bus);
   \node[caja,right=14mm of bus,yshift=22mm] (t) {2 × IBT-2 de tracción};
   \node[caja,right=14mm of bus,yshift=10mm] (b) {3 × IBT-2 del brazo};
   \node[caja,right=14mm of bus,yshift=-2mm] (bk) {buck 3 → 6 V → 2 servos};
@@ -91,7 +91,7 @@ Fusible de auto 20~A & Lámina ATO/ATC, apto para continua hasta 32~V. Va \textb
   ($2 \times 10$~A es justo su nominal). Cable del bus de al menos 14~AWG. \\
 Selector WEG & ON/OFF diario de los motores. Dos bloques BC10 normalmente abiertos en paralelo. \textbf{Moverlo solo
   con los motores quietos}: dos contactos en paralelo no suman 20~A al abrir (el último en separarse corta todo). \\
-Seta (bloque A) & Contacto normalmente cerrado en serie con el + del bus de 12~V, después del selector. Al apretarla,
+Seta (bloque A) & Contacto normalmente cerrado en serie con el + del bus de 12~V, entre el fusible y el selector. Al apretarla,
   los cinco IBT-2 y el buck quedan sin tensión. Los motores quedan en rueda libre: \textbf{no frena}. Está pensada
   para alterna (\cod{10(6)A 400V\textasciitilde}): solo para emergencias. \\
 Seta (bloque B) & Otro contacto NC del mismo botón, entre el GPIO~47 de la S3 y GND. Avisa al firmware. \textbf{Nunca

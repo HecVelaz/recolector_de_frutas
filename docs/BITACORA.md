@@ -346,3 +346,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   nada. En la primera prueba (48 y 38 alternados) también se veía rojo: el núcleo deja el canal RMT ruteado al 48, así
   que lo escrito "por el 38" también salía por el 48. Probar cada pin en un programa aparte. El EN de la tracción
   (38) queda sin conflicto; `pins.h` ya lo suponía en el 48.
+- **Orden de la potencia cambiado (decisión del grupo):** LiPo → XT60 → fusible 20 A → **seta (bloque A) → selector WEG**
+  → bornera +12 V (antes, selector → seta). Eléctricamente cortan igual; el divisor del GPIO 1 y el voltímetro siguen
+  después de los dos (con la seta apretada o el selector en OFF marcan 0 V). Cable 1 de la seta: fusible → A1; cable 2:
+  A2 → borne 3 del selector. Actualizados `seta`, `potencia`, `conexiones` y `todo` (republicados), `CONEXIONES.md`,
+  `ARQUITECTURA.md`, el manual (cap. 2 y 4, figuras regeneradas) y `CLAUDE.md`. La Entrega 4 de R2 no se tocó.

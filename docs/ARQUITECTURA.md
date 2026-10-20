@@ -175,7 +175,7 @@ Los nombres coinciden con los estados de la guía R2 (INACTIVO, NAVEGANDO, BUSCA
 
 ## 9. Alimentación (v0.6, 08/10)
 
-- Rama **potencia 12 V**: LiPo 3S directa (sin buck) → XT60 → fusible de auto 20 A → selector WEG → seta (bloque A) → bus de 12 V con los 5 IBT-2 (2 de tracción, J1, J2, J3) y el buck 3 (12 → 6 V) de los servos.
+- Rama **potencia 12 V**: LiPo 3S directa (sin buck) → XT60 → fusible de auto 20 A → seta (bloque A) → selector WEG → bus de 12 V con los 5 IBT-2 (2 de tracción, J1, J2, J3) y el buck 3 (12 → 6 V) de los servos.
 - Rama **lógica**: power bank Xiaomi PB2020MI (5 V 3 A) → Pi 5 → los dos ESP32 por USB.
 - Masa común en un único punto. Medir corriente pico con todos los motores arrancando.
 - Para el mínimo se puede usar **fuente de laboratorio** (la guía permite no depender de batería).
