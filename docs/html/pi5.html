@@ -141,36 +141,43 @@
           <rect x="730" y="171" width="34" height="304" rx="3" fill="none" class="c-gpio" stroke-width="2.5"/>
           <text class="p f-gpio" x="782" y="150">header 40 · HAT de borneras</text>
           <text class="s" x="782" y="164">pin 1 arriba, en la columna de adentro</text>
-          <path class="w c-v33" d="M739 181 V174 H900 V250 H960"/>
-          <path class="w c-gnd" d="M755 211 H880 V272 H960"/>
-          <path class="w c-data" d="M755 226 H860 V294 H960"/>
-          <path class="w c-data" d="M755 241 H840 V316 H960"/>
-          <path class="w c-res" d="M739 257 V262 H820 V392 H960" stroke-dasharray="6 4"/>
-          <path class="w c-res" d="M739 272 V278 H805 V414 H960" stroke-dasharray="6 4"/>
+          <!-- Header → GPS. Pines del UP501 en la foto (vista del blindaje, pin 1 a la derecha):
+               1 RXD x1139 · 2 TXD 1121 · 3 GND 1103 · 4 VDD 1085 · 5 VDD_B 1066 · 6 PPS 1048 -->
+          <g stroke="var(--card)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M755 241 H900 V466 H1121 V422"/>
+            <path d="M755 226 H880 V481 H1139 V422"/>
+          </g>
+          <path class="w c-v33" d="M739 181 V174 H940 V436 H1085 V422 M1066 436 V422"/>
+          <path class="w c-gnd" d="M755 211 H920 V451 H1103 V422"/>
+          <path class="w c-data" d="M755 241 H900 V466 H1121 V422"/>
+          <path class="w c-data" d="M755 226 H880 V481 H1139 V422"/>
+          <circle class="f-v33" cx="1066" cy="436" r="3.5"/>
+          <path class="w c-res" d="M739 257 V262 H820 V582 H960" stroke-dasharray="6 4"/>
+          <path class="w c-res" d="M739 272 V278 H805 V604 H960" stroke-dasharray="6 4"/>
           <circle class="f-v33" cx="739" cy="181" r="4.5"/><circle class="f-gnd" cx="755" cy="211" r="4.5"/>
           <circle class="f-data" cx="755" cy="226" r="4.5"/><circle class="f-data" cx="755" cy="241" r="4.5"/>
           <circle class="f-res" cx="739" cy="257" r="4"/><circle class="f-res" cx="739" cy="272" r="4"/>
 
-          <!-- GPS -->
-          <rect class="box" x="960" y="176" width="230" height="170" rx="5" style="stroke:var(--w-data)"/>
-          <text class="t" x="974" y="200">GPS Fastrax UP501</text>
-          <text class="s" x="974" y="218">NMEA 9600 8N1 · 1 Hz · a 3,3 V</text>
-          <text class="s" x="974" y="235">arriba del mástil, cielo libre</text>
-          <g class="p">
-            <text x="970" y="254"><tspan class="f-v33">pin 1 · 3V3</tspan> → VCC + VBACKUP</text>
-            <text x="970" y="276"><tspan class="f-gnd">pin 6 · GND</tspan> → GND</text>
-            <text x="970" y="298"><tspan class="f-data">pin 8 · GPIO 14</tspan> → RX</text>
-            <text x="970" y="320"><tspan class="f-data">pin 10 · GPIO 15</tspan> ← TX</text>
+          <!-- GPS: foto a escala 0,389 desde (975, 216) -->
+          <text class="t" x="975" y="190">GPS Fastrax UP501</text>
+          <text class="s" x="975" y="206">del lado del blindaje · pin 1 a la derecha</text>
+          <rect x="972" y="213" width="216" height="210" rx="6" fill="#ffffff"/>
+          <image href="fotos/GPS/GPS_UP501.jpg" x="975" y="216" width="210" height="204"/>
+          <g class="p" font-weight="600" text-anchor="middle" style="paint-order:stroke;stroke:#ffffff;stroke-width:3px">
+            <text x="1139" y="372" fill="#17231f">1</text><text x="1121" y="372" fill="#17231f">2</text>
+            <text x="1103" y="372" fill="#17231f">3</text><text x="1085" y="372" fill="#17231f">4</text>
+            <text x="1066" y="372" fill="#17231f">5</text><text x="1048" y="372" fill="#17231f">6</text>
           </g>
-          <circle class="f-v33" cx="960" cy="250" r="4"/><circle class="f-gnd" cx="960" cy="272" r="4"/>
-          <circle class="f-data" cx="960" cy="294" r="4"/><circle class="f-data" cx="960" cy="316" r="4"/>
-          <text class="s" x="974" y="338">1PPS: libre</text>
+          <g class="p">
+            <text x="850" y="502"><tspan class="f-data">1 RXD ← pin 8 (GPIO 14)</tspan> · <tspan class="f-data">2 TXD → pin 10 (GPIO 15)</tspan></text>
+            <text x="850" y="518"><tspan class="f-gnd">3 GND ← pin 6</tspan> · <tspan class="f-v33">4 VDD y 5 VDD_B ← pin 1 (3V3)</tspan> · 6 PPS libre</text>
+          </g>
 
           <!-- Luz y buzzer -->
-          <rect class="box opt" x="960" y="370" width="224" height="64" rx="5"/>
-          <text class="t" x="974" y="392">Luz y buzzer (H8)</text>
-          <text class="s" x="974" y="410">pin 11 · GPIO 17 · pin 13 · GPIO 27</text>
-          <text class="s" x="974" y="426">después de la prueba integrada</text>
+          <rect class="box opt" x="960" y="560" width="224" height="64" rx="5"/>
+          <text class="t" x="974" y="582">Luz y buzzer (H8)</text>
+          <text class="s" x="974" y="600">pin 11 · GPIO 17 · pin 13 · GPIO 27</text>
+          <text class="s" x="974" y="616">después de la prueba integrada</text>
 
           <!-- USB-A → ESP32 y LiDAR -->
           <rect x="567" y="550" width="100" height="98" rx="4" fill="none" class="c-data" stroke-width="2.5"/>
@@ -201,20 +208,21 @@
     <div class="grid2">
       <div class="card">
         <div class="tablewrap"><table>
-          <thead><tr><th>GPS</th><th>Bornera del HAT</th><th>Nota</th></tr></thead>
+          <thead><tr><th>Pin del GPS</th><th>Bornera del HAT</th><th>Nota</th></tr></thead>
           <tbody>
-            <tr><td class="m">VCC</td><td class="m">pin 1 · 3V3</td><td>El UP501 trabaja a 3,3 V: <b>nunca a los pines 2 o 4 (5 V)</b>.</td></tr>
-            <tr><td class="m">GND</td><td class="m">pin 6 · GND</td><td>Cualquier GND del header sirve.</td></tr>
-            <tr><td class="m">RX</td><td class="m">pin 8 · GPIO 14 (TXD)</td><td>Se cruzan: lo que manda la Pi entra por el RX del GPS.</td></tr>
-            <tr><td class="m">TX</td><td class="m">pin 10 · GPIO 15 (RXD)</td><td>Por acá llegan las frases <code>$GP…</code>.</td></tr>
-            <tr><td class="m">VBACKUP</td><td class="m">pin 1 · 3V3</td><td>Confirmar en la hoja del UP501: sin pila de respaldo, este pin va unido al VCC.</td></tr>
-            <tr><td class="m">1PPS</td><td class="m">—</td><td>Sin conectar (pulso por segundo, no lo usamos).</td></tr>
+            <tr><td class="m">1 · RXD</td><td class="m">pin 8 · GPIO 14 (TXD)</td><td>Se cruzan: lo que manda la Pi entra por el RX del GPS. Entrada de hasta 3,6 V.</td></tr>
+            <tr><td class="m">2 · TXD</td><td class="m">pin 10 · GPIO 15 (RXD)</td><td>Por acá llegan las frases <code>$GP…</code> (salida de 2,4 a 3,2 V).</td></tr>
+            <tr><td class="m">3 · GND</td><td class="m">pin 6 · GND</td><td>Cualquier GND del header sirve.</td></tr>
+            <tr><td class="m">4 · VDD</td><td class="m">pin 1 · 3V3</td><td>3,0 a 4,2 V (máximo absoluto 4,3 V): <b>nunca a los pines 2 o 4 (5 V)</b>.</td></tr>
+            <tr><td class="m">5 · VDD_B</td><td class="m">pin 1 · 3V3</td><td><b>Obligatorio</b>: la hoja pide que esté conectado siempre que lo esté VDD. Sin pila de respaldo, va unido al pin 4.</td></tr>
+            <tr><td class="m">6 · PPS</td><td class="m">—</td><td>Sin conectar (pulso por segundo, no lo usamos).</td></tr>
           </tbody>
         </table></div>
       </div>
       <div class="card"><ul class="lista">
         <li><b>Dónde:</b> lo más alto del mástil, con la antena (la cara del parche cerámico) mirando al cielo y sin metal encima. Bajo techo o pegado a la Pi no engancha satélites.</li>
-        <li><b>Cables:</b> 4 hilos (5 con VBACKUP) con punteras en el HAT. Que el HAT no choque con el disipador ni tape las cintas de las cámaras.</li>
+        <li><b>Pin 1:</b> mirando el módulo del lado del blindaje metálico, con los pines abajo, el pin 1 es el de la <b>derecha</b> y el 6 el de la izquierda (figura 1 de la hoja técnica).</li>
+        <li><b>Cables:</b> 4 hilos desde el HAT; en el GPS, un puente une el 4 con el 5. Punteras en el HAT. Que el HAT no choque con el disipador ni tape las cintas de las cámaras.</li>
         <li><b>Para qué se usa:</b> <code>/gps/fix</code> con la posición absoluta del robot (un dato por segundo, unos metros de error). No es de seguridad y el recorrido por el pasillo no depende de él.</li>
         <li><b>Primer fix:</b> en frío, a cielo abierto, puede tardar varios minutos. Sin fix, las tramas llegan igual, con los campos vacíos.</li>
       </ul></div>
@@ -276,7 +284,7 @@ sudo apt install ros-jazzy-nmea-navsat-driver   # usuario en el grupo dialout</p
     </table></div></div>
   </section>
 
-  <footer>Fuente de verdad: <span class="mono">docs/CONEXIONES.md</span> (Raspberry Pi 5) y <span class="mono">firmware/base/README.md</span> (GPS en la Pi). Foto del HAT en <span class="mono">docs/fotos/HAT_pi_5/</span>.</footer>
+  <footer>Fuente de verdad: <span class="mono">docs/CONEXIONES.md</span> (Raspberry Pi 5) y <span class="mono">firmware/base/README.md</span> (GPS en la Pi) y la hoja técnica del UP501 (Fastrax, rev. 1.2, tabla 4 y figura 1). Foto del HAT en <span class="mono">docs/fotos/HAT_pi_5/</span>.</footer>
 </div>
 
 <script>

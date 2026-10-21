@@ -132,7 +132,7 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | USB | ESP32-S3 (base) | micro-ROS |
 | USB | ESP32-WROOM (brazo) | micro-ROS |
 | USB | LiDAR | fuera del mínimo |
-| GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V |
+| GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V. Pines del módulo (hoja rev. 1.2; pin 1 a la derecha visto del blindaje): 1 RXD, 2 TXD, 3 GND, 4 VDD, 5 VDD_B (obligatorio: unido al 4) y 6 PPS libre |
 | USB-C | Power bank Xiaomi PB2020MI (5 V 3 A) | sin `usb_max_current_enable`: USB limitados a 600 mA (alcanza) |
 
 ## Alimentación (v0.6: LiPo 3S + power bank)
