@@ -169,6 +169,7 @@ class Recorrido:
         self.t_atras = None         # última caja de un limón que quedó atrás
         self.x_libre_atras = 0.0    # hasta dónde se sabe libre para retroceder (el arranque o el fin del último esquive)
         self.x_atras = -math.inf    # dónde empezó a retroceder en este tramo (hasta atras_max desde ahí)
+        self.gps_ok = True          # False: el GPS dice que no está en el inicio de la hilera (no arranca)
 
     # --- entradas
     def al_odom(self, x, y, rumbo, t):
@@ -188,6 +189,10 @@ class Recorrido:
         self.mision = estado
         if estado in ('AGARRAR', 'SOLTAR'):
             self.arrimes = 0  # cosechó: los arrimes vuelven a contar desde cero
+
+    def al_gps(self, en_inicio, t):
+        """Solo cuenta antes de arrancar: en la hilera manda la odometría (el GPS erra varios metros)."""
+        self.gps_ok = en_inicio
 
     def al_detecciones(self, cajas, t):
         """Cajas de YOLO [(u, ancho) px] de la imagen izquierda (salen también en movimiento)."""
@@ -247,7 +252,7 @@ class Recorrido:
             return self._frenar(t)
         if self.estado == INICIO:
             self._frenar(t)
-            if self.pose is None:
+            if self.pose is None or not self.gps_ok:
                 return
             if not self.base_armada:
                 if t - self.t0 >= 1.0:  # reintentar cada segundo hasta ver ARMADA

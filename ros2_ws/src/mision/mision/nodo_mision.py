@@ -15,6 +15,10 @@ Suscribe  /odom nav_msgs/Odometry (avance), /imu/data_raw sensor_msgs/Imu (rumbo
           /yolo/detecciones vision_msgs/Detection2DArray (clase `clase_limon`)
 Publica   /cmd_vel geometry_msgs/Twist (10 Hz, siempre: el watchdog de la base es de 300 ms), /base/comando (armar),
           /recorrido/estado std_msgs/String
+Con la hilera definida por GPS (hilera_inicio_lat/lon y, opcional, hilera_fin_lat/lon; medirlos con marcar_gps):
+Suscribe  /gps/fix sensor_msgs/NavSatFix (nmea_navsat_driver en la Pi)
+Publica   /hilera/estado std_msgs/String (1 Hz: distancia al inicio, σ, avance y corrimiento lateral)
+          y el recorrido autónomo no arranca hasta estar a menos de hilera_radio_inicio del inicio (guía R2, N1).
 Al cerrarse (Ctrl+C o ros2 launch) manda `s` al brazo y a la base: si no, seguirían hacia el último objetivo.
 """
 
@@ -27,13 +31,14 @@ import rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 from rclpy.time import Time
-from sensor_msgs.msg import Imu, JointState, Range
+from sensor_msgs.msg import Imu, JointState, NavSatFix, NavSatStatus, Range
 from std_msgs.msg import Float32, String, UInt8
 from vision_msgs.msg import Detection2DArray
 import tf2_geometry_msgs  # noqa: F401  (registra PointStamped en tf2)
 from tf2_ros import Buffer, TransformException, TransformListener
 
 from mision.fsm import centro_desde_superficie, Mision, Parametros
+from mision.hilera_gps import HileraGps, ParHilera
 from mision.recorrido import OdometriaGiro, ParRecorrido, Recorrido
 
 
@@ -87,6 +92,21 @@ class NodoMision(Node):
             self.clase_limon = self.declare_parameter('clase_limon', 'limon').value
             self.create_subscription(Detection2DArray, '/yolo/detecciones', self.al_detecciones, 10)
         self.create_subscription(String, '/base/estado', self.al_estado_base, 10)
+        nan = math.nan
+        self.hilera = HileraGps(ParHilera(
+            inicio=(self.declare_parameter('hilera_inicio_lat', nan).value,
+                    self.declare_parameter('hilera_inicio_lon', nan).value),
+            fin=(self.declare_parameter('hilera_fin_lat', nan).value,
+                 self.declare_parameter('hilera_fin_lon', nan).value),
+            radio_inicio=self.declare_parameter('hilera_radio_inicio', ParHilera.radio_inicio).value,
+            sigma_max=self.declare_parameter('hilera_sigma_max', ParHilera.sigma_max).value))
+        self.hilera_texto = None
+        if self.hilera.definida():
+            self.pubs['hilera'] = self.create_publisher(String, '/hilera/estado', 10)
+            self.create_subscription(NavSatFix, '/gps/fix', self.al_gps, 10)
+            self.create_timer(1.0, self.paso_hilera)
+            if self.recorrido:
+                self.recorrido.al_gps(False, self.t())  # hasta tener un fix en el inicio
         self.create_timer(0.1, self.paso)
         self.get_logger().info(f'mision lista (marco {self.marco}{", recorrido autónomo" if self.recorrido else ""})'
                                ': esperando /brazo/estado')
@@ -98,6 +118,23 @@ class NodoMision(Node):
             self.recorrido.paso(t)
             self.mision.base_quieta = self.recorrido.base_quieta(t)
         self.mision.paso(t)
+
+    def al_gps(self, m):
+        if m.status.status < NavSatStatus.STATUS_FIX or not math.isfinite(m.latitude):
+            return
+        c = m.position_covariance
+        sigma = (math.sqrt(max(c[0], c[4])) if m.position_covariance_type != NavSatFix.COVARIANCE_TYPE_UNKNOWN
+                 else math.inf)
+        self.hilera.al_fix(m.latitude, m.longitude, sigma, self.t())
+
+    def paso_hilera(self):
+        ok, texto = self.hilera.evaluar(self.t())
+        self.pubs['hilera'].publish(String(data=texto))
+        if texto.split()[0] != self.hilera_texto:  # loguear solo los cambios de estado
+            self.hilera_texto = texto.split()[0]
+            self.get_logger().info('hilera: ' + texto)
+        if self.recorrido:
+            self.recorrido.al_gps(ok, self.t())
 
     def al_estado_base(self, m):
         self.mision.al_estado_base(m.data, self.t())  # seta: desarma el brazo

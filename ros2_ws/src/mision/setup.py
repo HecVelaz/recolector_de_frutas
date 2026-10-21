@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'nodo_mision = mision.nodo_mision:main',
+            'marcar_gps = mision.marcar_gps:main',
         ],
     },
 )

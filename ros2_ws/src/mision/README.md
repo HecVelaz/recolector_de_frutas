@@ -14,10 +14,13 @@ el centro del pasillo mirando a lo largo.
 |---|---|
 | `mision/fsm.py` | Máquina de estados **sin ROS** (se prueba sola) |
 | `mision/recorrido.py` | Recorrido autónomo **sin ROS**: avanzar, mirar, arrimar, esquivar; odometría con giróscopo |
+| `mision/hilera_gps.py` | Hilera definida por GPS **sin ROS**: distancia al inicio, avance y corrimiento lateral |
 | `mision/nodo_mision.py` | Nodo `mision`: tópicos, TF y centro del limón (y el recorrido con `autonomo:=true`) |
+| `mision/marcar_gps.py` | `ros2 run mision marcar_gps`: promedia `/gps/fix` para marcar el inicio o el fin de la hilera |
 | `launch/mision.launch.py` | TF `brazo_base → stereo_camera_link` + `brazo_ik` + `mision` |
 | `test/test_fsm.py` | Ciclo completo con brazo simulado, muestras inestables o viejas, fuera de alcance, fallas, estados viejos, tiempos |
 | `test/test_recorrido.py` | Avance y frenado por YOLO, arrime, retroceso con tope, esquive, bloqueo, giróscopo |
+| `test/test_hilera_gps.py` | Plano local, promedio, EN_INICIO / LEJOS / FIX_MALO / SIN_FIX, el recorrido no arranca sin GPS |
 
 ## Estados
 
@@ -62,6 +65,22 @@ en horizontal) y pasarlo igual a `brazo_ik` y a `mision`. Si el centro del agarr
 hay que sumar ese desfase vertical (hoy no está contemplado). Hasta entonces, probar con `cierre` bajo y la mano en
 la seta.
 
+## Hilera definida por GPS (guía R2, N1; la demo es afuera)
+
+El GPS (UP501, 3-20 m de error) no guía dentro del pasillo: solo dice si el robot está en el inicio de la hilera.
+Antes de la demo, con el driver del GPS corriendo y el robot quieto en cada punto (cielo abierto, 15 min prendido):
+
+```bash
+ros2 run mision marcar_gps --ros-args -p punto:=inicio -p segundos:=60.0   # imprime -p hilera_inicio_lat:=... -p hilera_inicio_lon:=...
+ros2 run mision marcar_gps --ros-args -p punto:=fin -p segundos:=60.0
+```
+
+Con esos parámetros, `nodo_mision` lee `/gps/fix` y publica `/hilera/estado` a 1 Hz (`EN_INICIO`, `LEJOS`,
+`FIX_MALO` si σ > `hilera_sigma_max` = 20 m, `SIN_FIX` si no hay fix hace 3 s), con distancia al inicio, avance
+sobre inicio → fin y corrimiento lateral (+ a la izquierda). Con `autonomo:=true`, el recorrido **no arma la base
+ni arranca** hasta `EN_INICIO` (a menos de `hilera_radio_inicio` = 10 m); después el GPS ya no lo frena. Sin los
+parámetros (bajo techo) todo sigue como antes.
+
 ## Parámetros
 
 `marco_brazo`, `radio_limon`, `edad_max_imagen` y los de `Parametros` en `fsm.py`: `n_muestras`, `tol_muestras`,
@@ -91,4 +110,6 @@ más la TF `stereo_camera_link → camera` de `limon.launch.py`; ver Resultados.
 | 2026-09-28 | Notebook, launch + brazo simulado + TF óptica: limón en `camera` (0; 0,05; 0,55) → ESPERAR → APROXIMAR con objetivo (0,480; 0; 0,297) m en `brazo_base` (a mano: igual) y `brazo_ik` ok q = (0°; 57,9°; −45,4°) | OK |
 | 2026-09-28 | Revisión de Codex (11 hallazgos). Aplicados: estado vencido, falla tapada por un estado posterior, llegada por posición contra `joint_cmd` (antes: "no llegó → llegó", engañable por estados viejos y con timeout falso si ya estaba en el objetivo), tiempo de imagen y repetidas, `s` al cerrar, TF obligatoria, `SIN_CERO` y brazo quieto antes de muestrear, `n_muestras = 1`. Pendiente: desfase muñeca → pinza (sin medidas de la pinza). No aplicado: no abrir la pinza en INICIO (arrancar la misión es un acto del operador con el brazo en reposo) | 17 pruebas OK |
 | 2026-09-28 | Notebook, de nuevo tras la revisión: APROXIMAR con el mismo objetivo; con `joint_states` en reposo y `llego` en el estado **no** cierra; Ctrl+C → `s` en `/brazo/comando`; sin argumentos de TF el launch no arranca | OK |
+| 2026-10-21 | Hilera por GPS: 4 pruebas nuevas (35 en total) y en la notebook con `/gps/fix` falso: `SIN_FIX` → `LEJOS d_inicio=18.9 m … avance=18.9/30.0 m` → `SIN_FIX` al cortar el fix | OK |
+| | Hilera por GPS con el UP501 real afuera | — |
 | | Con el brazo real y la TF medida | — |

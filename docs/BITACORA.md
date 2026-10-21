@@ -460,3 +460,14 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   (HDOP 5,4). `/gps/fix`: `status: 0`, lat/lon con covarianza 451 m² (σ ≈ 21 m, fix pobre por usar solo 3 satélites).
   Falta comparar con el celular y ver cuánto mejora con más satélites. El contador de SNR del script de vigilancia
   estaba mal (marcaba 0): mirar las `$GPGSV` crudas.
+
+## 2026-10-21: hilera definida por GPS (N1)
+
+- La demo final es **afuera** (confirmado por el usuario): el GPS cuenta para N1 de la guía R2 ("la hilera estará
+  definida por GPS y verificada mediante visión").
+- `mision/hilera_gps.py` (sin ROS) + `nodo_mision`: con `hilera_inicio_lat/lon` (y opcional `hilera_fin_lat/lon`)
+  lee `/gps/fix`, publica `/hilera/estado` (distancia al inicio, σ, avance, lateral) y el recorrido autónomo no arma
+  la base hasta estar a menos de 10 m del inicio con σ ≤ 20 m; ya en la hilera el GPS no lo frena (manda la
+  odometría). `ros2 run mision marcar_gps` promedia el fix para marcar los puntos. Sin parámetros, nada cambia.
+- 35 pruebas de `mision` OK; probado en la notebook con un `/gps/fix` falso. Falta probarlo con el UP501 afuera.
+- No hecho: el regreso al punto de inicio al terminar la hilera (N1 también lo pide); hoy el recorrido frena en FIN.
