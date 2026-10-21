@@ -101,124 +101,98 @@
     </div>
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1200 660" role="img" aria-label="La Raspberry Pi 5 en el centro. A la izquierda, las dos cámaras NoIR por CSI0 y CSI1 y el power bank por USB-C. A la derecha, el header de 40 pines con el HAT de borneras y el GPS UP501: pin 1 a 3,3 V, pin 6 a GND, pin 8 (GPIO 14, TXD) al RX del GPS y pin 10 (GPIO 15, RXD) al TX del GPS; luz y buzzer en los GPIO 17 y 27, para más adelante. Abajo, dos USB a la ESP32-S3 de la base y a la ESP32-WROOM del brazo, y el LiDAR fuera del mínimo. Arriba, Wi-Fi con Tailscale hacia el celular y la notebook.">
-          <!-- Pi 5 -->
-          <rect class="board" x="400" y="150" width="360" height="330" rx="12"/>
-          <text class="tb" x="580" y="290" text-anchor="middle">Raspberry Pi 5</text>
-          <text class="s" x="580" y="310" text-anchor="middle">Ubuntu 24.04 · ROS 2 Jazzy</text>
-          <text class="s" x="580" y="328" text-anchor="middle">YOLO + estéreo · brazo_ik · mision</text>
-          <text class="s" x="580" y="346" text-anchor="middle">disipador activo</text>
-
-          <!-- Cámaras -->
-          <rect class="port" x="400" y="186" width="16" height="44" rx="2"/>
-          <rect class="port" x="400" y="246" width="16" height="44" rx="2"/>
-          <text class="p" x="424" y="212">CSI0</text>
-          <text class="p" x="424" y="272">CSI1</text>
-          <rect class="box" x="40" y="176" width="240" height="56" rx="5"/>
-          <text class="t" x="54" y="199">Cámara NoIR izquierda</text>
-          <text class="s" x="54" y="218">libcamera 0 · referencia del estéreo</text>
-          <rect class="box" x="40" y="246" width="240" height="56" rx="5"/>
-          <text class="t" x="54" y="269">Cámara NoIR derecha</text>
-          <text class="s" x="54" y="288">baseline 89,5 mm · soporte rígido</text>
-          <path class="w c-data" d="M280 208 H400"/>
-          <path class="w c-data" d="M280 268 H400"/>
-          <text class="p f-data" x="340" y="200" text-anchor="middle">cinta 15→22</text>
-          <text class="p f-data" x="340" y="260" text-anchor="middle">cinta 15→22</text>
-
-          <!-- Power bank -->
-          <rect class="port" x="400" y="392" width="16" height="30" rx="4"/>
-          <text class="p" x="424" y="411">USB-C</text>
-          <rect class="box" x="40" y="380" width="240" height="70" rx="5"/>
-          <text class="t" x="54" y="403">Power bank Xiaomi PB2020MI</text>
-          <text class="s" x="54" y="421">5 V 3 A · su cable USB-C corto</text>
-          <text class="s" x="54" y="438">al lado de la Pi · nunca a la vez que Keepon</text>
-          <path class="w c-v5" d="M280 407 H400" style="stroke-width:4"/>
-          <text class="p f-v5" x="340" y="399" text-anchor="middle">5 V · 15 W</text>
+        <svg viewBox="0 0 1200 790" role="img" aria-label="Foto de la Raspberry Pi 5 con cada conexión dibujada desde su conector real. A la izquierda, la cámara izquierda en CAM/DISP 0 y la derecha en CAM/DISP 1, y el power bank en el USB-C. A la derecha, desde el header de 40 pines por el HAT de borneras, el GPS UP501: pin 1 a 3,3 V, pin 6 a GND, pin 8 (GPIO 14, TXD) al RX del GPS y pin 10 (GPIO 15, RXD) al TX del GPS; luz y buzzer en los pines 11 y 13 (GPIO 17 y 27), para más adelante. Abajo, desde los USB-A, la ESP32-S3 de la base, la ESP32-WROOM del brazo y el LiDAR, fuera del mínimo. Arriba, Wi-Fi con Tailscale.">
+          <!-- Foto de la Pi 5 (recorte de docs/fotos/HAT_pi_5/pi5_pines.png), escala 1,2 -->
+          <rect x="419" y="114" width="362" height="540" rx="8" fill="#ffffff"/>
+          <image href="fotos/HAT_pi_5/pi5_placa.jpg" x="425" y="120" width="350" height="528"/>
 
           <!-- Red -->
-          <rect class="box" x="460" y="30" width="240" height="70" rx="5"/>
-          <text class="t" x="474" y="53">Wi-Fi · Tailscale</text>
-          <text class="s" x="474" y="71">ssh r2d2@100.116.96.71</text>
-          <text class="s" x="474" y="88">teleop :8000 · cámaras :8080</text>
-          <path class="w c-data" d="M580 100 V150" stroke-dasharray="2 5"/>
-          <text class="p f-data" x="590" y="130">inalámbrico</text>
+          <rect class="box" x="480" y="16" width="240" height="70" rx="5"/>
+          <text class="t" x="494" y="39">Wi-Fi · Tailscale</text>
+          <text class="s" x="494" y="57">ssh r2d2@100.116.96.71</text>
+          <text class="s" x="494" y="74">teleop :8000 · cámaras :8080</text>
+          <path class="w c-data" d="M600 86 V114" stroke-dasharray="2 5"/>
 
-          <!-- Header de 40 pines + HAT -->
-          <rect x="734" y="170" width="18" height="230" rx="2" fill="var(--ink)" opacity=".85"/>
-          <text class="p" x="726" y="166" text-anchor="end">header 40</text>
-          <rect class="box" x="792" y="160" width="76" height="250" rx="5" style="stroke:var(--w-gpio)"/>
-          <text class="t" x="830" y="152" text-anchor="middle">HAT</text>
-          <text class="s" x="830" y="426" text-anchor="middle">borneras</text>
-          <text class="s" x="830" y="442" text-anchor="middle">pasivo</text>
-          <!-- cables del header al HAT (cortos) y del HAT al GPS -->
-          <g>
-            <path class="w c-v33" d="M752 196 H792"/>
-            <path class="w c-gnd" d="M752 232 H792"/>
-            <path class="w c-data" d="M752 268 H792"/>
-            <path class="w c-data" d="M752 304 H792"/>
-            <path class="w c-res" d="M752 350 H792" stroke-dasharray="6 4"/>
-            <path class="w c-res" d="M752 380 H792" stroke-dasharray="6 4"/>
-          </g>
-          <g>
-            <text class="p" x="806" y="192">1</text><text class="p f-v33" x="806" y="205">3V3</text>
-            <text class="p" x="806" y="228">6</text><text class="p f-gnd" x="806" y="241">GND</text>
-            <text class="p" x="806" y="264">8</text><text class="p f-data" x="806" y="277">GP14</text>
-            <text class="p" x="806" y="300">10</text><text class="p f-data" x="806" y="313">GP15</text>
-            <text class="p" x="806" y="346">11</text><text class="p f-res" x="806" y="359">GP17</text>
-            <text class="p" x="806" y="376">13</text><text class="p f-res" x="806" y="389">GP27</text>
-          </g>
+          <!-- Power bank → USB-C -->
+          <rect class="box" x="30" y="130" width="250" height="70" rx="5"/>
+          <text class="t" x="44" y="153">Power bank Xiaomi PB2020MI</text>
+          <text class="s" x="44" y="171">5 V 3 A · su cable USB-C corto</text>
+          <text class="s" x="44" y="188">al lado de la Pi · nunca a la vez que Keepon</text>
+          <path class="w c-v5" d="M280 165 H360 V180 H440" style="stroke-width:4"/>
+          <circle cx="451" cy="180" r="13" fill="none" class="c-v5" stroke-width="3"/>
+          <text class="p f-v5" x="300" y="157">USB-C · 5 V · 15 W</text>
+
+          <!-- Cámaras → CAM/DISP 0 y 1 -->
+          <rect class="box" x="30" y="352" width="250" height="56" rx="5"/>
+          <text class="t" x="44" y="375">Cámara NoIR derecha</text>
+          <text class="s" x="44" y="394">baseline 89,5 mm · soporte rígido</text>
+          <rect class="box" x="30" y="436" width="250" height="56" rx="5"/>
+          <text class="t" x="44" y="459">Cámara NoIR izquierda</text>
+          <text class="s" x="44" y="478">libcamera 0 · referencia del estéreo</text>
+          <path class="w c-data" d="M280 380 H360 V414 H444" style="stroke-width:3.5"/>
+          <path class="w c-data" d="M280 464 H360 V450 H444" style="stroke-width:3.5"/>
+          <rect x="444" y="406" width="96" height="16" rx="3" fill="none" class="c-data" stroke-width="2.5"/>
+          <rect x="444" y="442" width="96" height="16" rx="3" fill="none" class="c-data" stroke-width="2.5"/>
+          <text class="p f-data" x="300" y="372">CAM/DISP 1</text>
+          <text class="p f-data" x="300" y="498">CAM/DISP 0</text>
+          <text class="s" x="30" y="520">cinta 15 → 22 pines; enchufar con la Pi apagada</text>
+
+          <!-- Header de 40 pines: pin n en la fila (n-1)/2, impares adentro (x 739) y pares afuera (x 755) -->
+          <rect x="730" y="171" width="34" height="304" rx="3" fill="none" class="c-gpio" stroke-width="2.5"/>
+          <text class="p f-gpio" x="782" y="150">header 40 · HAT de borneras</text>
+          <text class="s" x="782" y="164">pin 1 arriba, en la columna de adentro</text>
+          <path class="w c-v33" d="M739 181 V174 H900 V250 H960"/>
+          <path class="w c-gnd" d="M755 211 H880 V272 H960"/>
+          <path class="w c-data" d="M755 226 H860 V294 H960"/>
+          <path class="w c-data" d="M755 241 H840 V316 H960"/>
+          <path class="w c-res" d="M739 257 V262 H820 V392 H960" stroke-dasharray="6 4"/>
+          <path class="w c-res" d="M739 272 V278 H805 V414 H960" stroke-dasharray="6 4"/>
+          <circle class="f-v33" cx="739" cy="181" r="4.5"/><circle class="f-gnd" cx="755" cy="211" r="4.5"/>
+          <circle class="f-data" cx="755" cy="226" r="4.5"/><circle class="f-data" cx="755" cy="241" r="4.5"/>
+          <circle class="f-res" cx="739" cy="257" r="4"/><circle class="f-res" cx="739" cy="272" r="4"/>
 
           <!-- GPS -->
-          <rect class="box" x="960" y="160" width="220" height="168" rx="5" style="stroke:var(--w-data)"/>
-          <text class="t" x="974" y="184">GPS Fastrax UP501</text>
-          <text class="s" x="974" y="202">NMEA 9600 8N1 · 1 Hz · a 3,3 V</text>
-          <text class="s" x="974" y="219">arriba del mástil, cielo libre</text>
-          <path class="w c-v33" d="M868 196 H920 V242 H960"/>
-          <path class="w c-gnd" d="M868 232 H910 V264 H960"/>
-          <path class="w c-data" d="M868 268 H900 V286 H960"/>
-          <path class="w c-data" d="M868 304 H960"/>
-          <text class="p" x="1170" y="246" text-anchor="end">VCC</text>
-          <text class="p" x="1170" y="268" text-anchor="end">GND</text>
-          <text class="p" x="1170" y="290" text-anchor="end">RX del GPS ←</text>
-          <text class="p" x="1170" y="308" text-anchor="end">TX del GPS →</text>
-          <circle class="f-v33" cx="960" cy="242" r="4"/><circle class="f-gnd" cx="960" cy="264" r="4"/>
-          <circle class="f-data" cx="960" cy="286" r="4"/><circle class="f-data" cx="960" cy="304" r="4"/>
-          <text class="s" x="974" y="322">VBACKUP: ver nota · 1PPS: libre</text>
+          <rect class="box" x="960" y="176" width="230" height="170" rx="5" style="stroke:var(--w-data)"/>
+          <text class="t" x="974" y="200">GPS Fastrax UP501</text>
+          <text class="s" x="974" y="218">NMEA 9600 8N1 · 1 Hz · a 3,3 V</text>
+          <text class="s" x="974" y="235">arriba del mástil, cielo libre</text>
+          <g class="p">
+            <text x="970" y="254"><tspan class="f-v33">pin 1 · 3V3</tspan> → VCC + VBACKUP</text>
+            <text x="970" y="276"><tspan class="f-gnd">pin 6 · GND</tspan> → GND</text>
+            <text x="970" y="298"><tspan class="f-data">pin 8 · GPIO 14</tspan> → RX</text>
+            <text x="970" y="320"><tspan class="f-data">pin 10 · GPIO 15</tspan> ← TX</text>
+          </g>
+          <circle class="f-v33" cx="960" cy="250" r="4"/><circle class="f-gnd" cx="960" cy="272" r="4"/>
+          <circle class="f-data" cx="960" cy="294" r="4"/><circle class="f-data" cx="960" cy="316" r="4"/>
+          <text class="s" x="974" y="338">1PPS: libre</text>
 
           <!-- Luz y buzzer -->
-          <rect class="box opt" x="960" y="344" width="220" height="56" rx="5"/>
-          <text class="t" x="974" y="367">Luz y buzzer (H8)</text>
-          <text class="s" x="974" y="386">GPIO 17 · 27 · después de la integrada</text>
-          <path class="w c-res" d="M868 350 H940 V362 H960" stroke-dasharray="6 4"/>
-          <path class="w c-res" d="M868 380 H960" stroke-dasharray="6 4"/>
+          <rect class="box opt" x="960" y="370" width="224" height="64" rx="5"/>
+          <text class="t" x="974" y="392">Luz y buzzer (H8)</text>
+          <text class="s" x="974" y="410">pin 11 · GPIO 17 · pin 13 · GPIO 27</text>
+          <text class="s" x="974" y="426">después de la prueba integrada</text>
 
-          <!-- USB -->
-          <g>
-            <rect class="port" x="470" y="464" width="40" height="16" rx="2"/>
-            <rect class="port" x="530" y="464" width="40" height="16" rx="2"/>
-            <rect class="port" x="590" y="464" width="40" height="16" rx="2"/>
-            <rect class="port" x="650" y="464" width="40" height="16" rx="2"/>
-            <text class="p" x="580" y="456" text-anchor="middle">4 × USB · 600 mA en total con el power bank</text>
-          </g>
-          <path class="w c-data" d="M490 480 V530 H200 V560"/>
-          <path class="w c-data" d="M550 480 V545 H580 V560"/>
-          <path class="w c-res" d="M670 480 V530 H960 V560" stroke-dasharray="6 4"/>
-          <rect class="box" x="60" y="560" width="290" height="76" rx="5"/>
-          <text class="t" x="74" y="583">ESP32-S3 · base</text>
-          <text class="s" x="74" y="601">micro-ROS · USB nativo (ttyACM0/1)</text>
-          <text class="p" x="74" y="620">by-id/usb-Espressif_USB_JTAG…</text>
-          <rect class="box" x="435" y="560" width="290" height="76" rx="5"/>
-          <text class="t" x="449" y="583">ESP32-WROOM · brazo</text>
-          <text class="s" x="449" y="601">micro-ROS · CH340 a 115200 (ttyUSB0)</text>
-          <text class="p" x="449" y="620">by-id/usb-1a86_USB_Serial…</text>
-          <rect class="box opt" x="840" y="560" width="290" height="76" rx="5"/>
-          <text class="t" x="854" y="583">LiDAR</text>
-          <text class="s" x="854" y="601">fuera del mínimo</text>
-          <text class="p f-data" x="240" y="523">USB-A → C</text>
-          <text class="p f-data" x="590" y="523">USB-A → C</text>
+          <!-- USB-A → ESP32 y LiDAR -->
+          <rect x="567" y="550" width="100" height="98" rx="4" fill="none" class="c-data" stroke-width="2.5"/>
+          <rect x="675" y="550" width="82" height="98" rx="4" fill="none" class="c-data" stroke-width="2.5"/>
+          <path class="w c-data" d="M600 648 V675 H205 V690"/>
+          <path class="w c-data" d="M716 648 V690"/>
+          <path class="w c-res" d="M640 648 V665 H1010 V690" stroke-dasharray="6 4"/>
+          <text class="s" x="790" y="662">600 mA en total con el power bank</text>
+          <rect class="box" x="60" y="690" width="290" height="80" rx="5"/>
+          <text class="t" x="74" y="713">ESP32-S3 · base</text>
+          <text class="s" x="74" y="731">micro-ROS · USB nativo (ttyACM0/1)</text>
+          <text class="p" x="74" y="752">by-id/usb-Espressif_USB_JTAG…</text>
+          <rect class="box" x="571" y="690" width="290" height="80" rx="5"/>
+          <text class="t" x="585" y="713">ESP32-WROOM · brazo</text>
+          <text class="s" x="585" y="731">micro-ROS · CH340 a 115200 (ttyUSB0)</text>
+          <text class="p" x="585" y="752">by-id/usb-1a86_USB_Serial…</text>
+          <rect class="box opt" x="900" y="690" width="240" height="80" rx="5"/>
+          <text class="t" x="914" y="713">LiDAR</text>
+          <text class="s" x="914" y="731">fuera del mínimo</text>
         </svg>
       </div>
-      <figcaption>La Pi también alimenta a los dos ESP32 por el USB (la lógica de los encoders, la IMU, los HC-SR04 y los IBT-2 sale de ahí). Los 12 V de los motores nunca llegan a la Pi: el único punto en común es el GND, por el USB. Los cables del header al HAT no existen: el HAT se enchufa en el header y cada pin queda en su tornillo con el mismo número.</figcaption>
+      <figcaption>La Pi también alimenta a los dos ESP32 por el USB (la lógica de los encoders, la IMU, los HC-SR04 y los IBT-2 sale de ahí). Los 12 V de los motores nunca llegan a la Pi: el único punto en común es el GND, por el USB. Foto: la Pi 5 vista desde arriba, con los USB abajo. El HAT de borneras se enchufa en el header de 40 pines y cada pin queda en su tornillo con el mismo número, así que los cables del dibujo salen de esos tornillos.</figcaption>
     </figure>
   </section>
 
@@ -248,9 +222,15 @@
   </section>
 
   <section aria-labelledby="h-pines">
-    <h2 id="h-pines">Header de 40 pines (visto desde arriba, pin 1 cerca de la tarjeta SD)</h2>
+    <h2 id="h-pines">Header de 40 pines (pin 1 en la punta lejos de los USB, columna de adentro)</h2>
     <p class="lede">En color, los que usamos. Con borde punteado, los reservados para luz y buzzer. El resto queda libre.</p>
-    <div class="card"><div class="header40" id="h40" role="table" aria-label="Pines del header de la Raspberry Pi 5"></div></div>
+    <div class="grid2">
+      <div class="card"><div class="header40" id="h40" role="table" aria-label="Pines del header de la Raspberry Pi 5"></div></div>
+      <figure class="card">
+        <img src="fotos/HAT_pi_5/pi5_pines.jpg" alt="La Raspberry Pi 5 y la descripción de sus 40 pines: 3V3 en los pines 1 y 17, 5 V en el 2 y el 4, GND en 6, 9, 14, 20, 25, 30, 34 y 39, GPIO 14 (TXD) en el 8 y GPIO 15 (RXD) en el 10" loading="lazy" style="width:100%;height:auto">
+        <figcaption>Referencia completa de los 40 pines.</figcaption>
+      </figure>
+    </div>
   </section>
 
   <section class="grid2">
