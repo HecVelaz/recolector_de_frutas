@@ -455,3 +455,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   a los ~2 min seguía en `status: -1`. **Sin fix todavía: repetir a cielo abierto dejándolo 5-10 min quieto.**
   Ojo: `pkill -f nmea_serial_driver` por ssh mata la propia sesión (el patrón está en su línea de comando): usar
   `pgrep -f "[n]mea_serial_driver"`.
+- **Primer fix del GPS (16:40, afuera de verdad):** antes estaba bajo techo (0 satélites en 14 min). A cielo
+  abierto: hora real en ~1 min, 8 satélites a la vista y 3 enganchados (SNR 29-32) en ~5 min, y fix con 3 satélites
+  (HDOP 5,4). `/gps/fix`: `status: 0`, lat/lon con covarianza 451 m² (σ ≈ 21 m, fix pobre por usar solo 3 satélites).
+  Falta comparar con el celular y ver cuánto mejora con más satélites. El contador de SNR del script de vigilancia
+  estaba mal (marcaba 0): mirar las `$GPGSV` crudas.
