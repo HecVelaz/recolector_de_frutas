@@ -101,7 +101,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=
   \item \topic{/bumpers}: apretar cada uno; bit 0 frente, 1 izquierda, 2 derecha.
   \item \topic{/imu/data\_raw}: inclinar la base; a más de 25° entra en VUELCO.
   \item \topic{/battery}: comparar con el tester.
-  \item \topic{/gps/fix} (si el GPS está conectado a la Pi): \cod{cat /dev/ttyAMA0} tiene que mostrar frases \cod{\$GP\ldots}.
+  \item \topic{/gps/fix} (GPS en la Pi): \cod{cat /dev/ttyAMA0} tiene que mostrar frases \cod{\$GP\ldots}. El fix
+        solo sale a cielo abierto: bajo techo no ve satélites, y después de apagar la Pi tarda $\sim$5~min (arranque en frío).
 \end{itemize}
 
 \section{Paso 5: visión}

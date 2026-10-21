@@ -7,9 +7,11 @@ El paquete \cod{mision} (\archivo{ros2\_ws/src/mision/}) tiene dos máquinas de 
         lo suelta.
   \item[\cod{recorrido.py} — el recorrido] Maneja la \textbf{base}: avanza por el pasillo, frena cuando ve un limón,
         se arrima si está fuera de alcance, esquiva obstáculos. Se activa con el parámetro \cod{autonomo:=true}.
+  \item[\cod{hilera\_gps.py} — la hilera por GPS] Dice si el robot está en el \textbf{inicio de la hilera} (guía R2,
+        N1); el recorrido no arranca hasta que lo esté (sección~\ref{sec:hilera-gps}).
 \end{description}
 
-Las dos son Python puro, sin ROS (se prueban con \cod{colcon test}: 30 pruebas de la misión). \archivo{nodo\_mision.py}
+Las dos son Python puro, sin ROS (se prueban con \cod{colcon test}: 35 pruebas de la misión, el recorrido y la hilera). \archivo{nodo\_mision.py}
 es el nodo que las conecta con los tópicos.
 
 \section{La misión (brazo)}
@@ -186,6 +188,35 @@ cono de $\pm 7{,}5^\circ$, el recorrido calcula qué parte del pasillo ocupa el 
 (ancho del robot + 5~cm de cada lado), se corre a ese carril, avanza el largo supuesto del obstáculo (0,30~m) más su
 propio largo y vuelve al centro.
 
+\section{Hilera definida por GPS}\label{sec:hilera-gps}
+
+La guía R2 (N1) pide que ``la hilera esté definida por GPS y verificada mediante visión''. La demo es afuera, así
+que el GPS UP501 ve satélites, pero erra de 3 a 20~m (el primer fix, el 21/10, dio $\sigma \approx 21$~m con 3
+satélites): \textbf{no sirve para seguir el pasillo}, que mide $\sim$1~m. Por eso el GPS solo decide si el robot está
+en el inicio de la hilera; adentro manda la odometría (ruedas, giróscopo y visión).
+
+\begin{enumerate}
+  \item \textbf{Marcar la hilera} antes de la demo, con el GPS prendido 15~min a cielo abierto y el robot quieto en
+        cada punto:
+\begin{lstlisting}[language=consola]
+ros2 run mision marcar_gps --ros-args -p punto:=inicio -p segundos:=60.0
+ros2 run mision marcar_gps --ros-args -p punto:=fin -p segundos:=60.0
+\end{lstlisting}
+        Cada uno promedia \topic{/gps/fix} y imprime los parámetros \cod{-p hilera\_inicio\_lat:=\ldots} listos para copiar.
+  \item \textbf{Con esos parámetros}, \cod{nodo\_mision} publica \topic{/hilera/estado} a 1~Hz: \cod{EN\_INICIO},
+        \cod{LEJOS}, \cod{FIX\_MALO} ($\sigma$ mayor que \cod{hilera\_sigma\_max}) o \cod{SIN\_FIX} (nada en 3~s), con la
+        distancia al inicio, el avance sobre la línea inicio → fin y el corrimiento lateral (+ a la izquierda).
+  \item \textbf{Con \cod{autonomo:=true}}, el recorrido no arma la base ni arranca hasta \cod{EN\_INICIO}. Una vez
+        en marcha, el GPS ya no lo frena.
+\end{enumerate}
+
+Sin los parámetros de la hilera (bajo techo, en la simulación) todo funciona como antes.
+
+\begin{pendiente}[Hilera por GPS]
+Probarla con el UP501 afuera y ajustar \cod{hilera\_radio\_inicio} y \cod{hilera\_sigma\_max} (hoy 10~m y 20~m, a
+ojo). N1 también pide \textbf{volver al punto de inicio} al terminar: no está hecho (el recorrido frena en FIN).
+\end{pendiente}
+
 \section{Cómo se lanza}
 
 \begin{lstlisting}[language=consola]
@@ -196,6 +227,8 @@ ros2 topic echo /mision/estado --field data
 # Con el recorrido autónomo (también el agente de la base), parámetros del nodo:
 ros2 run mision nodo_mision --ros-args -p autonomo:=true -p largo_herramienta:=0.075 \
   -p f_px:=654.3 -p u_min:=163.0 -p z_min:=0.40 -p z_max:=0.95
+# Afuera, con la hilera marcada (sección anterior), sumar:
+#   -p hilera_inicio_lat:=... -p hilera_inicio_lon:=... -p hilera_fin_lat:=... -p hilera_fin_lon:=...
 \end{lstlisting}
 
 \begin{nota}[La TF es obligatoria]
@@ -222,5 +255,9 @@ cámaras ya montado: x, y, z con cinta; los ángulos se ajustan hasta que un lim
 \cod{radio\_limon} & 0,03~m & se suma a la superficie que da la visión \\
 \cod{edad\_max\_imagen} & 1~s & detecciones más viejas se ignoran \\
 \cod{autonomo} & \cod{false} & activa el recorrido \\
+\cod{hilera\_inicio\_lat/lon} & NaN & inicio de la hilera [°] (\cod{marcar\_gps}); NaN = sin hilera por GPS \\
+\cod{hilera\_fin\_lat/lon} & NaN & fin de la hilera [°]: opcional, para el avance y el lateral \\
+\cod{hilera\_radio\_inicio} & 10~m & más cerca que esto del inicio = \cod{EN\_INICIO} \\
+\cod{hilera\_sigma\_max} & 20~m & con un fix peor no arranca \\
 \bottomrule
 \end{tabularx}}

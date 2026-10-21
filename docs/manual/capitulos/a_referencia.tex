@@ -16,7 +16,7 @@
 \topic{/base/estado} & \cod{std\_msgs/String} & S3 (2~Hz) & mision, recorrido \\
 \topic{/base/comando} & \cod{std\_msgs/String} & recorrido, a mano & S3 \\
 \topic{/base/respuesta} & \cod{std\_msgs/String} & S3 & — \\
-\topic{/gps/fix} & \cod{sensor\_msgs/NavSatFix} & \cod{nmea\_navsat\_driver} (Pi) & — \\
+\topic{/gps/fix} & \cod{sensor\_msgs/NavSatFix} & \cod{nmea\_navsat\_driver} (Pi, 1~Hz) & mision (hilera) \\
 \topic{/brazo/joint\_states} & \cod{sensor\_msgs/JointState} & WROOM (20~Hz) & mision \\
 \topic{/brazo/estado} & \cod{std\_msgs/String} & WROOM (2~Hz) & mision \\
 \topic{/brazo/comando} & \cod{std\_msgs/String} & mision, a mano & WROOM \\
@@ -30,6 +30,7 @@
 \topic{/limon/posicion} & \cod{geometry\_msgs/PointStamped} & \cod{localizador\_node} & mision \\
 \topic{/mision/estado} & \cod{std\_msgs/String} & mision & — \\
 \topic{/recorrido/estado} & \cod{std\_msgs/String} & recorrido & — \\
+\topic{/hilera/estado} & \cod{std\_msgs/String} & mision (1~Hz, con la hilera por GPS) & — \\
 \bottomrule
 \end{longtable}}
 
@@ -66,7 +67,7 @@ ros2 launch mision mision.launch.py x:=... y:=... z:=... roll:=... pitch:=... ya
 cd firmware/base && ~/.platformio/penv/bin/pio test -e native && ~/.platformio/penv/bin/pio run -e ros
 
 # --- Grabar para la entrega
-ros2 bag record /cmd_vel /odom /imu/data_raw /range/frente /bumpers /base/estado /limon/posicion /mision/estado
+ros2 bag record /cmd_vel /odom /imu/data_raw /range/frente /bumpers /base/estado /limon/posicion /mision/estado /gps/fix /hilera/estado
 \end{lstlisting}
 
 \section{Estructura del repositorio}

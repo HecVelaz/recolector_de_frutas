@@ -12,14 +12,14 @@ Firmware de la base & \ok\ código & 20 pruebas OK; micro-ROS probado con la pla
 Firmware del brazo & \ok\ código & 17 pruebas OK; J1 medido en el banco (\cod{pruebas-esp32/10}). Pines v0.5 sin
   flashear en la Pi. J2/J3 sin motores. \\
 \cod{brazo\_ik} & \ok & 7 pruebas OK; probado en la notebook. \\
-\cod{mision} y \cod{recorrido} & \ok\ sim & 30 pruebas OK; 12 de 12 limones en la simulación. Sin probar con el brazo real. \\
+\cod{mision} y \cod{recorrido} & \ok\ sim & 35 pruebas OK (con la hilera por GPS); 12 de 12 limones en la simulación. Sin probar con el brazo real. \\
 Simulación & \ok & Gazebo Harmonic con base, brazo, sensores y hilera. \\
 Visión & \ok\ lab & Estéreo calibrado (RMS 0,36~px); limón real con error 3D $\leq$ 17~mm. Falta la prueba de campo. \\
 YOLO & parcial & Una clase (\cod{limon}); B3 pide tres. \\
 Potencia & armando & Diseño v0.7 revisado por Codex; faltan el portafusible y cambiar el Deans por XT60. \\
 Placas & armando & Diseño de las perforadas y los shields listo (\archivo{docs/html/}). \\
 Cableado general & $\sim$10~\% & \\
-GPS & configurado & Pi lista, falta conectar el módulo. \\
+GPS & \ok\ afuera & Conectado a la Pi; primer fix el 21/10 ($\sim$5~min, 3 satélites, $\sigma \approx 21$~m). La hilera por GPS (N1) está en \cod{mision}, sin probar afuera. \\
 App móvil, luz, buzzer & después & Después de la prueba integrada. \\
 \bottomrule
 \end{longtable}
