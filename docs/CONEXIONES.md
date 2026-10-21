@@ -54,7 +54,6 @@ entrega. Los dibujos quedan completos: esta lista dice qué se conecta ahora. **
 
 | Qué | Efecto | Ojo |
 |---|---|---|
-| GPS | `/gps/fix` no publica; nadie lo usa | — |
 | Bumpers ×3 | Con pull-up interno quedan "sueltos" | Sin parada por contacto: alguien con la mano en el selector |
 | HC-SR04 izquierdo y derecho | `/range/izq` y `/range/der` en NaN | Sin esquivar: la prueba va con teleop + `mision` |
 | Servo de giro (J4) | Queda quieto | Agarrar solo con la apertura |

@@ -223,8 +223,8 @@
         <li><b>Dónde:</b> lo más alto del mástil, con la antena (la cara del parche cerámico) mirando al cielo y sin metal encima. Bajo techo o pegado a la Pi no engancha satélites.</li>
         <li><b>Pin 1:</b> mirando el módulo del lado del blindaje metálico, con los pines abajo, el pin 1 es el de la <b>derecha</b> y el 6 el de la izquierda (figura 1 de la hoja técnica).</li>
         <li><b>Cables:</b> 4 hilos desde el HAT; en el GPS, un puente une el 4 con el 5. Punteras en el HAT. Que el HAT no choque con el disipador ni tape las cintas de las cámaras.</li>
-        <li><b>Para qué se usa:</b> <code>/gps/fix</code> con la posición absoluta del robot (un dato por segundo, unos metros de error). No es de seguridad y el recorrido por el pasillo no depende de él.</li>
-        <li><b>Primer fix:</b> en frío, a cielo abierto, puede tardar varios minutos. Sin fix, las tramas llegan igual, con los campos vacíos.</li>
+        <li><b>Para qué se usa:</b> <code>/gps/fix</code> con la posición absoluta del robot (un dato por segundo, unos metros de error). Hoy ningún nodo lo lee: sirve para grabar en un rosbag por dónde pasó el robot y lo pide la guía de R2. No es de seguridad y el recorrido por el pasillo no depende de él (usa ruedas, giróscopo y cámaras).</li>
+        <li><b>Primer fix (probado el 21/10):</b> bajo techo no ve ningún satélite. A cielo abierto: la hora en ~1 min y la posición en ~5 min con 3 satélites (σ ≈ 21 m; mejora con más satélites). Arranca siempre en frío, porque VDD_B sale de la Pi: al apagarla pierde lo guardado. Sin fix, las tramas llegan igual, con los campos vacíos.</li>
       </ul></div>
     </div>
   </section>

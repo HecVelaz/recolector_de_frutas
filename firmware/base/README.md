@@ -98,8 +98,9 @@ ros2 run nmea_navsat_driver nmea_serial_driver --ros-args \
   -p port:=/dev/ttyAMA0 -p baud:=9600 -p frame_id:=gps_link -r fix:=/gps/fix
 ```
 
-30/09: hecho en la Pi (UART0 y driver instalados; el driver abre `/dev/ttyAMA0`). Falta conectar el GPS al HAT y
-verificar con `cat /dev/ttyAMA0` que llegan frases `$GP…`. Sin GPS, el driver avisa "invalid checksum" con la frase
+30/09: hecho en la Pi (UART0 y driver instalados; el driver abre `/dev/ttyAMA0`). 21/10: GPS conectado al HAT
+(pines del módulo en `docs/html/pi5.html`; VDD_B obligatorio, unido al VDD); llegan las frases `$GP…` y a cielo abierto
+hubo fix en ~5 min con 3 satélites (σ ≈ 21 m); bajo techo no ve ninguno. Sin GPS, el driver avisa "invalid checksum" con la frase
 vacía cada 2 s: es normal.
 
 Primera prueba, **con las ruedas en el aire** y la fuente limitada a 3 A:

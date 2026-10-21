@@ -84,8 +84,9 @@ Notas:
 
 | Nodo | Dónde | Publica | Suscribe | Frec. |
 |---|---|---|---|---|
-| `base_fw` (micro-ROS) | ESP32-S3 | `/odom`, `/imu/data_raw`, `/bumpers`, `/range/{frente,izq,der}`, `/gps/fix`, `/battery`, `/base/estado`, `/base/respuesta` | `/cmd_vel`, `/base/comando` | 50 Hz (IMU), 25 Hz (odom), 10 Hz (rangos, bumpers) |
+| `base_fw` (micro-ROS) | ESP32-S3 | `/odom`, `/imu/data_raw`, `/bumpers`, `/range/{frente,izq,der}`, `/battery`, `/base/estado`, `/base/respuesta` | `/cmd_vel`, `/base/comando` | 50 Hz (IMU), 25 Hz (odom), 10 Hz (rangos, bumpers) |
 | `brazo_fw` (micro-ROS) | WROOM | `/brazo/joint_states`, `/brazo/estado`, `/brazo/respuesta` | `/brazo/joint_cmd`, `/pinza/cierre`, `/pinza/giro`, `/brazo/comando` | 20 Hz |
+| `nmea_navsat_driver` | Pi (UART GPIO 14/15) | `/gps/fix` (`gps_link`; hoy nadie lo usa: registro en rosbag) | — | 1 Hz |
 | `camaras_node` | Pi | `/stereo/left/image_raw`, `/stereo/right/image_raw` | — | 5–10 Hz |
 | `detector_yolo` | Pi | `/limones/detecciones_2d` | imágenes | 3–5 Hz |
 | `stereo_3d` | Pi | `/limones/posiciones` (marco `brazo_base`) | detecciones, `camera_info` | 3–5 Hz |
