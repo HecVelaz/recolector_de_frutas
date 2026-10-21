@@ -1,0 +1,322 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raspberry Pi 5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Conexiones de la Raspberry Pi 5: GPS por el HAT de borneras, cámaras, USB a los ESP32, power bank y red.
+     Misma paleta que conexiones.html. */
+  :root {
+    --paper: #f2f5f3; --card: #ffffff; --ink: #17231f; --muted: #56655f; --rule: #c3cfca; --soft: #e4ebe7;
+    --w-power: #c2362c; --w-supply: #cf7a12; --w-v33: #0f7f86; --w-data: #2a66ad; --w-gpio: #237a4f;
+    --w-gnd: #3b4843; --w-res: #8a9692;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    color-scheme: dark; --paper: #101614; --card: #18201d; --ink: #e2ebe7; --muted: #9aaaa4; --rule: #34423d; --soft: #1f2a26;
+    --w-power: #ef6a5e; --w-supply: #f0a24a; --w-v33: #4cc3ca; --w-data: #6fa6ea; --w-gpio: #4fc48a; --w-gnd: #b5c2bd; --w-res: #7d8a86; } }
+  :root[data-theme="dark"] {
+    color-scheme: dark; --paper: #101614; --card: #18201d; --ink: #e2ebe7; --muted: #9aaaa4; --rule: #34423d; --soft: #1f2a26;
+    --w-power: #ef6a5e; --w-supply: #f0a24a; --w-v33: #4cc3ca; --w-data: #6fa6ea; --w-gpio: #4fc48a; --w-gnd: #b5c2bd; --w-res: #7d8a86; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .page { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 40px; }
+  header { display: grid; gap: 10px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--cond); font-weight: 600; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--cond); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+  h3 { font-family: var(--cond); font-weight: 600; font-size: 17px; margin: 0; }
+  p { margin: 0; max-width: 72ch; }
+  .lede { color: var(--muted); }
+  code, .mono { font-family: var(--mono); font-size: .9em; }
+  b { font-weight: 600; }
+  section { display: grid; gap: 14px; }
+  figure { margin: 0; display: grid; gap: 10px; }
+  figcaption { color: var(--muted); font-size: 13.5px; max-width: 90ch; }
+  .scroll { overflow-x: auto; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; }
+  .scroll svg { display: block; min-width: 900px; width: 100%; height: auto; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 20px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--soft); vertical-align: top; }
+  th { font: 600 11.5px var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--rule); }
+  td.m { font-family: var(--mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  ul.lista { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+  ol.pasos { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; max-width: 80ch; }
+  pre { margin: 0; overflow-x: auto; background: var(--soft); border-radius: 4px; padding: 10px 12px; font: 12.5px/1.5 var(--mono); }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--rule); padding-top: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  /* Diagrama */
+  svg text { font-family: var(--sans); fill: var(--ink); }
+  svg .t { font: 600 14px var(--cond); fill: var(--ink); }
+  svg .tb { font: 600 18px var(--cond); fill: var(--ink); }
+  svg .s { font-size: 11.5px; fill: var(--muted); }
+  svg .p { font: 500 11px var(--mono); }
+  svg .box { fill: var(--card); stroke: var(--rule); stroke-width: 1.3; }
+  svg .board { fill: var(--soft); stroke: var(--ink); stroke-width: 1.5; }
+  svg .port { fill: var(--card); stroke: var(--muted); stroke-width: 1.2; }
+  svg .opt { stroke-dasharray: 6 4; }
+  svg .w { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .c-data { stroke: var(--w-data); } .c-gpio { stroke: var(--w-gpio); } .c-v33 { stroke: var(--w-v33); }
+  .c-gnd { stroke: var(--w-gnd); } .c-v5 { stroke: var(--w-supply); } .c-res { stroke: var(--w-res); }
+  .f-data { fill: var(--w-data); } .f-gpio { fill: var(--w-gpio); } .f-v33 { fill: var(--w-v33); }
+  .f-gnd { fill: var(--w-gnd); } .f-v5 { fill: var(--w-supply); } .f-res { fill: var(--w-res); }
+
+  /* Header de 40 pines */
+  .header40 { display: grid; grid-template-columns: 1fr auto auto 1fr; gap: 3px 8px; align-items: center; font-size: 12.5px; max-width: 620px; }
+  .header40 .n { font-family: var(--mono); color: var(--muted); font-size: 11px; text-align: center; width: 22px; height: 22px; line-height: 20px;
+                 border-radius: 50%; border: 1.5px solid var(--rule); box-sizing: border-box; }
+  .header40 .l { text-align: right; } .header40 .r { text-align: left; }
+  .header40 .x { color: var(--muted); }
+  .header40 .u { font-weight: 600; }
+  .header40 .n.v33 { background: var(--w-v33); border-color: var(--w-v33); color: #fff; }
+  .header40 .n.v5 { background: var(--w-supply); border-color: var(--w-supply); color: #fff; }
+  .header40 .n.gnd { background: var(--w-gnd); border-color: var(--w-gnd); color: var(--card); }
+  .header40 .n.uart { background: var(--w-data); border-color: var(--w-data); color: #fff; }
+  .header40 .n.res { border-color: var(--w-res); border-style: dashed; color: var(--ink); }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Grupo 2 · Arturito R2D2 · conexionado v0.6 · cerebro</div>
+    <h1>Raspberry Pi 5: GPS, cámaras y USB</h1>
+    <p class="lede">La Pi corre ROS 2 Jazzy (visión, cinemática inversa y misión) y va arriba del mástil junto a las cámaras. No toca ningún motor: habla por USB con los dos ESP32. El único periférico en sus GPIO es el <b>GPS UP501</b>, por el UART0 del header, atornillado en un <b>HAT pasivo de borneras</b> de 40 pines. Fuente: <code>docs/CONEXIONES.md</code> y <code>firmware/base/README.md</code>.</p>
+  </header>
+
+  <section aria-labelledby="h-diag">
+    <h2 id="h-diag">Cómo se conecta todo</h2>
+    <div class="legend">
+      <span><i style="background:var(--w-data)"></i>Datos (CSI, USB, UART)</span>
+      <span><i style="background:var(--w-v33)"></i>3,3 V</span>
+      <span><i style="background:var(--w-supply)"></i>5 V</span>
+      <span><i style="background:var(--w-gnd)"></i>GND</span>
+      <span><i style="background:var(--w-res);height:2px"></i>Trazo cortado: después de la prueba integrada</span>
+    </div>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1200 660" role="img" aria-label="La Raspberry Pi 5 en el centro. A la izquierda, las dos cámaras NoIR por CSI0 y CSI1 y el power bank por USB-C. A la derecha, el header de 40 pines con el HAT de borneras y el GPS UP501: pin 1 a 3,3 V, pin 6 a GND, pin 8 (GPIO 14, TXD) al RX del GPS y pin 10 (GPIO 15, RXD) al TX del GPS; luz y buzzer en los GPIO 17 y 27, para más adelante. Abajo, dos USB a la ESP32-S3 de la base y a la ESP32-WROOM del brazo, y el LiDAR fuera del mínimo. Arriba, Wi-Fi con Tailscale hacia el celular y la notebook.">
+          <!-- Pi 5 -->
+          <rect class="board" x="400" y="150" width="360" height="330" rx="12"/>
+          <text class="tb" x="580" y="290" text-anchor="middle">Raspberry Pi 5</text>
+          <text class="s" x="580" y="310" text-anchor="middle">Ubuntu 24.04 · ROS 2 Jazzy</text>
+          <text class="s" x="580" y="328" text-anchor="middle">YOLO + estéreo · brazo_ik · mision</text>
+          <text class="s" x="580" y="346" text-anchor="middle">disipador activo</text>
+
+          <!-- Cámaras -->
+          <rect class="port" x="400" y="186" width="16" height="44" rx="2"/>
+          <rect class="port" x="400" y="246" width="16" height="44" rx="2"/>
+          <text class="p" x="424" y="212">CSI0</text>
+          <text class="p" x="424" y="272">CSI1</text>
+          <rect class="box" x="40" y="176" width="240" height="56" rx="5"/>
+          <text class="t" x="54" y="199">Cámara NoIR izquierda</text>
+          <text class="s" x="54" y="218">libcamera 0 · referencia del estéreo</text>
+          <rect class="box" x="40" y="246" width="240" height="56" rx="5"/>
+          <text class="t" x="54" y="269">Cámara NoIR derecha</text>
+          <text class="s" x="54" y="288">baseline 89,5 mm · soporte rígido</text>
+          <path class="w c-data" d="M280 208 H400"/>
+          <path class="w c-data" d="M280 268 H400"/>
+          <text class="p f-data" x="340" y="200" text-anchor="middle">cinta 15→22</text>
+          <text class="p f-data" x="340" y="260" text-anchor="middle">cinta 15→22</text>
+
+          <!-- Power bank -->
+          <rect class="port" x="400" y="392" width="16" height="30" rx="4"/>
+          <text class="p" x="424" y="411">USB-C</text>
+          <rect class="box" x="40" y="380" width="240" height="70" rx="5"/>
+          <text class="t" x="54" y="403">Power bank Xiaomi PB2020MI</text>
+          <text class="s" x="54" y="421">5 V 3 A · su cable USB-C corto</text>
+          <text class="s" x="54" y="438">al lado de la Pi · nunca a la vez que Keepon</text>
+          <path class="w c-v5" d="M280 407 H400" style="stroke-width:4"/>
+          <text class="p f-v5" x="340" y="399" text-anchor="middle">5 V · 15 W</text>
+
+          <!-- Red -->
+          <rect class="box" x="460" y="30" width="240" height="70" rx="5"/>
+          <text class="t" x="474" y="53">Wi-Fi · Tailscale</text>
+          <text class="s" x="474" y="71">ssh r2d2@100.116.96.71</text>
+          <text class="s" x="474" y="88">teleop :8000 · cámaras :8080</text>
+          <path class="w c-data" d="M580 100 V150" stroke-dasharray="2 5"/>
+          <text class="p f-data" x="590" y="130">inalámbrico</text>
+
+          <!-- Header de 40 pines + HAT -->
+          <rect x="734" y="170" width="18" height="230" rx="2" fill="var(--ink)" opacity=".85"/>
+          <text class="p" x="726" y="166" text-anchor="end">header 40</text>
+          <rect class="box" x="792" y="160" width="76" height="250" rx="5" style="stroke:var(--w-gpio)"/>
+          <text class="t" x="830" y="152" text-anchor="middle">HAT</text>
+          <text class="s" x="830" y="426" text-anchor="middle">borneras</text>
+          <text class="s" x="830" y="442" text-anchor="middle">pasivo</text>
+          <!-- cables del header al HAT (cortos) y del HAT al GPS -->
+          <g>
+            <path class="w c-v33" d="M752 196 H792"/>
+            <path class="w c-gnd" d="M752 232 H792"/>
+            <path class="w c-data" d="M752 268 H792"/>
+            <path class="w c-data" d="M752 304 H792"/>
+            <path class="w c-res" d="M752 350 H792" stroke-dasharray="6 4"/>
+            <path class="w c-res" d="M752 380 H792" stroke-dasharray="6 4"/>
+          </g>
+          <g>
+            <text class="p" x="806" y="192">1</text><text class="p f-v33" x="806" y="205">3V3</text>
+            <text class="p" x="806" y="228">6</text><text class="p f-gnd" x="806" y="241">GND</text>
+            <text class="p" x="806" y="264">8</text><text class="p f-data" x="806" y="277">GP14</text>
+            <text class="p" x="806" y="300">10</text><text class="p f-data" x="806" y="313">GP15</text>
+            <text class="p" x="806" y="346">11</text><text class="p f-res" x="806" y="359">GP17</text>
+            <text class="p" x="806" y="376">13</text><text class="p f-res" x="806" y="389">GP27</text>
+          </g>
+
+          <!-- GPS -->
+          <rect class="box" x="960" y="160" width="220" height="168" rx="5" style="stroke:var(--w-data)"/>
+          <text class="t" x="974" y="184">GPS Fastrax UP501</text>
+          <text class="s" x="974" y="202">NMEA 9600 8N1 · 1 Hz · a 3,3 V</text>
+          <text class="s" x="974" y="219">arriba del mástil, cielo libre</text>
+          <path class="w c-v33" d="M868 196 H920 V242 H960"/>
+          <path class="w c-gnd" d="M868 232 H910 V264 H960"/>
+          <path class="w c-data" d="M868 268 H900 V286 H960"/>
+          <path class="w c-data" d="M868 304 H960"/>
+          <text class="p" x="1170" y="246" text-anchor="end">VCC</text>
+          <text class="p" x="1170" y="268" text-anchor="end">GND</text>
+          <text class="p" x="1170" y="290" text-anchor="end">RX del GPS ←</text>
+          <text class="p" x="1170" y="308" text-anchor="end">TX del GPS →</text>
+          <circle class="f-v33" cx="960" cy="242" r="4"/><circle class="f-gnd" cx="960" cy="264" r="4"/>
+          <circle class="f-data" cx="960" cy="286" r="4"/><circle class="f-data" cx="960" cy="304" r="4"/>
+          <text class="s" x="974" y="322">VBACKUP: ver nota · 1PPS: libre</text>
+
+          <!-- Luz y buzzer -->
+          <rect class="box opt" x="960" y="344" width="220" height="56" rx="5"/>
+          <text class="t" x="974" y="367">Luz y buzzer (H8)</text>
+          <text class="s" x="974" y="386">GPIO 17 · 27 · después de la integrada</text>
+          <path class="w c-res" d="M868 350 H940 V362 H960" stroke-dasharray="6 4"/>
+          <path class="w c-res" d="M868 380 H960" stroke-dasharray="6 4"/>
+
+          <!-- USB -->
+          <g>
+            <rect class="port" x="470" y="464" width="40" height="16" rx="2"/>
+            <rect class="port" x="530" y="464" width="40" height="16" rx="2"/>
+            <rect class="port" x="590" y="464" width="40" height="16" rx="2"/>
+            <rect class="port" x="650" y="464" width="40" height="16" rx="2"/>
+            <text class="p" x="580" y="456" text-anchor="middle">4 × USB · 600 mA en total con el power bank</text>
+          </g>
+          <path class="w c-data" d="M490 480 V530 H200 V560"/>
+          <path class="w c-data" d="M550 480 V545 H580 V560"/>
+          <path class="w c-res" d="M670 480 V530 H960 V560" stroke-dasharray="6 4"/>
+          <rect class="box" x="60" y="560" width="290" height="76" rx="5"/>
+          <text class="t" x="74" y="583">ESP32-S3 · base</text>
+          <text class="s" x="74" y="601">micro-ROS · USB nativo (ttyACM0/1)</text>
+          <text class="p" x="74" y="620">by-id/usb-Espressif_USB_JTAG…</text>
+          <rect class="box" x="435" y="560" width="290" height="76" rx="5"/>
+          <text class="t" x="449" y="583">ESP32-WROOM · brazo</text>
+          <text class="s" x="449" y="601">micro-ROS · CH340 a 115200 (ttyUSB0)</text>
+          <text class="p" x="449" y="620">by-id/usb-1a86_USB_Serial…</text>
+          <rect class="box opt" x="840" y="560" width="290" height="76" rx="5"/>
+          <text class="t" x="854" y="583">LiDAR</text>
+          <text class="s" x="854" y="601">fuera del mínimo</text>
+          <text class="p f-data" x="240" y="523">USB-A → C</text>
+          <text class="p f-data" x="590" y="523">USB-A → C</text>
+        </svg>
+      </div>
+      <figcaption>La Pi también alimenta a los dos ESP32 por el USB (la lógica de los encoders, la IMU, los HC-SR04 y los IBT-2 sale de ahí). Los 12 V de los motores nunca llegan a la Pi: el único punto en común es el GND, por el USB. Los cables del header al HAT no existen: el HAT se enchufa en el header y cada pin queda en su tornillo con el mismo número.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="h-gps">
+    <h2 id="h-gps">GPS UP501, cable por cable</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="tablewrap"><table>
+          <thead><tr><th>GPS</th><th>Bornera del HAT</th><th>Nota</th></tr></thead>
+          <tbody>
+            <tr><td class="m">VCC</td><td class="m">pin 1 · 3V3</td><td>El UP501 trabaja a 3,3 V: <b>nunca a los pines 2 o 4 (5 V)</b>.</td></tr>
+            <tr><td class="m">GND</td><td class="m">pin 6 · GND</td><td>Cualquier GND del header sirve.</td></tr>
+            <tr><td class="m">RX</td><td class="m">pin 8 · GPIO 14 (TXD)</td><td>Se cruzan: lo que manda la Pi entra por el RX del GPS.</td></tr>
+            <tr><td class="m">TX</td><td class="m">pin 10 · GPIO 15 (RXD)</td><td>Por acá llegan las frases <code>$GP…</code>.</td></tr>
+            <tr><td class="m">VBACKUP</td><td class="m">pin 1 · 3V3</td><td>Confirmar en la hoja del UP501: sin pila de respaldo, este pin va unido al VCC.</td></tr>
+            <tr><td class="m">1PPS</td><td class="m">—</td><td>Sin conectar (pulso por segundo, no lo usamos).</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="card"><ul class="lista">
+        <li><b>Dónde:</b> lo más alto del mástil, con la antena (la cara del parche cerámico) mirando al cielo y sin metal encima. Bajo techo o pegado a la Pi no engancha satélites.</li>
+        <li><b>Cables:</b> 4 hilos (5 con VBACKUP) con punteras en el HAT. Que el HAT no choque con el disipador ni tape las cintas de las cámaras.</li>
+        <li><b>Para qué se usa:</b> <code>/gps/fix</code> con la posición absoluta del robot (un dato por segundo, unos metros de error). No es de seguridad y el recorrido por el pasillo no depende de él.</li>
+        <li><b>Primer fix:</b> en frío, a cielo abierto, puede tardar varios minutos. Sin fix, las tramas llegan igual, con los campos vacíos.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-pines">
+    <h2 id="h-pines">Header de 40 pines (visto desde arriba, pin 1 cerca de la tarjeta SD)</h2>
+    <p class="lede">En color, los que usamos. Con borde punteado, los reservados para luz y buzzer. El resto queda libre.</p>
+    <div class="card"><div class="header40" id="h40" role="table" aria-label="Pines del header de la Raspberry Pi 5"></div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Configurar la Pi (hecho el 30/09)</h2>
+      <pre>echo 'dtparam=uart0=on' | sudo tee -a /boot/firmware/config.txt   # y reiniciar
+sudo apt install ros-jazzy-nmea-navsat-driver   # usuario en el grupo dialout</pre>
+      <p class="lede">En la Pi 5, el UART0 de los GPIO 14/15 queda como <code>/dev/ttyAMA0</code>.</p>
+    </div>
+    <div class="card">
+      <h2>Arrancar el driver</h2>
+      <pre>ros2 run nmea_navsat_driver nmea_serial_driver --ros-args \
+  -p port:=/dev/ttyAMA0 -p baud:=9600 -p frame_id:=gps_link -r fix:=/gps/fix</pre>
+      <p class="lede">Sin GPS conectado avisa "invalid checksum" con la frase vacía cada 2 s: es normal.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-prueba">
+    <h2 id="h-prueba">Prueba, en este orden</h2>
+    <ol class="pasos">
+      <li><b>Con la Pi apagada</b>, enchufar el HAT y atornillar los cables del GPS. Medir con el tester que el VCC del GPS esté en el pin 1 y no en el 2.</li>
+      <li><b>Encender y leer el puerto crudo:</b> <code>cat /dev/ttyAMA0</code>. Tienen que aparecer líneas <code>$GPGGA</code>, <code>$GPRMC</code>… una tanda por segundo. Si no llega nada, revisar TX/RX cruzados y la alimentación; si llega basura, el baudrate.</li>
+      <li><b>Cortar el <code>cat</code></b> (el puerto lo puede abrir uno solo) y arrancar el driver.</li>
+      <li><b>Afuera, a cielo abierto:</b> <code>ros2 topic echo /gps/fix</code> hasta que <code>status</code> pase de −1 a 0 o más, con latitud y longitud.</li>
+      <li><b>Con todo junto</b> (cámaras, YOLO y los ESP32 por USB): <code>vcgencmd get_throttled</code> tiene que seguir en <code>0x0</code>. El 20/10 dio 0x0 con la visión completa; falta repetirlo con los ESP32.</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-puertos">
+    <h2 id="h-puertos">Todos los puertos</h2>
+    <div class="card"><div class="tablewrap"><table>
+      <thead><tr><th>Puerto</th><th>Conecta a</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td class="m">CSI0 · CSI1</td><td>Cámaras NoIR izquierda · derecha</td><td>Cinta de 15 a 22 pines. Conectar solo con la Pi apagada.</td></tr>
+        <tr><td class="m">USB</td><td>ESP32-S3 (base)</td><td>Agente micro-ROS con <code>/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_*-if00</code> (el puerto salta entre ACM0 y ACM1).</td></tr>
+        <tr><td class="m">USB</td><td>ESP32-WROOM (brazo)</td><td>Agente con <code>/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0</code>, a 115200.</td></tr>
+        <tr><td class="m">USB</td><td>LiDAR</td><td>Fuera del mínimo.</td></tr>
+        <tr><td class="m">GPIO 14 · 15</td><td>GPS UP501</td><td>UART0, <code>/dev/ttyAMA0</code>, 9600.</td></tr>
+        <tr><td class="m">GPIO 17 · 27</td><td>Luz · buzzer</td><td>Reservados, después de la prueba integrada.</td></tr>
+        <tr><td class="m">USB-C</td><td>Power bank PB2020MI</td><td>5 V 3 A: los USB quedan limitados a 600 mA, que alcanzan para los dos ESP32.</td></tr>
+        <tr><td class="m">Wi-Fi</td><td>Celular y notebook por Tailscale</td><td><code>r2d2@100.116.96.71</code>. La Wi-Fi de FIUNA aísla los clientes: el celular entra solo por Tailscale.</td></tr>
+      </tbody>
+    </table></div></div>
+  </section>
+
+  <footer>Fuente de verdad: <span class="mono">docs/CONEXIONES.md</span> (Raspberry Pi 5) y <span class="mono">firmware/base/README.md</span> (GPS en la Pi). Foto del HAT en <span class="mono">docs/fotos/HAT_pi_5/</span>.</footer>
+</div>
+
+<script>
+(function () {
+  // [nombre, clase] de cada pin, del 1 al 40; los que usamos llevan uso
+  var P = ['3V3', '5V', 'GPIO 2', '5V', 'GPIO 3', 'GND', 'GPIO 4', 'GPIO 14 (TXD)', 'GND', 'GPIO 15 (RXD)',
+           'GPIO 17', 'GPIO 18', 'GPIO 27', 'GND', 'GPIO 22', 'GPIO 23', '3V3', 'GPIO 24', 'GPIO 10', 'GND',
+           'GPIO 9', 'GPIO 25', 'GPIO 11', 'GPIO 8', 'GND', 'GPIO 7', 'ID_SD', 'ID_SC', 'GPIO 5', 'GND',
+           'GPIO 6', 'GPIO 12', 'GPIO 13', 'GND', 'GPIO 19', 'GPIO 16', 'GPIO 26', 'GPIO 20', 'GND', 'GPIO 21'];
+  var USO = { 1: ['v33', 'VCC y VBACKUP del GPS'], 6: ['gnd', 'GND del GPS'], 8: ['uart', '→ RX del GPS'], 10: ['uart', '← TX del GPS'],
+              11: ['res', 'luz (reservado)'], 13: ['res', 'buzzer (reservado)'] };
+  var h = document.getElementById('h40');
+  function celda(txt, cls) { var d = document.createElement('div'); d.className = cls; d.innerHTML = txt; h.appendChild(d); }
+  for (var i = 1; i <= 40; i += 2) {
+    [i, i + 1].forEach(function (n, k) {
+      var u = USO[n];
+      var txt = '<span class="' + (u ? 'u' : 'x') + '">' + P[n - 1] + '</span>' + (u ? ' · ' + u[1] : '');
+      if (k === 0) { celda(txt, 'l'); celda(n, 'n ' + (u ? u[0] : '')); }
+      else { celda(n, 'n ' + (u ? u[0] : '')); celda(txt, 'r'); }
+    });
+  }
+})();
+</script>

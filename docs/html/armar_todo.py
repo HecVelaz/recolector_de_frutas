@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Arma todo.html: las 6 páginas de docs/html en un solo archivo, con pestañas y cajas clickeables.
+"""Arma todo.html: las 7 páginas de docs/html en un solo archivo, con pestañas y cajas clickeables.
 
 Cada página va en un iframe (srcdoc) para que no se pisen sus estilos, ids ni scripts; las fotos van
 embebidas en base64. Volver a correrlo cada vez que cambie una página:  python3 docs/html/armar_todo.py
@@ -14,6 +14,7 @@ PAGINAS = [  # (id, archivo, pestaña)
     ("wroom", "placa_wroom.html", "Placa WROOM (brazo)"),
     ("seta", "seta.html", "Seta"),
     ("continuidad", "checklist_traccion.html", "Continuidad (tracción)"),
+    ("pi", "pi5.html", "Pi 5 y GPS"),
 ]
 
 # Texto de una caja (regex, sin distinguir mayúsculas) -> [página, destino]. Gana la primera que coincide.
@@ -24,7 +25,7 @@ REGLAS = [
     [r"seta", "seta", "h-idea"],
     [r"esp32-s3|^s3\b", "s3", "h-cb"],
     [r"wroom|^17 · esp32", "wroom", "h-cb"],
-    [r"raspberry|cámaras|gps", "general", "Raspberry Pi 5"],
+    [r"raspberry|cámaras|gps", "pi", "h-diag"],
     [r"lipo", "potencia", "1 ·"],
     [r"fusible", "potencia", "3 ·"],
     [r"xt60", "potencia", "2 ·"],
