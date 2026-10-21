@@ -439,3 +439,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   frena por su watchdog) y botones ARMAR / DESARMAR / r / PARAR, con `/base/estado` en pantalla. Probado en la Pi con
   la base desarmada: `/cmd?v=0.5&w=-0.2` publica 0,125 m/s y −0,2 rad/s; comandos fuera de la lista, 400. Desde el
   celular: `http://100.116.96.71:8000` con Tailscale. Base de la app de la E7 de R2.
+
+## 2026-10-21: IMU, página de la Pi y primera prueba del GPS
+- IMU: foto del módulo (GY-9250/6500, `docs/fotos/IMU/`) y sección de montaje en `placa_s3.html`: plana en el medio
+  del eje de tracción, flecha X al frente, VCC a 3V3, SDA 8, SCL 9, AD0 y NCS sueltos (0x68, I²C).
+- `docs/html/pi5.html` (pestaña "Pi 5 y GPS" de `todo.html`): diagrama sobre la foto de la Pi y del GPS. Pines del UP501
+  según la hoja técnica (rev. 1.2): 1 RXD, 2 TXD, 3 GND, 4 VDD, 5 VDD_B, 6 PPS; pin 1 a la derecha mirando el blindaje.
+  **VDD_B es obligatorio** (unido al VDD a 3V3).
+- **GPS conectado a la Pi y probado bajo techo:** `/dev/ttyAMA0` a 9600 trae GGA, GSA, GSV y RMC una vez por segundo
+  (checksums válidos; basura solo al abrir el puerto). `nmea_serial_driver` publica `/gps/fix` (`gps_link`) con
+  `status: -1` y 0 satélites: normal adentro. Falta la prueba a cielo abierto hasta tener fix.
