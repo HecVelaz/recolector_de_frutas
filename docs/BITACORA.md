@@ -449,3 +449,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - **GPS conectado a la Pi y probado bajo techo:** `/dev/ttyAMA0` a 9600 trae GGA, GSA, GSV y RMC una vez por segundo
   (checksums válidos; basura solo al abrir el puerto). `nmea_serial_driver` publica `/gps/fix` (`gps_link`) con
   `status: -1` y 0 satélites: normal adentro. Falta la prueba a cielo abierto hasta tener fix.
+- Prueba afuera (16:07): la Pi se apagó por accidente y al volver el GPS siguió leyendo bien (`throttled` = 0x0).
+  Arrancó en frío: VDD_B sale de los 3V3 de la Pi, así que con la Pi apagada pierde la hora y los satélites
+  guardados (solo una pila en VDD_B lo evitaría). Driver lanzado con `nohup` (log en `~/logs/gps_*.log` de la Pi):
+  a los ~2 min seguía en `status: -1`. **Sin fix todavía: repetir a cielo abierto dejándolo 5-10 min quieto.**
+  Ojo: `pkill -f nmea_serial_driver` por ssh mata la propia sesión (el patrón está en su línea de comando): usar
+  `pgrep -f "[n]mea_serial_driver"`.
