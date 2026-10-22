@@ -6,8 +6,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 ## Avance
 - Software ~70 %, hardware real atrasado. Plan: 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
   3-9/11 integración, 30 frutos, informes.
-- Potencia v0.6 decidida (19/10): LiPo → XT60 → fusible 20 A → seta (bloque A) → selector WEG (un bloque NA) →
-  bornera +12 V; sin capacitores. Falta el portafusible, el XT60 en la LiPo y armar el divisor 100 k / 30 k.
+- Potencia v0.6 (cadena en `CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y armar el divisor 100 k / 30 k.
 - Power bank PB2020MI probado (20/10): 15 min con la cadena de visión completa, 5,03-5,13 V, `throttled` 0x0.
   Falta repetir con los ESP32 por USB.
 
@@ -18,7 +17,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - En la S3 está el env de prueba **`ros_motores`** (sin IMU ni distancia al frente; tope 25 %): nunca en el piso.
 - Con `u` a velocidad máxima, > 4 A (2,6 A en vacío por motor). La rueda derecha patina en el eje (prisionero).
 - Una vez, al prender los 12 V, el USB de la S3 se trabó (`Errno 71`); causa sin confirmar.
-- Sin probar: IMU, HC-SR04, bumpers y seta en ROS; odometría en el piso; parada real por el watchdog de 300 ms.
+- Sin probar: IMU, HC-SR04, bumpers y seta en ROS; odometría en el piso; parada real por el watchdog de 300 ms
+  (Codex: a 1 m/s recorre ~30 cm antes de empezar a frenar).
 
 ## Brazo (`firmware/brazo`, WROOM) — 18 pruebas OK
 - Cascada J1-J3 + pinza; flasheado con pines v0.5 el 20/10. Probado solo en la placa (sin motores ni sensores).
@@ -44,7 +44,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Calibración `config/calibracion_soporte_2/`: RMS 0,36 px, baseline 89,5 mm, ventana 0,38-0,96 m. Zona ciega:
   u < ~163 px de la imagen izquierda.
 - Limón real en el lab: confianza mediana 0,80; error 3D máx. 17 mm (B5 pide ≤ 35 mm). Falta el campo y las NoIR al sol.
-- Detector de una sola clase (`limon`; P 0,953, R 0,977, mAP50 0,978): B3 pide cosechable / no cosechable / obstáculo.
+- Detector de una sola clase (`limon`; P 0,953, R 0,977, mAP50 0,978: **optimistas**, el test sale de las mismas
+  fuentes que el entrenamiento): B3 pide cosechable / no cosechable / obstáculo.
   Modelo en la Pi: `~/vision_estereo/modelos/limon_yolo26n_ncnn_model`.
 
 ## GPS
@@ -64,6 +65,4 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Sin probar en Gazebo: limones a menos de 45° (adelante-izquierda) ya no se alcanzan con el rango nuevo de J1.
 
 ## Repo y herramientas
-- `CLAUDE.md` corto (6 KB) desde el 22/10; `/cerrar` y `/retomar`, la skill `pi-sync`, los hooks y
-  `.claude/settings.json` versionados.
 - `EncoderPCNT` sin probar en placa más allá de 32 000 cuentas (girar a mano y ver que no salte).

@@ -500,3 +500,15 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Rama `claude-md-corto` mergeada a `main` (fast-forward) y borrada; push hecho. `/pi-sync repo`: la Pi estaba apagada
   (Tailscale offline 12 h); al prenderla entró por Tailscale y quedó en `d688339` (solo documentos: sin compilar ni flashear).
 - Commits: `e061024`, `b69d52e`, `d688339`.
+
+## 2026-10-22: revisión de los CLAUDE.md contra el viejo
+
+- Revisados `CLAUDE.md`, `firmware/CLAUDE.md` y `docs/ESTADO.md` contra el CLAUDE.md de 33 KB (`f082c83`; `HEAD~3`
+  ya era el corto). Sin reglas contradictorias. Recortes: la regla de la simulación aislada salió de
+  `firmware/CLAUDE.md` (queda en la raíz y en `DECISIONES.md`); en ESTADO, la cadena de potencia (está en
+  `CONEXIONES.md`) y la línea de historia del CLAUDE.md corto.
+- Recuperado lo que solo había quedado en la bitácora: métricas del detector **optimistas** (test de las mismas
+  fuentes que el entrenamiento) y la parada por watchdog (Codex: ~30 cm a 1 m/s) en ESTADO; calibrar el sesgo del
+  giróscopo antes del recorrido real, en PENDIENTES.
+- `FLUJO_DE_TRABAJO.md` quedó desactualizado en dos cosas (anotadas en PENDIENTES 11): ponytail se activa con un hook
+  al arrancar cada sesión (no "sin usar") y `/pi-sync` ya se usó en modo `repo` (falta compilar y flashear con él).

@@ -33,6 +33,4 @@ Complementa el `CLAUDE.md` de la raíz. Estado de cada placa: `docs/ESTADO.md`; 
 - Por ssh, `pkill -f` con un patrón anclado (`"^/home/r2d2/microros_ws.*Espressif"`): si no, coincide con el propio
   comando y corta la sesión.
 - Ping del enlace a 100 ms (a 20 ms daba cortes falsos); contadores `enlace: pings_fallidos cortes` en `/<parte>/estado`.
-- Cualquier nodo de ROS 2 en la misma LAN que la Pi ve y comanda los ESP32 (dominio 0): la simulación va aislada con
-  `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`.
 - Lazos cerrados y seguridad en cada ESP32 (seta, vuelco, bumpers, distancia, watchdog): la Pi solo manda consignas.

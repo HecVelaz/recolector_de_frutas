@@ -42,4 +42,6 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    PC de escritorio); el recorrido autónomo ya cosecha 12 de 12 con `limones_sim`; cargar las medidas reales que faltan
    (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
 11. Herramientas: decidir si `/pi-sync` prueba también el Wi-Fi FIUNA (172.16.240.92) cuando no responden Tailscale
-   ni la LAN (sin verificar que esa IP siga valiendo).
+   ni la LAN (sin verificar que esa IP siga valiendo). Corregir `FLUJO_DE_TRABAJO.md`: ponytail activo por hook (dice
+   "sin usar") y `/pi-sync` probado solo en modo `repo` (dice "sin probar con la Pi").
+12. Recorrido autónomo en el robot real: calibrar antes el sesgo del giróscopo (supone arrancar en el centro del pasillo).
