@@ -65,4 +65,6 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Sin probar en Gazebo: limones a menos de 45° (adelante-izquierda) ya no se alcanzan con el rango nuevo de J1.
 
 ## Repo y herramientas
+- Comandos `/cerrar`, `/retomar` y `/verificar` en `.claude/commands/`; genéricos (más `/adelgazar-claude`) en
+  `~/.claude/commands/`. Con el mismo nombre parece ganar el de usuario: sin confirmar.
 - `EncoderPCNT` sin probar en placa más allá de 32 000 cuentas (girar a mano y ver que no salte).

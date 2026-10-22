@@ -515,3 +515,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - `/pi-sync` dos veces (Tailscale): solo documentos, sin compilar ni flashear; la Pi quedó en `a90bdc4`. ESTADO dice
   `84c5531` a propósito: `a90bdc4` solo cambia esa línea (actualizarla en cada sync sería un ciclo sin fin).
 - Commits: `f257c08`, `84c5531`, `a90bdc4` (con push).
+
+## 2026-10-22: comandos genéricos de usuario
+
+- En `~/.claude/commands/` (fuera del repo, para cualquier proyecto): `adelgazar-claude.md` (rama nueva; estado,
+  decisiones y pendientes a `docs/` sin borrar nada; `CLAUDE.md` < 8 KB con tabla "qué leer" sin `@`; `AGENTS.md`
+  symlink, preguntando si ya hay uno distinto; tamaños antes/después; sin push) y versiones genéricas de `cerrar`,
+  `retomar` y `verificar` (esta detecta los tests: npm, pytest, cargo, go, make, pio, colcon).
+- `.claude/commands/verificar.md` del repo versionado. Ojo: este `/cerrar` corrió la versión **genérica** (de usuario),
+  no la del repo: con el mismo nombre parece ganar la de usuario (pendiente confirmar).
+- Commits: `0de1dc6` y el de este cierre.

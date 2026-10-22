@@ -44,3 +44,5 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 11. Herramientas: decidir si `/pi-sync` prueba también el Wi-Fi FIUNA (172.16.240.92) cuando no responden Tailscale
    ni la LAN (sin verificar que esa IP siga valiendo).
 12. Recorrido autónomo en el robot real: calibrar antes el sesgo del giróscopo (supone arrancar en el centro del pasillo).
+13. Comandos: confirmar si `/cerrar`, `/retomar` y `/verificar` corren la versión del repo o la de `~/.claude/commands/`;
+   si gana la de usuario, renombrar las del repo (o las genéricas) para no perder los chequeos de firmware, ROS 2 y Pi.
