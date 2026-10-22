@@ -510,5 +510,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Recuperado lo que solo había quedado en la bitácora: métricas del detector **optimistas** (test de las mismas
   fuentes que el entrenamiento) y la parada por watchdog (Codex: ~30 cm a 1 m/s) en ESTADO; calibrar el sesgo del
   giróscopo antes del recorrido real, en PENDIENTES.
-- `FLUJO_DE_TRABAJO.md` quedó desactualizado en dos cosas (anotadas en PENDIENTES 11): ponytail se activa con un hook
-  al arrancar cada sesión (no "sin usar") y `/pi-sync` ya se usó en modo `repo` (falta compilar y flashear con él).
+- `FLUJO_DE_TRABAJO.md` corregido: ponytail se activa con un hook al arrancar cada sesión (modo `full`, rige el
+  código) y `/pi-sync` ya se usó en modo `repo` (falta compilar y flashear con él).
+- `/pi-sync` dos veces (Tailscale): solo documentos, sin compilar ni flashear; la Pi quedó en `a90bdc4`. ESTADO dice
+  `84c5531` a propósito: `a90bdc4` solo cambia esa línea (actualizarla en cada sync sería un ciclo sin fin).
+- Commits: `f257c08`, `84c5531`, `a90bdc4` (con push).
