@@ -102,7 +102,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
   la alternativa más simple y barata, sin listas largas de piezas nuevas.
 
-## 5. Estado actual (al 2026-10-20)
+## 5. Estado actual (al 2026-10-22)
 - **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
   conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
   soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
@@ -125,7 +125,7 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   para tener `log`), PI 0,89/11,1: `w 8 8` → las dos en 8 ± 0,1 rpm. 8316 cuentas confirmadas (rueda izq., 1 vuelta).
   **Teleop desde Android:** Termux + Tailscale → ssh → `teleop_twist_keyboard` (`repeat_rate:=10.0`); anda. Y una
   página con joystick, `firmware/base/scripts/teleop_web.py` (puerto 8000, sin rosbridge; base de la app de la E7):
-  `http://100.116.96.71:8000` con Tailscale (probada en la Pi, falta manejar desde el celular). Con `u` a
+  `http://100.116.96.71:8000` con Tailscale (**22/10: manejada desde el celular** con las ruedas en el aire, las dos placas en la Pi; cada botón destella al llegar el comando). Con `u` a
   velocidad máxima, > 4 A (normal: 2,6 A en vacío por motor). En la S3 está el env de prueba **`ros_motores`** (sin IMU
   ni distancia al frente; tope de `d` 25 %): nunca en el piso. Los 5 V de la Freenove salen de su jack (plug desde la
   bornera +12 V; el USB no los da). La rueda derecha patina en el eje (prisionero). `desarmar` por micro-ROS no
@@ -148,7 +148,10 @@ materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil co
   sensores siguen sin probar en este proyecto.
   Agentes: `micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` (brazo) y
   `.../usb-Espressif_USB_JTAG_serial_debug_unit_*-if00` (base). Si la S3 no abre sesión, está en modo descarga:
-  `~/venvs/esptool/bin/esptool --port <S3> --before no_reset --after watchdog-reset read-mac`.
+  `~/venvs/esptool/bin/esptool --port <S3> --before no_reset --after watchdog-reset read-mac` (sin `--before no_reset` la deja
+  en modo descarga). Si el puerto da `OSError: [Errno 71] Protocol error`, el USB quedó trabado: 12 V apagados, desenchufar
+  y enchufar el USB de la S3 (22/10, una vez al prender los 12 V; la segunda vez aguantó). Por ssh, `pkill -f` con un patrón
+  anclado (`"^/home/r2d2/microros_ws.*Espressif"`): si no, coincide con el propio comando y corta la sesión.
   Ping del enlace a 100 ms (a 20 ms daba cortes falsos por latencia); contadores `enlace: pings_fallidos cortes`
   en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
   la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).

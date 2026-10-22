@@ -69,7 +69,10 @@ setInterval(() => {
   const k = vel.value / 100;
   fetch('/cmd?v=' + (-y * k).toFixed(3) + '&w=' + (-x * k).toFixed(3));
 }, 100);
-function comando(c) { fetch('/c?x=' + c); }
+function comando(c) {  // el botón destella cuando la Pi recibió el comando
+  const b = document.getElementById(c === 's' ? 'parar' : c);
+  fetch('/c?x=' + c).then(r => { if (r.ok) { b.style.outline = '4px solid #fff'; setTimeout(() => b.style.outline = '', 300); } });
+}
 document.getElementById('parar').onclick = () => { soltar(); comando('s'); };
 document.getElementById('armar').onclick = () => comando('armar');
 document.getElementById('desarmar').onclick = () => comando('desarmar');

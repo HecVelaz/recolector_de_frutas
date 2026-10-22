@@ -471,3 +471,16 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   odometría). `ros2 run mision marcar_gps` promedia el fix para marcar los puntos. Sin parámetros, nada cambia.
 - 35 pruebas de `mision` OK; probado en la notebook con un `/gps/fix` falso. Falta probarlo con el UP501 afuera.
 - No hecho: el regreso al punto de inicio al terminar la hilera (N1 también lo pide); hoy el recorrido frena en FIN.
+
+## 2026-10-22: tracción con el joystick del celular
+
+- Pi con las dos placas por USB: agentes de la base y del brazo y `teleop_web.py`. Ruedas en el aire.
+- Primero no se movían (`rueda_izq/der=atasco`: el firmware mandaba PWM y los encoders no contaban): los motores y los
+  encoders estaban desconectados. Con 12 V apagados, `/battery` ≈ 0 da `BATERIA_BAJA`; con 12 V, 11,7 V.
+- Al prender los 12 V una vez la S3 dejó de publicar y su USB quedó trabado (`Errno 71 Protocol error`, esptool no
+  conectaba): se recuperó desenchufando y enchufando el USB (con 12 V apagados) y el reset por watchdog. La segunda vez,
+  grabando el kernel y `/base/estado` cada 0,5 s, el encendido no la cortó. Causa sin confirmar (¿pico en los 5 V del
+  jack de la Freenove o en el GND?): si se repite, mirar `journalctl -k` por un `USB disconnect` justo al encender.
+- `armar` + joystick: **funciona** desde el celular. `teleop_web.py`: los botones destellan cuando la Pi recibe el
+  comando (antes no había forma de saber si se habían tocado).
+- Pendiente: lo mismo en el piso (antes, firmware `ros` con IMU y HC-SR04 en vez de `ros_motores`).
