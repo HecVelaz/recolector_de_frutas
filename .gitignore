@@ -20,7 +20,8 @@ docs/**/Articulos de Referencia/
 
 # Grafo generado, configuración local y secretos
 graphify-out/
-.claude/
+.claude/*
+!.claude/commands/
 .env
 *.log
 
