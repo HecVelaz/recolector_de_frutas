@@ -25,6 +25,8 @@ Revisá el repo, en castellano, **sin modificar, commitear ni sincronizar nada**
      `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`). Si no está compilado, `colcon build` antes y decirlo.
 4. **Pi**: conexión y rsync del paso 0 y 2 de `.claude/skills/pi-sync/SKILL.md`, **solo con `-n`** (dry-run).
    Mostrar la lista de lo que copiaría, agrupada por carpeta. Si la Pi no responde, FALLA "Pi no accesible".
+   - Commit de la Pi: `ssh $PI cat ~/recolector_de_frutas/.commit` igual a `git rev-parse HEAD`. Si difiere, tiene
+     `-dirty` o no existe, FALLA "Pi en <hash corto> (o sin .commit), notebook en <hash corto>".
 
 Al final, una tabla `| Punto | Resultado | Detalle |` con una fila por chequeo (1a, 1b, …) y `OK` / `FALLA`; en
 Detalle, el motivo corto de cada falla.

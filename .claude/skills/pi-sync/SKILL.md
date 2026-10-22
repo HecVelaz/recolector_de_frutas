@@ -80,6 +80,12 @@ No hace falta `colcon test` en la Pi (se corre en la notebook).
    `/<parte>/estado` (`ros2 topic hz`). Recordar: arranca **desarmada**.
 
 ## 5. Cierre
+Si se corrió el rsync del paso 2 (sin `-n`), dejar en la Pi el commit sincronizado (con `-dirty` si se
+sincronizó con cambios sin commit, así `/verificar-robot` no lo da por igual):
+```bash
+H=$(git rev-parse HEAD); [ -n "$(git status --porcelain)" ] && H="$H-dirty"
+ssh $PI "echo $H > ~/recolector_de_frutas/.commit"
+```
 Resumen corto: qué se sincronizó, qué paquetes se compilaron, qué placa se flasheó y con qué commit
 (`git log -1 --format='%h %s'`). Si existe la memoria `pi-desactualizada` y quedó resuelto lo que pedía, borrarla.
 Si algún comando o ruta de esta skill estaba mal, corregirla acá.
