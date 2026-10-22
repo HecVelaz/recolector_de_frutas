@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Arma todo.html: las 7 páginas de docs/html en un solo archivo, con pestañas y cajas clickeables.
+"""Arma todo.html: las 8 páginas de docs/html en un solo archivo, con pestañas y cajas clickeables.
 
 Cada página va en un iframe (srcdoc) para que no se pisen sus estilos, ids ni scripts; las fotos van
 embebidas en base64. Volver a correrlo cada vez que cambie una página:  python3 docs/html/armar_todo.py
@@ -14,6 +14,7 @@ PAGINAS = [  # (id, archivo, pestaña)
     ("wroom", "placa_wroom.html", "Placa WROOM (brazo)"),
     ("seta", "seta.html", "Seta"),
     ("continuidad", "checklist_traccion.html", "Continuidad (tracción)"),
+    ("cont-brazo", "checklist_brazo.html", "Continuidad (brazo)"),
     ("pi", "pi5.html", "Pi 5 y GPS"),
 ]
 

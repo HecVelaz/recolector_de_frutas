@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continuidad del brazo</title>
+<style>
+:root {
+  --fondo: #f6f5f1; --carta: #ffffff; --texto: #1d1d1b; --suave: #5f5e58; --borde: #dcdad2;
+  --acento: #2f6f4f; --peligro: #a8321e; --peligro-fondo: #fbeae6; --aviso: #8a5a00; --aviso-fondo: #fdf3dc;
+  --codigo: #efede6; --hecho: #9a988f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #171716; --carta: #222220; --texto: #ecebe6; --suave: #a7a59c; --borde: #3a3935;
+    --acento: #6fc39a; --peligro: #ff8a73; --peligro-fondo: #3a1f19; --aviso: #f0c060; --aviso-fondo: #352a12;
+    --codigo: #2e2d2a; --hecho: #6f6d66;
+  }
+}
+:root[data-theme="dark"] {
+  --fondo: #171716; --carta: #222220; --texto: #ecebe6; --suave: #a7a59c; --borde: #3a3935;
+  --acento: #6fc39a; --peligro: #ff8a73; --peligro-fondo: #3a1f19; --aviso: #f0c060; --aviso-fondo: #352a12;
+  --codigo: #2e2d2a; --hecho: #6f6d66;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; }
+.sub { color: var(--suave); margin: 0 0 16px; }
+.barra { position: sticky; top: 0; z-index: 2; background: var(--fondo); padding: 10px 0; border-bottom: 1px solid var(--borde);
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.progreso { flex: 1; min-width: 160px; height: 8px; background: var(--borde); border-radius: 4px; overflow: hidden; }
+.progreso div { height: 100%; width: 0; background: var(--acento); transition: width .2s; }
+#cuenta { font-variant-numeric: tabular-nums; color: var(--suave); }
+button { font: inherit; background: var(--carta); color: var(--texto); border: 1px solid var(--borde); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; }
+section { background: var(--carta); border: 1px solid var(--borde); border-radius: 10px; padding: 16px; margin-top: 18px; }
+section h2 { font-size: 1.15rem; margin: 0 0 4px; }
+section > p { margin: 4px 0 10px; color: var(--suave); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { border-top: 1px solid var(--borde); }
+li:first-child { border-top: 0; }
+label { display: flex; gap: 10px; padding: 9px 2px; cursor: pointer; align-items: flex-start; }
+input[type=checkbox] { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--acento); }
+label:has(input:checked) .t { color: var(--hecho); text-decoration: line-through; }
+.t small { display: block; color: var(--suave); }
+label:has(input:checked) .t small { color: var(--hecho); }
+code { background: var(--codigo); padding: 0 4px; border-radius: 4px; font-size: .92em; }
+.alerta { border-left: 4px solid var(--peligro); background: var(--peligro-fondo); padding: 10px 12px; border-radius: 6px; margin: 10px 0; }
+.nota { border-left: 4px solid var(--aviso); background: var(--aviso-fondo); padding: 10px 12px; border-radius: 6px; margin: 10px 0; }
+.cadena { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; background: var(--codigo);
+  padding: 10px 12px; border-radius: 6px; overflow-x: auto; white-space: pre; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; margin: 6px 0 10px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+th { color: var(--suave); font-weight: 600; }
+.tabla { overflow-x: auto; }
+.fuera { color: var(--suave); }
+.esp { margin-left: auto; flex: none; align-self: center; font-size: .82rem; font-weight: 700; padding: 1px 9px;
+  border-radius: 999px; white-space: nowrap; }
+.esp.si { background: #dff3e7; color: #1d6b40; } .esp.no { background: #fbe3de; color: #9b2c19; } .esp.ohm { background: #fdf0d2; color: #7a5200; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .esp.si { background: #1d3a2a; color: #7fdcaa; }
+  :root:not([data-theme="light"]) .esp.no { background: #3d211b; color: #ff9a85; } :root:not([data-theme="light"]) .esp.ohm { background: #3a2e12; color: #f2c46a; } }
+:root[data-theme="dark"] .esp.si { background: #1d3a2a; color: #7fdcaa; } :root[data-theme="dark"] .esp.no { background: #3d211b; color: #ff9a85; }
+:root[data-theme="dark"] .esp.ohm { background: #3a2e12; color: #f2c46a; }
+.nota .esp { margin: 0 2px; }
+label:has(input:checked) .esp { opacity: .5; }
+/* Diagramas */
+:root { --c12: #d23a2a; --cgnd: #2b2b2b; --c5: #e08a00; --csig: #2f6fd0; --cen: #8a4fc0; --camar: #c99a00;
+  --cblanco: #9a9a9a; --cazul: #2f6fd0; --cverde: #2e9a4e; --linea: #8d8b83; --cajad: #efede6; --caja-roja: #fbeae6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --c12: #ff6a55; --cgnd: #d6d6d0; --c5: #ffab3d; --csig: #6ea3ff; --cen: #c08cf0;
+    --camar: #f2c94c; --cblanco: #e8e8e8; --cazul: #6ea3ff; --cverde: #5fd08a; --linea: #77756e; --cajad: #2e2d2a; --caja-roja: #3a1f19; }
+}
+:root[data-theme="dark"] { --c12: #ff6a55; --cgnd: #d6d6d0; --c5: #ffab3d; --csig: #6ea3ff; --cen: #c08cf0;
+  --camar: #f2c94c; --cblanco: #e8e8e8; --cazul: #6ea3ff; --cverde: #5fd08a; --linea: #77756e; --cajad: #2e2d2a; --caja-roja: #3a1f19; }
+.fig { overflow-x: auto; margin: 8px 0 14px; border: 1px solid var(--borde); border-radius: 8px; background: var(--fondo); }
+.fig svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.d text { font: 13px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--texto); }
+.d .n { font-weight: 700; }
+.d .ch { font-size: 11px; fill: var(--suave); }
+.d .rojo { fill: var(--c12); font-weight: 700; }
+.d .caja { fill: var(--cajad); stroke: var(--linea); stroke-width: 1.5; }
+.d .cajar { fill: var(--caja-roja); stroke: var(--c12); stroke-width: 1.5; }
+.d .w { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.d .w12 { stroke: var(--c12); } .d .wg { stroke: var(--cgnd); } .d .w5 { stroke: var(--c5); }
+.d .ws { stroke: var(--csig); stroke-width: 2.5; } .d .wen { stroke: var(--cen); stroke-width: 2.5; }
+.d .wam { stroke: var(--camar); } .d .wbl { stroke: var(--cblanco); } .d .waz { stroke: var(--cazul); } .d .wve { stroke: var(--cverde); }
+.d .r { fill: none; stroke: var(--texto); stroke-width: 2; stroke-linejoin: round; }
+.d .p { fill: var(--texto); }
+.d .flecha { fill: none; stroke: var(--suave); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .88rem; color: var(--suave); margin: 4px 0 2px; }
+.leyenda span::before { content: ""; display: inline-block; width: 18px; height: 4px; border-radius: 2px; margin-right: 6px;
+  vertical-align: middle; background: var(--c); }
+.paso { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--acento);
+  color: var(--carta); font-weight: 700; font-size: .95rem; margin-right: 8px; vertical-align: 2px; }
+.t { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.desliza { display: none; font-size: .85rem; color: var(--suave); margin: 6px 0 -4px; }
+@media (max-width: 680px) {
+  main { padding: 16px 12px 48px; }
+  h1 { font-size: 1.3rem; }
+  section { padding: 12px; }
+  .fig svg { min-width: 720px; }
+  .desliza { display: block; }
+  table { font-size: .88rem; }
+  th, td { padding: 6px 5px; }
+  .esp { font-size: .78rem; padding: 1px 7px; }
+}
+@media print { .barra button { display: none; } section { break-inside: avoid; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<main>
+<h1>Continuidad del brazo · Arturito R2D2</h1>
+<p class="sub">Solo continuidad, sin energizar. ESP32-WROOM en su shield, perforada de distribución, 3 IBT-2, motores J1-J3 con sus encoders SCX-555 y los 3 finales de carrera. Los servos van después.
+Pines de <code>firmware/brazo/include/pins.h</code> (v0.5); cables de <code>placa_wroom.html</code>.</p>
+
+<div class="barra">
+  <div class="progreso"><div id="barra"></div></div>
+  <span id="cuenta">0 / 0</span>
+  <button id="borrar" type="button">Desmarcar todo</button>
+</div>
+
+<section>
+  <h2>El brazo de un vistazo</h2>
+  <div class="leyenda">
+    <span style="--c:var(--c12)">+12 V</span><span style="--c:var(--cgnd)">GND</span>
+    <span style="--c:var(--c5)">5 V (VIN)</span><span style="--c:var(--cverde)">3,3 V</span><span style="--c:var(--csig)">PWM</span>
+    <span style="--c:var(--cen)">EN 23</span><span style="--c:var(--camar)">encoders</span>
+  </div>
+  <p class="desliza">Deslizá el dibujo hacia el costado →</p>
+  <div class="fig"><svg class="d" viewBox="0 0 820 380" role="img" aria-label="WROOM a los tres IBT-2 y a los motores J1-J3, encoders y finales de carrera">
+    <rect class="caja" x="16" y="20" width="96" height="56" rx="8"/><text x="64" y="44" text-anchor="middle" class="n">Pi 5</text><text x="64" y="62" text-anchor="middle" class="ch">USB</text>
+    <path class="w w5" d="M64 76 V110"/>
+    <rect class="caja" x="16" y="110" width="170" height="250" rx="10"/><text x="101" y="134" text-anchor="middle" class="n">ESP32-WROOM</text>
+    <text x="101" y="152" text-anchor="middle" class="ch">shield + perforada</text>
+    <g text-anchor="end"><text x="178" y="186">21·22 / 25·26 / 16·17</text><text x="178" y="216">EN 23</text>
+    <text x="178" y="256">34·35 / 36·39 / 18·19</text><text x="178" y="296">FC 32 / 33 / 27</text>
+    <text x="178" y="326">VIN · 3V3 · GND</text></g>
+    <rect class="caja" x="330" y="20" width="130" height="56" rx="8"/><text x="395" y="44" text-anchor="middle" class="n">IBT-2 J1</text><text x="395" y="62" text-anchor="middle" class="ch">PWM 21 · 22</text>
+    <rect class="caja" x="330" y="100" width="130" height="56" rx="8"/><text x="395" y="124" text-anchor="middle" class="n">IBT-2 J2</text><text x="395" y="142" text-anchor="middle" class="ch">PWM 25 · 26</text>
+    <rect class="caja" x="330" y="180" width="130" height="56" rx="8"/><text x="395" y="204" text-anchor="middle" class="n">IBT-2 J3</text><text x="395" y="222" text-anchor="middle" class="ch">PWM 16 · 17</text>
+    <path class="w ws" d="M186 182 H260 V48 H330 M260 128 H330 M260 208 H330"/>
+    <path class="w wen" d="M186 212 H290 V68 H330 M290 148 H330 M290 228 H330"/>
+    <path class="w w12" d="M460 36 H520 V196 H460 M520 116 H460 M520 36 V10 H640"/><text x="646" y="14" class="ch">bornera +12 V (B+)</text>
+    <circle cx="700" cy="60" r="28" class="caja"/><text x="700" y="64" text-anchor="middle" class="n">J1</text>
+    <circle cx="700" cy="140" r="28" class="caja"/><text x="700" y="144" text-anchor="middle" class="n">J2</text>
+    <circle cx="700" cy="220" r="28" class="caja"/><text x="700" y="224" text-anchor="middle" class="n">J3</text>
+    <path class="w wbl" d="M460 56 H672 M460 136 H672 M460 216 H672"/><text x="600" y="50" text-anchor="middle" class="ch">blanco · amarillo (M+ · M−)</text>
+    <path class="w wam" d="M186 252 H760 V60 H728 M760 140 H728 M760 220 H728"/><text x="560" y="270" text-anchor="middle" class="ch">encoders: negro A · rojo B (verde 3V3, azul GND)</text>
+    <path class="w wg" d="M186 292 H600"/><text x="610" y="296" class="ch">fin. de carrera: C a GND, NA al GPIO</text>
+    <path class="w wg" d="M186 322 H600" stroke-dasharray="6 4"/><text x="610" y="326" class="ch">GND común → bornera GND</text>
+  </svg></div>
+</section>
+
+<section>
+  <h2>Qué entra y qué no</h2>
+  <div class="tabla"><table>
+    <tr><th>Se revisa</th><th class="fuera">Fuera de esta lista</th></tr>
+    <tr><td>Shield → perforada de distribución: VIN, 3V3, GND y EN 23 con su 10 k</td><td class="fuera">Servos de la pinza y buck 3 (6 V)</td></tr>
+    <tr><td>3 IBT-2 (J1, J2, J3): B+/B−, PWM, EN, VCC/GND lógica, M+/M−</td><td class="fuera">Potencia de 12 V hasta la bornera (ya está en Continuidad de tracción)</td></tr>
+    <tr><td>3 encoders SCX-555 a 3,3 V (sin divisor)</td><td class="fuera">Seta y bumpers de la base (son de la S3)</td></tr>
+    <tr><td>3 finales de carrera (32, 33, 27) y GND común</td><td class="fuera">GPIO 13 (reserva), 4 y 14 (servos)</td></tr>
+  </table></div>
+  <div class="nota"><b>Todo desenergizado:</b> LiPo y USB desenchufados. Cada renglón es una medición entre dos puntos:
+  <span class="esp si">pita</span> continuidad, <span class="esp no">no pita</span> abierto,
+  <span class="esp ohm">≈ kΩ</span> medir en Ω.</div>
+</section>
+
+<section>
+  <h2><span class="paso">0</span>Antes de tocar nada</h2>
+  <ul>
+    <li><label><input type="checkbox"><span class="t">LiPo desenchufada y selector en <b>OFF</b>.</span></label></li>
+    <li><label><input type="checkbox"><span class="t">USB de la WROOM desenchufado: nada energizado.</span></label></li>
+    <li><label><input type="checkbox"><span class="t">Brazo apoyado en su tope: J2 y J3 no se sostienen solos.</span></label></li>
+    <li><label><input type="checkbox"><span class="t">Multímetro: puntas juntas → pita. Continuidad para cables; Ω (escala 20 k) para resistencias.</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="paso">1</span>Shield y perforada de distribución</h2>
+  <ul>
+    <li><label><input type="checkbox"><span class="t"><b>VIN del shield</b> ↔ <b>riel 5 V</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>3V3 del shield</b> ↔ <b>riel 3,3 V</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GND del shield</b> ↔ <b>riel GND</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>D23 del shield</b> ↔ <b>riel EN</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel EN</b> ↔ <b>riel GND</b><small>en Ω. Solo con la perforada (sin IBT-2): 10 k. Con los tres IBT-2 conectados baja (sus entradas quedan en paralelo; en tracción, con dos, dio ≈ 5 k). Pita: corto. Abierto: falta el 10 k.</small></span><span class="esp ohm">≤ 10 kΩ</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel 5 V</b> ↔ <b>riel 3,3 V</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel 5 V</b> ↔ <b>riel GND</b><small>un pitido corto puede ser el capacitor de la placa; seguido: corto</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel 3,3 V</b> ↔ <b>riel GND</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel EN</b> ↔ <b>riel 5 V y 3,3 V</b></span><span class="esp no">no pita</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="paso">2</span>Drivers IBT-2 de J1, J2 y J3</h2>
+  <div class="alerta">Polaridad de B+ / B−: un IBT-2 al revés se rompe. Revisar los tres antes de enchufar la LiPo.</div>
+  <div class="tabla"><table>
+    <tr><th>Pin del IBT-2</th><th>J1</th><th>J2</th><th>J3</th></tr>
+    <tr><td>B+ / B−</td><td colspan="3">Bornera +12 V / bornera GND</td></tr>
+    <tr><td>M+ / M−</td><td colspan="3">Blanco / amarillo de su motor</td></tr>
+    <tr><td>RPWM</td><td>GPIO <b>21</b></td><td>GPIO <b>25</b></td><td>GPIO <b>16</b></td></tr>
+    <tr><td>LPWM</td><td>GPIO <b>22</b></td><td>GPIO <b>26</b></td><td>GPIO <b>17</b></td></tr>
+    <tr><td>R_EN + L_EN</td><td colspan="3">Los 6 al riel EN (GPIO <b>23</b>)</td></tr>
+    <tr><td>VCC / GND (lógica)</td><td colspan="3">Riel 5 V / riel GND</td></tr>
+    <tr><td>R_IS / L_IS</td><td colspan="3">Sin conectar</td></tr>
+  </table></div>
+  <ul>
+    <li><label><input type="checkbox"><span class="t"><b>B+ de J1, J2 y J3</b> ↔ <b>bornera +12 V</b><small>tres mediciones</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>B− de J1, J2 y J3</b> ↔ <b>bornera GND</b><small>tres mediciones</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 21 / 22</b> ↔ <b>RPWM / LPWM de J1</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 25 / 26</b> ↔ <b>RPWM / LPWM de J2</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 16 / 17</b> ↔ <b>RPWM / LPWM de J3</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>21 ↔ 22 · 25 ↔ 26 · 16 ↔ 17</b><small>los PWM de un mismo driver no están puenteados</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 21</b> ↔ <b>RPWM de J2 y de J3</b><small>drivers no cruzados (lo mismo con 25 y 16)</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 23</b> ↔ <b>R_EN y L_EN de los tres IBT-2</b><small>seis mediciones, una por pin</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>VCC de cada IBT-2</b> ↔ <b>riel 5 V</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GND lógica de cada IBT-2</b> ↔ <b>riel GND</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 21, 22, 25, 26, 16, 17 y 23</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t">R_IS y L_IS sueltos y sin tocar nada.</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="paso">3</span>Motores J1-J3 (blanco y amarillo)</h2>
+  <ul>
+    <li><label><input type="checkbox"><span class="t"><b>blanco de J1 / J2 / J3</b> ↔ <b>M+ de su IBT-2</b><small>el bobinado une blanco y amarillo (pocos Ω): blanco ↔ M− también pita. Para confirmar que no están cruzados, soltar el amarillo de M−: entonces solo pita blanco ↔ M+.</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>amarillo de J1 / J2 / J3</b> ↔ <b>M− de su IBT-2</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>M+ de J1</b> ↔ <b>M+ de J2 y de J3</b><small>cada motor en su driver, no cruzados</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>blanco o amarillo</b> ↔ <b>verde, azul, negro o rojo del mismo motor</b><small>el motor no toca el encoder</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t">Blanco y amarillo no pasan por el shield ni por la perforada.</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="paso">4</span>Encoders SCX-555 (16 PPR, a 3,3 V)</h2>
+  <div class="tabla"><table>
+    <tr><th>Cable</th><th>Va a</th><th>J1</th><th>J2</th><th>J3</th></tr>
+    <tr><td>Verde</td><td>Vcc del encoder</td><td colspan="3">Riel <b>3,3 V</b> (nunca 5 V)</td></tr>
+    <tr><td>Azul</td><td>GND</td><td colspan="3">Riel GND</td></tr>
+    <tr><td>Negro</td><td>A</td><td>GPIO <b>34</b></td><td>GPIO <b>36</b> (VP)</td><td>GPIO <b>18</b></td></tr>
+    <tr><td>Rojo</td><td>B</td><td>GPIO <b>35</b></td><td>GPIO <b>39</b> (VN)</td><td>GPIO <b>19</b></td></tr>
+    <tr><td>Blanco / amarillo</td><td>Motor</td><td colspan="3">M+ / M− de su IBT-2 (nunca a la WROOM)</td></tr>
+  </table></div>
+  <div class="alerta">Verde a 5 V saca A y B a 5 V (pull-up de 5,1 k de su placa) y quema los GPIO. Acá no hay divisor: va directo, por eso tiene que ser 3,3 V.</div>
+  <ul>
+    <li><label><input type="checkbox"><span class="t"><b>verde de J1, J2 y J3</b> ↔ <b>riel 3,3 V</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>verde de J1, J2 y J3</b> ↔ <b>riel 5 V</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>azul de J1, J2 y J3</b> ↔ <b>riel GND</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>negro J1 ↔ GPIO 34 · rojo J1 ↔ GPIO 35</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>negro J2 ↔ GPIO 36 (VP) · rojo J2 ↔ GPIO 39 (VN)</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>negro J3 ↔ GPIO 18 · rojo J3 ↔ GPIO 19</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>34 ↔ 35 · 36 ↔ 39 · 18 ↔ 19</b><small>A y B no puenteados</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 34</b> ↔ <b>GPIO 36 y 18</b><small>encoders no cruzados entre articulaciones</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 34, 35, 36, 39, 18 y 19</b> ↔ <b>riel 3,3 V</b><small>en Ω: el pull-up de la placa del encoder. Abierto: el encoder no tiene pull-up (sumar 10 k a 3V3). Pita: corto.</small></span><span class="esp ohm">≈ 5 kΩ</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 34, 35, 36, 39, 18 y 19</b> ↔ <b>riel GND</b></span><span class="esp no">no pita</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="paso">5</span>Finales de carrera (homing)</h2>
+  <div class="tabla"><table>
+    <tr><th>Borne del microinterruptor</th><th>J1</th><th>J2</th><th>J3</th></tr>
+    <tr><td>C (común)</td><td colspan="3">Riel GND</td></tr>
+    <tr><td>NA (NO)</td><td>GPIO <b>32</b></td><td>GPIO <b>33</b></td><td>GPIO <b>27</b></td></tr>
+    <tr><td>NC</td><td colspan="3">Libre</td></tr>
+  </table></div>
+  <div class="nota">Sin resistencia ni capacitor: el pull-up es el interno de la WROOM.</div>
+  <ul>
+    <li><label><input type="checkbox"><span class="t"><b>C de cada final de carrera</b> ↔ <b>riel GND</b></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 32 / 33 / 27</b> ↔ <b>GND · suelto</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 32 / 33 / 27</b> ↔ <b>GND · apretado</b><small>apretar cada uno con la mano: solo pita el suyo</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>GPIO 32, 33 y 27</b> ↔ <b>riel 3,3 V y 5 V</b><small>nada alimenta a los microinterruptores</small></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t">El NC de cada uno queda libre.</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="paso">6</span>GND común y lógica</h2>
+  <ul>
+    <li><label><input type="checkbox"><span class="t"><b>riel GND de la WROOM</b> ↔ <b>bornera GND</b><small>GND común: sin él, los PWM no tienen referencia</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel GND de la WROOM</b> ↔ <b>GND de la S3</b><small>las dos placas por la bornera GND</small></span><span class="esp si">pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>riel 5 V y riel 3,3 V</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t"><b>cualquier GPIO del brazo</b> ↔ <b>bornera +12 V</b></span><span class="esp no">no pita</span></label></li>
+    <li><label><input type="checkbox"><span class="t">Cada cable en la bornera del shield del pin correcto: 21, 22, 25, 26, 16, 17, 23, 34, 35, 36 (VP), 39 (VN), 18, 19, 32, 33, 27.</span></label></li>
+    <li><label><input type="checkbox"><span class="t">Nada atornillado en 12, 15, 2, 5, RX0/TX0 ni EN del shield.</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Si algo no da</h2>
+  <ul>
+    <li><label><input type="checkbox"><span class="t">Anotar cada medición que no dio lo esperado y corregirla antes de energizar.</span></label></li>
+    <li><label><input type="checkbox"><span class="t">Cuando todo dé bien, la prueba energizada va aparte: primero solo USB (encoders girando a mano, finales de carrera), después los 12 V con el brazo apoyado.</span></label></li>
+  </ul>
+</section>
+</main>
+<script>
+(function () {
+  var cajas = Array.prototype.slice.call(document.querySelectorAll('input[type=checkbox]'));
+  var CLAVE = 'checklist_brazo_continuidad_v1';
+  var guardado = [];
+  try { guardado = JSON.parse(localStorage.getItem(CLAVE) || '[]'); } catch (e) {}
+  cajas.forEach(function (c, i) { c.checked = !!guardado[i]; });
+  function actualizar() {
+    var n = cajas.filter(function (c) { return c.checked; }).length;
+    document.getElementById('cuenta').textContent = n + ' / ' + cajas.length;
+    document.getElementById('barra').style.width = (100 * n / cajas.length) + '%';
+    try { localStorage.setItem(CLAVE, JSON.stringify(cajas.map(function (c) { return c.checked; }))); } catch (e) {}
+  }
+  cajas.forEach(function (c) { c.addEventListener('change', actualizar); });
+  document.getElementById('borrar').addEventListener('click', function () {
+    cajas.forEach(function (c) { c.checked = false; });
+    actualizar();
+  });
+  actualizar();
+})();
+</script>
+</body>
+</html>
