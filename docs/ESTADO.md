@@ -54,7 +54,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 
 ## Pi 5
 - `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
-  entra solo por Tailscale). Repo sincronizado el 22/10 (`d688339`); `brazo_ik` y `mision` compilados.
+  entra solo por Tailscale). Repo sincronizado el 22/10 (`84c5531`); `brazo_ik` y `mision` compilados.
 - Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
   `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).
 - Cámaras: las dos a 30 FPS con la cinta CSI nueva (`~/scripts/probar_camaras.sh`; vista cruda en el 8080).
