@@ -16,6 +16,7 @@ terceros quedan fuera de git (`.gitignore`).
 **Diseño**
 - `manual/manual.pdf` — **Manual completo del sistema** (14/10, LaTeX, 71 págs.): mecánica, potencia, placas, firmware, ROS 2 desde cero, micro-ROS y armado, visión, cinemática, misión y recorrido, simulación, puesta en marcha paso a paso, diagnóstico y referencia. Compilar con `pdflatex manual` (dos pasadas) en `docs/manual/`.
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
+- `ESTADO.md` / `PENDIENTES.md` / `DECISIONES.md` — Estado actual, próximos pasos y decisiones (salieron de `CLAUDE.md` el 22/10). `FLUJO_DE_TRABAJO.md`: plugins, Codex, graphify, hooks y reglas de trabajo en detalle.
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
 - `CONEXIONES.md` — Conexionado v0.6 (08/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, prueba integrada mínima, circuito de potencia solo con lo que hay (LiPo 3S directa para motores, power bank para la Pi y los ESP32; la 10S guardada), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `html/conexiones.html`: lo mismo como diagrama.
 - `COMPRAS.md` — Lista de compras con casillas, del conexionado v0.4.
@@ -45,3 +46,14 @@ terceros quedan fuera de git (`.gitignore`).
 1. La lista de componentes de R2 E1 no coincide con el hardware real (2 ESP32, L298N).
 2. ~~R2 E2: MPU-6050 → MPU-6500; Humble/22.04.5 → Jazzy/24.04.5~~ y ~~R2 E3: drivers~~: corregidos el 05/10 (.md y .ipynb;
    E3 con el diseño v0.4: 5 IBT-2, 3 del brazo).
+
+**Estructura del repo** (movido de `CLAUDE.md` §3, 22/10)
+- `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
+  `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, `IMU` (GY-9250/6500), bumpers, `llaves` (seta y selector), `conectores` (XT60), `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
+  compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `html/` (páginas: conexiones, potencia, placas, seta, continuidad de tracción y del brazo (`checklist_*`) y `pi5` (Pi, GPS, cámaras y USB); `html/fotos` es un enlace a `fotos/`),
+  `manual/` (manual completo en LaTeX: `manual.tex` + `capitulos/`, PDF compilado; `capturar.py` regenera las figuras de los HTML),
+  inventario, bitácora.
+- `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960,
+  EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
+- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
+  detector. `graphify-out/`: grafo del repo (local, fuera de git).

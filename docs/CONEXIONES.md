@@ -312,3 +312,47 @@ margen (calor, ESP32, picos).
 - Luz y buzzer (H8): fuera hasta después de la prueba integrada; irían en la Pi (GPIO 17 y 27 libres). La seta y los bumpers quedan en la S3 para que la base
   reaccione sola.
 - Se respetan los pines ya probados en `~/pruebas-esp32`: IMU 8/9, motor 4/5, encoder 15/16.
+
+## Hardware, potencia, placas y páginas publicadas (movido de `CLAUDE.md` §2, 22/10)
+
+- Base (R2 E3): caja de madera en **T** de 40 cm de largo y ~20 cm de alto. **Adelante** la parte ancha (40 × 23 cm,
+  con el brazo); **atrás** la angosta (34 × 17 cm) con las ruedas de tracción en rebajes de 3 cm; 2 ruedas locas.
+  Ruedas inflables de **150 mm** × 45 mm (`docs/fotos/rueda/`), trocha ~0,40 m (MEDIR).
+- Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
+  a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
+- **Potencia v0.6 (08/10, solo con lo que hay):** motores con la **LiPo Zeee 3S** 11,1 V 8000 mAh, sin BMS
+  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**: XT60 (el Deans de fábrica se cambia: no hay hembra) → **fusible de auto 20 A** (la protección contra
+  cortos) → **seta (bloque A)** → **selector WEG** (ON/OFF de motores: 1 bloque NA BC10, el otro libre (19/10); la térmica CHINT salió el 10/10); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2020MI** (el mismo que usa Keepon: nunca a la vez)
+  5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W; **probado el 20/10**: 15 min con la cadena de visión completa, 5,03-5,13 V y `throttled` = 0x0 siempre; falta repetir con los ESP32 por USB). Divisor de batería
+  **100 k / 30 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`): **bloque A corta el + del bus de 12 V** (entre fusible y selector desde el 19/10; 10/10,
+  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/html/seta.html`, con el detalle borne por borne del 47 y del GPIO 1 en el Paso 2b; directo, sin 100 nF:
+  ponerlo si aparecen paradas por `SETA` sin tocarla); sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
+  (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 30 k quema el GPIO).
+  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/html/conexiones.html` y `docs/html/potencia.html` (potencia cable por cable, con fotos;
+  publicada en https://claude.ai/artifact/XgHwcJdBMFjG3Wtzww6Dbz, link compartido: republicar ahí si cambia). Otros HTML publicados
+  (republicar en el mismo link): `conexiones` 5hi4sWhQBTHYNr3FLSfbBT, `placa_s3` Eh7aHHJxkqLbDRWDK8V4QC, `placa_wroom`
+  9bNnuG8gzoY4JaQFYZkM2M, `seta` Xg44ttLdCxQPopHYMKNGdw (privada). **Todo junto:** `docs/html/todo.html` (generado por `armar_todo.py`, fuera de git: correrlo y republicar en
+  SQyjUtPU6x63Cw6wRtUoKi cada vez que cambie una página; las cajas de los diagramas son clickeables y llevan al detalle).
+- Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
+  Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
+  Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; conectado y probado el 21/10: primer fix a cielo abierto en ~5 min, 3 satélites, σ ≈ 21 m; bajo techo no ve ninguno; **la demo es afuera**: `mision` usa la hilera definida por GPS para N1, ver su README) por un HAT pasivo de borneras.
+- **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
+  3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
+  2 servos. **J2/J3: 36-555 de 58 rpm (139:1; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y
+  engranajes helicoidales 15 → 75 (5:1; NO correa: la correa GT2 5:1 es solo de J1). Llegan entre el 19 y el 29/10**
+  (5840 descartado, 8 kgf·cm: no levantaba el brazo ni con IBT-2; con resorte oscilaba. El motor de J1 en J2 con los
+  helicoidales sí lo levantó (prueba hecha). Detalle en `docs/BITACORA.md` 17/10); pines v0.5 en `firmware/brazo/include/pins.h` (12/10). Total: 5 IBT-2.
+- Placas (05/10, `docs/html/placa_s3.html` y `docs/html/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
+  expansión Freenove** (bornera por pin) y sus componentes (divisores de ECHO, 20 k de encoders, pull-down
+  del EN, divisor de batería; **sin capacitores** desde el 13/10: bumpers y seta directo a su bornera) en dos perforadas chicas, una sobre cada fila de borneras. La **WROOM es una HW-394 de
+  30 pines** (USB-C, CH340) **en un shield de borneras** (12/10, foto en `docs/fotos/esp32 wroom 32D/`) + una perforada
+  chica de distribución (rieles 5 V, 3,3 V, EN, GND y 6 V). **Pines v0.5:** encoder J2 en 36/39 y FC J1/J2 en 32/33:
+  la única resistencia es el 10 k del EN (23); sin 100 nF (el homing pide 3 lecturas). Pinouts en `docs/fotos/esp32 s3 wroom/` y
+  `docs/fotos/esp32 wroom 32D/`. LED RGB de la S3 en el **GPIO 48** (probado el 19/10:
+  el 38, EN de la tracción, queda libre). **Pines de la S3 vigentes = los de `bb9263d`** (los v0.8 "por lado" del
+  15/10 se revirtieron el 16/10 a pedido del usuario: no volver a proponerlos). Diagramas de cableado (16/10): cada
+  resistencia a GND dibujada con su símbolo de tierra y debajo del pin un "↳" con la perforada y la tira donde va
+  (campo `lugar` del pin). EN: R_EN y L_EN unidos directo, GPIO directo al nodo y el 10 k del nodo a GND (pull-down, no en serie).
+- Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
+  herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
+  20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.

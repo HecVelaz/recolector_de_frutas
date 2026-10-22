@@ -3,274 +3,69 @@
 **Hablar siempre en castellano** (rioplatense, como el usuario): respuestas, avisos intermedios y explicaciones,
 también en sesiones largas o mientras se depura. Nunca pasar al inglés. Detalle histórico en `docs/BITACORA.md`.
 
-## 1. Proyecto
-Robot móvil autónomo recolector de limones "Arturito R2D2" (Grupo 2, FIUNA Mecatrónica, 2026S2). Cubre dos
-materias: **Robótica I** evalúa el brazo; **Robótica II**, el robot móvil con ROS 2. Objetivo mínimo para aprobar:
-**el robot se mueve, detecta el limón con YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`).
+## Proyecto
+Robot móvil autónomo recolector de limones "Arturito R2D2" (Grupo 2, FIUNA Mecatrónica, 2026S2). **Robótica I**
+evalúa el brazo; **Robótica II**, el robot móvil con ROS 2. Objetivo mínimo: **el robot se mueve, detecta el limón con
+YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`). **Fecha límite: 9/11/2026.**
 
-## 2. Hardware y arquitectura
-- Base (R2 E3): caja de madera en **T** de 40 cm de largo y ~20 cm de alto. **Adelante** la parte ancha (40 × 23 cm,
-  con el brazo); **atrás** la angosta (34 × 17 cm) con las ruedas de tracción en rebajes de 3 cm; 2 ruedas locas.
-  Ruedas inflables de **150 mm** × 45 mm (`docs/fotos/rueda/`), trocha ~0,40 m (MEDIR).
-- Tracción: 2× 42GM-895H planetario, 12 V, 53 rpm, 189:1, encoder Hall 11 PPR a 5 V (A/B salen a 5 V: bajar
-  a 3,3 V). Hoja del vendedor en `docs/fotos/motor_traccion/`.
-- **Potencia v0.6 (08/10, solo con lo que hay):** motores con la **LiPo Zeee 3S** 11,1 V 8000 mAh, sin BMS
-  (`docs/fotos/bateria 2/`), **directa al bus de 12 V, sin buck**: XT60 (el Deans de fábrica se cambia: no hay hembra) → **fusible de auto 20 A** (la protección contra
-  cortos) → **seta (bloque A)** → **selector WEG** (ON/OFF de motores: 1 bloque NA BC10, el otro libre (19/10); la térmica CHINT salió el 10/10); hay cargador balanceador. Pi y ESP32 desde el **power bank Xiaomi PB2020MI** (el mismo que usa Keepon: nunca a la vez)
-  5 V 3 A (`docs/fotos/bateria 3/`; 15 W, piden ~11 W; **probado el 20/10**: 15 min con la cadena de visión completa, 5,03-5,13 V y `throttled` = 0x0 siempre; falta repetir con los ESP32 por USB). Divisor de batería
-  **100 k / 30 k**, aviso a 10,5 V (no frena: parar a mano). Seta (ya está, `docs/fotos/llaves/`): **bloque A corta el + del bus de 12 V** (entre fusible y selector desde el 19/10; 10/10,
-  decisión del grupo; contacto `10(6)A 400V~`: solo emergencias) + bloque B avisa al GPIO 47 (`docs/html/seta.html`, con el detalle borne por borne del 47 y del GPIO 1 en el Paso 2b; directo, sin 100 nF:
-  ponerlo si aparecen paradas por `SETA` sin tocarla); sin relé, TVS ni Schottky. Buck 3 (12 → 6 V) para los servos. **Guardada: la 10S** de 36 V
-  (`bateria 1`): si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 30 k quema el GPIO).
-  Ver `docs/CONEXIONES.md` (pines, potencia, autonomía ~2,1 h), `docs/html/conexiones.html` y `docs/html/potencia.html` (potencia cable por cable, con fotos;
-  publicada en https://claude.ai/artifact/XgHwcJdBMFjG3Wtzww6Dbz, link compartido: republicar ahí si cambia). Otros HTML publicados
-  (republicar en el mismo link): `conexiones` 5hi4sWhQBTHYNr3FLSfbBT, `placa_s3` Eh7aHHJxkqLbDRWDK8V4QC, `placa_wroom`
-  9bNnuG8gzoY4JaQFYZkM2M, `seta` Xg44ttLdCxQPopHYMKNGdw (privada). **Todo junto:** `docs/html/todo.html` (generado por `armar_todo.py`, fuera de git: correrlo y republicar en
-  SQyjUtPU6x63Cw6wRtUoKi cada vez que cambie una página; las cajas de los diagramas son clickeables y llevan al detalle).
-- Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión, IK, misión. Habla por USB (micro-ROS) con dos ESP32.
-  Propuesta: la Pi arriba del mástil junto a las cámaras (cable CSI corto) y USB hacia los ESP32. **GPS UP501 en la
-  Pi** (UART GPIO 14/15, `nmea_navsat_driver` → `/gps/fix`; conectado y probado el 21/10: primer fix a cielo abierto en ~5 min, 3 satélites, σ ≈ 21 m; bajo techo no ve ninguno; **la demo es afuera**: `mision` usa la hilera definida por GPS para N1, ver su README) por un HAT pasivo de borneras.
-- **ESP32-S3** (base): 2 motores de tracción + 2 IBT-2, encoders, IMU MPU-6500 (sin magnetómetro),
-  3 HC-SR04 (un TRIG cada uno: 10/41/42, de a uno cada 40 ms), **3 bumpers** (frente y laterales), seta, batería. **ESP32-WROOM-32D** (brazo): J1 36GP-555 + IBT-2,
-  2 servos. **J2/J3: 36-555 de 58 rpm (139:1; mismo encoder SCX-555 que J1, NO se autobloquean) con un IBT-2 cada uno y
-  engranajes helicoidales 15 → 75 (5:1; NO correa: la correa GT2 5:1 es solo de J1). Llegan entre el 19 y el 29/10**
-  (5840 descartado, 8 kgf·cm: no levantaba el brazo ni con IBT-2; con resorte oscilaba. El motor de J1 en J2 con los
-  helicoidales sí lo levantó (prueba hecha). Detalle en `docs/BITACORA.md` 17/10); pines v0.5 en `firmware/brazo/include/pins.h` (12/10). Total: 5 IBT-2.
-- Placas (05/10, `docs/html/placa_s3.html` y `docs/html/placa_wroom.html`, con vista de cableado): la **S3 va sobre la
-  expansión Freenove** (bornera por pin) y sus componentes (divisores de ECHO, 20 k de encoders, pull-down
-  del EN, divisor de batería; **sin capacitores** desde el 13/10: bumpers y seta directo a su bornera) en dos perforadas chicas, una sobre cada fila de borneras. La **WROOM es una HW-394 de
-  30 pines** (USB-C, CH340) **en un shield de borneras** (12/10, foto en `docs/fotos/esp32 wroom 32D/`) + una perforada
-  chica de distribución (rieles 5 V, 3,3 V, EN, GND y 6 V). **Pines v0.5:** encoder J2 en 36/39 y FC J1/J2 en 32/33:
-  la única resistencia es el 10 k del EN (23); sin 100 nF (el homing pide 3 lecturas). Pinouts en `docs/fotos/esp32 s3 wroom/` y
-  `docs/fotos/esp32 wroom 32D/`. LED RGB de la S3 en el **GPIO 48** (probado el 19/10:
-  el 38, EN de la tracción, queda libre). **Pines de la S3 vigentes = los de `bb9263d`** (los v0.8 "por lado" del
-  15/10 se revirtieron el 16/10 a pedido del usuario: no volver a proponerlos). Diagramas de cableado (16/10): cada
-  resistencia a GND dibujada con su símbolo de tierra y debajo del pin un "↳" con la perforada y la tira donde va
-  (campo `lugar` del pin). EN: R_EN y L_EN unidos directo, GPIO directo al nodo y el 10 k del nodo a GND (pull-down, no en serie).
-- Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
-  herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
-  20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
+## Hardware clave (detalle en `docs/CONEXIONES.md`)
+- Base en T de madera (40 cm; adelante la parte ancha con el brazo, atrás las ruedas de tracción de 150 mm), 2× 42GM-895H con IBT-2.
+- Potencia v0.6: LiPo 3S directa al bus de 12 V (XT60 → fusible 20 A → seta → selector WEG); Pi y ESP32 con el power bank PB2020MI.
+- Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión estéreo + YOLO, IK, misión, GPS. Habla por USB (micro-ROS) con dos ESP32.
+- **ESP32-S3** (base): tracción, encoders, IMU, 3 HC-SR04, 3 bumpers, seta, batería. **ESP32-WROOM-32D** (brazo): J1-J3 con IBT-2, 2 servos.
+- 2 cámaras NoIR por CSI en un mástil adelante a la derecha (estéreo, baseline 90 mm); GPS UP501 en la Pi. La demo es al aire libre.
+- Brazo RRR tipo uArm (paralelogramo: herramienta siempre horizontal), atrás a la izquierda sobre el eje de tracción.
 
-## 3. Estructura
-- `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/` (`motor_j1/2/3`, `motor_traccion`, pinza, rueda,
-  `bateria 1` = 10S, `bateria 2` = LiPo, `bateria 3` = power bank, `IMU` (GY-9250/6500), bumpers, `llaves` (seta y selector), `conectores` (XT60), `esp32 s3 wroom`, `esp32 wroom 32D`), `COMPRAS.md` (lista de
-  compras con casillas), `INDICE.md`, `ARQUITECTURA.md`, `CONEXIONES.md`, `html/` (páginas: conexiones, potencia, placas, seta, continuidad de tracción y del brazo (`checklist_*`) y `pi5` (Pi, GPS, cámaras y USB); `html/fotos` es un enlace a `fotos/`),
-  `manual/` (manual completo en LaTeX: `manual.tex` + `capitulos/`, PDF compilado; `capturar.py` regenera las figuras de los HTML),
-  inventario, bitácora.
-- `firmware/lib/`: drivers y lógica compartidos (`ControlArticulacion`, `EnlaceMicroRos`, BTS7960,
-  EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
-- `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
-  detector. `graphify-out/`: grafo del repo (local, fuera de git).
-
-## 4. Cómo trabajar acá
-- Empezar por `docs/INDICE.md`, `git log --oneline -5` y `git status`. **No leer PDF** (bloqueados en
-  `.claude/settings.local.json`): usar sus `.txt`/`.md`. Los `.ipynb` se pueden leer (11/10); preferir su `.md` si existe.
-- Firmware: `~/.platformio/penv/bin/pio`; pines solo en `include/pins.h`; drivers por `symlink://../lib/X`; lógica
-  sin Arduino con pruebas `pio test -e native`. Verificar `pio test` y `pio run` sin warnings antes de un commit.
-  **Apagar los 12 V antes de flashear o resetear.** ROS 2: unidades SI y `frame_id` explícito; `colcon test`.
-- **Entregas (`docs/TPF R*/`): el usuario las edita a mano en Drive/Colab** (el profesor sigue el panel de actividad).
-  Claude edita el `.ipynb` y el `.md` locales y le pasa qué
-  copiar. Imágenes por link `lh3.googleusercontent.com/d/<ID>=w2400`: al cambiar una, subir nueva versión en Drive (mismo
-  ID) y cambiar el `=w` para saltear la caché. Diagramas: `.drawio` → PNG con Firefox headless + visor de diagrams.net
-  (no hay draw.io instalado; el snap de Firefox no ve `/tmp`: usar `~/snap/firefox/common/render/`).
-  **Formato desde la E7 de R1 (17/10):** el `.md` es la fuente; el cuaderno se arma desde él (una celda por cada
-  `<!-- celda -->`). El que va a Colab es `Entrega7_.ipynb`, con links `lh3` (no incrustar imágenes en base64: la celda
-  queda ilegible en Colab). Diagramas `.drawio` + PNG en `Diagramas/`, figuras en `Imagenes/FigN_*`; tablas y figuras
-  grandes (diagramas con letra de 16-20 pt), párrafos cortos, sin emojis. Los IDs que pasa el usuario se verifican
-  bajando cada `lh3` y comparando el tamaño con el archivo local. El conector de Drive no tiene permiso de escritura:
-  el usuario sube todo a mano. **Si el usuario edita en Colab, manda su versión:** bajar el `.ipynb` de Drive y
-  reconstruir el `.md` desde él antes de tocar nada.
+## Reglas
+- **El estado va en `docs/ESTADO.md`, nunca en `CLAUDE.md`.** Este archivo solo cambia si cambia una regla.
+  Al cerrar una sesión: `/cerrar`; al empezar: `/retomar`.
+- **Hardware: trabajar con lo que hay, no con lo ideal** (sin presupuesto ni tiempo). Antes de proponer un circuito,
+  componentes o un cambio de hardware: revisar `docs/fotos/` y `docs/Componentes_inventario.md` y **preguntar qué hay**
+  si no hay certeza. Solo si es imposible con lo disponible: explicar por qué y proponer lo más simple y barato.
+- **Pines de la S3 vigentes = los de `bb9263d`**: los v0.8 "por lado" se revirtieron el 16/10 a pedido del usuario;
+  **no volver a proponerlos**. Pines solo en `include/pins.h` de cada placa.
+- **Simulación aislada:** `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal; si no, ve y comanda
+  los ESP32 reales de la Pi (dominio 0). Con el robot real, no dejar agentes corriendo con el brazo armado si no se usa.
+- **10S guardada:** si vuelve, buck 1 y divisor 120 k / 8,2 k **antes** de conectarla (el de 30 k quema el GPIO 1).
+- **Seta:** el bloque B va al **GPIO 47, nunca al 1**. Bus de 12 V sin capacitores.
+- **Apagar los 12 V antes de flashear o resetear** un ESP32.
+- **No leer PDF** (bloqueados): usar sus `.txt`/`.md`. Los `.ipynb` se pueden leer; preferir su `.md` si existe.
+- ROS 2: unidades SI y `frame_id` explícito; `colcon test`. Firmware: `pio test` y `pio run` sin warnings antes de un commit.
 - Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
-- Plugins: **codex** (revisor con `-s read-only`; sandbox arreglado el 28/09 con el perfil AppArmor `/etc/apparmor.d/bwrap`;
-  lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
-  sesión); **graphify** (grafo del repo, rehecho el 17/10: usarlo con `graphify query` para preguntas
-  amplias, como dónde se usa algo o qué conecta dos partes, y para buscar inconsistencias; para editar, leer igual el
-  archivo real. Sus aristas INFERRED pueden estar mal: confirmar en el archivo. **Actualizarlo de vez en cuando**, una vez
-  por semana o antes de una entrega o revisión grande, no después de cada commit: el código es gratis (AST), pero cada
-  tanda de documentos cuesta ~75-115 k tokens y el armado completo ~450 k); **ponytail**
-  (instalado, sin usar todavía); **anatomy** (figuras isométricas, en `~/.claude/skills/`; para informes, no antes del 3/11).
-  Locales (`.claude/`, fuera de git): **`/pi-sync`** (rsync a la Pi, `colcon build` y flasheo de los ESP32;
-  sin probar con la Pi), un hook que pide confirmar los 12 V apagados antes de `pio ... -t upload` o `esptool`, y otro
-  (`.claude/hooks/tests_firmware.sh`, 15/10) que corre `pio test -e native` en la placa afectada al editar `firmware/` (las dos si es `lib/`). `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
-- Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
-  usuario lo pide, Codex puede editar con estas reglas
-  (`codex --sandbox workspace-write` en el repo; lee este archivo por `AGENTS.md`); al volver, revisar `git log` antes de seguir.
-- **Hardware: trabajar con lo que hay, no con lo ideal** (sin presupuesto ni tiempo para conseguir piezas). Antes de
-  proponer un circuito, una lista de componentes o un cambio de hardware (sobre todo potencia: baterías, step-down,
-  fusibles, protecciones, cableado, conectores; también sensores o placas): 1) revisar `docs/fotos/` y
-  `docs/Componentes_inventario.md`; 2) **preguntar qué componentes hay ahora mismo** si no hay certeza, en vez de
-  completar con el componente "ideal". Solo si es imposible con lo disponible: explicar por qué no alcanza y proponer
-  la alternativa más simple y barata, sin listas largas de piezas nuevas.
-
-## 5. Estado actual (al 2026-10-22)
-- **Fecha límite: 9/11/2026** (robot completo). Estimado al 05/10: ~45 % (software ~70 % pero casi sin hardware real;
-  conexiones ~10 %). Plan por semanas: 6-12/10 potencia + S3 + sensores + visión real; 13-19/10 base con teleop, GPS/IMU,
-  soporte de cámaras, J1 por micro-ROS, IBT-2 de J2/J3 cableados; 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3
-  (partiendo de J1) y `mision` real; 3-9/11 integración, 30 frutos, informes.
-- **19/10 (potencia, decisión del grupo):** orden LiPo → XT60 → fusible 20 A → **seta (bloque A) → selector WEG** →
-  bornera +12 V (cable 1 de la seta: fusible → A1; cable 2: A2 → borne 3 del selector); el selector usa **un solo
-  bloque NA** (3-4; si calienta, sumar el otro en paralelo); **sin capacitores en el bus de 12 V**. El divisor del GPIO 1
-  toma los 12 V de la bornera (después de seta y selector). El bloque B de la seta va al **GPIO 47, nunca al 1**:
-  detalle borne por borne en el Paso 2b de `seta.html`. Bumpers: microinterruptor con C (abajo) a GND y NO (borne 3)
-  al GPIO; NC (2) libre (`docs/fotos/bumpers/circuito.jpeg`). `armar_todo.py` solo reemplaza por base64 rutas dentro
-  de atributos (una ruta en el texto estiraba la pestaña Seta a 5000 px). Pi sincronizada el 19/10 (repo, `brazo_ik`
-  y `mision` compilados, binarios copiados); sin flashear: no había ESP32 enchufados.
-- `firmware/brazo`: control en cascada J1-J3 + pinza; comandos por serial o micro-ROS. 18 pruebas OK; `m` y `j` rechazan J2/J3 con γ₄ = q2 + q3 − 90° fuera de −111,9…−30° (`cuatroBarrasOk()`, 18/10, revisado por Codex): una falla en J2 o J3 detiene la otra; `home 2`/`home 3` bloqueados (`HOME_J23_VERIFICADO`) hasta medir `HOME_Q`; `POSE_CERO` provisoria (90°, 90°, −40°). Sin cubrir: el camino entre objetivos y `d`/`v`. **Pines v0.4 (05/10; v0.5 el 12/10, ver §2): J1-J3 con IBT-2 (J2 25/26, J3 16/17), EN común 23 (rueda libre solo de las tres juntas: si una se mueve, las otras quedan frenadas), FC J3 en 27 con pull-up interno, sin L298N; J2/J3 con 139:1 (8896 cuentas) y parámetros de J1 a 58 rpm, relación 5 = engranajes helicoidales 15 → 75 (confirmado 17/10) y signos sin medir.** **J1 con los parámetros medidos en `pruebas-esp32/10` (2026-10-02):** relación 5 (correa 18 → 90), zona muerta 17 %, PI 0,659 %/rpm y 4,8 (= 0,549 y 4 en °/s de la base), Kpp 2, tolerancia 0,3°, velMin 3 °/s, feedforward solo con la zona muerta (`ffSoloZonaMuerta`), `ENC_INVERTIDO` y `MOTOR_INVERTIDO` en true, duty máx 40 %, homing 25 s. Sin probar en este firmware. **Rango de J1 = 45°/225° en el marco de `brazo_ik`** (q1 = 0 al frente, antihorario; decisión del usuario 2026-10-02: −45/+135 desde el costado izquierdo, que es q1 = 90° = `POSE_CERO` de J1 y la marca del banco). Pasa por atrás y nunca cruza el mástil (adelante-derecha). Definido en `brazo_config.h`, `Q1_LIM` y `q1_en_rango()` de `cinematica.py` (atan2 da (−180°, 180°]) y el urdf; reposo por defecto de `fsm.py`: q = 75°/94°/−50°, el de la simulación (provisorio desde el 18/10: con el balancín de 60 mm el de 110°/−30° no cierra el cuatro barras). Pruebas OK: firmware 18, brazo_ik 9, mision 31, simulacion 13. **Sin probar en Gazebo:** limones de la simulación a menos de 45° (adelante-izquierda) ya no se alcanzan.
-  Probado en la placa sola (sin motores ni sensores).
-- `firmware/base`: tracción diferencial, odometría, sensores, seguridad local; serial o micro-ROS. 20 pruebas OK.
-  Al 29/09: ruedas de 150 mm (radio 0,075), trocha 0,40, 3 bumpers (frente: no avanza; laterales: sin giro), batería
-  LiPo 3S (aviso a 10,5 V, divisor 100 k / 30 k; 08/10).
-  **20/10, tracción probada con las ruedas en el aire (bitácora):** sentidos de motores y encoders correctos,
-  arrancan con 20 %; medidos K 0,6 rpm/%, zona muerta 11 % y τ 80 ms (`scripts/escalon_tau.py`, env `serial_motores`
-  para tener `log`), PI 0,89/11,1: `w 8 8` → las dos en 8 ± 0,1 rpm. 8316 cuentas confirmadas (rueda izq., 1 vuelta).
-  **Teleop desde Android:** Termux + Tailscale → ssh → `teleop_twist_keyboard` (`repeat_rate:=10.0`); anda. Y una
-  página con joystick, `firmware/base/scripts/teleop_web.py` (puerto 8000, sin rosbridge; base de la app de la E7):
-  `http://100.116.96.71:8000` con Tailscale (**22/10: manejada desde el celular** con las ruedas en el aire, las dos placas en la Pi; cada botón destella al llegar el comando). Con `u` a
-  velocidad máxima, > 4 A (normal: 2,6 A en vacío por motor). En la S3 está el env de prueba **`ros_motores`** (sin IMU
-  ni distancia al frente; tope de `d` 25 %): nunca en el piso. Los 5 V de la Freenove salen de su jack (plug desde la
-  bornera +12 V; el USB no los da). La rueda derecha patina en el eje (prisionero). `desarmar` por micro-ROS no
-  funcionaba en ninguna placa (palabra cortada a 7 letras): corregido y flasheado en las dos.
-- Capa micro-ROS: compila en las dos placas; cada sesión arranca **desarmada** (`armar` por `/<parte>/comando`).
-  Las dos placas probadas con el agente, solas y a la vez (28/09): tasas nominales, armado y reconexión.
-  S3: flashear con reset por watchdog (ya en `platformio.ini`); abrir el puerto con DTR/RTS bajos la deja en
-  modo descarga. Usar `/dev/serial/by-id/` porque el puerto pasa de ACM0 a ACM1.
-- `brazo_ik`: 9 pruebas OK (2 comparan sus límites y el rango de γ₄ con `brazo_config.h`). `/brazo/objetivo` es el punto de agarre (TCP); con la herramienta horizontal, la muñeca
-  está `largo_herramienta` más adentro en horizontal (parámetro; 0 por defecto, MEDIR en el real).
-- Pi 5 (`r2d2@100.116.96.71`, Tailscale `r2d2-desktop`; en el lab, Wi-Fi FIUNA 172.16.240.92 al 20/10: aísla los
-  clientes, el celular entra solo por Tailscale): Jazzy, agente micro-ROS en `~/microros_ws`, copia del repo
-  en `~/recolector_de_frutas` (por rsync, sin `.git`), esptool en `~/venvs/esptool`. Binarios para flashear en
-  `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en `~/logs`, workspaces de ROS en `~/ros/` y venvs en
-  `~/venvs/` (ordenado el 01/10; `~/microros_ws`, `~/camera_ws`, `~/yolo_ws`, `~/yolo_env` y `~/keepon_env` quedan
-  como symlinks: las rutas viejas siguen valiendo). Las dos placas conectadas a la
-  Pi con sus agentes: todas las tasas nominales. Brazo a 115200 (a 921600 el CH340 pierde datos en la Pi).
-  **Todo lo del 28/09 fue con las placas solas: sin motores, drivers, encoders, IMU, GPS, HC-SR04, bumpers ni
-  seta.** Las tasas son de mensajes sin datos reales (distancias NaN, IMU y GPS no publican). Los drivers y
-  sensores siguen sin probar en este proyecto.
-  Agentes: `micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` (brazo) y
-  `.../usb-Espressif_USB_JTAG_serial_debug_unit_*-if00` (base). Si la S3 no abre sesión, está en modo descarga:
-  `~/venvs/esptool/bin/esptool --port <S3> --before no_reset --after watchdog-reset read-mac` (sin `--before no_reset` la deja
-  en modo descarga). Si el puerto da `OSError: [Errno 71] Protocol error`, el USB quedó trabado: 12 V apagados, desenchufar
-  y enchufar el USB de la S3 (22/10, una vez al prender los 12 V; la segunda vez aguantó). Por ssh, `pkill -f` con un patrón
-  anclado (`"^/home/r2d2/microros_ws.*Espressif"`): si no, coincide con el propio comando y corta la sesión.
-  Ping del enlace a 100 ms (a 20 ms daba cortes falsos por latencia); contadores `enlace: pings_fallidos cortes`
-  en `/<parte>/estado`; bajo carga fuerte, 0 cortes. Pendiente con ruedas: medir
-  la parada real por el watchdog de 300 ms (revisión de Codex: a 1 m/s, ~30 cm antes de empezar a frenar).
-- Visión: repo aparte `HecVelaz/vision_estereo` (en la Pi, `~/vision_estereo`; en la notebook, `~/Documentos/vision_estereo`;
-  en GitHub al día; su `CLAUDE.md` §5-6 tiene el detalle). `datos/` (calibración, foco, pruebas; fuera de git) solo se genera en la Pi: respaldo en la
-  notebook (01/10, con los logs de las pruebas) con `rsync -a r2d2@192.168.2.219:vision_estereo/datos/ ~/Documentos/vision_estereo/datos/`
-  (repetir tras cada calibración o prueba). Cadena
-  `scripts/start_limon.sh` = `launch/limon.launch.py` (cámaras, rectificación, disparidad **SGBM** por defecto, BM con
-  `ALGORITMO=0`) + `detector_node` (`/yolo/detecciones`) + `localizador_node` (`/limon/posicion`, PointStamped en el
-  marco óptico RECTIFICADO de la cámara izquierda: tenerlo en cuenta en la TF al brazo). Disparidad SGBM ~2,5 Hz
-  (BM ~10). Revisado por Codex. Cámaras y calibración en `config/camaras.yaml` (cámara 0 de libcamera = izquierda).
-  **Calibración en uso: `config/calibracion_soporte_2/`** (soporte rígido, 01/10): RMS 0,36 px, baseline 89,5 mm
-  (regla: 90 mm), f 654,3 px, ventana 0,38-0,96 m. Zona ciega: el cuarto izquierdo de la imagen izquierda (u < ~163 px)
-  se detecta pero no se localiza. Exposiciones izq/der sin sincronizar: localizar con el robot quieto.
-- **Cámaras (01/10): las dos transmiten a 30 FPS con la cinta CSI nueva.** Si una falla: síntomas de cinta dañada
-  `Failed to write reg`, `stream on failed`, `Camera frontend has timed out`; se aísla intercambiando cintas (con la
-  Pi apagada). `~/scripts/probar_camaras.sh` en la Pi. Vista en crudo: `web_video_server` en el 8080.
-- **Ensayos con un limón real (01/10, SGBM, logs en `vision_estereo/datos/pruebas/`):** YOLO lo detecta (confianza
-  mediana 0,80); `/limon/posicion` contra cinta en el eje a 40/55/70/90 cm: error +4 a +15 mm; a los costados (6 puntos
-  con regla): error 3D máximo **17 mm** (B5 pide ≤ 35 mm: cumple en laboratorio). Queda ~+1 cm de desfase en Z
-  (origen de la cinta en el frente de la lente + ~1 % de escala). **Pendiente: prueba de campo** (limón en un arbusto
-  a 40-90 cm, `guia_limon.py --campo`; lanzada y cancelada sin mediciones) y las NoIR al sol (colores rosados).
-- Detector de limones (28/09): entrenado en Colab con `vision/entrenamiento_limon/` (datasets de Roboflow, una
-  clase `limon`). Test: P 0,953, R 0,977, mAP50 0,978, mAP50-95 0,814 (285 imágenes, 200 sin limón, 173
-  limones; mismas fuentes que el entrenamiento: números optimistas). En la Pi:
-  `~/vision_estereo/modelos/limon_yolo26n_ncnn_model` (fuera de git; 23 FPS solo). El `.pt` quedó en Drive
-  (`arturito/limon_yolo`). Probado con un limón real en el lab (arriba); falta el campo. **Una sola clase: B3 pide
-  cosechable / no cosechable / obstáculo-oclusión.** Uso:
-  `MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh`
-- Revisados por Codex (brazo, base, micro-ROS, cambios del 28/09 y visión) y hallazgos aplicados.
-- `EncoderPCNT` (28/09): sin interrupción; desenvuelve el contador por software en cada `count()` (salto falso de
-  32 000 corregido). Hay que leer antes de ~1,5 s (J2/J3); si no, `ControlArticulacion` entra en falla de encoder.
-  Revisado por Codex. **Sin probar en placa**: girar un motor a mano más de 32 000 cuentas y ver que no salte.
-- `simulacion` (Gazebo Harmonic en la notebook; README del paquete): `ros2 launch simulacion sim.launch.py`
-  (`gui:=false`, `mision:=true`, `vision:=yolo`). Mismos tópicos que los ESP32 (`brazo_sim` imita al firmware del
-  brazo), así que `mision`, `brazo_ik` y la visión corren sin cambios. Base real de la R2 E3 (T, ruedas de 150 mm,
-  brazo atrás a la izquierda sobre el eje, mástil de cámaras adelante a la derecha, dibujado). Hilera de 4+4 limoneros con las medidas de
-  R1, 12 limones cosechables, 2 obstáculos (caja y balde) entre las **marcas de parada** (x = 1,19 / 2,70 / 4,17 / 5,69: frenar
-  con el eje de las ruedas sobre la franja, ±2 cm, en el centro del pasillo). Con `mision:=true`, **12 de 12 limones cosechados** en las 4 paradas
-  (TCP a ≤ 0,1 cm, base quieta). Etapa 3 (`vision:=yolo`, cámaras de Gazebo + cadena real) parcial: el estéreo
-  localiza, YOLO no reconoce los limones sintéticos. Etapa 5 (29/09): `base_sim` imita la S3 (seguridad de
-  `SeguridadBase` portada, arranca DESARMADA: `armar` por `/base/comando`, teleop con `repeat_rate:=10.0`), 3 HC-SR04
-  (`gpu_lidar`) y 3 bumpers con resorte. Falta pasarla a la PC de escritorio. **Aislada de la red** (`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` en el launch y en cada terminal): si
-  no, ve y comanda los ESP32 reales de la Pi. Trucos de la física: masas del brazo al 5 % (si no, la base se deslizaba
-  con las ruedas frenadas), el limón agarrado se lleva con `set_pose` y `limones_sim` usa la pose real de Gazebo.
-- Recorrido autónomo (29/09, `mision/recorrido.py`, `autonomo:=true`): avanza de corrido, frena por YOLO en la zona
-  útil del estéreo, se arrima, retrocede por limones que quedaron atrás, esquiva con los 3 HC-SR04 (ahora los 3 al
-  frente) y usa el rumbo del giróscopo. En la simulación: **12 de 12 limones sin teleop**, sin tocar la caja ni el
-  balde. Sin probar en el robot real (calibrar el sesgo del giróscopo; supone arrancar en el centro del pasillo).
-- `mision` (28/09): FSM mínima (ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR, FALLA manda `s`) + TF
-  `brazo_base → stereo_camera_link` en `mision.launch.py` (argumentos obligatorios: MEDIR). Llegada por posición
-  (`joint_states` contra `joint_cmd`). Revisada por Codex y aplicada; con la seta en `/base/estado` desarma el
-  brazo y pasa a FALLA (06/10, revisión de conexiones de Codex); probada en la notebook con
-  brazo y limón simulados. Sin probar con el brazo real. Usa el mismo `largo_herramienta` que `brazo_ik` (MEDIR).
-
-## 6. Decisiones
-- Limón aunque no figura en la guía R2: aprobado por el profesor.
-- Base: frente = parte ancha (brazo), atrás = parte angosta (ruedas de tracción). 3 bumpers, sin trasero.
-- Pi 5 arriba con las cámaras (no hay cable CSI largo): bajan USB a los ESP32 y el power bank va arriba, al lado de la Pi.
-- Configuración RRR (opción 6 de la tabla R1); pinza con agarre + tracción + giro en vez de succión (aprobado por
-  el profesor, 28/09).
-- Medidas del brazo vigentes: las de la E4; motor de J1 = 36GP-555 160 rpm (el DC 895 de 2700 rpm fue un error de compra).
-- Un ESP32 por subsistema y lazos cerrados en los ESP32: la Pi solo manda consignas y cada placa se detiene sola.
-- Control en cascada posición → velocidad, porque la E5 identificó modelos de velocidad.
-- Seguridad de la base decidida en la S3 (seta NC, vuelco, bumpers, distancia, watchdog), sin depender de la Pi.
-- Armado por sesión en micro-ROS, para que un nodo que siga publicando no mueva el robot al reconectar.
-- Cualquier nodo de ROS 2 en la misma LAN que la Pi ve y comanda los ESP32 reales (dominio 0): la simulación va
-  aislada con `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`; con el robot real, no dejar agentes corriendo con el brazo
-  armado si no se usa.
-- EN común de tracción y GPS en la Pi (luz y buzzer, cuando vuelvan, también: GPIO 17 y 27): la S3 solo tiene libre el GPIO 40 (reservado para un 4.º bumper).
-  GPS a la Pi (30/09) para dar un TRIG a cada HC-SR04: los 3 miran al frente y con TRIG común se pisaban los ecos.
+- Entregas (`docs/TPF R*/`): el usuario las edita a mano en Drive/Colab; Claude edita lo local y le pasa qué copiar.
+  **Si el usuario editó en Colab, manda su versión.** Las entregas ya entregadas no se tocan sin preguntar.
+- Páginas HTML publicadas: republicar en el **mismo link** (IDs en `docs/CONEXIONES.md`, al final); `todo.html` se
+  regenera con `armar_todo.py` cada vez que cambia una página.
+- Roles: Claude Code escribe, compila y hace commits; **Codex solo revisa** (`-s read-only`, lanzado desde el repo con
+  `< /dev/null`). Si se agota el límite y el usuario lo pide, Codex puede editar; al volver, revisar `git log`.
+- graphify (`graphify query`) para preguntas amplias; sus aristas INFERRED pueden estar mal: confirmar en el archivo.
+  Rehacerlo una vez por semana o antes de una entrega, no después de cada commit (los documentos cuestan tokens).
+- Valores marcados `MEDIR` en el código son provisorios: no darlos por medidos ni copiarlos a una entrega como reales.
+- Visión: no reentrenar YOLO con imágenes de Gazebo (arruina el modelo para los limones reales); localizar con el
+  robot quieto (exposiciones izq/der sin sincronizar).
 - Videos (~500 MB) y artículos de terceros fuera de git.
-- Cámaras (hallazgos de la simulación, valen para el robot real): el estéreo tiene una zona ciega a la izquierda de la
-  imagen izquierda (42 % con la calibración vieja de la simulación; ~25 % con la del soporte rígido) y el brazo en reposo no puede quedar entre
-  las cámaras y la fila. Con el brazo sobre el eje (29/09): mástil adelante a la derecha, cámara a 0,85 m mirando 94°
-  a la izquierda y 28° abajo (del lado izquierdo quedaba tan cerca de la fila que ningún ángulo veía los 3 limones de
-  un árbol), y reposo q = (75°, 94°, -50°) (provisorio, 18/10; antes 110°/-30°; con la cámara real la pinza en reposo se asoma hasta u ≈ 200 px, un poco fuera de la zona ciega: bitácora 17-18/10), girado a la izquierda: J1 no cruza el mástil (girado a la derecha lo
-  atravesaba al ir al limón).
-- Simulación: brazo por velocidad (`JointController`, velocidad del perfil + corrección) y `/joint_states` a 50 Hz;
-  con `JointPositionController` + `use_velocity_commands` el brazo temblaba (Gazebo va a la consigna en un paso).
-- Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
 
-## 7. Próximos pasos
-00. **Entrega 7 de R1 (diseño final y demo, 17/10)** en `docs/TPF R1/Entrega 7/`, revisada con Codex (aclaraciones aplicadas; detalle en la bitácora) y
-   con todos los IDs de Drive puestos. El usuario la siguió editando en Colab (Figs. 19a-c, servo, videos): el repo quedó
-   igual a su versión de Drive (18:23). Falta: el video de la demo (lo agrega el usuario); confirmar los rodamientos (bridados 4×13×5 y axial 51105) y la clasificación de las 18 piezas por
-   tipo. Propuesto y sin aplicar: sumar a Sensores el potenciómetro interno de los servos y la seta. Los PDF de
-   `Partes_del_brazo/` (30 MB) y el `.rar` del CAD (121 MB, en Drive) quedan fuera de git. "Correa" para J2/J3 corregida (17/10) en `CONEXIONES.md`, `COMPRAS.md`, el manual, `conexiones.html` y `todo.html`
-   (republicadas); siguen con correa solo la Entrega 4 de R2 (entregada: preguntar antes de tocarla).
-0. **Power bank corregido (15/10):** es el **PB2020MI** (22,5 W), no el PB2030MI; corregido en docs, HTML, manual y Entrega 4 local,
-   y republicados `potencia`, `conexiones` y `todo` (que además seguían con el divisor de 27 k). Falta: a) la Entrega 4 en **Drive**
-   (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
-   b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
-   `placa_s3` ya está republicada con 30 k (16/10).
-1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60
-   (sin capacitores en el bus desde el 19/10). Armar el divisor
-   100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
-2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → seta → selector WEG → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
-   "Antes de conectar". Base con ruedas en el aire: hecha el 20/10. Falta, en el piso y con la IMU, el HC-SR04 del
-   frente y el env `ros`: odometría contra cinta (radio, trocha, cuentas), parada real por watchdog y corriente con
-   peso; antes, el prisionero de la rueda derecha. Probar sensores en ROS (hoy nada probado con periféricos).
-   Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
-   antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
-3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
-   hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
-4. Brazo: **flasheado con los pines v0.5 el 20/10** (y la corrección de `desarmar`); armar el shield y la perforada
-   de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
-   si falta, 10 k a 3V3). El motor de J1 en J2 ya se probó (levantó el brazo, 17/10); con los motores nuevos, pasos 0-3 de
-   `pruebas-esp32/10` (hoy J2/J3 tienen los parámetros de J1 llevados a 58 rpm). Medir lo
-   `MEDIR`. Falta sostener J2/J3 contra la gravedad (no se autobloquean) y definir los límites articulares reales (hoy provisorios: q1 45°/225°, q2 −25…135°, q3 ±50°); el balancín rojo mide 60 mm (`L30`, 18/10): con él, el reposo y `HOME_Q` = (45°, −25°, −50°) del firmware tienen que caer en γ₄ = q2 + q3 − 90° entre −112° y −30°; hoy `HOME_Q` da −165° (no cierra: MEDIR).
-5. Peso real del robot (estimado 6-9 kg; la guía pide ≥ 5 kg) y autonomía real (estimado ~2,1 h de cosecha con la LiPo).
-6. Si la cátedra exige 4 bumpers: el 4.º en el GPIO 40 de la S3.
-7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —
-   luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta ya corta los 12 V de
-   todos los motores. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
-8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
-   brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
-   vertical si lo hay, hoy no contemplado).
-9. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).
-10. Simulación: validar la cadena real con un detector "perfecto" sobre las imágenes de Gazebo (`vision:=yolo`, en la
-   PC de escritorio); el recorrido autónomo ya cosecha 12 de 12 con `limones_sim`; cargar las medidas reales que faltan
-   (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
+## Qué leer para cada cosa
+| Para… | Leer |
+|---|---|
+| Empezar una sesión | `docs/ESTADO.md`, `docs/PENDIENTES.md`, `git log --oneline -5`, `git status` (o `/retomar`) |
+| Índice de todos los documentos y estructura del repo | `docs/INDICE.md` |
+| Lo hecho día por día, mediciones, revisiones de Codex | `docs/BITACORA.md` |
+| Por qué se decidió algo | `docs/DECISIONES.md` |
+| Pines, potencia, borneras, autonomía, IDs de las páginas publicadas | `docs/CONEXIONES.md` |
+| Diagramas y cableado | `docs/html/` (`conexiones`, `potencia`, `placa_s3`, `placa_wroom`, `seta`, `checklist_*`, `pi5`) |
+| Arquitectura del objetivo mínimo, nodos, FSM | `docs/ARQUITECTURA.md` |
+| Manual completo (LaTeX) | `docs/manual/` |
+| Firmware, PlatformIO, flasheo, micro-ROS | `firmware/CLAUDE.md` |
+| Entregas en Colab/Drive | `docs/TPF R1/CLAUDE.md` |
+| Plugins (Codex, graphify, ponytail, anatomy), hooks y comandos locales | `docs/FLUJO_DE_TRABAJO.md` |
+| Inventario y compras | `docs/Componentes_inventario.md`, `docs/COMPRAS.md`, `docs/fotos/` |
+| IK, misión, simulación | `ros2_ws/src/{brazo_ik,mision,simulacion}/` (README de cada paquete) |
+| Visión estéreo + YOLO | repo aparte `HecVelaz/vision_estereo` (su `CLAUDE.md`); datos en `docs/ESTADO.md` |
+| Entrenamiento del detector | `vision/entrenamiento_limon/` |
+
+## Estructura
+- `firmware/lib/` drivers y lógica compartidos; `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
+- `ros2_ws/src/`: `brazo_ik` (cinemática inversa), `mision` (FSM de la demo y TF cámara → brazo), `simulacion` (Gazebo Harmonic).
+- `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/`, `html/`, `manual/`, estado, decisiones y bitácora.
+- Pi 5: `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); copia del repo por rsync con `/pi-sync`.
