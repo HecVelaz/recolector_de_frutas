@@ -484,3 +484,19 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - `armar` + joystick: **funciona** desde el celular. `teleop_web.py`: los botones destellan cuando la Pi recibe el
   comando (antes no había forma de saber si se habían tocado).
 - Pendiente: lo mismo en el piso (antes, firmware `ros` con IMU y HC-SR04 en vez de `ros_motores`).
+
+## 2026-10-22: CLAUDE.md corto y comandos de sesión
+
+- `CLAUDE.md` pesaba 33 KB (~10 k tokens) y `AGENTS.md` es un symlink a él (Codex lo corta a 32 KiB): pasó a
+  **6 112 bytes, 71 líneas** (proyecto, hardware clave, reglas y un mapa de qué leer). Nada se borró, solo se movió:
+  §5 → `docs/ESTADO.md`, §6 → `docs/DECISIONES.md`, §7 → `docs/PENDIENTES.md`, §4 completo → `docs/FLUJO_DE_TRABAJO.md`,
+  §2 → final de `docs/CONEXIONES.md`, §3 → `docs/INDICE.md` (verificado línea por línea). Regla nueva: **el estado va
+  en `docs/ESTADO.md`, nunca en `CLAUDE.md`.**
+- `firmware/CLAUDE.md` (PlatformIO, flasheo, micro-ROS) y `docs/TPF R1/CLAUDE.md` (entregas Colab/Drive), cada uno con
+  su `AGENTS.md` symlink. Codex solo los lee si se lanza desde esa carpeta (lee los `AGENTS.md` de la raíz hasta el cwd).
+- Comandos `/cerrar` y `/retomar` en `.claude/commands/`. Versionados también la skill `pi-sync`, el hook de pruebas y
+  `.claude/settings.json` (los dos hooks y el bloqueo de PDF); `settings.local.json` queda fuera de git solo con los
+  plugins. `.gitignore`: `.claude/*` con excepciones.
+- Rama `claude-md-corto` mergeada a `main` (fast-forward) y borrada; push hecho. `/pi-sync repo`: la Pi estaba apagada
+  (Tailscale offline 12 h); al prenderla entró por Tailscale y quedó en `d688339` (solo documentos: sin compilar ni flashear).
+- Commits: `e061024`, `b69d52e`, `d688339`.
