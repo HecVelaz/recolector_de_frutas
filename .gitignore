@@ -39,6 +39,8 @@ docs/manual/*.aux
 docs/manual/*.log
 docs/manual/*.out
 docs/manual/*.toc
+# PDF compilado del manual (~6 MB): se comparte por Drive
+docs/manual/manual.pdf
 
 # Fotos y pesos de las piezas en PDF (30 MB): están en Drive; las fotos van en Imagenes/Fig18a de la Entrega 7
 docs/**/Partes_del_brazo/*.pdf

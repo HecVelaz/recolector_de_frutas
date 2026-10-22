@@ -19,6 +19,8 @@ Movido de `CLAUDE.md` §4 el 22/10 (texto completo). Resumen en `CLAUDE.md`; reg
   bajando cada `lh3` y comparando el tamaño con el archivo local. El conector de Drive no tiene permiso de escritura:
   el usuario sube todo a mano. **Si el usuario edita en Colab, manda su versión:** bajar el `.ipynb` de Drive y
   reconstruir el `.md` desde él antes de tocar nada.
+- Manual (`docs/manual/`): en git va solo el LaTeX; el PDF compilado (`manual.pdf`, ~6 MB) está en `.gitignore` y se
+  comparte por Drive (sacado de git el 22/10).
 - Commits en castellano en `main`; push a GitHub (`HecVelaz/recolector_de_frutas`, privado) solo si el usuario lo pide.
 - Plugins: **codex** (revisor con `-s read-only`; sandbox arreglado el 28/09 con el perfil AppArmor `/etc/apparmor.d/bwrap`;
   lanzar con `< /dev/null` **desde la carpeta del repo** y esperar `tokens used`; confirmar a los 20 s que abrió
