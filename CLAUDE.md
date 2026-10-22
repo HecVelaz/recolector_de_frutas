@@ -18,7 +18,7 @@ YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`). **Fecha l
 
 ## Reglas
 - **El estado va en `docs/ESTADO.md`, nunca en `CLAUDE.md`.** Este archivo solo cambia si cambia una regla.
-  Al cerrar una sesión: `/cerrar`; al empezar: `/retomar`.
+  Al cerrar una sesión: `/cerrar`; al empezar: `/retomar`. Antes de push o `/pi-sync`: `/verificar-robot`.
 - **Hardware: trabajar con lo que hay, no con lo ideal** (sin presupuesto ni tiempo). Antes de proponer un circuito,
   componentes o un cambio de hardware: revisar `docs/fotos/` y `docs/Componentes_inventario.md` y **preguntar qué hay**
   si no hay certeza. Solo si es imposible con lo disponible: explicar por qué y proponer lo más simple y barato.
