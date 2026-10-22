@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./**/*.pdf)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "c=$(jq -r '.tool_input.command // \"\"'); printf '%s' \"$c\" | grep -qvE '^[[:space:]]*(grep|rg|ugrep|cat)\\b' && printf '%s' \"$c\" | grep -qE '((pio|platformio)[[:space:]]+run\\b.*(-t|--target)[ =]*upload)|(esptool(\\.py)?[[:space:]]+(--|-p[[:space:]]|-b[[:space:]]|write|read|erase|chip|flash|run|load|dump|merge|elf2image))' && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"Flasheo/reset de un ESP32: ¿apagaste los 12 V (selector WEG o seta)? Aprobá solo si los motores están sin tensión.\"}}' || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/tests_firmware.sh\"",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

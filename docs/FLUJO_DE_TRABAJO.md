@@ -28,7 +28,7 @@ Movido de `CLAUDE.md` §4 el 22/10 (texto completo). Resumen en `CLAUDE.md`; reg
   por semana o antes de una entrega o revisión grande, no después de cada commit: el código es gratis (AST), pero cada
   tanda de documentos cuesta ~75-115 k tokens y el armado completo ~450 k); **ponytail**
   (instalado, sin usar todavía); **anatomy** (figuras isométricas, en `~/.claude/skills/`; para informes, no antes del 3/11).
-  Locales (`.claude/`, fuera de git): **`/pi-sync`** (rsync a la Pi, `colcon build` y flasheo de los ESP32;
+  En `.claude/` (versionados desde el 22/10: `commands/`, `skills/`, `hooks/` y `settings.json`, con los hooks y el bloqueo de PDF; `settings.local.json`, con los plugins, queda fuera de git): **`/pi-sync`** (rsync a la Pi, `colcon build` y flasheo de los ESP32;
   sin probar con la Pi), un hook que pide confirmar los 12 V apagados antes de `pio ... -t upload` o `esptool`, y otro
   (`.claude/hooks/tests_firmware.sh`, 15/10) que corre `pio test -e native` en la placa afectada al editar `firmware/` (las dos si es `lib/`). `~/pruebas-esp32` sigue siendo el repo de pruebas de componentes sueltos.
 - Roles: Claude Code escribe, compila y hace commits; Codex solo revisa. Si se agota el límite de Claude Code y el
