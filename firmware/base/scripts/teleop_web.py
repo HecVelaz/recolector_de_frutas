@@ -30,18 +30,18 @@ PAGINA = """<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Arturito</title>
 <style>
-  body { margin: 0; font: 16px system-ui, sans-serif; background: #111; color: #eee; touch-action: none;
+  body { margin: 0; font: 16px system-ui, sans-serif; background: #111; color: #eee;
          user-select: none; -webkit-user-select: none; display: flex; flex-direction: column; align-items: center;
          gap: 14px; padding: 14px; box-sizing: border-box; min-height: 100vh; }
   #estado, .estado { font: 13px ui-monospace, monospace; background: #222; padding: 8px 10px; border-radius: 8px;
             width: 100%; max-width: 420px; box-sizing: border-box; min-height: 3em; word-break: break-word; }
   .pad { width: min(80vw, 320px); height: min(80vw, 320px); border-radius: 50%; background: #262626;
-         border: 2px solid #444; position: relative; flex: none; }
+         border: 2px solid #444; position: relative; flex: none; touch-action: none; }
   .bola { width: 34%; height: 34%; border-radius: 50%; background: #3a7bd5; position: absolute;
           left: 33%; top: 33%; }
   #padB { width: min(60vw, 240px); height: min(60vw, 240px); }
   #barra { width: 70px; height: min(60vw, 240px); border-radius: 35px; background: #262626; border: 2px solid #444;
-           position: relative; flex: none; }
+           position: relative; flex: none; touch-action: none; }
   #barra .bola { width: 60px; height: 60px; left: 5px; top: calc(50% - 30px); background: #e08a1e; }
   #padB .bola { background: #e08a1e; }
   h2 { margin: 6px 0 0; font-size: 16px; color: #aaa; }
