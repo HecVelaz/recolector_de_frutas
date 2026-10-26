@@ -22,7 +22,7 @@ from std_msgs.msg import String
 
 PUERTO = 8000
 V_MAX, W_MAX = 0.25, 1.0  # los mismos topes que CFG_DIF de la base
-DUTY_MAX = (30.0, 50.0, 50.0)  # JOG_DUTY_MAX de J1, J2 y J3 (el firmware recorta igual)
+DUTY_MAX = (50.0, 50.0, 50.0)  # JOG_DUTY_MAX de J1, J2 y J3 (el firmware recorta igual)
 COMANDOS = {"armar", "desarmar", "s", "r", "z"}
 
 PAGINA = """<!doctype html>

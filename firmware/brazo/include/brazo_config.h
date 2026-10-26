@@ -27,7 +27,7 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
                                // sobrepico por el juego de la correa)
         2.0f, 30.0f, 60.0f,    // kpPos 1/s (sin sobrepico con <= 2,78), velMax °/s, accMax °/s²
         0.3f,                  // tolerancia de llegada ° (se despierta al doble: 0,6°)
-        40.0f,                 // duty máx %: el de las pruebas (30 °/s piden ~33 %)
+        50.0f,                 // duty máx %: 50 a pedido del usuario (26/10; las pruebas usaban 40; 30 °/s piden ~33 %)
         35.0f, 1.7f, 0.3f,     // atasco: 35 %, menos de 1,7 rpm (2 °/s de la base) durante 0,3 s
         5.0f,                  // margen fuera de límites °
         3.0f,                  // velMin °/s: sin esto se trababa a 0,8° del objetivo
@@ -132,9 +132,9 @@ constexpr float GIRO_MAX_DEG = 90.0f;
 
 // Seguridad. Valores de PUESTA EN MARCHA: subirlos recién con la relación de transmisión medida.
 constexpr uint32_t JOG_MS = 300;  // el comando d (lazo abierto) se corta solo si no se repite
-// % máximo en lazo abierto manual. J1: ~25 rpm del motor (arranca desde quieta con ~25-30 % por la fricción:
-// medido en pruebas-esp32/10); J2/J3 50 % (pedido del usuario el 26/10, para levantar el peso con el joystick)
-constexpr float JOG_DUTY_MAX[N_ART] = {30.0f, 50.0f, 50.0f};
+// % máximo en lazo abierto manual: 50 % en las tres (pedido del usuario el 26/10, para el joystick). J1 arranca
+// desde quieta con ~25-30 % por la fricción (medido en pruebas-esp32/10)
+constexpr float JOG_DUTY_MAX[N_ART] = {50.0f, 50.0f, 50.0f};
 constexpr float VEL_CMD_MAX_RPM = 30.0f;  // |rpm| máximo del comando v (el control admite hasta rpmMax)
 constexpr float VEL_CMD_S_DEF = 2.0f;     // duración por defecto del comando v
 constexpr float VEL_CMD_S_MAX = 5.0f;
