@@ -4,7 +4,7 @@ Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `
 con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026**.
 
 ## Avance
-- Software ~70 %, hardware real atrasado. Plan: 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
+- Software ~70 %, hardware real atrasado. Plan (atrasado): 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
   3-9/11 integración, 30 frutos, informes.
 - Potencia v0.6 (cadena en `CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y armar el divisor 100 k / 30 k.
 - Power bank PB2020MI probado (20/10): 15 min con la cadena de visión completa, 5,03-5,13 V, `throttled` 0x0.
@@ -56,7 +56,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 ## Pi 5
 - `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
   entra solo por Tailscale). Commit sincronizado en `~/recolector_de_frutas/.commit` (26/10).
-  Agentes micro-ROS lanzados en segundo plano el 26/10 (logs en `/tmp/agente_*.log`).
+  Apagada el 26/10 (desconectada a mano): le falta `949359e` (solo la bitácora). Agentes y `teleop_web.py` se
+  lanzan a mano (no arrancan solos).
 - Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
   `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).
 - Cámaras: las dos a 30 FPS con la cinta CSI nueva (`~/scripts/probar_camaras.sh`; vista cruda en el 8080).

@@ -547,7 +547,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   sigue en 35 %. Brazo reflasheado (12 V apagados); la ayuda (`?`) confirma "J1 máx 30 %, J2/J3 50 %".
 - `/verificar-robot` antes del sync: todo OK salvo el cambio sin commit y la Pi sin `.commit` (se creó). Ojo al
   leerlo por ssh: con `~` sin comillas se expande en la notebook.
-- Commits: `d50891f`, `16eb640`, `3d94f4c` y el de este cierre.
+- Commits: `d50891f`, `16eb640`, `3d94f4c`, `c448f4d` (cierre), `072c403`, `66a9815`, `e9f2b01`, `fb59898`, `fbce7a5`,
+  `949359e` y el de este cierre; push a GitHub hecho (hasta `949359e`).
 - Después del cierre: **J1 también a 50 %** (jog y `dutyMax` 40 → 50; `072c403`), reflasheado con 12 V apagados;
   ayuda: "J1 máx 50 %, J2/J3 50 %". Funciona desde el celular. El agente de la base se había caído
   (`fastcdr BadParamException`: byte corrupto por el USB; `cortes=6` en la sesión): relanzado, log en `~/logs/`.
