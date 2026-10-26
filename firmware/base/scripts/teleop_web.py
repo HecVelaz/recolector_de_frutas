@@ -132,6 +132,8 @@ def main():
         nodo.create_subscription(String, f"/{a}/estado", lambda m, a=a: ultimo.update({a: m.data}), 10)
 
     class Manejador(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"  # reusa la conexión: por el relay de Tailscale cada TCP nuevo es un viaje más
+
         def responder(self, cuerpo, tipo="text/plain; charset=utf-8"):
             datos = cuerpo.encode()
             self.send_response(200)
