@@ -556,4 +556,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   FIUNA aísla clientes) y cada consigna abría un TCP nuevo (HTTP/1.0). `teleop_web` pasa a HTTP/1.1 (`e9f2b01`) y
   muestra el tiempo de ida y vuelta (`fb59898`). Medido desde el celular, ya en conexión directa: **media 38 ms,
   máx 49 ms** (corte de las placas: 300 ms). Si vuelve el lag: respuesta alta = red; baja = enlace USB/micro-ROS.
-- Al terminar: placas desarmadas, agentes y página parados en la Pi.
+- Segunda prueba con el robot (12 V prendidos, celular directo): ida y vuelta Pi ↔ placa con `e` por
+  `/<parte>/comando` → `/<parte>/respuesta`, 10 veces: **base 6 ms (máx 14)**, **brazo 50 ms (máx 56)**; lo del brazo
+  es casi todo la respuesta larga de `e` a 115200 (una consigna `d` llega en ~10 ms). Dedo → placa: ~20-30 ms más
+  hasta 100 ms del período de envío de la página. La Pi se desconectó a mano al terminar (sin `shutdown`); la orden de
+  desarmar quedó sin confirmar, pero las placas se apagan con la Pi.
