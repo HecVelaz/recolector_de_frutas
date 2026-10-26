@@ -22,7 +22,7 @@ from std_msgs.msg import String
 
 PUERTO = 8000
 V_MAX, W_MAX = 0.25, 1.0  # los mismos topes que CFG_DIF de la base
-DUTY_MAX = 30.0  # JOG_DUTY_MAX del brazo (el firmware recorta igual)
+DUTY_MAX = (30.0, 50.0, 50.0)  # JOG_DUTY_MAX de J1, J2 y J3 (el firmware recorta igual)
 COMANDOS = {"armar", "desarmar", "s", "r", "z"}
 
 PAGINA = """<!doctype html>
@@ -158,7 +158,7 @@ def main():
                 self.responder("ok")
             elif u.path == "/brazo":
                 try:
-                    d = [max(-1.0, min(1.0, float(q[f"d{i}"][0]))) * DUTY_MAX for i in (1, 2, 3)]
+                    d = [max(-1.0, min(1.0, float(q[f"d{i}"][0]))) * DUTY_MAX[i - 1] for i in (1, 2, 3)]
                 except (KeyError, ValueError):
                     return self.send_error(400)
                 if not all(math.isfinite(x) for x in d):
