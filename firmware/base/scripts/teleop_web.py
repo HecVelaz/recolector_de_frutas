@@ -53,6 +53,7 @@ PAGINA = """<!doctype html>
   label { width: 100%; max-width: 420px; display: flex; gap: 10px; align-items: center; }
   input[type=range] { flex: 1; }
 </style></head><body>
+<div id="rtt" class="estado">midiendo…</div>
 <div id="estado">conectando…</div>
 <h2>Base</h2>
 <div class="pad" id="pad"><div class="bola"></div></div>
@@ -111,9 +112,15 @@ for (const c of ['armar', 'desarmar', 'r']) {
   $(c + 'B').onclick = () => comando(c, 'brazo', c + 'B');
 }
 $('zB').onclick = () => comando('z', 'brazo', 'zB');
+const rtts = [];  // ida y vuelta de las últimas 20 consultas de estado (10 s)
 setInterval(async () => {
   try {
+    const t0 = performance.now();
     const e = JSON.parse(await (await fetch('/estado')).text());
+    rtts.push(performance.now() - t0); if (rtts.length > 20) rtts.shift();
+    const ms = x => Math.round(x) + ' ms';
+    $('rtt').textContent = 'Respuesta: ' + ms(rtts.at(-1)) + ' · media ' + ms(rtts.reduce((a, b) => a + b) / rtts.length) +
+      ' · máx ' + ms(Math.max(...rtts)) + ' (últimos 10 s)';
     $('estado').textContent = 'Base: ' + e.base; $('estadoB').textContent = 'Brazo: ' + e.brazo;
   } catch (e) { $('estado').textContent = 'sin conexión con la Pi'; }
 }, 500);
