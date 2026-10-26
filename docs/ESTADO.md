@@ -13,7 +13,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 ## Base (`firmware/base`, S3) — 20 pruebas OK
 - **Ruedas en el aire (20-22/10):** sentidos de motores y encoders correctos; K 0,6 rpm/%, zona muerta 11 %,
   τ 80 ms, PI 0,89/11,1 (`w 8 8` → 8 ± 0,1 rpm); 8316 cuentas por vuelta. Manejada desde el celular con
-  `teleop_web.py` (`http://100.116.96.71:8000`, Tailscale; base y brazo, 26/10) y con `teleop_twist_keyboard`.
+  `teleop_web.py` (`http://100.116.96.71:8000`, Tailscale; base y brazo; muestra la latencia: 38 ms directo, 26/10) y con `teleop_twist_keyboard`.
 - En la S3 está el env de prueba **`ros_motores`** (sin IMU ni distancia al frente; tope 25 %): nunca en el piso.
 - Con `u` a velocidad máxima, > 4 A (2,6 A en vacío por motor). La rueda derecha patina en el eje (prisionero).
 - Una vez, al prender los 12 V, el USB de la S3 se trabó (`Errno 71`); causa sin confirmar.

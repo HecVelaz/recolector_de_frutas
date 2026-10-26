@@ -552,3 +552,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   ayuda: "J1 máx 50 %, J2/J3 50 %". Funciona desde el celular. El agente de la base se había caído
   (`fastcdr BadParamException`: byte corrupto por el USB; `cortes=6` en la sesión): relanzado, log en `~/logs/`.
   Dos veces el brazo seguía ARMADO tras "desarmar": se había tocado el DESARMAR de la base.
+- Lag a veces con el joystick: el celular entraba por el **relay DERP de São Paulo** de Tailscale (el Wi-Fi de
+  FIUNA aísla clientes) y cada consigna abría un TCP nuevo (HTTP/1.0). `teleop_web` pasa a HTTP/1.1 (`e9f2b01`) y
+  muestra el tiempo de ida y vuelta (`fb59898`). Medido desde el celular, ya en conexión directa: **media 38 ms,
+  máx 49 ms** (corte de las placas: 300 ms). Si vuelve el lag: respuesta alta = red; baja = enlace USB/micro-ROS.
+- Al terminar: placas desarmadas, agentes y página parados en la Pi.

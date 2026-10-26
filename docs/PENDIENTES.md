@@ -44,3 +44,5 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 11. Herramientas: decidir si `/pi-sync` prueba también el Wi-Fi FIUNA (172.16.240.92) cuando no responden Tailscale
    ni la LAN (sin verificar que esa IP siga valiendo).
 12. Recorrido autónomo en el robot real: calibrar antes el sesgo del giróscopo (supone arrancar en el centro del pasillo).
+13. Red directa celular ↔ Pi para el piso y la demo afuera (datos compartidos del celular o red propia de la Pi): sin
+   Wi-Fi de FIUNA no hay Tailscale directo garantizado, y por el relay de São Paulo el joystick tiene lag.
