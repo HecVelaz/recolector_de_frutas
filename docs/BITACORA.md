@@ -525,3 +525,26 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - `.claude/commands/verificar.md` del repo versionado. Ojo: este `/cerrar` corrió la versión **genérica** (de usuario),
   no la del repo: con el mismo nombre parece ganar la de usuario (pendiente confirmar).
 - Commits: `0de1dc6` y el de este cierre.
+
+## 2026-10-26: brazo con el joystick del celular
+
+- `teleop_web.py` (`d50891f`) mueve también el brazo, desde la misma página que la tracción: joystick para J1 (←→)
+  y J2 (↑↓), barra para J3, control de duty (escala sobre el tope de cada articulación), ARMAR / DESARMAR / Cero
+  aquí (`z`) / `r` propios del brazo, PARAR TODO para las dos placas y el estado de las dos. Cada consigna es
+  `d <n> <pct>` por `/brazo/comando` (lazo abierto, como `pruebas-esp32/17-brazo-joystick`); el WROOM la corta
+  solo a los `JOG_MS` = 300 ms y cuida los límites desde el cero y el atasco. No se usó el puente serie de la
+  prueba 17: el USB lo ocupa el agente micro-ROS. Teclado y gamepad de la 17, no portados. Probado primero con un
+  rclpy falso en la notebook (`/brazo?d1=..` publica los tres `d`, `z` solo para el brazo, `/estado` en JSON).
+- En el celular la página no se podía deslizar: `touch-action: none` estaba en todo el `body`; quedó solo en los
+  joysticks y la barra (`16eb640`).
+- No se movía: los dos agentes esperaban sin `create_session`. El WROOM tenía el firmware de la **prueba 17**
+  (telemetría `Q …` por serie); la S3 sí tenía micro-ROS (mandaba tramas XRCE) y le faltaba un reset (esptool
+  `read-mac --after watchdog-reset`). Brazo flasheado con `firmware/brazo` `ros`, 12 V apagados; agentes
+  relanzados en segundo plano en la Pi (logs `/tmp/agente_base.log` y `/tmp/agente_brazo.log`). Con eso,
+  **funciona**: base y brazo desde el celular.
+- Topes del jog (`3d94f4c`, a pedido del usuario): J1 30 %, **J2 y J3 50 %**. Hubo que subir también `dutyMax` de
+  J2/J3 (40 → 50): `duty()` recortaba el jog a 40. Ese tope vale también para el lazo de posición; el atasco
+  sigue en 35 %. Brazo reflasheado (12 V apagados); la ayuda (`?`) confirma "J1 máx 30 %, J2/J3 50 %".
+- `/verificar-robot` antes del sync: todo OK salvo el cambio sin commit y la Pi sin `.commit` (se creó). Ojo al
+  leerlo por ssh: con `~` sin comillas se expande en la notebook.
+- Commits: `d50891f`, `16eb640`, `3d94f4c` y el de este cierre.
