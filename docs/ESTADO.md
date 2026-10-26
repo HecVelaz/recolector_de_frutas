@@ -21,8 +21,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
   (Codex: a 1 m/s recorre ~30 cm antes de empezar a frenar).
 
 ## Brazo (`firmware/brazo`, WROOM) — 18 pruebas OK
-- Cascada J1-J3 + pinza, pines v0.5; reflasheado el 26/10 (`3d94f4c`; antes tenía la prueba 17). Movido desde el
-  celular con `teleop_web.py` (jog `d`, lazo abierto). Topes: jog J1 30 %, J2/J3 50 %; `dutyMax` J1 40 %, J2/J3 50 %.
+- Cascada J1-J3 + pinza, pines v0.5; reflasheado el 26/10 (`072c403`; antes tenía la prueba 17). Movido desde el
+  celular con `teleop_web.py` (jog `d`, lazo abierto). Topes (jog y `dutyMax`): 50 % en las tres.
 - J1 con los parámetros de `pruebas-esp32/10` (sin probar en este firmware). J2/J3: motores 36-555 58 rpm 139:1 +
   helicoidales 15 → 75, llegan 19-29/10; tienen los parámetros de J1 llevados a 58 rpm y signos sin medir.
 - `m`/`j` rechazan γ₄ = q2 + q3 − 90° fuera de −111,9…−30°; `home 2/3` bloqueados hasta medir `HOME_Q`
@@ -55,7 +55,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 
 ## Pi 5
 - `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
-  entra solo por Tailscale). Commit sincronizado en `~/recolector_de_frutas/.commit` (26/10: `3d94f4c`).
+  entra solo por Tailscale). Commit sincronizado en `~/recolector_de_frutas/.commit` (26/10).
   Agentes micro-ROS lanzados en segundo plano el 26/10 (logs en `/tmp/agente_*.log`).
 - Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
   `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).

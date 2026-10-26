@@ -548,3 +548,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - `/verificar-robot` antes del sync: todo OK salvo el cambio sin commit y la Pi sin `.commit` (se creó). Ojo al
   leerlo por ssh: con `~` sin comillas se expande en la notebook.
 - Commits: `d50891f`, `16eb640`, `3d94f4c` y el de este cierre.
+- Después del cierre: **J1 también a 50 %** (jog y `dutyMax` 40 → 50; `072c403`), reflasheado con 12 V apagados;
+  ayuda: "J1 máx 50 %, J2/J3 50 %". Funciona desde el celular. El agente de la base se había caído
+  (`fastcdr BadParamException`: byte corrupto por el USB; `cortes=6` en la sesión): relanzado, log en `~/logs/`.
+  Dos veces el brazo seguía ARMADO tras "desarmar": se había tocado el DESARMAR de la base.
