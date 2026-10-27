@@ -562,3 +562,25 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   es casi todo la respuesta larga de `e` a 115200 (una consigna `d` llega en ~10 ms). Dedo → placa: ~20-30 ms más
   hasta 100 ms del período de envío de la página. La Pi se desconectó a mano al terminar (sin `shutdown`); la orden de
   desarmar quedó sin confirmar, pero las placas se apagan con la Pi.
+
+## 2026-10-26 (noche): joystick otra vez, encoder de J2 y finales de carrera
+
+- Pi prendida con las dos placas por USB. Agentes y `teleop_web.py` lanzados en segundo plano (logs en `~/logs/`).
+  Ninguna placa abría sesión:
+  - **S3 en modo descarga** (`boot:0x0 … waiting for download`). Resetearla por RTS (pyserial o el `hard_reset` de
+    esptool) la vuelve a dejar así; lo que sirve es `esptool --chip esp32s3 -p <S3> --before no_reset --after
+    watchdog_reset read_mac`. Pasó de nuevo al reconectar el USB: los agentes viejos quedaron con el puerto
+    anterior y hubo que relanzarlos.
+  - **El WROOM tenía la prueba 14** (`== 14 · J3 (codo) …`), no micro-ROS: alguien la grabó después del cierre.
+    Reflasheado desde la Pi con `~/firmware/brazo` (md5 igual al `ros` de `072c403`); conectó enseguida.
+- `BATERIA_BAJA` de la base no sirve para saber si hay 12 V (sin el divisor de la v0.6 la lectura no es confiable):
+  preguntar siempre antes de flashear o resetear. Una vez se flasheó el brazo suponiéndolo por esa lectura.
+- **J2 se cortaba por atasco:** el motor giraba, pero el encoder no contaba ni una cuenta (`d 2 40` durante 0,6 s:
+  q2 clavado en 90,01°; a los 0,3 s, `falla=atasco`). Con `e`: J1 y J3 seguían a mano, J2 no. Script de la
+  prueba: `r` + `d 2 40` cada 100 ms leyendo `/brazo/joint_states` y `/brazo/estado`. El usuario revisó el encoder
+  y reconectó los USB; después el joystick completo **funcionó**. No se volvió a leer `e` para confirmar J2.
+- Enlace de la base: `pings_fallidos` subió hasta 82 con `cortes=4` en ~1 h; el del brazo, 0. Sin investigar.
+- Finales de carrera para el homing: el firmware ya los tiene (GPIO 32/33/27, NA a GND con pull-up interno;
+  `home <n>`, `HOME_Q`, `HOME_RPM`). Falta montarlos y medir `HOME_Q`; J2/J3 cerca de la pose de cero (no en el
+  extremo bajo de los dos: el cuatro barras pide q2 + q3 entre −21,9° y 60°), homing de J3 antes que J2.
+- `/pi-sync`: solo `BITACORA.md` y `ESTADO.md`; la Pi queda en `b7b4432`. Sin compilar ni flashear.

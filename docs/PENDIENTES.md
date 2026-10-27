@@ -46,3 +46,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 12. Recorrido autónomo en el robot real: calibrar antes el sesgo del giróscopo (supone arrancar en el centro del pasillo).
 13. Red directa celular ↔ Pi para el piso y la demo afuera (datos compartidos del celular o red propia de la Pi): sin
    Wi-Fi de FIUNA no hay Tailscale directo garantizado, y por el relay de São Paulo el joystick tiene lag.
+14. Encoder de J2: confirmar con `e` que cuenta (el 26/10 no contaba; después del arreglo del usuario no se midió).
+15. Finales de carrera del brazo: montar 3 microinterruptores (GPIO 32/33/27), medir `HOME_Q` con `z` + `e`, signo de
+   `HOME_RPM` y `HOME_J23_VERIFICADO = true`; J2/J3 cerca de la pose de cero, homing de J3 antes que J2.
+16. Enlace de la base: `pings_fallidos` y `cortes` suben (82 y 4 en ~1 h; el brazo, 0): mirar `~/logs/agente_base.log`.
