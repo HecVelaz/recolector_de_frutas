@@ -53,11 +53,12 @@ print("Resultados en", SALIDA)
 # - `yolo-1zyxa/food-lemons`: limones, probablemente sueltos (no en la planta).
 #
 # Limones **amarillos y anaranjados** (maduros), todos en la misma clase `limon`:
-# - `limoneros/lemon-tree`: limonero (segmentación; las máscaras se pasan a cajas).
 # - `lemon-classification-ai/lemon-detection-ifcwr`: clases `Ripe` / `Unripe` / `Rotten`, sin la palabra
 #   "lemon": por eso lleva `"."`.
 # - `fruitclassi/new-lemon`: `Good_lemon` / `Raw_lemon` / `Rotten_lemon`.
-# - `brinjalproject/lemons-segmentation`: `Lemon yellow` / `Good Lemon` (`Disease_lemon` queda afuera).
+# - `brinjalproject/lemons-segmentation`: `Lemon yellow` / `Good Lemon` (`Disease_lemon` queda afuera);
+#   segmentación: las máscaras se pasan a cajas.
+# Descartado: `limoneros/lemon-tree` (árboles vistos desde arriba).
 # Si alguno resulta ser de limones sueltos en una mesa, sirve igual para el color, pero menos que en la planta.
 # Las naranjas de `tree-fruit-detection` siguen como "no limón": si el modelo nuevo no ve los limones
 # anaranjados, sacar ese dataset o agregar fotos propias de limones anaranjados.
@@ -69,7 +70,6 @@ print("Resultados en", SALIDA)
 DATASETS = [
     ("dip-dqsgr", "lime-detection", None),
     ("smart-harvesting-system", "tree-fruit-detection", None),
-    ("limoneros", "lemon-tree", None),
     ("lemon-classification-ai", "lemon-detection-ifcwr", None, "."),
     ("fruitclassi", "new-lemon", None),
     ("brinjalproject", "lemons-segmentation", None),
