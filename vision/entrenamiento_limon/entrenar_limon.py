@@ -384,7 +384,10 @@ modelo = YOLO("yolo26n.pt")
 #
 # - `epochs`: cantidad de pasadas completas por el dataset.
 # - `patience`: corta el entrenamiento si la métrica de validación no mejora en esa cantidad de épocas.
-# - `imgsz`: resolución a la que se redimensionan las imágenes.
+# - `imgsz`: resolución a la que se redimensionan las imágenes. **480**, la misma con la que predice la Pi; además
+#   entrena casi el doble de rápido que a 640.
+# - `cache="disk"`: la primera época guarda cada imagen ya achicada en el disco de Colab; las siguientes no
+#   vuelven a abrir los JPG grandes (la CPU de Colab, de 2 núcleos, es la que frena el entrenamiento).
 # - `batch`: imágenes por lote; si aparece un error de memoria, bajarlo a 8.
 # - `hsv_h`: cuánto se varía al azar el **tono** de las imágenes. Más alto que el de fábrica (0.015): las cámaras
 #   NoIR corren el color, sobre todo el verde, y así el modelo depende menos del tono exacto.
@@ -399,7 +402,8 @@ modelo.train(
     data=str(DATOS / "data.yaml"),   # archivo .yaml del dataset unificado
     epochs=100,                      # número de épocas
     patience=20,                     # parada temprana: corta si 20 épocas seguidas no mejoran
-    imgsz=640,                       # las imágenes se redimensionan a 640 x 640
+    imgsz=480,                       # las imágenes se redimensionan a 480 x 480 (como en la Pi)
+    cache="disk",                    # guarda las imágenes achicadas: épocas más rápidas
     batch=16,                        # imágenes por lote (bajar a 8 si falta memoria de GPU)
     hsv_h=0.05,                      # variación de tono (las NoIR corren el color)
     project=str(SALIDA),             # carpeta de resultados (en Drive)
@@ -443,7 +447,7 @@ plt.show()
 # Cargamos el mejor modelo (mayor mAP en validación) y lo evaluamos en test (o en val si no hay test).
 mejor = YOLO(str(SALIDA / "entreno/weights/best.pt"))
 parte_eval = "test" if "test" in partes else "val"
-m = mejor.val(data=str(DATOS / "data.yaml"), split=parte_eval, imgsz=640)
+m = mejor.val(data=str(DATOS / "data.yaml"), split=parte_eval, imgsz=480)
 
 # Mostramos las métricas y las comparamos con el criterio B4.
 print(f"{parte_eval}: precisión {m.box.mp:.3f}  recobrado {m.box.mr:.3f}  mAP50 {m.box.map50:.3f}  "
