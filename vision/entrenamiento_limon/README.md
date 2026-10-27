@@ -10,6 +10,10 @@ su versión NCNN (a 480, como predice el nodo `yolo_ros` de la Pi).
 | `hacer_cuaderno.py` | Genera `entrenar_limon.ipynb` desde el `.py` (`python3 hacer_cuaderno.py`) |
 | `entrenar_limon.ipynb` | El cuaderno para subir a Colab (*Archivo → Subir cuaderno*) |
 
+Formato (desde el 27/10): el del cuaderno de la clase del profesor (`vision/CLASE_27_10_26/`, frutillas):
+secciones numeradas y comentadas, estadísticas por dataset, chequeo de B4, matriz de confusión, etiqueta contra
+predicción y prueba con una foto propia. La localización (sección 11) se explica, pero la hace el estéreo en la Pi.
+
 Uso: ver las instrucciones de la primera celda (GPU T4, API key de Roboflow como secreto `ROBOFLOW_API_KEY`,
 revisar los datasets de la celda 3).
 
