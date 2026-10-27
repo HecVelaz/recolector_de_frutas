@@ -20,4 +20,8 @@ revisar los datasets de la celda 3).
   navegador): `dip-dqsgr/lime-detection` (~680 imágenes), `smart-harvesting-system/tree-fruit-detection`
   (~4 500, frutas en el árbol, con clase `lime`), `yolo-1zyxa/food-lemons`. Otro posible, en formato COCO y
   con licencia CC BY-NC-SA: CitDet (cítricos en el árbol).
+- 27/10: sumados cuatro datasets con limones **amarillos y anaranjados** (maduros), también como `limon`:
+  `limoneros/lemon-tree`, `lemon-classification-ai/lemon-detection-ifcwr` (clases `Ripe`/`Unripe`/`Rotten`,
+  todas a `limon`), `fruitclassi/new-lemon` y `brinjalproject/lemons-segmentation`. Los de segmentación se
+  pasan a cajas. Sin revisar las fotos ni correr en Colab: el modelo de la Pi (28/09) todavía no los tiene.
 - Falta: fotos propias con las NoIR (limones verdes reales; las NoIR corren el color del verde).

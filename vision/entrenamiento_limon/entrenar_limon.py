@@ -43,13 +43,24 @@ print("Resultados en", SALIDA)
 # %% [markdown]
 # ## 3. Datasets
 # Cada entrada es `(workspace, proyecto, versión)`, tal como aparece en la URL de Roboflow Universe:
-# `universe.roboflow.com/<workspace>/<proyecto>`. Con versión `None` se usa la última.
+# `universe.roboflow.com/<workspace>/<proyecto>`. Con versión `None` se usa la última. Un cuarto elemento
+# opcional reemplaza `CLASES_LIMON` para ese dataset (por ejemplo, `"."`: todas sus clases son limones).
 #
 # Candidatos encontrados (**sin revisar las fotos**: mirarlas antes de entrenar):
 # - `dip-dqsgr/lime-detection`: ~680 imágenes de lima (limón verde).
 # - `smart-harvesting-system/tree-fruit-detection`: ~4 500 imágenes de frutas en el árbol; una de las
 #   8 clases es `lime`.
 # - `yolo-1zyxa/food-lemons`: limones, probablemente sueltos (no en la planta).
+#
+# Limones **amarillos y anaranjados** (maduros), todos en la misma clase `limon`:
+# - `limoneros/lemon-tree`: limonero (segmentación; las máscaras se pasan a cajas).
+# - `lemon-classification-ai/lemon-detection-ifcwr`: clases `Ripe` / `Unripe` / `Rotten`, sin la palabra
+#   "lemon": por eso lleva `"."`.
+# - `fruitclassi/new-lemon`: `Good_lemon` / `Raw_lemon` / `Rotten_lemon`.
+# - `brinjalproject/lemons-segmentation`: `Lemon yellow` / `Good Lemon` (`Disease_lemon` queda afuera).
+# Si alguno resulta ser de limones sueltos en una mesa, sirve igual para el color, pero menos que en la planta.
+# Las naranjas de `tree-fruit-detection` siguen como "no limón": si el modelo nuevo no ve los limones
+# anaranjados, sacar ese dataset o agregar fotos propias de limones anaranjados.
 #
 # Cuando estén las fotos propias con las cámaras NoIR, subirlas a un proyecto propio de Roboflow,
 # etiquetarlas ahí (una caja por limón, clase `limon`) y agregar ese proyecto a la lista.
@@ -58,6 +69,10 @@ print("Resultados en", SALIDA)
 DATASETS = [
     ("dip-dqsgr", "lime-detection", None),
     ("smart-harvesting-system", "tree-fruit-detection", None),
+    ("limoneros", "lemon-tree", None),
+    ("lemon-classification-ai", "lemon-detection-ifcwr", None, "."),
+    ("fruitclassi", "new-lemon", None),
+    ("brinjalproject", "lemons-segmentation", None),
     # ("tu-workspace", "limones-noir", None),   # fotos propias con las cámaras del robot
 ]
 
@@ -74,11 +89,11 @@ from roboflow import Roboflow
 rf = Roboflow(api_key=userdata.get("ROBOFLOW_API_KEY"))
 BAJADOS = Path("/content/bajados")
 descargas = []
-for ws, proyecto, version in DATASETS:
+for ws, proyecto, version, *clases in DATASETS:
     p = rf.workspace(ws).project(proyecto)
     v = version or max(int(x.version.split("/")[-1]) for x in p.versions())
     d = p.version(v).download("yolov8", location=str(BAJADOS / f"{ws}__{proyecto}__v{v}"), overwrite=True)
-    descargas.append(Path(d.location))
+    descargas.append((Path(d.location), clases[0] if clases else CLASES_LIMON))
     print(f"OK {ws}/{proyecto} v{v}")
 
 # %% [markdown]
@@ -93,14 +108,22 @@ DATOS = Path("/content/datos")
 shutil.rmtree(DATOS, ignore_errors=True)
 PARTES = {"train": "train", "valid": "val", "val": "val", "test": "test"}
 
-def es_limon(nombre):
-    return re.search(CLASES_LIMON, nombre, re.I) and not re.search(EXCLUIR, nombre, re.I)
+def es_limon(nombre, clases):
+    return re.search(clases, nombre, re.I) and not re.search(EXCLUIR, nombre, re.I)
 
-for d in descargas:
+def a_caja(campos):
+    # Los datasets de segmentación traen polígonos (x1 y1 x2 y2 ...): se pasan a la caja que los encierra
+    if len(campos) == 4:
+        return campos
+    xs, ys = [float(c) for c in campos[0::2]], [float(c) for c in campos[1::2]]
+    return [f"{(min(xs) + max(xs)) / 2:.6f}", f"{(min(ys) + max(ys)) / 2:.6f}",
+            f"{max(xs) - min(xs):.6f}", f"{max(ys) - min(ys):.6f}"]
+
+for d, clases in descargas:
     nombres = yaml.safe_load((d / "data.yaml").read_text())["names"]
     if isinstance(nombres, dict):
         nombres = [nombres[k] for k in sorted(nombres)]
-    mapa = {i: 0 for i, n in enumerate(nombres) if es_limon(n)}
+    mapa = {i: 0 for i, n in enumerate(nombres) if es_limon(n, clases)}
     print(f"\n{d.name}")
     for i, n in enumerate(nombres):
         print(f"  {i:2d} {n:30s} {'-> limon' if i in mapa else '(se borra)'}")
@@ -117,7 +140,7 @@ for d in descargas:
                 for linea in etiqueta.read_text().splitlines():
                     campos = linea.split()
                     if campos and int(campos[0]) in mapa:
-                        lineas.append(" ".join(["0"] + campos[1:]))
+                        lineas.append(" ".join(["0"] + a_caja(campos[1:])))
             nombre = f"{d.name}__{img.name}"
             shutil.copy(img, DATOS / parte / "images" / nombre)
             (DATOS / parte / "labels" / (Path(nombre).stem + ".txt")).write_text("\n".join(lineas))
