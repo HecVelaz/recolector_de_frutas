@@ -52,8 +52,8 @@
 # planta y sueltos) y, cuando las haya, **fotos propias** sacadas con las cámaras del robot. Al final deja en
 # Google Drive:
 #
-# - `limon_yolo26n.pt`: pesos de PyTorch.
-# - `limon_yolo26n_ncnn_model/`: el mismo modelo en NCNN, el formato que usa el nodo `yolo_ros` en la Pi.
+# - `limon_yolo26n_v2.pt`: pesos de PyTorch (con la versión del modelo en el nombre).
+# - `limon_yolo26n_v2_ncnn_model/`: el mismo modelo en NCNN, el formato que usa el nodo `yolo_ros` en la Pi.
 #
 # > **Antes de empezar:**
 # > 1. En Colab, ir a *Entorno de ejecución → Cambiar tipo de entorno de ejecución* y elegir **GPU (T4)**.
@@ -504,14 +504,17 @@ plt.show()
 #
 # En la Raspberry Pi conviene no usar PyTorch directamente. Se exporta a **NCNN** (optimizado para CPU ARM), a
 # **480**: el tamaño con el que predice el nodo `yolo_ros` de la Pi. El modelo exportado se carga igual:
-# `YOLO("limon_yolo26n_ncnn_model")`. Todo queda en Drive.
+# `YOLO("limon_yolo26n_v2_ncnn_model")`. Todo queda en Drive, con la versión en el nombre (**subirla en cada
+# entrenamiento nuevo**; v1 = la del 28/09). El final `_ncnn_model` no se cambia: así reconoce el formato ultralytics.
 
 # %%
+# Versión del modelo: va en el nombre de los archivos para no pisar los anteriores.
+VERSION = "v2"
 # Copiamos best.pt a Drive con un nombre claro.
-shutil.copy(SALIDA / "entreno/weights/best.pt", SALIDA / "limon_yolo26n.pt")
+shutil.copy(SALIDA / "entreno/weights/best.pt", SALIDA / f"limon_yolo26n_{VERSION}.pt")
 # Exportamos a NCNN (la primera vez, ultralytics instala el paquete ncnn) y copiamos la carpeta a Drive.
 ruta_ncnn = Path(mejor.export(format="ncnn", imgsz=480))
-destino = SALIDA / "limon_yolo26n_ncnn_model"
+destino = SALIDA / f"limon_yolo26n_{VERSION}_ncnn_model"
 shutil.rmtree(destino, ignore_errors=True)
 shutil.copytree(ruta_ncnn, destino)
 print("Listo en Drive:")
@@ -571,11 +574,12 @@ for nombre in subidos:
 #    cuando las fotos propias muestren que las NoIR distinguen la madurez.
 # 3. **Validación con 30 limones (B4 y B5):** con el modelo en la Pi, medir con regla la posición real de cada
 #    limón y comparar con `/limon/posicion`.
-# 4. **Usarlo en la Pi:** bajar de Drive la carpeta `limon_yolo26n_ncnn_model` y copiarla a la Pi:
+# 4. **Usarlo en la Pi:** bajar de Drive la carpeta `limon_yolo26n_v2_ncnn_model`, copiarla a la Pi y apuntar a ella
+#    el nombre fijo `limon_yolo26n_ncnn_model` que buscan los nodos (un enlace: cambiar de versión es rehacerlo):
 #
 # ```bash
-# scp -r limon_yolo26n_ncnn_model r2d2@100.116.96.71:~/vision_estereo/modelos/
+# scp -r limon_yolo26n_v2_ncnn_model r2d2@100.116.96.71:~/vision_estereo/modelos/
+# # en la Pi, la primera vez (el del 28/09 es una carpeta real: pasa a ser la v1):
+# cd ~/vision_estereo/modelos && mv limon_yolo26n_ncnn_model limon_yolo26n_v1_ncnn_model
+# ln -sfn limon_yolo26n_v2_ncnn_model limon_yolo26n_ncnn_model
 # ```
-#
-# El modelo que está hoy en la Pi (`~/vision_estereo/modelos/limon_yolo26n_ncnn_model`, del 28/09) queda
-# reemplazado: conviene renombrar el viejo antes de copiar, para poder volver atrás.

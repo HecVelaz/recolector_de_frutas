@@ -1,7 +1,7 @@
 # Entrenamiento del detector de limones
 
 Cuaderno de Google Colab que entrena un `yolo26n` de una sola clase (`limon`) juntando datasets de Roboflow
-Universe y, cuando estén, fotos propias con las cámaras NoIR del robot. Deja en Drive `limon_yolo26n.pt` y
+Universe y, cuando estén, fotos propias con las cámaras NoIR del robot. Deja en Drive `limon_yolo26n_<versión>.pt` (`VERSION`, sección 9) y
 su versión NCNN (a 480, como predice el nodo `yolo_ros` de la Pi).
 
 | Archivo | Qué es |
