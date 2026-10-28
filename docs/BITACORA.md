@@ -584,3 +584,27 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   `home <n>`, `HOME_Q`, `HOME_RPM`). Falta montarlos y medir `HOME_Q`; J2/J3 cerca de la pose de cero (no en el
   extremo bajo de los dos: el cuatro barras pide q2 + q3 entre −21,9° y 60°), homing de J3 antes que J2.
 - `/pi-sync`: solo `BITACORA.md` y `ESTADO.md`; la Pi queda en `b7b4432`. Sin compilar ni flashear.
+
+## 2026-10-27/28: detector de limones v2 (solo verdes) entrenado en Colab
+
+- 27/10: cuaderno `vision/entrenamiento_limon/` pasado al formato de la clase del profesor (`vision/CLASE_27_10_26/`,
+  sin commitear) y entrenamiento a 480 con cache en disco (épocas de 3-5 min en la T4). Se probaron datasets de
+  limones amarillos (`lemon-detection-ifcwr`, `new-lemon`); `limoneros/lemon-tree` descartado (árboles desde arriba).
+  Commits `38c25f5`, `e5346fd`, `e31266e`, `aa9c893`.
+- 28/10: **solo limones verdes, una clase `limon`**. Quedan `dip-dqsgr/lime-detection` (todo),
+  `smart-harvesting-system/tree-fruit-detection` (solo `lime`; las otras frutas quedan como negativos) y
+  `brinjalproject/lemons-segmentation` (`good lemon` verdes y `lemon yellow`; sin `disease lemon`; la clase
+  `lemons segmentation` no tiene objetos). Fuera `lemon-detection-ifcwr` y `new-lemon` (amarillos sueltos).
+  Las imágenes con un limón de una clase descartada (enfermo, podrido…) se sacan enteras (`DUDOSAS`): si no, el
+  limón sin etiqueta le enseña que es fondo. Se discutió multiclase (verde/maduro/podrido) y se descartó: las NoIR
+  corren el color y los datasets etiquetan cosas distintas. La madurez va por **tamaño** con el estéreo
+  (diámetro = ancho_px · Z / f; umbral `D_min` a medir con limones reales). Roboflow da 403 a WebFetch: las clases
+  de cada dataset las dijo el usuario.
+- **Resultado v2** (Colab, T4, otro gmail del usuario), test: 335 imágenes (200 sin limón), 274 limones:
+  **P 0,894, R 0,832, mAP50 0,919, mAP50-95 0,709** (cumple B4). Mismas fuentes que el entrenamiento: sin probar con
+  las NoIR. Exportado a NCNN 480 (salida `(1, 5, 4725)`, una clase).
+- La versión va en el nombre: `VERSION = "v2"` en la sección 9 → `limon_yolo26n_v2.pt` y
+  `limon_yolo26n_v2_ncnn_model` (la v1 es la del 28/09). En la Pi, el nombre fijo `limon_yolo26n_ncnn_model` pasa a
+  ser un enlace a la versión en uso (`mv` de la v1 y `ln -sfn`; ver sección 12 del cuaderno). **Todavía no copiado
+  a la Pi**; el usuario pasa los zips del Drive secundario al principal (`arturito/limon_yolo_v1`, `_v2`).
+- Commits `bbb7e50`, `ea6cf01` y el de este cierre.

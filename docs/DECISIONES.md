@@ -27,3 +27,6 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 - Simulación: brazo por velocidad (`JointController`, velocidad del perfil + corrección) y `/joint_states` a 50 Hz;
   con `JointPositionController` + `use_velocity_commands` el brazo temblaba (Gazebo va a la consigna en un paso).
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).
+- Detector (28/10): una sola clase `limon` entrenada solo con limones verdes (el robot cosecha verdes); la madurez
+  (B3) se decide por **tamaño** con el estéreo, no con clases de color: las NoIR corren el color y los datasets de
+  Roboflow etiquetan colores distintos. Imágenes con limones de clases descartadas se sacan enteras.

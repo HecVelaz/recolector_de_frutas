@@ -1,4 +1,4 @@
-# Estado actual (al 2026-10-26, noche)
+# Estado actual (al 2026-10-28)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
 con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026**.
@@ -50,9 +50,11 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Calibración `config/calibracion_soporte_2/`: RMS 0,36 px, baseline 89,5 mm, ventana 0,38-0,96 m. Zona ciega:
   u < ~163 px de la imagen izquierda.
 - Limón real en el lab: confianza mediana 0,80; error 3D máx. 17 mm (B5 pide ≤ 35 mm). Falta el campo y las NoIR al sol.
-- Detector de una sola clase (`limon`; P 0,953, R 0,977, mAP50 0,978: **optimistas**, el test sale de las mismas
-  fuentes que el entrenamiento): B3 pide cosechable / no cosechable / obstáculo.
-  Modelo en la Pi: `~/vision_estereo/modelos/limon_yolo26n_ncnn_model`.
+- Detector de una sola clase `limon`. En la Pi sigue la **v1** (28/09) en `~/vision_estereo/modelos/limon_yolo26n_ncnn_model`.
+- **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las
+  mismas fuentes (sin probar con las NoIR). En el Drive del usuario (`arturito/limon_yolo_v2`), sin copiar a la Pi.
+- Madurez (B3 cosechable / no cosechable) por **tamaño** con el estéreo (ancho_px · Z / f ≥ `D_min`, MEDIR): sin
+  implementar. No hay clases de color: las NoIR lo corren.
 
 ## GPS
 - UP501 en la Pi (`/dev/ttyAMA0`, `nmea_navsat_driver` → `/gps/fix`). Primer fix a cielo abierto (21/10): ~5 min,

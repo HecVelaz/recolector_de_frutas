@@ -22,8 +22,10 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    peso; antes, el prisionero de la rueda derecha. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
-3. Visión: prueba de campo del limón (§5) y con las NoIR al sol; B3 (cosechable / no cosechable / obstáculo):
-   hoy el detector tiene una sola clase. Recalibrar solo si el soporte de cámaras se mueve o cambia.
+3. Visión: copiar la v2 a la Pi (`scp` + enlace, sección 12 del cuaderno) y probarla con las NoIR contra la v1;
+   prueba de campo del limón (§5) y al sol. B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
+   `vision_estereo`, medir `D_min` con limones reales; obstáculo sin hacer. Fotos propias con las NoIR para el
+   detector. Recalibrar solo si el soporte de cámaras se mueve o cambia.
 4. Brazo: **flasheado el 26/10** (`072c403`, duty máx 50 % en las tres); con `teleop_web.py` medir los signos de J2/J3 (`ENC_INVERTIDO`/`MOTOR_INVERTIDO`, hoy sin medir) y si 50 % alcanza para levantar el brazo; armar el shield y la perforada
    de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
    si falta, 10 k a 3V3). El motor de J1 en J2 ya se probó (levantó el brazo, 17/10); con los motores nuevos, pasos 0-3 de
