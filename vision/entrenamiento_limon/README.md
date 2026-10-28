@@ -28,4 +28,12 @@ revisar los datasets de la celda 3).
   `lemon-classification-ai/lemon-detection-ifcwr` (clases `Ripe`/`Unripe`/`Rotten`,
   todas a `limon`), `fruitclassi/new-lemon` y `brinjalproject/lemons-segmentation` (segmentación, se
   pasa a cajas). Descartado `limoneros/lemon-tree`: árboles desde arriba. Sin revisar las fotos ni correr en Colab: el modelo de la Pi (28/09) todavía no los tiene.
+- 28/10: clases elegidas por dataset (pedido del usuario): `lime-detection` todo (verdes); `tree-fruit-detection`
+  solo `lime`; `lemon-detection-ifcwr` solo `Ripe`; `new-lemon` solo `good lemon`; `lemons-segmentation` solo
+  `lemon yellow`, `lemons - segmentation` y `good lemon`. Las imágenes con limones de clases descartadas
+  (`Unripe`, `Rotten`, `Raw_lemon`…) se sacan enteras (`DUDOSAS`), para no enseñarle que un limón es fondo.
+- 28/10 (2): **solo limones verdes** (el robot cosecha verdes; la madurez se decide por tamaño con el estéreo,
+  no con YOLO). Quedan `lime-detection` (todo), `tree-fruit-detection` (solo `lime`) y `lemons-segmentation`
+  (`good lemon` verdes y `lemon yellow`; las imágenes con `disease lemon` se sacan). Quitados `lemon-detection-ifcwr`
+  y `new-lemon` (amarillos sueltos).
 - Falta: fotos propias con las NoIR (limones verdes reales; las NoIR corren el color del verde).

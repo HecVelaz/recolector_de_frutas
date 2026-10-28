@@ -19,7 +19,7 @@
 # El robot se detiene frente al limonero, las dos cámaras NoIR del mástil miran la planta y el sistema de visión
 # responde dos preguntas:
 #
-# 1. **¿Qué hay en la imagen?** Limones (verdes, amarillos o anaranjados), todos en **una sola clase, `limon`**.
+# 1. **¿Qué hay en la imagen?** Limones verdes, en **una sola clase, `limon`** (la madurez se decide después por tamaño).
 # 2. **¿Dónde está el limón?** Coordenadas 3D en el sistema del brazo, para que pueda ir a agarrarlo.
 #
 # Este cuaderno resuelve la **primera** pregunta. La segunda la resuelve la visión estereoscópica, que corre en la
@@ -48,7 +48,7 @@
 #
 # </div>
 #
-# El modelo se entrena juntando **varios datasets de Roboflow Universe** (limones verdes, amarillos y maduros, en la
+# El modelo se entrena juntando **varios datasets de Roboflow Universe** (limones verdes, en la
 # planta y sueltos) y, cuando las haya, **fotos propias** sacadas con las cámaras del robot. Al final deja en
 # Google Drive:
 #
@@ -143,21 +143,20 @@ print("Resultados en", SALIDA)
 # Se juntan varios datasets públicos de **Roboflow Universe**. Cada entrada de la lista `DATASETS` es
 # `(workspace, proyecto, versión)`, tal como aparece en la URL `universe.roboflow.com/<workspace>/<proyecto>`.
 # Con versión `None` se usa la última. Un cuarto elemento opcional indica qué clases de ese dataset son limones
-# (por defecto, las que se llaman *lemon*, *lime* o *limón*; `"."` significa todas).
+# (expresión regular; por defecto, las que se llaman *lemon*, *lime* o *limón*; `"."` significa todas).
 #
-# | Dataset | Qué trae | Rol |
+# | Dataset | Clases que se usan | Rol |
 # |---|---|---|
-# | [dip-dqsgr/lime-detection](https://universe.roboflow.com/dip-dqsgr/lime-detection) | ~680 imágenes de lima (limón verde) | limones verdes |
-# | [smart-harvesting-system/tree-fruit-detection](https://universe.roboflow.com/smart-harvesting-system/tree-fruit-detection) | ~4 500 imágenes de frutas en el árbol, clase `lime` | limones en la planta; **las otras frutas (naranjas, manzanas…) quedan como "no limón"** |
-# | [lemon-classification-ai/lemon-detection-ifcwr](https://universe.roboflow.com/lemon-classification-ai/lemon-detection-ifcwr) | limones amarillos sueltos: `Ripe` / `Unripe` / `Rotten` | limones amarillos y en mal estado |
-# | [fruitclassi/new-lemon](https://universe.roboflow.com/fruitclassi/new-lemon) | limones amarillos redondos y machucados: `Good_lemon` / `Raw_lemon` / `Rotten_lemon` | limones amarillos |
-# | [brinjalproject/lemons-segmentation](https://universe.roboflow.com/brinjalproject/lemons-segmentation) | limones amarillos y verdes **en el árbol** (segmentación) | el más parecido a lo que ve el robot |
+# | [dip-dqsgr/lime-detection](https://universe.roboflow.com/dip-dqsgr/lime-detection) | todas (~680 imágenes de lima) | limones verdes |
+# | [smart-harvesting-system/tree-fruit-detection](https://universe.roboflow.com/smart-harvesting-system/tree-fruit-detection) | solo `lime` (~4 500 imágenes de frutas en el árbol) | limones verdes en la planta; **las otras frutas (naranjas, manzanas…) quedan como "no limón"** |
+# | [brinjalproject/lemons-segmentation](https://universe.roboflow.com/brinjalproject/lemons-segmentation) | `good lemon` (verdes) y `lemon yellow` (amarillentos), **sin** `disease lemon` (segmentación) | limones **en el árbol**, lo más parecido a lo que ve el robot |
 #
-# Descartado: `limoneros/lemon-tree` (árboles vistos desde arriba).
+# Descartados: `limoneros/lemon-tree` (árboles vistos desde arriba), `lemon-classification-ai/lemon-detection-ifcwr` y
+# `fruitclassi/new-lemon` (limones amarillos sueltos: el robot cosecha limones verdes en el árbol).
 #
-# **Todos van a la misma clase `limon`**, incluidos los machucados y podridos: para el objetivo mínimo (detectar y
-# agarrar) no hace falta distinguirlos. Ningún dataset trae limones **anaranjados**: para eso hacen falta fotos
-# propias (sección 12).
+# **Todos van a la misma clase `limon`**. La madurez no la decide YOLO sino el **tamaño**: con la caja y la profundidad
+# del estéreo, diámetro = ancho_px · Z / f. Las imágenes que tienen un limón de una clase descartada (enfermo,
+# podrido...) **se sacan enteras**: si quedaran sin esa etiqueta, el modelo aprendería que ese limón es fondo.
 #
 # Cuando estén las fotos propias con las cámaras NoIR, subirlas a un proyecto propio de Roboflow, etiquetarlas ahí
 # (una caja por limón, clase `limon`) y agregar ese proyecto a la lista.
@@ -165,11 +164,9 @@ print("Resultados en", SALIDA)
 # %%
 # Lista de datasets: (workspace, proyecto, versión[, clases que son limón]).
 DATASETS = [
-    ("dip-dqsgr", "lime-detection", None),
-    ("smart-harvesting-system", "tree-fruit-detection", None),
-    ("lemon-classification-ai", "lemon-detection-ifcwr", None, "."),
-    ("fruitclassi", "new-lemon", None),
-    ("brinjalproject", "lemons-segmentation", None),
+    ("dip-dqsgr", "lime-detection", None, "."),
+    ("smart-harvesting-system", "tree-fruit-detection", None, r"^lime$"),
+    ("brinjalproject", "lemons-segmentation", None, r"^(good[\W_]*lemon|lemon[\W_]*yellow)$"),
     # ("tu-workspace", "limones-noir", None),   # fotos propias con las cámaras del robot
 ]
 
@@ -177,7 +174,10 @@ DATASETS = [
 # borran, y sus imágenes quedan como ejemplos de "esto no es un limón" (naranjas, manzanas, hojas...).
 CLASES_LIMON = r"lemon|lime|lim[oó]n"
 # Clases que nunca son limón, aunque el nombre lo diga (por ejemplo "lemon leaf" o "Disease_lemon").
-EXCLUIR = r"infect|diseas|leaf|hoja|tree|arbol|árbol|flower|flor"
+NO_FRUTA = r"leaf|hoja|tree|arbol|árbol|flower|flor"
+EXCLUIR = r"infect|diseas|" + NO_FRUTA
+# Clases descartadas que igual son limones (enfermos, podridos...): las imágenes que las tienen se sacan enteras.
+DUDOSAS = r"lemon|lime|lim[oó]n|ripe|rotten|raw|diseas|infect"
 
 # %%
 from google.colab import userdata
@@ -259,9 +259,13 @@ for d, clases in descargas:
         nombres = [nombres[k] for k in sorted(nombres)]
     # mapa: número de clase original -> 0 (limon), solo para las clases que son limón.
     mapa = {i: 0 for i, n in enumerate(nombres) if es_limon(n, clases)}
+    # dudosas: clases descartadas que son limones; sus imágenes no se usan.
+    dudosas = {i for i, n in enumerate(nombres)
+               if i not in mapa and re.search(DUDOSAS, n, re.I) and not re.search(NO_FRUTA, n, re.I)}
     print(f"\n{d.name}")
     for i, n in enumerate(nombres):
-        print(f"  {i:2d} {n:30s} {'-> limon' if i in mapa else '(se borra)'}")
+        print(f"  {i:2d} {n:30s} "
+              f"{'-> limon' if i in mapa else '(se saca la imagen)' if i in dudosas else '(se borra)'}")
     for parte_origen, parte in PARTES.items():
         carpeta = d / parte_origen / "images"
         if not carpeta.exists():
@@ -272,12 +276,15 @@ for d, clases in descargas:
         for img in carpeta.iterdir():
             etiqueta = d / parte_origen / "labels" / (img.stem + ".txt")
             lineas = []
-            if etiqueta.exists():
-                for linea in etiqueta.read_text().splitlines():
-                    campos = linea.split()
-                    # Nos quedamos solo con los objetos de clase limón, renumerados a 0.
-                    if campos and int(campos[0]) in mapa:
-                        lineas.append(" ".join(["0"] + a_caja(campos[1:])))
+            objetos = [l.split() for l in etiqueta.read_text().splitlines()] if etiqueta.exists() else []
+            objetos = [c for c in objetos if c]
+            # Si tiene algún limón de una clase descartada, la imagen no se usa.
+            if any(int(c[0]) in dudosas for c in objetos):
+                continue
+            # Nos quedamos solo con los objetos de clase limón, renumerados a 0.
+            for campos in objetos:
+                if int(campos[0]) in mapa:
+                    lineas.append(" ".join(["0"] + a_caja(campos[1:])))
             # El nombre lleva delante el del dataset, para que no se pisen imágenes de igual nombre.
             nombre = f"{d.name}__{img.name}"
             shutil.copy(img, DATOS / parte / "images" / nombre)
@@ -517,7 +524,7 @@ for f in sorted(SALIDA.iterdir()):
 # Subir una foto de limones (por ejemplo, del limonero del lab o sacada con las cámaras NoIR del robot) y ver qué
 # detecta el modelo. Lo esperable es que funcione peor que en el dataset si el fondo, la iluminación o la cámara son
 # distintos: eso indica que hay que **sumar imágenes propias etiquetadas** y reentrenar. Probar en especial
-# limones **amarillos y anaranjados**.
+# limones **verdes en el árbol, entre hojas**.
 
 # %%
 from google.colab import files
