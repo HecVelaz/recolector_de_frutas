@@ -13,6 +13,9 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
    b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
    `placa_s3` ya está republicada con 30 k (16/10).
+0b. **Alimentación de la Pi (28/10):** el power bank daba 4,83-4,85 V en reposo y la Pi se apagó 3 veces con todo
+   corriendo; con el cargador oficial, 5,05-5,10 V y `0x0`. Cargarlo completo, medir en reposo (≥ 4,9 V) y 10 min con
+   todo (`~/logs/tension.log`). Si no alcanza, no hay fuente para la demo afuera: revisar cable/salida o qué hay.
 1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60
    (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
@@ -22,10 +25,11 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    peso; antes, el prisionero de la rueda derecha. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
-3. Visión: copiar la v2 a la Pi (`scp` + enlace, sección 12 del cuaderno) y probarla con las NoIR contra la v1;
-   prueba de campo del limón (§5) y al sol. B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
+3. Visión: **recalibrar el estéreo** (cámaras giradas 180° el 28/10: la calibración no vale; `herramientas/calibrar_estereo.py`)
+   y hacer pull de `940548d` en la Pi. v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
+   tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo del limón (§5) y al sol. B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
    `vision_estereo`, medir `D_min` con limones reales; obstáculo sin hacer. Fotos propias con las NoIR para el
-   detector. Recalibrar solo si el soporte de cámaras se mueve o cambia.
+   detector. 
 4. Brazo: **flasheado el 26/10** (`072c403`, duty máx 50 % en las tres); con `teleop_web.py` medir los signos de J2/J3 (`ENC_INVERTIDO`/`MOTOR_INVERTIDO`, hoy sin medir) y si 50 % alcanza para levantar el brazo; armar el shield y la perforada
    de distribución según `docs/html/placa_wroom.html`; medir que los encoders tengan su pull-up (A/B en 0 o 3,3 V, nunca a mitad;
    si falta, 10 k a 3V3). El motor de J1 en J2 ya se probó (levantó el brazo, 17/10); con los motores nuevos, pasos 0-3 de

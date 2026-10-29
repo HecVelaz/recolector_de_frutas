@@ -608,3 +608,32 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   ser un enlace a la versión en uso (`mv` de la v1 y `ln -sfn`; ver sección 12 del cuaderno). **Todavía no copiado
   a la Pi**; el usuario pasa los zips del Drive secundario al principal (`arturito/limon_yolo_v1`, `_v2`).
 - Commits `bbb7e50`, `ea6cf01` y el de este cierre.
+
+## 2026-10-28 (noche): tracción a fondo, brazo y visión desde el celular; la fuente apagaba la Pi
+
+- Agentes, `teleop_web.py` (8000) y visión lanzados a mano desde la notebook por ssh (`setsid nohup … &`, logs en
+  `~/logs/`). Sin flashear: el firmware y ROS de la Pi (`b9d67ae`) son los mismos que `main`. Cada vez que la Pi se
+  reinicia la S3 queda en modo descarga: `esptool --before no_reset --after watchdog-reset read-mac` y relanzar.
+- **Tracción (env `ros_motores`, ruedas en el aire):** un `rueda_der=atasco` al principio, sin repetir. Grabación de
+  `e` cada 0,2 s (`~/scripts/grabar_ruedas.py` → `~/logs/ruedas*.log`): suave, error < 0,5 rpm; **a fondo (Velocidad
+  100 %)**, 30-34 rpm con duty 71-81 % y error < 1 rpm; la rueda de afuera en curva pide ~40 rpm y satura en 85 %
+  (llega a 38-39 rpm). **0 atascos** (pide < 2 rpm con duty ≥ 50 % durante 1 s): el primero fue algo que frenó la
+  rueda. Cortes de 0,2-0,4 s a `parado` = consignas de la web que tardan > 300 ms (watchdog). Brazo y base juntos
+  desde el celular: "funciona todo perfectamente" (usuario).
+- **Cámaras montadas cabeza abajo** (giradas 180°; la 0 sigue a la izquierda por la paralaje de la maceta): en
+  `vision_estereo` `orientacion: 180` en `config/camaras.yaml` → parámetro `orientation` de `camera_ros` en
+  `launch/camaras_comun.py` (commit `940548d` de ese repo, sin push; a la Pi por scp). Desnivel vertical de ~25 px
+  entre las dos imágenes: **la calibración `calibracion_soporte_2` ya no vale**, recalibrar antes de usar Z.
+- **Apagados de la Pi:** uno por el botón de encendido ("Power key pressed short"), uno porque el usuario desconectó el
+  power bank y **tres por baja tensión**: power bank PB2020MI con 4,83-4,85 V en reposo (el 20/10, cargado, 5,03-5,13 V
+  con la visión) y 22 avisos de `Undervoltage`; otro cargador de pared, 4,63-4,89 V con `0x50005` y **4,42 V** justo
+  antes del corte. Con el **cargador oficial de la Pi**: 5,05-5,10 V y `throttled=0x0` con todo corriendo (dos
+  agentes, teleop, visión, web_video_server). Registro: `~/logs/tension.log` (EXT5V, throttled y carga cada 2 s).
+- Al relanzar la visión quedó vivo el `ros2 launch` anterior (carga 17, detector a 0,3 FPS): cortar el grupo de
+  procesos de `start_limon.sh` (`kill -INT -<pgid>`; si no sale, `-TERM`/`-KILL` por PID). Sin duplicados: ~4-5 FPS.
+- **YOLO v2 en la Pi** (`~/vision_estereo/modelos/limon_yolo26n_v2_ncnn_model` y `.pt`, desde
+  `docs/TPF R1/Entrega 8/arturito_v2/`, fuera de git), lanzado con `MODELO=… CLASE=limon ./start_limon.sh`; la v1 sigue
+  en su carpeta (no se hizo el enlace de la sección 12 del cuaderno). **v1 contra v2** sobre los mismos 20 cuadros
+  rectificados (arbolito con 3 limones verdes a ~0,5-1 m, lab): las dos ven los 3 en los 20, sin falsos positivos;
+  mediana 0,78 (v1) y 0,79 (v2); por limón 0,84/0,78/0,72 contra 0,79/0,80/0,64. Empate: decidir afuera.
+- Google Drive desde Claude: "Insufficient scope" (el conector no tiene lectura).
