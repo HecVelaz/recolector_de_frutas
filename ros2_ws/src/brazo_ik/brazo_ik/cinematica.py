@@ -3,7 +3,7 @@
 Mismo algoritmo y convenciones que el notebook de la E4 (Entrega4.md), sin numpy ni gráficos:
 
     q1 : giro de la base alrededor de Z (0 = eje +X del brazo = frente del robot; antihorario visto desde arriba).
-         Su rango (Q1_LIM) pasa de 180° (atrás): los q1 se expresan dentro de Q1_LIM, no en (-180°, 180°]
+         Los q1 se expresan dentro de Q1_LIM (q1_en_rango), no en (-180°, 180°]
     q2 : barra verde l2 medida desde la horizontal, del lado de la muñeca
     q3 : actuador de la barra roja l3,0; su ángulo absoluto es 90° - q3
     gamma4 = q2 + q3 - 90°        (ángulo del cuatro barras en la base)
@@ -28,9 +28,9 @@ L30 = 60.00   # balancín de entrada (rojo): 60 mm medido el 17/10 (en la E4 era
 L31 = 40.00   # balancín de salida (tramo corto del azul)
 
 # Límites [°]
-# J1: -45/+135 desde el costado izquierdo (q1 = 90°, el cero del banco de pruebas-esp32/10, 2026-10-02). Igual que
-# brazo_config.h y el urdf
-Q1_LIM = (45.0, 225.0)
+# J1: medido en pruebas-esp32/12 (2026-10-30) con el cero al frente: -30° hacia el mástil (adelante-derecha; choca a
+# -38°) y +90° al costado izquierdo (la fila). Igual que brazo_config.h y el urdf
+Q1_LIM = (-30.0, 90.0)
 Q2_LIM = (-25.0, 135.0)
 Q3_LIM = (-50.0, 50.0)
 GAMMA4_LIM = (-180.0, 0.0)  # rama física: la roja no cruza la verde
@@ -70,7 +70,7 @@ def norm_ang(a):
 
 def q1_en_rango(q1):
     """Lleva un ángulo de la base al intervalo que empieza en Q1_LIM[0] (+-360°): atan2 da (-180°, 180°] y el rango de
-    J1 pasa por 180°."""
+    J1 podría pasar por 180°."""
     a = q1
     while math.degrees(a) < Q1_LIM[0] - 1e-9:
         a += 2 * math.pi

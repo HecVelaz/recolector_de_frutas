@@ -23,7 +23,7 @@ def test_ida_y_vuelta_y_misma_muneca():
     while n < 500:
         q2, q3 = math.radians(random.uniform(-25, 135)), math.radians(random.uniform(-50, 50))
         q3o = actuador_a_serie(q2, q3)
-        # q1 = 90° (costado izquierdo): 0° quedó fuera del rango de J1 (45..225°) y nunca habría una config válida
+        # q1 = 90° (costado izquierdo, la fila; borde del rango de J1, -30..90°)
         if q3o is None or not config_valida(Q1, q2, q3, cinematica_directa(Q1, q2, q3)[2]):
             continue
         n += 1

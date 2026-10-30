@@ -53,7 +53,7 @@ static void llegaAlObjetivo(int i, float desde, float hasta) {
   TEST_ASSERT_EQUAL_FLOAT(0.0f, k.u());  // en reposo frena (duty 0)
 }
 
-void test_j1_llega() { llegaAlObjetivo(0, 90.0f, 150.0f); }  // J1: 45..225 (q1 = 90 al costado izquierdo)
+void test_j1_llega() { llegaAlObjetivo(0, 0.0f, 60.0f); }  // J1: -30..90 (q1 = 0 al frente)
 void test_j2_llega() { llegaAlObjetivo(1, 90.0f, 10.0f); }
 void test_j3_llega() { llegaAlObjetivo(2, 0.0f, -40.0f); }
 
@@ -193,8 +193,8 @@ void test_detener_no_vuelve_atras() {
   ControlArticulacion k;
   k.configurar(CFG_ART[0]);
   MotorSim m = simDe(0);
-  k.fijarCero(m.leer(), 50.0f);  // J1: 45..225
-  k.irA(220.0f);
+  k.fijarCero(m.leer(), -25.0f);  // J1: -30..90
+  k.irA(85.0f);
   correr(k, m, 1.5f);  // a velocidad máxima
   TEST_ASSERT_TRUE(fabsf(k.w()) > 3.0f);
   k.detener();

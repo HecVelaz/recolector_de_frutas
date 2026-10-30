@@ -36,7 +36,7 @@ class Parametros:
     cierre: float = 100.0        # % de cierre para agarrar (MEDIR con un limón: sin aplastarlo)
     # m, TCP donde lleva y suelta el limón: q = (75°, 94°, -50°), el reposo de la simulación (no tapa las cámaras ni
     # toca el mástil). PROVISORIO (17/10): con el balancín de 60 mm el de antes (110°, -30°) no cierra el cuatro barras;
-    # q3 = -50° es el borde de Q3_LIM: MEDIR con los límites reales. Al frente (q1 = 0°) queda fuera del rango de J1
+    # q3 = -50° es el borde de Q3_LIM: MEDIR con los límites reales. q1 = 75° entra en el rango de J1 (-30..90°)
     reposo: tuple = (0.07580, 0.28289, 0.27605)
     largo_herramienta: float = 0.0  # m, muñeca -> TCP en horizontal: el mismo que brazo_ik (MEDIR en el real)
 

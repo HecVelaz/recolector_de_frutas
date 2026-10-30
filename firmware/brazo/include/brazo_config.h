@@ -11,20 +11,19 @@ constexpr float TS = 0.01f;  // periodo del control: 10 ms (100 Hz)
 // Límites articulares de la Entrega 4 (q1: base, q2: hombro, q3: balancín de entrada del cuatro barras).
 constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
-        // J1 medido en pruebas-esp32/10-control-lazo-cerrado (2026-10-02), montado en el brazo. Ese firmware
-        // controla en °/s de la base; acá el lazo de velocidad va en rpm de la salida de la reductora:
-        // 1 rpm = 6 °/s de la salida = 6/5 = 1,2 °/s de la base, así que kpVel y kiVel van x1,2.
+        // J1 medido en pruebas-esp32/12-j1-base (2026-10-30, ca2b9ad) con el brazo completo montado en el robot. Ese
+        // firmware controla en °/s de la base; acá el lazo de velocidad va en rpm de la salida de la reductora:
+        // 1 rpm = 6 °/s de la salida = 6/4,667 = 1,286 °/s de la base, así que kpVel y kiVel van x1,286.
         "J1",
-        3200.0f,  // 16 PPR x4 x reductora 50:1 (medido en pruebas-esp32/06)
-        5.0f,     // correa GT2, polea de 18 dientes en el motor y 90 en la base (verificado: 44,44 cuentas/°)
+        3200.0f,        // 16 PPR x4 x reductora 50:1 (medido en pruebas-esp32/06)
+        84.0f / 18.0f,  // correa GT2, polea de 18 dientes en el motor y 84 en la base (no 90): 41,48 cuentas/°
         160.0f,
-        45.0f, 225.0f,   // marco de brazo_ik (q1 = 0 al frente, +X; antihorario visto desde arriba). Es el rango
-                         // -45/+135 del banco de pruebas medido desde el costado IZQUIERDO (q1 = 90°): de
-                         // adelante-izquierda, por atrás, hasta atrás-derecha; nunca cruza el mástil (adelante-derecha).
-                         // Igual que Q1_LIM de cinematica.py y el urdf
+        -30.0f, 90.0f,  // marco de brazo_ik (q1 = 0 al frente, +X; antihorario visto desde arriba) = el cero de 12
+                        // (fotos en docs/fotos/motor_j1/CERO). Negativo = hacia el mástil (adelante-derecha): choca
+                        // a -38°. +90° = costado izquierdo (la fila). Igual que Q1_LIM de cinematica.py y el urdf
         1.58f, 0.065f, 17.0f,  // E5: K rpm/%, tau s; zona muerta girando 17 % (medida con el brazo)
-        0.659f, 4.8f,          // PI: 0,549 %/(°/s) y 4 %/° de las pruebas (Ki de diseño 8,44 daba 18 % de
-                               // sobrepico por el juego de la correa)
+        0.706f, 5.14f,         // PI: 0,549 %/(°/s) y 4 %/° de 12 (Ki de diseño 8,44 daba 18 % de sobrepico por el
+                               // juego de la correa; en 12, 14,5 % de sobrepico en velocidad y 0 en posición)
         2.0f, 30.0f, 60.0f,    // kpPos 1/s (sin sobrepico con <= 2,78), velMax °/s, accMax °/s²
         0.3f,                  // tolerancia de llegada ° (se despierta al doble: 0,6°)
         50.0f,                 // duty máx %: 50 a pedido del usuario (26/10; las pruebas usaban 40; 30 °/s piden ~33 %)
@@ -73,10 +72,11 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
 // Signos. ENC_INVERTIDO: si con duty positivo la velocidad sale negativa. MOTOR_INVERTIDO: si con duty positivo la
 // articulación gira al revés de su sentido positivo (q1 positivo = antihorario visto desde arriba); invierte el
 // duty, así que el encoder también hay que invertirlo para que sigan de acuerdo.
-// J1 (pruebas-esp32/10): el encoder sube con duty + (normal), pero la base giraba horario -> motor invertido y,
-// con él, el encoder. J2 y J3: MEDIR con los motores nuevos (lo medido en pruebas-esp32/08 era del 5840).
-constexpr bool ENC_INVERTIDO[N_ART] = {true, false, false};
-constexpr bool MOTOR_INVERTIDO[N_ART] = {true, false, false};
+// J1 (pruebas-esp32/12, 2026-10-30): duty + gira alejándose del mástil = antihorario y el encoder sube con él.
+// (En pruebas-esp32/10 salían invertidos, pero con otra referencia de sentido.) J2 y J3: MEDIR con los motores nuevos
+// (lo medido en pruebas-esp32/08 era del 5840).
+constexpr bool ENC_INVERTIDO[N_ART] = {false, false, false};
+constexpr bool MOTOR_INVERTIDO[N_ART] = {false, false, false};
 
 // Cuatro barras: J2 y J3 no son independientes. El mecanismo solo cierra con gamma4 = q2 + q3 - 90° en este rango
 // (balancín rojo de 60 mm; es el que da MU_MIN = 15° en brazo_ik/cinematica.py). Los límites de cada articulación
@@ -97,19 +97,19 @@ constexpr bool cuatroBarrasOk(float q2, float q3) {
 
 // Pose de referencia para el cero manual (comando z) [°]. MEDIR/definir con la mecánica:
 // una pose fácil de reproducir a ojo o con una plantilla (por ejemplo, base al frente y brazo vertical).
-// J1: la marca del banco de pruebas (brazo hacia el costado izquierdo del robot) = 90° en el marco de brazo_ik.
+// J1: brazo hacia el frente del robot (fotos en docs/fotos/motor_j1/CERO), el cero de pruebas-esp32/12 = 0°.
 // J3: -40° (provisorio, 18/10) para que la pose cierre el cuatro barras; el 0° de antes daba gamma4 = 0°.
-constexpr float POSE_CERO[N_ART] = {90.0f, 90.0f, -40.0f};
+constexpr float POSE_CERO[N_ART] = {0.0f, 90.0f, -40.0f};
 static_assert(cuatroBarrasOk(POSE_CERO[1], POSE_CERO[2]), "POSE_CERO de J2/J3 no cierra el cuatro barras");
 
 // Homing con final de carrera: velocidad (rpm del motor, con signo hacia el final de carrera),
 // ángulo que vale la articulación al tocarlo y tiempo máximo.
 constexpr float HOME_RPM[N_ART] = {-10.0f, -10.0f, -10.0f};
-constexpr float HOME_Q[N_ART] = {45.0f, -25.0f, -50.0f};  // MEDIR con la mecánica (finales de carrera: 32, 33 y 27)
+constexpr float HOME_Q[N_ART] = {-30.0f, -25.0f, -50.0f};  // MEDIR con la mecánica (finales de carrera: 32, 33 y 27)
 // El homing de J2 o J3 mueve una sola en velocidad, sin mirar el cuatro barras, y HOME_Q de hoy (gamma4 = -165°) no
 // cierra: home 2 y home 3 quedan bloqueados hasta medir HOME_Q y el orden seguro con el brazo armado (usar z).
 constexpr bool HOME_J23_VERIFICADO = false;
-// J1 con la correa 5:1: -10 rpm = 12 °/s de la base, 180° de recorrido son 15 s (más arranque y confirmación)
+// J1 con la correa 84/18: -10 rpm = 12,9 °/s de la base, 120° de recorrido son 9 s (más arranque y confirmación)
 constexpr float HOME_TIMEOUT_S = 25.0f;
 // Recorrido máximo del homing: el rango de la articulación más este margen [°]. Corta aunque no venza el tiempo.
 constexpr float HOME_MARGEN_DEG = 10.0f;

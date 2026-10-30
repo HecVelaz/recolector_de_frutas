@@ -5,7 +5,7 @@ import math
 from mision.fsm import (AGARRAR, alcanzable, APROXIMAR, centro_desde_superficie, ESPERAR, FALLA, leer_estado_brazo,
                         Mision, Parametros, RETIRAR, SOLTAR)
 
-# Al costado izquierdo, del lado de la fila: J1 va de 45° a 225° (q1 = 0 al frente quedó fuera de rango)
+# Al costado izquierdo, del lado de la fila: J1 va de -30° a 90°
 LIMON = (0.05, 0.45, 0.25)  # m, alcanzable
 LEJOS = (0.0, 2.0, 0.25)
 Q_REPOSO = [1.571, 0.785, 0.0]  # rad, donde está el brazo al empezar

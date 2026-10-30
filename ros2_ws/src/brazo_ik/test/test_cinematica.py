@@ -11,8 +11,8 @@ from brazo_ik.nodo_ik import resolver
 
 
 def test_ejemplo_numerico_de_la_e4(monkeypatch):
-    # E4 §9: P_d = (368.32, 0, 91.03) mm -> q = (0°, 45°, 0°), q3O = -113.516°. Con el rango nuevo de J1 (45..225°) el
-    # frente queda afuera: el mismo punto girado 90° (al costado izquierdo) da q1 = 90° y el resto igual.
+    # E4 §9: P_d = (368.32, 0, 91.03) mm -> q = (0°, 45°, 0°), q3O = -113.516°. Acá, el mismo punto girado 90° (al
+    # costado izquierdo, la fila): q1 = 90°, el borde del rango de J1 (-30..90°), y el resto igual.
     # El ejemplo es con el balancín de la E4 (40 mm); el real mide 60
     monkeypatch.setattr(cinematica, 'L30', 40.0)
     sols, _ = cinematica_inversa(0.0, 368.32, 91.03)
@@ -47,21 +47,23 @@ def test_demasiado_lejos():
 
 
 def test_q1_fuera_de_rango():
-    sols, motivos = cinematica_inversa(300.0, -100.0, 150.0)  # ~-18°: adelante a la derecha (el mástil)
+    sols, motivos = cinematica_inversa(300.0, -300.0, 150.0)  # -45°: adelante a la derecha, contra el mástil
     assert not sols
     assert any('q1' in m for m in motivos)
 
 
-def test_q1_pasa_por_atras():
-    # Atrás a la derecha: atan2 da -160°, que en el rango de J1 (45..225°) es 200°
-    x, y = 400.0 * math.cos(math.radians(200.0)), 400.0 * math.sin(math.radians(200.0))
+def test_q1_no_pasa_por_atras():
+    # Atrás a la izquierda (135°): fuera del rango de J1 (-30..90°); al frente (0°) sí llega
+    x, y = 400.0 * math.cos(math.radians(135.0)), 400.0 * math.sin(math.radians(135.0))
     sols, motivos = cinematica_inversa(x, y, 150.0)
+    assert not sols and any('q1' in m for m in motivos)
+    sols, motivos = cinematica_inversa(400.0, 0.0, 150.0)
     assert sols, motivos
-    assert all(abs(math.degrees(s.q1) - 200.0) < 1e-6 for s in sols)
+    assert all(abs(math.degrees(s.q1)) < 1e-6 for s in sols)
 
 
 def test_resolver_en_metros():
-    # Puntos al costado izquierdo (q1 = 90°): el frente quedó fuera del rango de J1 (45..225°)
+    # Puntos al costado izquierdo (q1 = 90°, la fila)
     q, texto = resolver(0.0, 0.36832, 0.09103)
     assert q is not None and texto.startswith('ok')
     assert abs(math.degrees(q[1]) - 45.0) < 0.01
@@ -76,7 +78,7 @@ def test_herramienta_horizontal():
     assert all(abs(a - b) < 1e-12 for a, b in zip(m, (0.255, 0.34, 0.1)))
     assert muneca_desde_herramienta(0.05, 0.0, 0.1, 0.075) is None
     # con resolver: la muñeca que resulta queda 75 mm antes del TCP, a la misma altura y en la misma dirección
-    # (al costado izquierdo, q1 = 90°: el frente quedó fuera del rango de J1)
+    # (al costado izquierdo, q1 = 90°)
     q, texto = resolver(0.0, 0.36832 + 0.075, 0.09103, 0.075)
     assert q is not None and abs(math.degrees(q[1]) - 45.0) < 0.01, texto
     p = directa(q[0], q[1], q[2])[0]
