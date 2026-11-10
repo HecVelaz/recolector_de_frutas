@@ -11,8 +11,8 @@ Complementa el `CLAUDE.md` de la raíz. Vale también para `docs/TPF R2/`.
 - Las entregas ya entregadas no se tocan sin preguntar.
 
 ## Formato (desde la E7 de R1, 17/10)
-- El `.md` es la fuente; el cuaderno se arma desde él (una celda por cada `<!-- celda -->`). El que va a Colab es
-  `Entrega7_.ipynb`, con links `lh3`.
+- El `.md` es la fuente; el cuaderno se arma desde él con `armar_cuaderno.py` (una celda por cada `<!-- celda -->`;
+  una celda que es solo un bloque ```python queda de código). El que va a Colab lleva links `lh3`.
 - No incrustar imágenes en base64 (la celda queda ilegible en Colab).
 - Diagramas `.drawio` + PNG en `Diagramas/`, figuras en `Imagenes/FigN_*`. Tablas y figuras grandes (diagramas con letra
   de 16-20 pt), párrafos cortos, sin emojis.

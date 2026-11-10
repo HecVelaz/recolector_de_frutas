@@ -51,3 +51,13 @@ docs/**/version_drive/
 # Aclaraciones de la revisión de Codex de la Entrega 7: solo en local
 docs/TPF R1/Entrega 7/AGENTS.md
 docs/TPF R1/Entrega 7/Entrega7.ipynb
+# Visión (Entrega 8 de R1 y Tarea VA de R2): pesos, datasets y cuadernos con salidas pesadas, en Drive
+docs/**/arturito_v*/
+docs/TPF R1/Entrega 8/entrenar_limon.ipynb
+docs/TPF R2/TAREA VA/dataset/
+docs/TPF R2/TAREA VA/estacion_prueba_imagenes/
+docs/TPF R2/TAREA VA/limones_renombrados/
+docs/TPF R2/TAREA VA/*.zip
+docs/TPF R2/TAREA VA/*.ipynb
+# Cuadernos de clase (no son del robot)
+vision/CLASE_*/
