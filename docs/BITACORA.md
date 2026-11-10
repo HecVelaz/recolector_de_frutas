@@ -684,3 +684,14 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Cables USB largos a los ESP32: no explican los apagones de la Pi (la caída queda en el cable, del lado del ESP32);
   pueden dar reinicios del ESP32 o cortes del agente. Revisar con `dmesg` cuando estén conectados.
 - `PENDIENTES.md` 0b actualizado. Sin tocar: `CONEXIONES.md` sigue en v0.6 (power bank → Pi).
+- Commits y **push** (`3264b17..d3644c8`): `ed6b224` (estos documentos) y `d3644c8`
+  (`firmware/brazo/scripts/prueba_articulacion.py`: signo, zona muerta a cada lado y escalón de duty por serial, con
+  pulsos alternados y corte a 30° del arranque; sin ejecutar todavía).
+- `/verificar-robot` (dos veces): firmware base 20/20 y brazo 18/18, `pio run` y `-e ros` sin warnings, `ros2_ws` 57
+  tests OK. Única falla al final: la Pi en `34eb95d`.
+- `/pi-sync`: 281 archivos (379 MB, casi todo `docs/TPF R1` y `R2`), `brazo_ik` y `mision` recompilados en la Pi,
+  binarios `ros` del brazo copiados a `~/firmware/brazo`, `.commit` = `d3644c8`. **Sin flashear**: no había ESP32
+  conectados (`/dev/serial/by-id/` no existe) y cambió `brazo_config.h`. Con el power bank, 5,08 V y `0x0` al terminar.
+  El rsync copia `vision/CLASE_27_10_26` (ignorada por git, no excluida en la skill).
+- Para cortar procesos por ssh con `pkill -f`: poner el primer carácter entre corchetes (`"[s]tart_limon.sh"`); si
+  no, el patrón coincide con el propio comando y corta la sesión (exit 255).

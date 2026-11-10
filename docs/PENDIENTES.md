@@ -4,7 +4,9 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 
 000. **Fecha límite (10/11):** el 9/11 ya pasó; confirmar la nueva fecha o qué se entregó/demostró, y actualizar
    `CLAUDE.md`, `ESTADO.md` y esta lista. Registrar lo hecho en el robot desde el 28/10 (no hay nada anotado).
-000b. `/pi-sync` cuando la Pi esté conectada (está en `b9d67ae`; `main` en `d92655e`).
+000b. **Flashear el brazo** (`/pi-sync brazo`, con los 12 V apagados) cuando la WROOM esté conectada: la Pi ya está en
+   `d3644c8` (10/11) con el binario `ros` en `~/firmware/brazo`, pero la placa sigue con `072c403` (sin el J1 de polea
+   de 84 y cero al frente). Para J2/J3: `firmware/brazo/scripts/prueba_articulacion.py` (env `esp32dev`, por serial).
 
 00. **Entrega 7 de R1 (diseño final y demo, 17/10)** en `docs/TPF R1/Entrega 7/`, revisada con Codex (aclaraciones aplicadas; detalle en la bitácora) y
    con todos los IDs de Drive puestos. El usuario la siguió editando en Colab (Figs. 19a-c, servo, videos): el repo quedó
