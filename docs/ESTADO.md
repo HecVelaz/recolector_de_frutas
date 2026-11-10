@@ -1,7 +1,7 @@
-# Estado actual (al 2026-10-28, noche)
+# Estado actual (al 2026-11-10; sin novedades del robot registradas desde el 28/10)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
-con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026**.
+con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar).
 
 ## Avance
 - Software ~70 %, hardware real atrasado. Plan (atrasado): 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
@@ -64,7 +64,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 
 ## Pi 5
 - `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
-  entra solo por Tailscale). `.commit`: `b9d67ae` (26/10). Agentes y `teleop_web.py` se lanzan a mano en segundo
+  entra solo por Tailscale). `.commit`: `b9d67ae` (26/10), atrás de `main` (`d92655e`, en GitHub). Agentes y `teleop_web.py` se lanzan a mano en segundo
   plano (no arrancan solos); al reconectar los USB o reiniciar, relanzar los agentes y despertar la S3 con esptool.
 - Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
   `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).

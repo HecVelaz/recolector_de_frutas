@@ -638,7 +638,15 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   mediana 0,78 (v1) y 0,79 (v2); por limón 0,84/0,78/0,72 contra 0,79/0,80/0,64. Empate: decidir afuera.
 - Google Drive desde Claude: "Insufficient scope" (el conector no tiene lectura).
 
-## 2026-11-10: J2/J3 con engranajes doble helicoidales
+## 2026-11-10: verificación, orden del repo y J2/J3 con engranajes doble helicoidales
+- `/verificar-robot` (Pi desconectada): firmware base 20/20 y brazo 18/18, `pio run` y `-e ros` sin warnings; `ros2_ws`
+  57 tests OK. Fallaban `git status` (6 carpetas sin versionar) y `ESTADO.md` con 80 líneas (ahora 79).
+- `1e48f7f`: Entrega 8 de R1 (`.md`, cuadernos chicos, figuras), `armar_cuaderno.py`, `.py` de la Tarea VA de R2,
+  `docs/fotos/CABLE_pi5` (sin el espacio final) y capturas de `vision/entrenamiento_limon/resultados/`. Al
+  `.gitignore`: `arturito_v*/` (pesos), datasets y fotos de la Tarea VA, `entrenar_limon.ipynb` (12 MB con salidas),
+  `.ipynb`/`.zip` de la Tarea VA y `vision/CLASE_*/`. Siguen en local: subirlos a Drive si no están.
+  `Entrega 8/imagenes /` termina en espacio: sin renombrar (entrega; nada la cita).
+- `d92655e` (abajo) y **push a GitHub** de 11 commits (`38c25f5..d92655e`). La Pi sigue en `b9d67ae`.
 - El usuario cambió los helicoidales simples de J2/J3 por **doble helicoidales (espina de pescado), misma relación
   15 → 75 (5:1)**. El firmware no cambia (`transmision` 5,0 y 8896 cuentas por vuelta de la reductora). Lo que puede
   cambiar es la planta: juego (backlash), rozamiento (zona muerta) e inercia; el empuje axial de los simples desaparece.
