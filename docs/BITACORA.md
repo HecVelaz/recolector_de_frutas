@@ -637,3 +637,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   rectificados (arbolito con 3 limones verdes a ~0,5-1 m, lab): las dos ven los 3 en los 20, sin falsos positivos;
   mediana 0,78 (v1) y 0,79 (v2); por limón 0,84/0,78/0,72 contra 0,79/0,80/0,64. Empate: decidir afuera.
 - Google Drive desde Claude: "Insufficient scope" (el conector no tiene lectura).
+
+## 2026-11-10: J2/J3 con engranajes doble helicoidales
+- El usuario cambió los helicoidales simples de J2/J3 por **doble helicoidales (espina de pescado), misma relación
+  15 → 75 (5:1)**. El firmware no cambia (`transmision` 5,0 y 8896 cuentas por vuelta de la reductora). Lo que puede
+  cambiar es la planta: juego (backlash), rozamiento (zona muerta) e inercia; el empuje axial de los simples desaparece.
+  Como K, τ y zona muerta de J2/J3 nunca se midieron (son los de J1 escalados), se miden directo con estos engranajes.

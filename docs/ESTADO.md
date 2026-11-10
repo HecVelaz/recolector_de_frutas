@@ -28,7 +28,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - El encoder de J2 no contaba (atasco a los 0,3 s); tras revisarlo el usuario el joystick funcionó, sin confirmar con `e`.
 - Finales de carrera (GPIO 32/33/27, `home <n>`): previstos en el firmware, sin montar; falta medir `HOME_Q`.
 - J1 con los parámetros de `pruebas-esp32/10` (sin probar en este firmware). J2/J3: motores 36-555 58 rpm 139:1 +
-  helicoidales 15 → 75, llegan 19-29/10; tienen los parámetros de J1 llevados a 58 rpm y signos sin medir.
+  doble helicoidales 15 → 75 (10/11); tienen los parámetros de J1 llevados a 58 rpm y signos sin medir.
 - `m`/`j` rechazan γ₄ = q2 + q3 − 90° fuera de −111,9…−30°; `home 2/3` bloqueados hasta medir `HOME_Q`
   (hoy da −165°: no cierra con el balancín de 60 mm). `POSE_CERO` provisoria (90°, 90°, −40°).
 - Rango de J1: 45°/225° en el marco de `brazo_ik` (pasa por atrás, nunca cruza el mástil). Reposo provisorio

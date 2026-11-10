@@ -38,7 +38,7 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
         "J2",
         8896.0f,  // 16 PPR x4 x reductora 139:1
-        5.0f,     // engranajes helicoidales motor -> hombro: 15 -> 75 dientes (confirmado 17/10)
+        5.0f,     // engranajes doble helicoidales motor -> hombro: 15 -> 75 dientes (10/11)
         58.0f,
         -25.0f, 135.0f,
         0.57f, 0.065f, 17.0f,  // MEDIR: K, tau y zona muerta (de J1)
@@ -54,7 +54,7 @@ constexpr ConfigArticulacion CFG_ART[N_ART] = {
     {
         "J3",
         8896.0f,
-        5.0f,  // engranajes helicoidales motor -> codo: 15 -> 75 dientes (confirmado 17/10)
+        5.0f,  // engranajes doble helicoidales motor -> codo: 15 -> 75 dientes (10/11)
         58.0f,
         -50.0f, 50.0f,
         0.57f, 0.065f, 17.0f,  // MEDIR (mismo motor que J2)
