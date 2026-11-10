@@ -17,9 +17,11 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
    b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
    `placa_s3` ya está republicada con 30 k (16/10).
-0b. **Alimentación de la Pi (28/10):** el power bank daba 4,83-4,85 V en reposo y la Pi se apagó 3 veces con todo
-   corriendo; con el cargador oficial, 5,05-5,10 V y `0x0`. Cargarlo completo, medir en reposo (≥ 4,9 V) y 10 min con
-   todo (`~/logs/tension.log`). Si no alcanza, no hay fuente para la demo afuera: revisar cable/salida o qué hay.
+0b. **Alimentación de la Pi (10/11):** el power bank cargado (4 LED) aguantó 10 min con 4 núcleos al 100 % a
+   5,01-5,04 V y `0x0`, pero **simulado** (sin cámaras ni ESP32; `BITACORA.md`). Falta: (a) repetir con las cámaras,
+   los ESP32 y `start_limon.sh`, 10 min; (b) 1 h seguida para ver cómo cae al descargarse; cargarlo al 100 % antes de
+   la demo. Alternativa: buck 2 a 5,20 V por USB-C desde antes de la seta; hoy no sirve (4,80 V con 1 núcleo): necesita
+   un cable de carga rápida de 10-15 cm con el empalme soldado, y repetir la prueba (≥ 4,9 V con 4 núcleos).
 1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60
    (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.

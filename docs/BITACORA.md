@@ -651,3 +651,36 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   15 → 75 (5:1)**. El firmware no cambia (`transmision` 5,0 y 8896 cuentas por vuelta de la reductora). Lo que puede
   cambiar es la planta: juego (backlash), rozamiento (zona muerta) e inercia; el empuje axial de los simples desaparece.
   Como K, τ y zona muerta de J2/J3 nunca se midieron (son los de J1 escalados), se miden directo con estos engranajes.
+
+## 2026-11-10 (tarde): alimentación de la Pi, buck 2 por USB-C contra el power bank
+- Idea del usuario: LiPo → fusible 20 A → **buck 2 (XL4016 300 W) → Pi 5 por USB-C**, tomando los 12 V **antes de la
+  seta y del selector** (la seta y el corte de 12 V para flashear no apagan la Pi). Probado en la mesa con fuente de
+  laboratorio a 12 V, sin cámaras ni ESP32. Tope de corriente del buck al máximo (horario hasta el clic; con el tope
+  en el mínimo el LED del buck queda rojo sin carga: es indicador de carga, no de falla).
+- Con el cable USB-C cortado original: la Pi arrancaba y **a los ~5 s pasaba de verde a rojo**, con 5,07-5,10 V en la
+  salida del buck y la fuente en 12 V / 0,44 A (no limitaba). Subir a 5,20 V no lo arregló. Con el cargador oficial
+  arrancaba bien: Pi y SD sanas. Causa: caída en el cable USB-C.
+- Con el cable acortado arranca (5,16 V en el multímetro, 0,3 A en la fuente), pero medido en la Pi
+  (`vcgencmd pmic_read_adc EXT5V_V`): 4,96-5,00 V en reposo, **4,796 V con un solo núcleo al 100 %** y
+  `throttled=0x50000`. Unos 0,3-0,5 Ω entre el buck y la Pi: **así no aguanta la visión**. Pendiente si se sigue con
+  el buck: cable de carga rápida (3 A o más), 10-15 cm, empalme soldado. Límite de tensión: 5,25 V en la Pi. El
+  usuario no quiere alimentar por el header GPIO.
+- **Power bank PB2020MI con 4 LED, prueba simulada** (`~/logs/prueba_powerbank_sim_20261110_1914.csv` en la Pi;
+  carga con `numpy` en 1, 2 y 4 núcleos, corte automático a 4,75 V que no actuó):
+
+  | Etapa | EXT5V mín / media | Rieles del PMIC media / pico | `throttled` |
+  |---|---|---|---|
+  | Reposo, 20 s | 5,09 / 5,10 V | 2,3 / 2,9 W | `0x0` |
+  | 1 núcleo, 30 s | 5,08 / 5,10 V | 5,4 / 6,3 W | `0x0` |
+  | 2 núcleos, 30 s | 5,02 / 5,05 V | 8,0 / 8,9 W | `0x0` |
+  | 4 núcleos, 10 min | 5,01 / 5,04 V | 8,2 / 9,3 W | `0x0` |
+
+  Temperatura máxima 67,5 °C. Referencia: la visión real del 20/10 daba 6,7 W de media y 8,9 W de pico en los mismos
+  rieles. **No incluye** las dos cámaras ni los ESP32 por USB (~2-3 W más; estimado ~4,97 V y ~2,4 A de 3 A, sin
+  medir). Conclusión: cargado alcanza; lo del 28/10 (4,83 V en reposo) era el power bank descargado. Sin probar: cómo
+  cae la tensión al descargarse (hacer 1 h seguida) y la corrida real con cámaras, ESP32 y `start_limon.sh`.
+- Un primer intento con `start_limon.sh` no valió: sin cámaras conectadas, `camera_node` muere con
+  `no cameras available`.
+- Cables USB largos a los ESP32: no explican los apagones de la Pi (la caída queda en el cable, del lado del ESP32);
+  pueden dar reinicios del ESP32 o cortes del agente. Revisar con `dmesg` cuando estén conectados.
+- `PENDIENTES.md` 0b actualizado. Sin tocar: `CONEXIONES.md` sigue en v0.6 (power bank → Pi).
