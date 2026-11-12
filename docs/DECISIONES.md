@@ -24,6 +24,10 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
   a la izquierda y 28° abajo (del lado izquierdo quedaba tan cerca de la fila que ningún ángulo veía los 3 limones de
   un árbol), y reposo q = (75°, 94°, -50°) (provisorio, 18/10; antes 110°/-30°; con la cámara real la pinza en reposo se asoma hasta u ≈ 200 px, un poco fuera de la zona ciega: bitácora 17-18/10), girado a la izquierda: J1 no cruza el mástil (girado a la derecha lo
   atravesaba al ir al limón).
+- Cámaras en el robot real (12/11): mástil adelante a la derecha, mirando a la izquierda (el limonero va a la
+  izquierda), horizontales a ~58,7 cm del piso (no 0,85 m / 28° como en la simulación). La calibración estéreo se
+  hace con el robot sobre una mesa (para cubrir el borde de abajo de la imagen parado) y los ensayos de distancia
+  y cámara → brazo, en el piso.
 - Simulación: brazo por velocidad (`JointController`, velocidad del perfil + corrección) y `/joint_states` a 50 Hz;
   con `JointPositionController` + `use_velocity_commands` el brazo temblaba (Gazebo va a la consigna en un paso).
 - Simulación: no reentrenar YOLO con imágenes de Gazebo (arruinaría el modelo para los limones reales).

@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-12; del robot, solo la alimentación de la Pi desde el 28/10)
+# Estado actual (al 2026-11-12, tarde; del robot, solo la alimentación de la Pi desde el 28/10)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
 con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar).
@@ -48,8 +48,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Calibración `config/calibracion_soporte_2/`: RMS 0,36 px, baseline 89,5 mm, ventana 0,38-0,96 m. Zona ciega:
   u < ~163 px de la imagen izquierda.
 - Limón real en el lab: confianza mediana 0,80; error 3D máx. 17 mm (B5 pide ≤ 35 mm). Falta el campo y las NoIR al sol.
-- **Cámaras montadas cabeza abajo** (28/10): `orientacion: 180` en `config/camaras.yaml` (`940548d`, sin push).
-  **Calibración inválida** (~25 px de desnivel vertical): recalibrar antes de usar Z.
+- **Cámaras en el mástil (12/11):** miran a la izquierda, horizontales, a ~58,7 cm del piso, separación ~10 cm, cabeza
+  abajo (`orientacion: 180`, `940548d` sin push). **Calibración inválida:** recalibrar en una mesa (plan en `BITACORA.md`).
 - Detector de una sola clase `limon`. En la Pi están la **v1** (28/09, `limon_yolo26n_ncnn_model`) y la **v2**
   (`limon_yolo26n_v2_ncnn_model`, en uso desde el 28/10; sin el enlace de la sección 12 del cuaderno).
 - **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las

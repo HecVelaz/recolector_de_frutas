@@ -733,3 +733,28 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   no se hizo.**
 - La S3 todavía necesita el RST físico (el reinicio por watchdog de `lanzar.sh` no alcanza; sin mirar `~/logs/reset_s3.log`).
 - Al final se cortó todo en la Pi (visión, visor, teleop y agentes).
+
+## 2026-11-12 (tarde): brazo sin flashear a propósito, montaje de las cámaras en el mástil y plan de recalibración
+- **Brazo:** la WROOM tiene `pruebas-esp32/20-brazo-coordinado` env `ros` desde el 11/11 (lo usa el teleop 25);
+  `firmware/brazo` quedó atrás. El binario `d3644c8` de `~/firmware/brazo` NO se flashea hasta pasarle lo de 20
+  (`cba197d`, PENDIENTES 000b). Push `4badf7a..cba197d` y `/pi-sync` (solo documentos; `.commit` = `cba197d`).
+- **Montaje de las cámaras** (fotos del usuario: `~/Imágenes/brazo/tapa.jpeg` y `camara.pdf`): par estéreo en
+  el mástil adelante a la derecha, **mirando a la izquierda** (el limonero va a la izquierda), **inclinación 0°**,
+  a **32,7 cm sobre la tapa**; tapa a 26 cm del piso → **~58,7 cm del piso**. Separación medida ~10 cm (la
+  calibración vieja daba 89,5 mm: soporte nuevo), centradas sobre el caño. Mástil: Ø 5 cm, centro a 5 cm del borde
+  derecho de la tapa y 6,5 cm detrás del frente → **≈ (330, 245) mm de J1** en el marco de `cinematica.py`
+  (x derecha, y adelante); cámara de atrás (izquierda de la imagen) ≈ (330, 195, 327) mm, la de adelante ≈ (330, 295, 327).
+- Geometría estimada (FOV vertical ~41°, sin medir): a 50 / 65 / 85 cm ve de 41-77 / 35-83 / 27-91 cm del piso. El
+  borde izquierdo de la tapa queda a ~45 cm de las cámaras (fuera de la imagen hasta ~0,9 m) y el árbol a ~65-85 cm.
+  J1 queda ~25 cm detrás del eje óptico: el brazo en reposo aparece al fondo de la imagen, no delante del árbol.
+- Riesgos señalados: el caño puede girar o flexionarse (fijarlo con un tornillo pasante y marcarlo); Pi y power
+  bank arriba del mástil (esperar 1-2 s quieto antes de localizar); con el par girado 180° la cámara 0 puede haber
+  pasado a la derecha (verificar con paralaje); el foco se ajustó a 55 cm (revisarlo a ~0,7 m **antes** de calibrar).
+- **Tablero:** `vision_estereo/docs/Imprimir.pdf` (del usuario, sin commitear): A4 apaisado, 9 × 6 esquinas,
+  cuadrado 25,000 mm (medido rasterizando a 254 dpi con OpenCV), centrado. Controlar la hoja: 10 cuadrados =
+  250 mm, 7 = 175 mm.
+- **Plan:** calibración estéreo con el robot **sobre una mesa** (en el piso las celdas de abajo de la imagen quedan
+  a 20-40 cm del suelo); el ensayo con cinta, el limón y cámara → brazo, **en el piso**, repitiendo antes
+  `medir_profundidad_tablero.py`. Prompt completo para la sesión en `vision_estereo` pasado al usuario (orden
+  izq/der, foco, `config/calibracion_mastil`, criterios RMS ≲ 0,4 px y epipolar ≲ 0,1 px, z_max ~1,1 m, zona ciega, FOV).
+- Pendiente del usuario: alturas del limón más bajo y del más alto del árbol de la demo.
