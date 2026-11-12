@@ -714,3 +714,22 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Usar ese modelo como **v3** en la Pi: los pesos no están (`GUARDAR_EN_DRIVE = False`; ni en la notebook ni
   accesibles por el conector de Drive, sin permiso de lectura). Hay que bajarlos o reentrenar en Colab. Ojo: la v2 es
   de limones **verdes** y esta de **amarillos** con celular (nunca vio NoIR).
+
+## 2026-11-12: detector v3 (amarillos) en la Pi y registrador de tensión para el power bank
+- **v3 reentrenada en Colab** (mismo cuaderno de la Tarea VA, `GUARDAR_EN_DRIVE = True`): paró en la época 51, mejor
+  la 31 (validación propia: P 1,0, R 0,925, mAP50 0,974). Bajada a `~/Descargas/R2_TPF2026S2_limones-20261112T174504Z-1-001/`
+  (`best.pt`, `best_ncnn_model/` a 480, `recolector_limones_yolo26n/`), fuera de git; también en Drive
+  `Mi unidad/R2_TPF2026S2_limones/`. Las cifras de la entrega son las de la corrida del 07/11.
+- En la Pi: `~/vision_estereo/modelos/limon_yolo26n_v3_ncnn_model` y `limon_yolo26n_v3.pt`. Carga con ultralytics
+  8.4.153, clase `limon`, **68 ms por imagen a 480** (imagen negra, sin cámaras corriendo). Con `start_limon.sh`
+  (`MODELO=... CLASE=limon`) **detecta el limón con las NoIR** (visto a ojo por el usuario, sin cifras de confianza).
+- Visor desde la notebook: `ros2 run web_video_server web_video_server --ros-args -p port:=8080` en la Pi →
+  `http://100.116.96.71:8080/stream_viewer?topic=/yolo/left/image_annotated` (log `~/logs/web_video.log`).
+  `start_limon.sh` sin `MODELO` usa el COCO genérico (`yolo26n_ncnn_model`): así estaba corriendo al principio.
+- **Registrador de tensión** `pruebas-esp32/25-teleop-pi/tools/registrar_tension.sh [segundos]` (copiado a la Pi):
+  CSV cada 2 s en `~/logs/prueba_powerbank_real_<fecha>.csv` con EXT5V, potencia de los rieles del PMIC, `throttled`,
+  temperatura, carga y MHz; avisa si EXT5V < 4,85 V o `throttled` ≠ `0x0`. Necesita `LC_ALL=C` (con coma decimal awk
+  leía 0.1 como 0). Probado 2 s: 5,08 V, `0x0`, 2,4-2,6 W en reposo. **La prueba real (teleop 25 + visión v3 + ESP32)
+  no se hizo.**
+- La S3 todavía necesita el RST físico (el reinicio por watchdog de `lanzar.sh` no alcanza; sin mirar `~/logs/reset_s3.log`).
+- Al final se cortó todo en la Pi (visión, visor, teleop y agentes).

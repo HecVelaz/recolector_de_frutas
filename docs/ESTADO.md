@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-11; del robot, solo la alimentación de la Pi desde el 28/10)
+# Estado actual (al 2026-11-12; del robot, solo la alimentación de la Pi desde el 28/10)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
 con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar).
@@ -7,9 +7,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Software ~70 %, hardware real atrasado. Plan (atrasado): 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
   3-9/11 integración, 30 frutos, informes.
 - Potencia v0.6 (cadena en `CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y armar el divisor 100 k / 30 k.
-- **Alimentación de la Pi (10/11): el power bank cargado (4 LED) aguanta**: 10 min con 4 núcleos al 100 % (8,2 W de
-  media en los rieles; simulado, sin cámaras ni ESP32) a 5,01-5,04 V y `0x0`; lo del 28/10 era descarga. Falta la prueba
-  real y 1 h seguida. **Buck 2 a 5,20 V por USB-C: hoy no sirve** (cable fino: 4,80 V con 1 núcleo); detalle en `BITACORA.md`.
+- **Alimentación de la Pi:** el power bank cargado (4 LED) aguantó 10 min simulados (4 núcleos, 5,01 V, `0x0`; 10/11). Falta
+  la prueba real (`registrar_tension.sh`, listo en la Pi) y 1 h seguida. Buck 2 por USB-C: no sirve (cable fino).
 
 ## Base (`firmware/base`, S3) — 20 pruebas OK
 - **Ruedas en el aire (20-22/10; a fondo el 28/10, 30-40 rpm, sin atascos):** sentidos de motores y encoders correctos; K 0,6 rpm/%, zona muerta 11 %,
@@ -55,7 +54,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
   (`limon_yolo26n_v2_ncnn_model`, en uso desde el 28/10; sin el enlace de la sección 12 del cuaderno).
 - **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las
   mismas fuentes. Con las NoIR (lab, 3 limones, 20 cuadros): empate con la v1, mediana 0,79 contra 0,78.
-- Candidata **v3** (Tarea VA, amarillos, celular): P 0,93 / R 0,92; pesos perdidos en Colab: reentrenar.
+- **v3** (Tarea VA, amarillos, celular; reentrenada el 12/11): en la Pi como `limon_yolo26n_v3_ncnn_model`, 68 ms a 480;
+  detecta el limón con las NoIR (a ojo). Sin comparar con la v2 en cifras. Visor: `web_video_server` en el 8080.
 - Madurez (B3 cosechable / no cosechable) por **tamaño** con el estéreo (ancho_px · Z / f ≥ `D_min`, MEDIR): sin
   implementar. No hay clases de color: las NoIR lo corren.
 
