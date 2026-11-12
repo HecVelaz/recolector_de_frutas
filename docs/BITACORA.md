@@ -695,3 +695,22 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   El rsync copia `vision/CLASE_27_10_26` (ignorada por git, no excluida en la skill).
 - Para cortar procesos por ssh con `pkill -f`: poner el primer carácter entre corchetes (`"[s]tart_limon.sh"`); si
   no, el patrón coincide con el propio comando y corta la sesión (exit 255).
+
+## 2026-11-11: /pi-sync de documentos y revisión del cuaderno de la Tarea VA de R2
+- `/pi-sync`: solo cambiaban `BITACORA.md`, `ESTADO.md` y `PENDIENTES.md`; sin paquetes de ROS ni firmware.
+  `.commit` de la Pi = `4a2d647`. El brazo sigue sin flashear (binario de `d3644c8` en `~/firmware/brazo`).
+- Revisión de `docs/TPF R2/TAREA VA/..._Limones_Grupo2_colab_version.ipynb` (ejecutado en Colab el 07/11; mismo
+  código que la versión local, solo le falta "**Autor:** FB"). Cifras de la ejecución: YOLO26n, base
+  `brinjalproject/lemons-segmentation` v5 (915 imágenes, solo `Lemon yellow`) + propio `limones-amarillos` v3
+  (50 fotos 30/10/10, train ×3); paró en la época 51 (mejor, 31). 20 fotos propias: P 0,929, R 0,922, mAP50 0,952;
+  test propio (10): P 0,96, R 0,862; matriz 110/6/14; F1 máx. 0,92 a conf 0,459. CPU Colab: 640 → 84 ms, 480 → 55 ms
+  (mAP50 0,962), 320 → 47 ms (R 0,853). NCNN a 480: 9,2 MB, 71 ms en CPU x86.
+- Errores en el texto (sin corregir; el cuaderno lo edita el usuario en Colab): §6.1 dice "15 de 20 fotos exactas"
+  y son **16**; falta "Autor: FB" (la consigna pide *agregar* "Modificado por"); §11 dice "8 fotos de otro día y
+  otro lugar" pero es el mismo limonero y `IMG_20261107_160640` está dos veces; §5.2 "precisión 1,0 hasta R 0,85"
+  es ≈ 0,99 desde R 0,6.
+- ultralytics 8.4.153 en la Pi (venvs `yolo` y `keepon`), igual que el cuaderno. Modelos NCNN en
+  `~/vision_estereo/modelos/`; `start_limon.sh` elige con `MODELO=... CLASE=limon`.
+- Usar ese modelo como **v3** en la Pi: los pesos no están (`GUARDAR_EN_DRIVE = False`; ni en la notebook ni
+  accesibles por el conector de Drive, sin permiso de lectura). Hay que bajarlos o reentrenar en Colab. Ojo: la v2 es
+  de limones **verdes** y esta de **amarillos** con celular (nunca vio NoIR).

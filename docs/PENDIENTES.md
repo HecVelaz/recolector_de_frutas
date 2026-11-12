@@ -33,6 +33,11 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    peso; antes, el prisionero de la rueda derecha. Probar sensores en ROS (hoy nada probado con periféricos).
    Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
+2b. **Tarea VA de R2 (si no se entregó):** corregir en Colab §6.1 (16 de 20, no 15), volver a poner "Autor: FB",
+   §11 (mismo limonero, una foto repetida) y §5.2 (≈ 1,0). Detalle en la bitácora 11/11.
+2c. **Detector v3 (amarillos):** conseguir el `best.pt` (reentrenar en Colab con `GUARDAR_EN_DRIVE = True`), exportar
+   a NCNN, copiarlo a `~/vision_estereo/modelos/limon_yolo26n_v3_ncnn_model` y compararlo con la v2 con las NoIR
+   (`MODELO=... ./start_limon.sh`). Antes: confirmar de qué color son los limones de la demo.
 3. Visión: **recalibrar el estéreo** (cámaras giradas 180° el 28/10: la calibración no vale; `herramientas/calibrar_estereo.py`)
    y hacer pull de `940548d` en la Pi. v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
    tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo del limón (§5) y al sol. B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en

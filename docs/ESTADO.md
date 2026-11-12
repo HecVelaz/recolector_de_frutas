@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-10; del robot, solo la alimentación de la Pi desde el 28/10)
+# Estado actual (al 2026-11-11; del robot, solo la alimentación de la Pi desde el 28/10)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
 con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar).
@@ -55,6 +55,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
   (`limon_yolo26n_v2_ncnn_model`, en uso desde el 28/10; sin el enlace de la sección 12 del cuaderno).
 - **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las
   mismas fuentes. Con las NoIR (lab, 3 limones, 20 cuadros): empate con la v1, mediana 0,79 contra 0,78.
+- Candidata **v3** (Tarea VA R2, 07/11, limones **amarillos** con celular): P 0,93 / R 0,92 en 20 fotos propias.
+  Pesos perdidos con la sesión de Colab: reentrenar o bajarlos para probarla en la Pi.
 - Madurez (B3 cosechable / no cosechable) por **tamaño** con el estéreo (ancho_px · Z / f ≥ `D_min`, MEDIR): sin
   implementar. No hay clases de color: las NoIR lo corren.
 
@@ -64,7 +66,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 
 ## Pi 5
 - `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
-  entra solo por Tailscale). `.commit`: `d3644c8` (10/11, igual a `main` y a GitHub); `brazo_ik` y `mision` recompilados. Agentes y `teleop_web.py` se lanzan a mano en segundo
+  entra solo por Tailscale). `.commit`: `4a2d647` (11/11; firmware del brazo de `d3644c8` sin flashear); `brazo_ik` y `mision` recompilados. Agentes y `teleop_web.py` se lanzan a mano en segundo
   plano (no arrancan solos); al reconectar los USB o reiniciar, relanzar los agentes y despertar la S3 con esptool.
 - Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
   `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).
