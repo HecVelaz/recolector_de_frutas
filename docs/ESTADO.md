@@ -22,8 +22,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Sin probar: IMU, HC-SR04, bumpers y seta en ROS; odometría en el piso; parada real por el watchdog de 300 ms.
 
 ## Brazo (`firmware/brazo`, WROOM) — 18 pruebas OK
-- Cascada J1-J3 + pinza, pines v0.5; en la WROOM sigue `072c403` (26/10): **falta flashear** el J1 nuevo (binario en la Pi). Movido desde el
-  celular con `teleop_web.py` (jog `d`, lazo abierto). Topes (jog y `dutyMax`): 50 % en las tres.
+- **En la WROOM está `pruebas-esp32/20-brazo-coordinado` env `ros` (11/11)**, no este firmware: no flashear `d3644c8` (viejo).
+  Este firmware: cascada J1-J3 + pinza, pines v0.5; falta pasarle lo de 20. Topes (jog y `dutyMax`): 50 % en las tres.
 - El encoder de J2 no contaba (atasco a los 0,3 s); tras revisarlo el usuario el joystick funcionó, sin confirmar con `e`.
 - Finales de carrera (GPIO 32/33/27, `home <n>`): previstos en el firmware, sin montar; falta medir `HOME_Q`.
 - J1 con los parámetros de `pruebas-esp32/10` (sin probar en este firmware). J2/J3: motores 36-555 58 rpm 139:1 +
@@ -65,7 +65,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 
 ## Pi 5
 - `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
-  entra solo por Tailscale). `.commit`: `4a2d647` (11/11; firmware del brazo de `d3644c8` sin flashear); `brazo_ik` y `mision` recompilados. Agentes y `teleop_web.py` se lanzan a mano en segundo
+  entra solo por Tailscale). `.commit`: `4badf7a` (12/11); `brazo_ik` y `mision` recompilados. Agentes y `teleop_web.py` se lanzan a mano en segundo
   plano (no arrancan solos); al reconectar los USB o reiniciar, relanzar los agentes y despertar la S3 con esptool.
 - Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
   `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).
