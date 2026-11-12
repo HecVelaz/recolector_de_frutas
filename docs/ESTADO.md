@@ -55,8 +55,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
   (`limon_yolo26n_v2_ncnn_model`, en uso desde el 28/10; sin el enlace de la sección 12 del cuaderno).
 - **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las
   mismas fuentes. Con las NoIR (lab, 3 limones, 20 cuadros): empate con la v1, mediana 0,79 contra 0,78.
-- Candidata **v3** (Tarea VA R2, 07/11, limones **amarillos** con celular): P 0,93 / R 0,92 en 20 fotos propias.
-  Pesos perdidos con la sesión de Colab: reentrenar o bajarlos para probarla en la Pi.
+- Candidata **v3** (Tarea VA, amarillos, celular): P 0,93 / R 0,92; pesos perdidos en Colab: reentrenar.
 - Madurez (B3 cosechable / no cosechable) por **tamaño** con el estéreo (ancho_px · Z / f ≥ `D_min`, MEDIR): sin
   implementar. No hay clases de color: las NoIR lo corren.
 
