@@ -13,7 +13,7 @@ YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`). **Fecha l
 - Potencia v0.6: LiPo 3S directa al bus de 12 V (XT60 → fusible 20 A → seta → selector WEG); Pi y ESP32 con el power bank PB2020MI.
 - Raspberry Pi 5 (Ubuntu 24.04, ROS 2 Jazzy): visión estéreo + YOLO, IK, misión, GPS. Habla por USB (micro-ROS) con dos ESP32.
 - **ESP32-S3** (base): tracción, encoders, IMU, 3 HC-SR04, 3 bumpers, seta, batería. **ESP32-WROOM-32D** (brazo): J1-J3 con IBT-2, 2 servos.
-- 2 cámaras NoIR por CSI en un mástil adelante a la derecha (estéreo, baseline 90 mm); GPS UP501 en la Pi. La demo es al aire libre.
+- 2 cámaras NoIR por CSI en un mástil adelante a la derecha, mirando a la izquierda y cabeza abajo (estéreo, baseline 100 mm); GPS UP501 en la Pi. La demo es al aire libre.
 - Brazo RRR tipo uArm (paralelogramo: herramienta siempre horizontal), atrás a la izquierda sobre el eje de tracción.
 
 ## Reglas

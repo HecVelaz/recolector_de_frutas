@@ -45,13 +45,13 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 ## Visión (repo `HecVelaz/vision_estereo`)
 - `scripts/start_limon.sh`: cámaras + rectificación + SGBM (~2,5 Hz) + `detector_node` + `localizador_node`
   (`/limon/posicion` en el marco óptico RECTIFICADO de la cámara izquierda).
-- Calibración `config/calibracion_soporte_2/`: RMS 0,36 px, baseline 89,5 mm, ventana 0,38-0,96 m. Zona ciega:
-  u < ~163 px de la imagen izquierda.
-- Limón real en el lab: confianza mediana 0,80; error 3D máx. 17 mm (B5 pide ≤ 35 mm). Falta el campo y las NoIR al sol.
-- **Cámaras en el mástil (12/11):** miran a la izquierda, horizontales, a ~58,7 cm del piso, separación ~10 cm, cabeza
-  abajo (`orientacion: 180`, `940548d` sin push). **Calibración inválida:** recalibrar en una mesa (plan en `BITACORA.md`).
-- Detector de una sola clase `limon`. En la Pi están la **v1** (28/09, `limon_yolo26n_ncnn_model`) y la **v2**
-  (`limon_yolo26n_v2_ncnn_model`, en uso desde el 28/10; sin el enlace de la sección 12 del cuaderno).
+- **Mástil (12/11):** cámaras mirando a la izquierda (−x), horizontales, a ~58,5 cm del piso, cabeza abajo. Referencia
+  (izquierda) = la de **atrás**, ≈ (330, 195, 327) mm; adelante ≈ (330, 295, 327). `calibracion_mastil`: RMS 0,22 px,
+  baseline 100,3 mm, ventana 0,37-0,96 m; el brazo tapa media imagen izquierda (hasta u ≈ 280 px).
+- Contra cinta: tablero +18 mm constante; **arbusto (v3, robot quieto): Z +7 a +11 mm, detección 100 %, posición
+  ~70 %.** Limón en movimiento: falla. A 0° y 40-55 cm solo ve limones de ≳ 40 cm. Detalle en `vision_estereo`.
+- Detector de una sola clase `limon`. En la Pi están la **v1** (28/09), la **v2** (28/10) y la **v3**
+  (`limon_yolo26n_v3_ncnn_model`, 12/11, en uso para los ensayos desde el 12/11; se pasa con `MODELO=`).
 - **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las
   mismas fuentes. Con las NoIR (lab, 3 limones, 20 cuadros): empate con la v1, mediana 0,79 contra 0,78.
 - **v3** (Tarea VA, amarillos, celular; reentrenada el 12/11): en la Pi como `limon_yolo26n_v3_ncnn_model`, 68 ms a 480;

@@ -39,12 +39,10 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    §11 (mismo limonero, una foto repetida) y §5.2 (≈ 1,0). Detalle en la bitácora 11/11.
 2c. **Detector v3 (amarillos):** ya en la Pi (12/11) y detecta con las NoIR. Falta compararlo con la v2 en cifras
    (confianza mediana, 20 cuadros, como el 28/10) y afuera al sol; confirmar el color de los limones de la demo.
-3. Visión: **recalibrar el estéreo en el mástil** (12/11: mirando a la izquierda, ~58,7 cm del piso, ~10 cm entre
-   cámaras): sesión en `vision_estereo` con el prompt del 12/11 (orden izq/der, foco a 0,7 m, robot sobre una mesa,
-   tablero `docs/Imprimir.pdf`); después cinta y limón en el piso. Fijar el caño contra el giro. Medir las alturas del
-   limón más bajo y del más alto. Antes: `herramientas/calibrar_estereo.py`
-   y hacer pull de `940548d` en la Pi. v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
-   tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo del limón (§5) y al sol. B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
+3. Visión: estéreo recalibrado en el mástil y probado en el arbusto (12/11, `calibracion_mastil`). Falta: **TF cámara →
+   brazo** (`mision.launch.py`, medir con `pruebas-esp32/20-brazo-coordinado`), limones bajos (inclinar el soporte
+   ~15°) y fijar el caño contra el giro. v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
+   tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo al sol (§5; en el arbusto del lab hecha el 12/11). B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
    `vision_estereo`, medir `D_min` con limones reales; obstáculo sin hacer. Fotos propias con las NoIR para el
    detector. 
 4. Brazo (J2/J3 con **doble helicoidales 15 → 75 desde el 10/11**: primero, a mano y sin 12 V, medir el juego en la
