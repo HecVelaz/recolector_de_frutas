@@ -7,8 +7,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2
 - Software ~70 %, hardware real atrasado. Plan (atrasado): 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
   3-9/11 integración, 30 frutos, informes.
 - Potencia v0.6 (cadena en `CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y armar el divisor 100 k / 30 k.
-- **Alimentación de la Pi:** el power bank cargado (4 LED) aguantó 10 min simulados (4 núcleos, 5,01 V, `0x0`; 10/11). Falta
-  la prueba real (`registrar_tension.sh`, listo en la Pi) y 1 h seguida. Buck 2 por USB-C: no sirve (cable fino).
+- **Alimentación de la Pi: power bank OK** (prueba real del 12/11, 1 h: EXT5V 4,96–5,13 V, `throttled` 0x0 siempre,
+  4 W de media y 10,5 W de pico, 61 °C máx; `~/logs/prueba_powerbank_real_20261112_1450.csv` en la Pi).
 
 ## Base (`firmware/base`, S3) — 20 pruebas OK
 - **Ruedas en el aire (20-22/10; a fondo el 28/10, 30-40 rpm, sin atascos):** sentidos de motores y encoders correctos; K 0,6 rpm/%, zona muerta 11 %,

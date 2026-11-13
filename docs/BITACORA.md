@@ -758,3 +758,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
   `medir_profundidad_tablero.py`. Prompt completo para la sesión en `vision_estereo` pasado al usuario (orden
   izq/der, foco, `config/calibracion_mastil`, criterios RMS ≲ 0,4 px y epipolar ≲ 0,1 px, z_max ~1,1 m, zona ciega, FOV).
 - Pendiente del usuario: alturas del limón más bajo y del más alto del árbol de la demo.
+
+## 2026-11-12 (noche) — TF cámara → brazo, agarre con la visión, power bank
+- TF `brazo_base -> stereo_camera_link` medida en `pruebas-esp32/20-brazo-coordinado` (9 puntos, ~2 cm): x 0,1961
+  y −0,2694 z 0,3833 m, roll 0,0425 pitch 0,2415 yaw 1,5810 rad (cámaras ~14° hacia abajo), con `radio_limon` 0,025
+  (limón de juguete de 5 cm). Con esa TF y `punta.py` (a mano) el brazo agarró todos los limones pedidos.
+- `mision.launch.py`: argumento `radio_limon` (`bcc611d`); baseline 100,3 mm en `entrenar_limon` (`8ba48ca`).
+  Pi sincronizada en `bcc611d` (solo `mision` compilado; firmware sin tocar: la WROOM sigue con 20 env `ros`).
+- Power bank: prueba real de 1 h OK (14:50–15:50; EXT5V 4,96–5,13 V, `throttled` 0x0, 4 W media, 10,5 W pico, 61 °C).
+- Caño del mástil fijado (usuario). Falta: la misión no mueve el brazo de 20 (`brazo_ik` publica `/brazo/joint_cmd`;
+  el 20 escucha `/brazo/comando` en texto).

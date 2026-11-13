@@ -20,12 +20,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
    b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
    `placa_s3` ya está republicada con 30 k (16/10).
-0b. **Alimentación de la Pi (10/11):** el power bank cargado (4 LED) aguantó 10 min con 4 núcleos al 100 % a
-   5,01-5,04 V y `0x0`, pero **simulado** (sin cámaras ni ESP32; `BITACORA.md`). Falta: (a) repetir con las cámaras,
-   los ESP32, `lanzar.sh` (25) y `start_limon.sh` con la v3, 10 min, con `registrar_tension.sh` (en la Pi, 12/11);
-   (b) 1 h seguida para ver cómo cae al descargarse; cargarlo al 100 % antes de
-   la demo. Alternativa: buck 2 a 5,20 V por USB-C desde antes de la seta; hoy no sirve (4,80 V con 1 núcleo): necesita
-   un cable de carga rápida de 10-15 cm con el empalme soldado, y repetir la prueba (≥ 4,9 V con 4 núcleos).
+0b. ~~**Alimentación de la Pi**~~ (12/11): prueba real de 1 h con el power bank OK (EXT5V ≥ 4,96 V, `0x0`; ESTADO).
+   Cargarlo al 100 % antes de la demo.
 1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60
    (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
@@ -42,7 +38,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 3. Visión: estéreo recalibrado en el mástil y probado en el arbusto (12/11, `calibracion_mastil`). TF cámara → brazo
    **medida el 12/11** (9 puntos, ~2 cm; valores en el docstring de `mision.launch.py`, `radio_limon:=0.025`); el error
    viene sobre todo del modelo de la punta en z (`pruebas-esp32`, bitácora del 12/11). Falta: limones bajos (inclinar el soporte
-   ~15°) y fijar el caño contra el giro. v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
+   ~15°) ; caño del mástil **fijado** (12/11, usuario). v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
    tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo al sol (§5; en el arbusto del lab hecha el 12/11). B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
    `vision_estereo`, medir `D_min` con limones reales; obstáculo sin hacer. Fotos propias con las NoIR para el
    detector. 
