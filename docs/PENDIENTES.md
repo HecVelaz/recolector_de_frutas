@@ -38,7 +38,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 3. Visión: estéreo recalibrado en el mástil y probado en el arbusto (12/11, `calibracion_mastil`). TF cámara → brazo
    **medida el 12/11** (9 puntos, ~2 cm; valores en el docstring de `mision.launch.py`, `radio_limon:=0.025`); el error
    viene sobre todo del modelo de la punta en z (`pruebas-esp32`, bitácora del 12/11). Falta: limones bajos (inclinar el soporte
-   ~15°) ; caño del mástil **fijado** (12/11, usuario). v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
+   ~15°); caño del mástil **fijado** (12/11, usuario). v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
    tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo al sol (§5; en el arbusto del lab hecha el 12/11). B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
    `vision_estereo`, medir `D_min` con limones reales; obstáculo sin hacer. Fotos propias con las NoIR para el
    detector. 
