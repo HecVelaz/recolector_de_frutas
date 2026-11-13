@@ -29,7 +29,7 @@
 #
 # **Arquitectura del sistema de visión**
 #
-# Dos cámaras NoIR (estéreo, baseline 90 mm)
+# Dos cámaras NoIR (estéreo, baseline 100,3 mm)
 # ↓
 #
 # Rectificación + disparidad SGBM
@@ -558,7 +558,7 @@ for nombre in subidos:
 #
 # $$Z = \frac{f_x \, B}{d}$$
 #
-# con $B$ el baseline (89,5 mm, calibrado). El nodo `localizador_node` toma el centro de la caja de YOLO, lee la
+# con $B$ el baseline (100,3 mm, calibrado en el mástil el 12/11). El nodo `localizador_node` toma el centro de la caja de YOLO, lee la
 # disparidad alrededor y publica `/limon/posicion` (`geometry_msgs/PointStamped`) en el marco de la cámara
 # izquierda; `tf2` lo lleva a la base del brazo.
 #
