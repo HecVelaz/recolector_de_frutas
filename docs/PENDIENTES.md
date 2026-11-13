@@ -39,8 +39,9 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    §11 (mismo limonero, una foto repetida) y §5.2 (≈ 1,0). Detalle en la bitácora 11/11.
 2c. **Detector v3 (amarillos):** ya en la Pi (12/11) y detecta con las NoIR. Falta compararlo con la v2 en cifras
    (confianza mediana, 20 cuadros, como el 28/10) y afuera al sol; confirmar el color de los limones de la demo.
-3. Visión: estéreo recalibrado en el mástil y probado en el arbusto (12/11, `calibracion_mastil`). Falta: **TF cámara →
-   brazo** (`mision.launch.py`, medir con `pruebas-esp32/20-brazo-coordinado`), limones bajos (inclinar el soporte
+3. Visión: estéreo recalibrado en el mástil y probado en el arbusto (12/11, `calibracion_mastil`). TF cámara → brazo
+   **medida el 12/11** (9 puntos, ~2 cm; valores en el docstring de `mision.launch.py`, `radio_limon:=0.025`); el error
+   viene sobre todo del modelo de la punta en z (`pruebas-esp32`, bitácora del 12/11). Falta: limones bajos (inclinar el soporte
    ~15°) y fijar el caño contra el giro. v2 ya en la Pi: compararla con la v1 afuera, al sol y con limones lejos o
    tapados (en el lab empatan); después, el enlace de la sección 12. Prueba de campo al sol (§5; en el arbusto del lab hecha el 12/11). B3: madurez por tamaño (diámetro = ancho_px · Z / f) en la misión o en
    `vision_estereo`, medir `D_min` con limones reales; obstáculo sin hacer. Fotos propias con las NoIR para el
@@ -56,7 +57,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 7. **Después de la prueba integrada (decisión 08/10: ahora se minimiza todo lo no esencial):** H8 de la guía R2 —
    luz, buzzer y habilitación física del brazo con estado visible (sacados de la v0.5); la seta ya corta los 12 V de
    todos los motores. R2: app del celular (E7), detección de árboles/troncos/caminos (E5), herramienta (E6).
-8. Medir la TF cámara → brazo con el soporte rígido (argumentos de `mision.launch.py`) y probar `mision` con el
+8. ~~Medir la TF cámara → brazo~~ (12/11). Pasar a `brazo_ik` el modelo medido de la punta (`pruebas-esp32/20`,
+   `cinematica.py`, hombro 165 mm; hoy E4 con 150) y probar `mision` con el
    brazo real: `cierre`, `reposo` y `largo_herramienta` (muñeca → centro del agarre, en horizontal; más un desfase
    vertical si lo hay, hoy no contemplado).
 9. Preguntas a la cátedra que quedan (`docs/ARQUITECTURA.md` §11: eje lineal de 1,2 m, GDL en R2, cajones).

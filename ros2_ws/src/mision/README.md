@@ -44,7 +44,8 @@ armada, al soltarla el brazo arrancaría con el error acumulado mientras J2/J3 c
   de hace menos de 2 s (al reconectar el agente, el brazo vuelve desarmado a propósito: la misión solo arma en
   INICIO).
 - Las muestras usan el tiempo de la imagen: se descartan las de más de 1 s (`edad_max_imagen`) y las repetidas.
-- La visión da la **superficie** del limón: el nodo le suma `radio_limon` (3 cm) sobre el rayo de la cámara.
+- La visión da la **superficie** del limón: el nodo le suma `radio_limon` (3 cm por defecto; argumento
+  del launch, `radio_limon:=0.025` con el limón de juguete de 5 cm) sobre el rayo de la cámara.
 - El objetivo es el **punto de agarre (TCP)**: `brazo_ik` lo pasa a muñeca con `largo_herramienta` (herramienta
   horizontal, brazo tipo uArm). `mision` usa el mismo `largo_herramienta` para ver si el limón es alcanzable.
 
