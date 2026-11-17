@@ -768,3 +768,22 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard          # frenar con el ej
 - Power bank: prueba real de 1 h OK (14:50–15:50; EXT5V 4,96–5,13 V, `throttled` 0x0, 4 W media, 10,5 W pico, 61 °C).
 - Caño del mástil fijado (usuario). Falta: la misión no mueve el brazo de 20 (`brazo_ik` publica `/brazo/joint_cmd`;
   el 20 escucha `/brazo/comando` en texto).
+
+## 2026-11-13 — Navegación y recolección autónoma (en `pruebas-esp32`)
+Resumen; el detalle y las cifras completas están en `pruebas-esp32/notas/BITACORA.md` (commits `e1beae0`, `7ee08ee`,
+`9921b2f`, `ba907ec`, `9a58ac5` de ese repo).
+- **Base en ROS:** S3 con el env `ros` de `firmware/base` (sin cambios desde el 11/11), flasheada desde la Pi con
+  `--after watchdog-reset` (arranca sola). Con 12 V: batería 11,24 V, HC-SR04 ×3, bumpers ×3, seta e IMU OK (la IMU
+  era un cable; calibra el giróscopo sola al arrancar). Con micro-ROS el watchdog es de 300 ms: `/cmd_vel` continuo.
+- **Odometría en el piso:** `recto 1.0` → 102,2 / 102,8 cm contra ~102 cm de cinta (< 1 %). `giro 90`: las ruedas
+  se pasan ~2° cada 90° (patinan); el giróscopo acierta (~±1°). Decisión del usuario: giros con el giróscopo,
+  distancia con las ruedas; frenado proporcional en `25-teleop-pi/tools/movimiento.py`.
+- **Demo (decisión del usuario):** un solo arbolito en el aula (el profesor lo acepta) con marcas ArUco; GPS solo para
+  la rúbrica. Marcas DICT_4X4_50 de 15 cm (`27-aruco-arbol`), ID 0 en la maceta; se ven de ~0,9 a ~4 m.
+  Calibración de navegación de la cámara: `27/resultados/tf_navegacion.json` (~3 cm a 1–2 m).
+- **Parada** (`26-sim-alcance-arbolito`): tronco a 70 cm a la izquierda de J1 y 15 cm adelante; 4 paradas cada 90° =
+  100 % del arbolito medido (60 cm, limones de 32 a 54 cm del piso). Validada agarrando desde ahí.
+- **Primera recolección autónoma completa (`recolectar.py`, 95 s):** marca a 1,4 m → girar 85° (giróscopo 85,4°) →
+  avanzar 88 cm (88,8) → girar 87° (87,5°) → limón medido (7 posiciones, 0,7 mm) → agarre en 54 s. Agarró el limón.
+- GPS en la Pi a 9600 baud (`-r fix:=/gps/fix`); adentro sin fix. Un corte del enlace USB de la S3 durante un giro.
+- Al cierre: WROOM con 20 env `brazo` (serie). `ros2_ws/src/mision` no tiene este enfoque (ver PENDIENTES).

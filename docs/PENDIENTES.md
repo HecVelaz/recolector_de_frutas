@@ -4,8 +4,17 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 
 000. **Fecha límite (10/11):** el 9/11 ya pasó; confirmar la nueva fecha o qué se entregó/demostró, y actualizar
    `CLAUDE.md`, `ESTADO.md` y esta lista. Registrar lo hecho en el robot desde el 28/10 (no hay nada anotado).
+00a. **Navegación y recolección autónoma (13/11, en `pruebas-esp32`; detalle en su `notas/PENDIENTES.md`), en orden:**
+   a) **BUSCAR:** si no ve la marca, girar de a ~20° con el giróscopo; si no aparece en 360°, avanzar ~1 m esquivando
+      con los HC-SR04. Hoy `recolectar.py` tiene que arrancar viendo la marca.
+   b) **RODEAR:** pegar las marcas ID 1–3 (antihorario) e ir de parada en parada con arcos de 90°, el árbol a la izquierda.
+   c) **Soltar el limón:** el lugar todavía no está decidido.
+   d) **Seguridad con los motores andando:** HC-SR04 < 20 cm, bumper, vuelco y los cortes del USB de la S3.
+   e) **Llevarlo a la misión ROS** (`ros2_ws/src/mision`), primero en Gazebo: mandar texto por `/brazo/comando` al
+      firmware 20 (no entiende `/brazo/joint_cmd`) con la WROOM en el env `ros`; los giros con `movimiento.py` / el
+      giróscopo o `robot_localization` con `/odom` + IMU; el GPS (±20 m) solo para la rúbrica.
 000b. **Brazo: NO flashear `firmware/brazo`** (el binario `ros` de `d3644c8` en `~/firmware/brazo` de la Pi está viejo).
-   Desde el 11/11 la WROOM tiene `pruebas-esp32/20-brazo-coordinado` env `ros` (franja, caja, homing 3/6/3, pinza y
+   Desde el 11/11 la WROOM tiene `pruebas-esp32/20-brazo-coordinado` (env `brazo`, serie, desde el 13/11; el `ros` en `respaldo_wroom_20261112.bin`) (franja, caja, homing 3/6/3, pinza y
    muñeca; lo usa el teleop `25-teleop-pi`). Falta pasar todo eso a `firmware/brazo` (pendiente "f" de
    `pruebas-esp32/notas/PENDIENTES.md`) y recién ahí flashearlo. Respaldo de 20: `~/firmware/brazo/respaldo_wroom_20261111.bin`.
 
@@ -26,9 +35,9 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
 2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → seta → selector WEG → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
-   "Antes de conectar". Base con ruedas en el aire: hecha el 20/10. Falta, en el piso y con la IMU, el HC-SR04 del
-   frente y el env `ros`: odometría contra cinta (radio, trocha, cuentas), parada real por watchdog y corriente con
-   peso; antes, el prisionero de la rueda derecha. Probar sensores en ROS (hoy nada probado con periféricos).
+   "Antes de conectar". Base con ruedas en el aire: hecha el 20/10. **13/11: env `ros` con IMU, HC-SR04,
+   bumpers y seta OK en ROS, y odometría en el piso medida (recto < 1 %).** Falta: parada real por watchdog, corriente
+   con peso y las pruebas de seguridad con los motores (00a d); confirmar si el prisionero de la rueda derecha se arregló.
    Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 2b. **Tarea VA de R2 (si no se entregó):** corregir en Colab §6.1 (16 de 20, no 15), volver a poner "Autor: FB",
@@ -63,7 +72,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
    (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
 11. Herramientas: decidir si `/pi-sync` prueba también el Wi-Fi FIUNA (172.16.240.92) cuando no responden Tailscale
    ni la LAN (sin verificar que esa IP siga valiendo).
-12. Recorrido autónomo en el robot real: calibrar antes el sesgo del giróscopo (supone arrancar en el centro del pasillo).
+12. Recorrido autónomo por hilera (`recorrido.py`) en el robot real: sin probar; la demo pasó a ser un arbolito con
+   marcas (00a). El giróscopo ya se calibra solo al arrancar (13/11).
 13. Red directa celular ↔ Pi para el piso y la demo afuera (datos compartidos del celular o red propia de la Pi): sin
    Wi-Fi de FIUNA no hay Tailscale directo garantizado, y por el relay de São Paulo el joystick tiene lag.
 14. Encoder de J2: confirmar con `e` que cuenta (el 26/10 no contaba; después del arreglo del usuario no se midió).
