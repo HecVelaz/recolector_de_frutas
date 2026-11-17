@@ -39,4 +39,6 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
   UP501 da ±20 m. Giros con el giróscopo y distancia con las ruedas (las ruedas se pasan ~2° cada 90°).
 - **Celular como sensor de navegación: no por ahora (17/11):** no mejora la parada (±5 cm), el magnetómetro sufre
   junto a los motores y H2/H3 lo dejan en zona gris. Se reconsidera solo si sobra tiempo y la cátedra lo acepta.
+- **Plan hasta la demo del 27/11 (17/11, usuario):** prioridad a la demo con el arbolito (BUSCAR, RODEAR, soltar,
+  seguridad) y a pasarla a ROS; afuera la hilera, el EKF, la app nueva y las métricas detalladas.
 

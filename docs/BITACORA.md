@@ -804,3 +804,8 @@ Resumen; el detalle y las cifras completas están en `pruebas-esp32/notas/BITACO
   11 %, τ 80 ms); rango de J1 45°/225° en el marco de `brazo_ik`, reposo 75°/94°/−50°, q2 −25…135°, q3 ±50°; arbusto
   con v3 y el robot quieto: Z +7 a +11 mm, detección 100 %, posición ~70 %; en Gazebo sin probar limones a menos de
   45° adelante-izquierda con el rango nuevo de J1.
+- **Fecha límite nueva: 27/11/2026 (demo).** Plan día por día hasta el 26/11 en `PENDIENTES.md` (000): robot =
+  usuario, software = Claude en paralelo. Recortado: hilera, EKF, app nueva, métricas detalladas, madurez, celular.
+  Plan B: demostrar con `recolectar.py` si la misión ROS no llega. `CLAUDE.md`: fecha y "la demo es en el aula con un
+  arbolito y marcas ArUco" (antes "al aire libre"). Commits `ecaaace`, `612aafb`, `2f10b5c`, `77b02d0`.
+
