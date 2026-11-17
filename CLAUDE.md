@@ -6,7 +6,7 @@ también en sesiones largas o mientras se depura. Nunca pasar al inglés. Detall
 ## Proyecto
 Robot móvil autónomo recolector de limones "Arturito R2D2" (Grupo 2, FIUNA Mecatrónica, 2026S2). **Robótica I**
 evalúa el brazo; **Robótica II**, el robot móvil con ROS 2. Objetivo mínimo: **el robot se mueve, detecta el limón con
-YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`). **Fecha límite: 9/11/2026.**
+YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`). **Fecha límite: 27/11/2026** (demo).
 
 ## Hardware clave (detalle en `docs/CONEXIONES.md`)
 - Base en T de madera (40 cm; adelante la parte ancha con el brazo, atrás las ruedas de tracción de 150 mm), 2× 42GM-895H con IBT-2.

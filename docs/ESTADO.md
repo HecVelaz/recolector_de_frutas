@@ -1,7 +1,7 @@
 # Estado actual (al 2026-11-17; el robot, al 13/11)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
-con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar la nueva).
+con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/2026** (demo; plan día por día en `PENDIENTES.md`).
 
 ## Avance
 - **Primera recolección autónoma completa en el robot real (13/11, 95 s)**, con scripts de `pruebas-esp32`; la

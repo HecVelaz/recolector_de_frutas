@@ -1,9 +1,19 @@
 # Próximos pasos
 
-Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md`.
+Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
 
-000. **Fecha límite (10/11):** el 9/11 ya pasó; confirmar la nueva fecha o qué se entregó/demostró, y actualizar
-   `CLAUDE.md`, `ESTADO.md` y esta lista. Registrar lo hecho en el robot desde el 28/10 (no hay nada anotado).
+000. **Plan hasta la demo del 27/11** (17/11; robot = usuario, software = Claude en paralelo, probado en Gazebo):
+   | Días | Robot | Software |
+   |---|---|---|
+   | 18–19/11 | Seguridad con los motores andando (00a d) | BUSCAR (00a a) y paradas de seguridad en `movimiento.py` |
+   | 20–21/11 | Pegar las marcas 1–3, probar BUSCAR, decidir dónde soltar | RODEAR (00a b) y soltar (00a c) |
+   | 22–23/11 | Recolección en las 4 paradas | Misión ROS (00a e) con los estados de S3; nodo `seguridad` aparte (S2) |
+   | 24–25/11 | WROOM al env `ros`; probar la misión ROS | Rosbag por misión (S5), GPS en el registro, estado y alarmas en `teleop_web.py` (S6) |
+   | 26/11 | Ensayo general y video de respaldo | Ajustes |
+   - **Recortado:** hilera (`recorrido.py`), EKF, app nueva, métricas detalladas, madurez por tamaño, celular como
+     sensor. H8 (luz y buzzer) solo si sobra un día y hay piezas.
+   - **Plan B:** si la misión ROS no llega, demostrar con `recolectar.py` y presentar la misión ROS como en curso.
+   - **Riesgo:** los cortes del USB de la S3 (la base se desarma). Falta saber si el 27/11 hay además informe (E7/E8).
 00a. **(Con a, b y d se cubre N3 de la guía.)** **Navegación y recolección autónoma (13/11, en `pruebas-esp32`; detalle en su `notas/PENDIENTES.md`), en orden:**
    a) **BUSCAR:** si no ve la marca, girar de a ~20° con el giróscopo; si no aparece en 360°, avanzar ~1 m esquivando
       con los HC-SR04. Hoy `recolectar.py` tiene que arrancar viendo la marca.
