@@ -12,17 +12,8 @@ su versión NCNN (a 480, como predice el nodo `yolo_ros` de la Pi).
 
 ## Versiones del detector (`versiones/`)
 
-Copia fija del cuaderno con el que salió cada modelo. Los pesos no van en git: están en Drive y en la Pi
-(`~/vision_estereo/modelos/`).
-
-| Versión | Cuaderno | Datos | Pesos |
-|---|---|---|---|
-| v1 (28/09) | `v1_entrenar_limon_2026-09-28.ipynb` (commit `e03901d`) | Roboflow: `lime-detection` + `tree-fruit-detection` (`lime`) | Drive `arturito/limon_yolo_v1`; Pi `limon_yolo26n_ncnn_model` |
-| v2 (28/10) | `v2_entrenar_limon_2026-10-28.ipynb` (commit `ea6cf01`) | Solo limones verdes (ver Estado, 28/10) | Drive `arturito/limon_yolo_v2`; Pi `limon_yolo26n_v2_ncnn_model` |
-| v3 (12/11) | `v3_tarea_va_limones_amarillos_2026-11-12.ipynb` (Tarea VA de R2, corrida del 12/11 que guardó los pesos en Drive; época 51, mejor 31) | `brinjalproject/lemons-segmentation` + 50 fotos propias de limones amarillos | Drive `R2_TPF2026S2_limones/`; Pi `limon_yolo26n_v3_ncnn_model` (en uso) |
-
-`entrenar_limon.ipynb` (arriba) es el cuaderno vivo de la línea v1/v2; el de la v3 se edita en Colab y esta es
-una copia (el original es `[2026S2]_R2_TPF2026S2_VA_Limones_G2_V2.ipynb` en `docs/TPF R2/TAREA VA/`, fuera de git).
+Una carpeta por versión (`v1/`, `v2/`, `v3/`) con su cuaderno y sus resultados; el resumen ordenado está en
+[`versiones/README.md`](versiones/README.md). `entrenar_limon.ipynb` (arriba) es el cuaderno vivo de la línea v1/v2.
 
 Formato (desde el 27/10): el del cuaderno de la clase del profesor (`vision/CLASE_27_10_26/`, frutillas):
 secciones numeradas y comentadas, estadísticas por dataset, chequeo de B4, matriz de confusión, etiqueta contra
