@@ -787,3 +787,20 @@ Resumen; el detalle y las cifras completas están en `pruebas-esp32/notas/BITACO
   avanzar 88 cm (88,8) → girar 87° (87,5°) → limón medido (7 posiciones, 0,7 mm) → agarre en 54 s. Agarró el limón.
 - GPS en la Pi a 9600 baud (`-r fix:=/gps/fix`); adentro sin fix. Un corte del enlace USB de la S3 durante un giro.
 - Al cierre: WROOM con 20 env `brazo` (serie). `ros2_ws/src/mision` no tiene este enfoque (ver PENDIENTES).
+
+## 2026-11-17 — Análisis de la guía R2: celular, navegación y N3 (sin cambios en el robot)
+- **Celular como sensor (GPS, IMU, magnetómetro):** la guía R2 no lo menciona; el celular solo aparece como interfaz
+  (S6, E7). H2 pide IMU y GPS en la base y H3 procesamiento a bordo; §8 permite componentes comerciales: zona gris,
+  consultar a la cátedra. Conclusión: no vale la pena ahora (GPS del celular 3–5 m contra 21 m del UP501, pero
+  ninguno sirve para la parada de ±5 cm; magnetómetro ruidoso junto a los motores; haría falta un segundo celular en
+  el mástil). Si sobra tiempo: página en `teleop_web.py` que publique la geolocalización (requiere HTTPS: `tailscale serve`).
+- **Tipo de navegación de `recorrido.py`:** por estima (odometría + giróscopo) con capa reactiva (esquive con HC-SR04,
+  frenado por bumper y por YOLO), sin mapa; no sigue la hilera con sensores. N3 (seguimiento, evitación, detención
+  ante personas) solo parcial y simulado; no hay nodo de seguridad separado (S2).
+- Con la decisión del 13/11 (arbolito con marcas), N3 se cubriría con BUSCAR + esquive, RODEAR con las marcas 1–3 y
+  la seguridad con los motores andando (PENDIENTES 00a a, b, d).
+- Mensaje de la sesión `pruebas-esp32` con lo del 13/11 pasado a ESTADO, BITACORA y PENDIENTES (`ecaaace`).
+- Sacado de ESTADO al reescribirlo (no estaba en la bitácora): PI de las ruedas 0,89/11,1 (K 0,6 rpm/%, zona muerta
+  11 %, τ 80 ms); rango de J1 45°/225° en el marco de `brazo_ik`, reposo 75°/94°/−50°, q2 −25…135°, q3 ±50°; arbusto
+  con v3 y el robot quieto: Z +7 a +11 mm, detección 100 %, posición ~70 %; en Gazebo sin probar limones a menos de
+  45° adelante-izquierda con el rango nuevo de J1.

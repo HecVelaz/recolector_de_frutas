@@ -1,108 +1,63 @@
-# Estado actual (al 2026-11-13, noche; lo del 13/11 viene de `pruebas-esp32`)
+# Estado actual (al 2026-11-17; el robot, al 13/11)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
-con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar).
+con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **9/11/2026** (ya pasó: confirmar la nueva).
 
 ## Avance
-- Software ~70 %, hardware real atrasado. Plan (atrasado): 20-26/10 hilera real, app, TF; 27/10-2/11 J2/J3 y `mision` real;
-  3-9/11 integración, 30 frutos, informes.
-- Potencia v0.6 (cadena en `CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y armar el divisor 100 k / 30 k.
-- **Alimentación de la Pi: power bank OK** (prueba real del 12/11, 1 h: EXT5V 4,96–5,13 V, `throttled` 0x0 siempre,
-  4 W de media y 10,5 W de pico, 61 °C máx; `~/logs/prueba_powerbank_real_20261112_1450.csv` en la Pi).
+- **Primera recolección autónoma completa en el robot real (13/11, 95 s)**, con scripts de `pruebas-esp32`; la
+  misión ROS (`ros2_ws/src/mision`) todavía no la tiene.
+- Potencia v0.6 (`CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y el divisor 100 k / 30 k.
+  Pi con el power bank: OK (prueba real de 1 h, 12/11).
 
-## Recolección autónoma (13/11, en `~/Documentos/pruebas-esp32`, no en `ros2_ws`)
-- **Primera recolección autónoma completa en el robot real (13/11, 95 s):** `27-aruco-arbol/tools/recolectar.py`
-  hace homing del brazo → reposo → mira la marca ArUco → va a la parada → mide el limón 5 s → `agarrar`. Hoy tiene
-  que arrancar viendo la marca (a ~0,9–4 m a la izquierda). En la Pi: `~/scripts/27-aruco-arbol`.
-- **Demo:** un solo arbolito en el aula (el profesor lo acepta), con marcas; el GPS (±20 m) solo para la rúbrica.
-- **Marcas:** DICT_4X4_50 de 15 cm; la ID 0 pegada en la maceta (cara a 16,5 cm del tronco); **faltan las IDs 1–3**
-  (una por cara, antihorario). Se detectan de ~0,9 a ~4 m; en la parada la marca queda cortada (ahí mandan los limones).
-- **Parada:** tronco a **70 cm a la izquierda de J1 y 15 cm adelante** (`26-sim-alcance-arbolito`: con 4 paradas cada
-  90° se alcanza el 100 % del arbolito medido). Validada: desde la parada `agarrar` funciona.
-- `ir_a_parada.py`: gira con el giróscopo, avanza con las ruedas y vuelve a girar.
-- **Dos calibraciones de la cámara:** agarre = la del brazo del 12/11 (sirve < 70 cm); navegación =
-  `27/resultados/tf_navegacion.json` (6 puntos en el piso, ~3 cm a 1–2 m; cámara a 57,4 cm del piso, 6,5° abajo).
-- **`ros2_ws/src/mision` no tiene nada de esto:** `recorrido.py` (hilera + YOLO) sigue sin probar en el robot. Para
-  pasarlo a ROS: la WROOM tiene el firmware 20 en el env `brazo` (serie, texto), que no entiende `/brazo/joint_cmd`
-  de `brazo_ik`; la misión tendría que mandar texto por `/brazo/comando` con la WROOM en el env `ros`
-  (`~/firmware/respaldo_wroom_20261112.bin`).
+## Demo y navegación (13/11, en `~/Documentos/pruebas-esp32`)
+- **Demo:** un solo arbolito en el aula (el profesor lo acepta), con marcas ArUco; el GPS (±20 m) solo para la rúbrica.
+- `27-aruco-arbol/tools/recolectar.py`: homing → reposo → marca → `ir_a_parada.py` (gira con el giróscopo, avanza
+  con las ruedas, gira) → mide el limón 5 s → `agarrar`. Tiene que arrancar viendo la marca (~0,9–4 m, a la izquierda).
+- Marcas DICT_4X4_50 de 15 cm; ID 0 en la maceta (cara a 16,5 cm del tronco); **faltan las IDs 1–3** (antihorario).
+  En la parada la marca queda cortada: ahí mandan los limones.
+- **Parada:** tronco a 70 cm a la izquierda de J1 y 15 cm adelante; 4 paradas cada 90° = 100 % del arbolito medido
+  (`26-sim-alcance-arbolito`). Validada agarrando.
+- Cámara: calibración de agarre (12/11, < 70 cm) y de navegación (`27/resultados/tf_navegacion.json`, ~3 cm a 1–2 m).
+- **N3 de la guía (análisis del 17/11):** con BUSCAR + esquive, RODEAR y la seguridad andando (PENDIENTES 00a) se
+  cubre; `recorrido.py` (hilera + YOLO, 12/12 en Gazebo) sigue sin probar en el robot y pasó a segundo plano.
 
-## Base (`firmware/base`, S3) — 20 pruebas OK
-- **En ROS con los 12 V (13/11):** S3 con el env `ros` de `firmware/base` (flasheo con `--after watchdog-reset`:
-  arranca sola). Funcionan la IMU (era un cable; calibra el giróscopo sola al arrancar), los 3 HC-SR04, los 3
-  bumpers y la seta. Con micro-ROS el watchdog es de 300 ms: mover solo con `/cmd_vel` continuo.
-- **Odometría en el piso (13/11):** recto, error < 1 % con las ruedas; los giros con el giróscopo (~±1°), porque las
-  ruedas se pasan ~2° cada 90°. Herramientas en `pruebas-esp32/25-teleop-pi/tools/`: `movimiento.py` (frenado
-  proporcional) y `prueba_odom.py recto|giro|tiempo`.
-- **Ruedas en el aire (20-22/10; a fondo el 28/10, 30-40 rpm, sin atascos):** sentidos de motores y encoders correctos; K 0,6 rpm/%, zona muerta 11 %,
-  τ 80 ms, PI 0,89/11,1 (`w 8 8` → 8 ± 0,1 rpm); 8316 cuentas por vuelta. Manejada desde el celular con
-  `teleop_web.py` (`http://100.116.96.71:8000`, Tailscale; base y brazo; muestra la latencia: 38 ms directo, 26/10) y con `teleop_twist_keyboard`.
-- En la S3 está el env de prueba **`ros_motores`** (sin IMU ni distancia al frente): nunca en el piso.
-- Con `u` a velocidad máxima, > 4 A (2,6 A en vacío por motor). La rueda derecha patina en el eje (prisionero).
-- La S3 queda a veces en modo descarga (al reconectar el USB o con un reset por RTS): `esptool --before no_reset
-  --after watchdog_reset read_mac` desde la Pi. `BATERIA_BAJA` no indica si hay 12 V: preguntar.
-- Enlace de la base: `pings_fallidos` 82 y `cortes=4` en ~1 h (el brazo, 0). Sin investigar.
-- Sin probar con los motores andando: frenado por HC-SR04 (< 20 cm), bumper y vuelco. Un corte del enlace USB de
-  la S3 durante un giro (13/11; la base se desarma al reconectar, por diseño).
+## Base (`firmware/base`, S3)
+- **En ROS con los 12 V (13/11):** env `ros` (flasheo con `--after watchdog-reset`: arranca sola); IMU (calibra el
+  giróscopo sola al arrancar), 3 HC-SR04, 3 bumpers y seta OK. Watchdog de 300 ms: `/cmd_vel` continuo.
+- **Odometría en el piso:** recto < 1 % con las ruedas; giros con el giróscopo (~±1°; las ruedas se pasan ~2°/90°).
+  `pruebas-esp32/25-teleop-pi/tools/movimiento.py` (frenado proporcional) y `prueba_odom.py`.
+- Sin probar con los motores andando: frenado por HC-SR04 (< 20 cm), bumper y vuelco. Enlace USB de la S3 con cortes
+  (uno durante un giro el 13/11; la base se desarma al reconectar). Rueda derecha: patinaba en el eje (¿arreglada?).
+- `BATERIA_BAJA` no indica si hay 12 V. Si la S3 queda en modo descarga: `esptool --before no_reset --after
+  watchdog_reset read_mac` desde la Pi.
 
-## Brazo (`firmware/brazo`, WROOM) — 18 pruebas OK
-- **En la WROOM está `pruebas-esp32/20-brazo-coordinado` env `brazo` (serie, 13/11; el env `ros` en
-  `~/firmware/respaldo_wroom_20261112.bin`)**, no este firmware: no flashear `d3644c8` (viejo).
-  Este firmware: cascada J1-J3 + pinza, pines v0.5; falta pasarle lo de 20. Topes (jog y `dutyMax`): 50 % en las tres.
-- El encoder de J2 no contaba (atasco a los 0,3 s); tras revisarlo el usuario el joystick funcionó, sin confirmar con `e`.
-- Finales de carrera (GPIO 32/33/27, `home <n>`): previstos en el firmware, sin montar; falta medir `HOME_Q`.
-- J1 con los parámetros de `pruebas-esp32/10` (sin probar en este firmware). J2/J3: motores 36-555 58 rpm 139:1 +
-  doble helicoidales 15 → 75 (10/11); tienen los parámetros de J1 llevados a 58 rpm y signos sin medir.
-- `m`/`j` rechazan γ₄ = q2 + q3 − 90° fuera de −111,9…−30°; `home 2/3` bloqueados hasta medir `HOME_Q`
-  (hoy da −165°: no cierra con el balancín de 60 mm). `POSE_CERO` provisoria (90°, 90°, −40°).
-- Rango de J1: 45°/225° en el marco de `brazo_ik` (pasa por atrás, nunca cruza el mástil). Reposo provisorio
-  q = 75°/94°/−50°. Límites provisorios: q2 −25…135°, q3 ±50°.
+## Brazo (WROOM)
+- **En la WROOM está `pruebas-esp32/20-brazo-coordinado` env `brazo` (serie)**; el env `ros` en
+  `~/firmware/respaldo_wroom_20261112.bin`. **No flashear `firmware/brazo`** (`d3644c8`, viejo: falta pasarle lo de 20).
+- `punta.py agarrar` (visión → brazo, pinza 1300 µs) funciona. El 20 entiende texto por `/brazo/comando`, no
+  `/brazo/joint_cmd` de `brazo_ik`.
+- Detalle del brazo (homing, límites, cinemática): `pruebas-esp32/notas/ESTADO.md`.
 
 ## ROS 2
-- `brazo_ik` 9 pruebas; `mision` 35; `simulacion` 13. `/brazo/objetivo` es el TCP; `largo_herramienta` = 0 (MEDIR).
-- `mision`: FSM ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR (FALLA manda `s`; la seta desarma el brazo) y TF
-  `brazo_base → stereo_camera_link` (argumentos obligatorios: MEDIR). Probada con brazo y limón simulados.
-- Recorrido autónomo (`autonomo:=true`): 12 de 12 limones en Gazebo sin teleop. Sin probar en el robot real. Lo probado en el
-  robot es otro enfoque (marca → parada → agarrar, sección "Recolección autónoma").
-- Hilera por GPS (N1, `hilera_gps.py`): no arma la base hasta estar a < 10 m del inicio con σ ≤ 20 m. Probado con un
-  fix falso. Falta: probar con el UP501 afuera y el regreso al inicio al terminar la hilera.
-- micro-ROS: las dos placas abren sesión con sus agentes, a la vez, con tasas nominales; arrancan desarmadas.
+- `brazo_ik` 9 pruebas; `mision` 35; `simulacion` 13. `largo_herramienta` = 0 (MEDIR).
+- `mision`: FSM ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR y TF `brazo_base → stereo_camera_link` (medida el
+  12/11). `autonomo:=true` (hilera) y `hilera_gps.py` (fix falso): solo simulados.
+- No hay nodo de seguridad separado (S2) ni estados con los nombres de S3 de la guía.
 
 ## Visión (repo `HecVelaz/vision_estereo`)
-- `scripts/start_limon.sh`: cámaras + rectificación + SGBM (~2,5 Hz) + `detector_node` + `localizador_node`
-  (`/limon/posicion` en el marco óptico RECTIFICADO de la cámara izquierda).
-- **Mástil (12/11):** cámaras mirando a la izquierda (−x), horizontales, a ~58,5 cm del piso, cabeza abajo. Referencia
-  (izquierda) = la de **atrás**, ≈ (330, 195, 327) mm; adelante ≈ (330, 295, 327). `calibracion_mastil`: RMS 0,22 px,
-  baseline 100,3 mm, ventana 0,37-0,96 m; el brazo tapa media imagen izquierda (hasta u ≈ 280 px).
-- Contra cinta: tablero +18 mm constante; **arbusto (v3, robot quieto): Z +7 a +11 mm, detección 100 %, posición
-  ~70 %.** Limón en movimiento: falla. A 0° y 40-55 cm solo ve limones de ≳ 40 cm. Detalle en `vision_estereo`.
-- Detector de una sola clase `limon`. En la Pi están la **v1** (28/09), la **v2** (28/10) y la **v3**
-  (`limon_yolo26n_v3_ncnn_model`, 12/11, en uso para los ensayos desde el 12/11; se pasa con `MODELO=`).
-- **v2 (28/10, solo limones verdes**; `vision/entrenamiento_limon/`): P 0,894, R 0,832, mAP50 0,919 en test de las
-  mismas fuentes. Con las NoIR (lab, 3 limones, 20 cuadros): empate con la v1, mediana 0,79 contra 0,78.
-- **v3** (Tarea VA, amarillos, celular; reentrenada el 12/11): en la Pi como `limon_yolo26n_v3_ncnn_model`, 68 ms a 480;
-  detecta el limón con las NoIR (a ojo). Sin comparar con la v2 en cifras. Visor: `web_video_server` en el 8080.
-- Madurez (B3 cosechable / no cosechable) por **tamaño** con el estéreo (ancho_px · Z / f ≥ `D_min`, MEDIR): sin
-  implementar. No hay clases de color: las NoIR lo corren.
+- `~/scripts/vision.sh` = `start_limon.sh` con el v3 (`/limon/posicion` en el marco óptico rectificado izquierdo).
+  No arranca sola. Ubica limones entre 0,40 y 0,95 m (u ≥ 280 px: el brazo tapa el resto).
+- Mástil: cámaras mirando a la izquierda, ~58 cm del piso, baseline 100,3 mm (`calibracion_mastil`, RMS 0,22 px).
+- Detector de una clase `limon`: v1, v2 (verdes) y **v3** (amarillos, en uso). v3 sin comparar con la v2 en cifras.
+- Madurez por tamaño con el estéreo: sin implementar.
 
 ## GPS
-- UP501 en la Pi (`/dev/ttyAMA0`, `nmea_navsat_driver` → `/gps/fix`). Primer fix a cielo abierto (21/10): ~5 min,
-  3 satélites, σ ≈ 21 m. Bajo techo no ve ninguno. Con la Pi apagada pierde los satélites (arranque en frío).
-- 9600 baud; sin `-r fix:=/gps/fix` el driver publica `fix`. Desde el 13/11, solo para la rúbrica (zona, registro,
-  `robot_localization`): la parada pide ±5 cm.
+- UP501 en la Pi (`/dev/ttyAMA0`, 9600, `nmea_navsat_driver ... -r fix:=/gps/fix`): σ ≈ 21 m afuera; adentro sin fix.
 
 ## Pi 5
-- `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); en el lab, Wi-Fi FIUNA 172.16.240.92 (aísla clientes: el celular
-  entra solo por Tailscale). `.commit`: `4badf7a` (12/11); `brazo_ik` y `mision` recompilados. Agentes y `teleop_web.py` se lanzan a mano en segundo
-  plano (no arrancan solos); al reconectar los USB o reiniciar, relanzar los agentes y despertar la S3 con esptool.
-- Rutas: agente en `~/microros_ws`, binarios en `~/firmware/<base|brazo|hola>`, scripts en `~/scripts`, logs en
-  `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/` (las rutas viejas siguen como symlinks).
-- Cámaras: las dos a 30 FPS con la cinta CSI nueva (`~/scripts/probar_camaras.sh`; vista cruda en el 8080).
+- `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); Wi-Fi FIUNA aísla clientes (celular solo por Tailscale).
+  `.commit` `4badf7a` (12/11). Después de reiniciar, a mano: `~/scripts/agente_base.sh` y `~/scripts/vision.sh`.
+- Rutas: binarios en `~/firmware/`, scripts en `~/scripts`, logs en `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/`.
 
 ## Simulación (Gazebo Harmonic, notebook)
-- `ros2 launch simulacion sim.launch.py` (`mision:=true`, `vision:=yolo`, `gui:=false`): 12 de 12 limones.
-  `vision:=yolo` parcial (YOLO no reconoce los limones sintéticos). Falta pasarla a la PC de escritorio.
-- Sin probar en Gazebo: limones a menos de 45° (adelante-izquierda) ya no se alcanzan con el rango nuevo de J1.
-
-## Repo y herramientas
-- `EncoderPCNT` sin probar en placa más allá de 32 000 cuentas (girar a mano y ver que no salte).
+- `ros2 launch simulacion sim.launch.py` (`mision:=true`): 12 de 12 limones con la hilera; no tiene el arbolito con marcas.

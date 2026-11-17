@@ -4,7 +4,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: 9/11/2026. Estado: `ESTADO.md
 
 000. **Fecha límite (10/11):** el 9/11 ya pasó; confirmar la nueva fecha o qué se entregó/demostró, y actualizar
    `CLAUDE.md`, `ESTADO.md` y esta lista. Registrar lo hecho en el robot desde el 28/10 (no hay nada anotado).
-00a. **Navegación y recolección autónoma (13/11, en `pruebas-esp32`; detalle en su `notas/PENDIENTES.md`), en orden:**
+00a. **(Con a, b y d se cubre N3 de la guía.)** **Navegación y recolección autónoma (13/11, en `pruebas-esp32`; detalle en su `notas/PENDIENTES.md`), en orden:**
    a) **BUSCAR:** si no ve la marca, girar de a ~20° con el giróscopo; si no aparece en 360°, avanzar ~1 m esquivando
       con los HC-SR04. Hoy `recolectar.py` tiene que arrancar viendo la marca.
    b) **RODEAR:** pegar las marcas ID 1–3 (antihorario) e ir de parada en parada con arcos de 90°, el árbol a la izquierda.

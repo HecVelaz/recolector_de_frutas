@@ -34,3 +34,9 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 - Detector (28/10): una sola clase `limon` entrenada solo con limones verdes (el robot cosecha verdes); la madurez
   (B3) se decide por **tamaño** con el estéreo, no con clases de color: las NoIR corren el color y los datasets de
   Roboflow etiquetan colores distintos. Imágenes con limones de clases descartadas se sacan enteras.
+- **Demo con un arbolito y marcas ArUco, GPS solo para la rúbrica (13/11, usuario; detalle en
+  `pruebas-esp32/notas/DECISIONES.md`):** el profesor acepta un árbol en el aula y marcas; la parada pide ±5 cm y el
+  UP501 da ±20 m. Giros con el giróscopo y distancia con las ruedas (las ruedas se pasan ~2° cada 90°).
+- **Celular como sensor de navegación: no por ahora (17/11):** no mejora la parada (±5 cm), el magnetómetro sufre
+  junto a los motores y H2/H3 lo dejan en zona gris. Se reconsidera solo si sobra tiempo y la cátedra lo acepta.
+
