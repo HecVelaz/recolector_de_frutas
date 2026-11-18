@@ -40,8 +40,11 @@ EncoderPCNT enc[2];
 ControlArticulacion rueda[2];
 HCSR04 ultrasonido;
 MPU9250 imu(Wire);
-SemaphoreHandle_t i2c;  // la tarea lee la IMU y el loop la calibra: no a la vez
-bool hwOk = false, imuOk = false;
+SemaphoreHandle_t i2c;  // la tarea lee la IMU y el loop la calibra o la recupera: no a la vez
+bool hwOk = false;
+volatile bool imuOk = false;          // la escribe el loop (arranque y recuperación), la lee la tarea
+volatile uint32_t imuUltimaOkMs = 0;  // millis() de la última muestra válida (la escribe la tarea)
+volatile uint32_t imuRecuperaciones = 0, imuReintentos = 0;  // recuperaciones que funcionaron / intentos
 // Toda la salida de texto pasa por acá: en modo serial es el monitor; con micro-ROS, un búfer que se publica
 // en /base/respuesta (el USB lo usa el agente)
 Print *out = &Serial;
@@ -144,6 +147,7 @@ void tareaControl(void *) {
         pitch = hayImu ? pitch + IMU_FILTRO * (p - pitch) : p;
         hayImu = true;
         imuUltimaMs = millis();
+        imuUltimaOkMs = imuUltimaMs;
       }
     }
     if (tick % US_CADA == 0) ultrasonido.disparar();
@@ -325,7 +329,10 @@ void sensores() {
     out->printf("IMU: acc=(%.2f, %.2f, %.2f) g gyro=(%.1f, %.1f, %.1f) °/s | roll=%.1f° pitch=%.1f°\n", s.acc.x, s.acc.y,
                   s.acc.z, s.gyro.x, s.gyro.y, s.gyro.z, s.roll, s.pitch);
   else
-    out->println("IMU: sin responder (revisar SDA 8 / SCL 9)");
+    out->println("IMU: sin responder (revisar SDA 8 / SCL 9; se reintenta sola cada 1 s)");
+  if (imuReintentos)
+    out->printf("IMU: recuperaciones del bus I2C %lu de %lu intentos\n", (unsigned long)imuRecuperaciones,
+                (unsigned long)imuReintentos);
   out->print("Distancias [m]:");
   const char *nom[3] = {"frente", "izq", "der"};
   for (int k = 0; k < 3; k++) {
@@ -539,6 +546,7 @@ void baseLeer(EstadoBase &e) {
   e.gyro[1] = sens.gyro.y;
   e.gyro[2] = sens.gyro.z;
   e.imuValida = sens.imuValida;
+  e.imuRecuperaciones = imuRecuperaciones;
   for (int k = 0; k < 3; k++) e.dist[k] = sens.dist[k];
   for (int k = 0; k < 3; k++) e.bumper[k] = sens.bumper[k];
   e.seta = sens.seta;
@@ -557,6 +565,59 @@ void baseLeer(EstadoBase &e) {
   portEXIT_CRITICAL(&mux);
 }
 #endif
+
+// ---------------------------------------------------------------- recuperación de la IMU
+
+// Libera el bus I2C si el MPU quedó a mitad de un byte sosteniendo SDA en bajo (pasa con ruido o un corte de
+// tensión durante una lectura): hasta 9 pulsos en SCL y una condición de STOP, con Wire detenido.
+void liberarBusI2c() {
+  pinMode(PIN_I2C_SDA, INPUT_PULLUP);
+  pinMode(PIN_I2C_SCL, OUTPUT_OPEN_DRAIN);
+  digitalWrite(PIN_I2C_SCL, HIGH);
+  delayMicroseconds(5);
+  for (int k = 0; k < 9 && digitalRead(PIN_I2C_SDA) == LOW; k++) {
+    digitalWrite(PIN_I2C_SCL, LOW);
+    delayMicroseconds(5);
+    digitalWrite(PIN_I2C_SCL, HIGH);
+    delayMicroseconds(5);
+  }
+  // STOP: SDA sube con SCL en alto
+  pinMode(PIN_I2C_SDA, OUTPUT_OPEN_DRAIN);
+  digitalWrite(PIN_I2C_SDA, LOW);
+  delayMicroseconds(5);
+  digitalWrite(PIN_I2C_SCL, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(PIN_I2C_SDA, HIGH);
+  delayMicroseconds(5);
+}
+
+// En el loop (no en la tarea de control, para no frenarla ~110 ms): si la IMU no da muestras hace más de
+// IMU_RECUPERAR_MS (o no respondió al arrancar), libera el bus y la vuelve a iniciar, cada IMU_REINTENTO_MS como
+// mucho. Conserva el bias del giroscopio de la última "cal". La seguridad sigue frenando hasta que vuelvan las muestras.
+void recuperarImu() {
+  static uint32_t ultimoIntentoMs = 0;
+  const uint32_t ahora = millis();
+  if (imuOk && ahora - imuUltimaOkMs < IMU_RECUPERAR_MS) return;
+  if (ahora - ultimoIntentoMs < IMU_REINTENTO_MS) return;
+  ultimoIntentoMs = ahora;
+  if (xSemaphoreTake(i2c, pdMS_TO_TICKS(50)) != pdTRUE) return;
+  imuReintentos++;
+  const MPU9250::Vec3 bias = imu.gyroBias();
+  Wire.end();
+  liberarBusI2c();
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);
+  const MPU9250::Status st = imu.begin(MPU9250::Dlpf::Hz20);
+  imu.setGyroBias(bias);
+  const bool ok = st == MPU9250::Status::Ok;
+  if (ok) {
+    imuUltimaOkMs = millis();  // margen para la primera muestra: no reintentar enseguida
+    imuRecuperaciones++;
+  }
+  imuOk = ok;
+  xSemaphoreGive(i2c);
+  out->printf(">> IMU: reinicio del bus I2C %s (%s; recuperaciones %lu de %lu intentos)\n", ok ? "OK" : "sin respuesta",
+              MPU9250::statusName(st), (unsigned long)imuRecuperaciones, (unsigned long)imuReintentos);
+}
 
 // ---------------------------------------------------------------- setup / loop
 
@@ -623,6 +684,8 @@ void loop() {
 #endif
 
   static uint32_t batMs = 0;
+  if (hwOk) recuperarImu();
+
   if (millis() - batMs >= BATERIA_CADA_MS) {
     batMs = millis();
     const float v = analogReadMilliVolts(PIN_BATERIA) * 1e-3f * BATERIA_DIVISOR;

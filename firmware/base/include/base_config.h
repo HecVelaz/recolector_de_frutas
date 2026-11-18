@@ -64,6 +64,11 @@ constexpr int IMU_CADA = 2;  // 50 Hz
 constexpr int US_CADA = 4;   // 40 ms entre disparos, de a un HC-SR04: cada uno mide cada 120 ms (~8 Hz)
 constexpr float IMU_FILTRO = 0.1f;  // pasa bajos de roll y pitch (a 50 Hz: ~0,2 s)
 constexpr uint32_t IMU_VALIDA_MS = 200;  // sin muestras de la IMU por más de esto, la base no se mueve
+// Recuperación de la IMU (loop): sin muestras por más de IMU_RECUPERAR_MS, libera el bus I2C (9 pulsos en SCL y STOP)
+// y vuelve a iniciar Wire y el MPU, como mucho cada IMU_REINTENTO_MS. En el pasto (17/11) la IMU quedó colgada
+// (SIN_DATOS) hasta apagar y prender. Mientras tanto la seguridad frena por "IMU sin datos", como siempre.
+constexpr uint32_t IMU_RECUPERAR_MS = 300;
+constexpr uint32_t IMU_REINTENTO_MS = 1000;
 
 // Batería LiPo 3S (9,9-12,6 V, desde el 08/10; antes la 10S): divisor 100 k / 30 k -> 12,6 V da 2,91 V en el ADC
 // (con 11 dB mide hasta ~3,1 V: ~13,4 V). Si vuelve la 10S (42 V), volver a 120 k / 8,2 k: este divisor la quemaría

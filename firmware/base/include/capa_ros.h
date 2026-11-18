@@ -26,6 +26,7 @@ struct EstadoBase {
   float x, y, th, v, w;       // odometría [m, rad, m/s, rad/s]
   float acc[3], gyro[3];      // [g], [°/s]
   bool imuValida;
+  uint32_t imuRecuperaciones;  // veces que se reinició el bus I2C y la IMU volvió
   float dist[3];              // frente, izq, der [m]
   bool bumper[3];  // frente, izquierda, derecha
   bool seta;

@@ -196,13 +196,13 @@ void alTimer(rcl_timer_t *t, int64_t) {
   if (tick % ESTADO_CADA == 0) {
     const int n = snprintf(estadoBuf, sizeof(estadoBuf),
                            "%s modo=%s seguridad=%s%s%s%s%s%s imu=%s rueda_izq=%s rueda_der=%s"
-                           " enlace: pings_fallidos=%lu cortes=%lu",
+                           " imu_rec=%lu enlace: pings_fallidos=%lu cortes=%lu",
                            armado ? "ARMADA" : "DESARMADA", e.modo,
                            SeguridadBase::texto(e.seg), e.seta ? " SETA" : "", e.bloqAdelante ? " no_avanza" : "",
                            e.frenteSinDato ? "(frente_sin_eco)" : "", e.bloqAtras ? " no_retrocede" : "",
                            e.bateriaBaja ? " BATERIA_BAJA" : "", e.imuValida ? "ok" : "SIN_DATOS",
                            ControlArticulacion::texto(e.falla[0]), ControlArticulacion::texto(e.falla[1]),
-                           (unsigned long)enlace.pingsFallidos(), (unsigned long)enlace.cortes());
+                           (unsigned long)e.imuRecuperaciones, (unsigned long)enlace.pingsFallidos(), (unsigned long)enlace.cortes());
     estadoMsg.data.size = n < (int)sizeof(estadoBuf) ? n : sizeof(estadoBuf) - 1;
     ignorar(rcl_publish(&pubEstado, &estadoMsg, nullptr));
   }
