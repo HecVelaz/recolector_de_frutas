@@ -48,3 +48,10 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
   Pinza con el servo RDS3218 (el MG996R vibraba): abierta 500 µs, cerrada 1200.
 - **Banderín único (19/11; detalle en `pruebas-esp32/notas/DECISIONES.md`):** una sola marca alcanza para ubicar el
   árbol (la pose da posición y rumbo); los limones se agarran siempre con la visión. Meta: cosecha con navegación el 27/11.
+- **Demo afuera con un banderín y una hilera de 2-3 arbolitos (19/11, usuario):** reemplaza "un arbolito en el aula
+  con 4 marcas"; ida por un lado y vuelta por el otro (vuelta en U antihoraria), el árbol siempre a la izquierda.
+  En Gazebo: `mundo:=arbolitos`; navegación dentro de `nodo_mision` (`navegacion:=true`) para compartir con la misión
+  cuándo la base está quieta (con un nodo aparte había una carrera entre APROXIMAR y el arranque de la base).
+- **Simulación de la demo (19/11):** limones solo hasta 52 cm (usuario; el brazo simulado no llega más arriba por
+  `Q3_LIM`, provisorio); cámara de navegación real en el urdf como `camara:=nav` (la v1 queda para la hilera);
+  reposo del brazo J1 = 0° en ese mundo (a 75° la pinza tapa la cámara; el real espera sobre la canasta).

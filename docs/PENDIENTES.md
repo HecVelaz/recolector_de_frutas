@@ -6,7 +6,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    | Días | Robot | Software |
    |---|---|---|
    | 18–19/11 | ~~Seguridad con los motores (00a d)~~ ✓; `cosechar N` y canasta ✓ | BUSCAR y RODEAR programados (sin probar) |
-   | 20–21/11 | Medir `banderin.json`; probar BUSCAR, RODEAR y base + cosecha juntas | Misión ROS (00a e) en Gazebo |
+   | 20–21/11 | Medir `banderin.json`; probar BUSCAR, RODEAR y base + cosecha juntas | ~~Misión ROS (00a e) en Gazebo~~: navegación con banderín e hilera hecha (19/11, 15/18 paradas) |
    | 22–23/11 | Recolección en las 4 paradas | Misión ROS (00a e) con los estados de S3; nodo `seguridad` aparte (S2) |
    | 24–25/11 | WROOM al env `ros`; probar la misión ROS | Rosbag por misión (S5), GPS en el registro, estado y alarmas en `teleop_web.py` (S6) |
    | 26/11 | Ensayo general y video de respaldo | Ajustes |
@@ -24,7 +24,10 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    c) ~~**Soltar el limón**~~ (18/11): canasta sobre la tapa, `soltar` 28–30 s ida y vuelta. Falta probar el ajuste
       fino en una cosecha y base + cosecha juntas.
    d) ~~**Seguridad con los motores**~~ (18/11): HC-SR04 del medio, bumpers, seta y vuelco OK. Quedan los cortes del USB (16).
-   e) **Llevarlo a la misión ROS** (`ros2_ws/src/mision`), primero en Gazebo: mandar texto por `/brazo/comando` al
+   e) **Llevarlo a la misión ROS** (`ros2_ws/src/mision`). **Gazebo hecho el 19/11** (`navegacion.py`, demo afuera
+      con banderín e hilera de arbolitos; ver ESTADO). Sigue: (1) volver a medir el banderín desde ~1,2 m antes de la
+      parada 1 (las 3 paradas que no cumplen: sesgo de ~2 % del detector desde 2,8 m); (2) en la Pi: `nodo_banderin`
+      con la TF de navegación real y medir `hilera_arboles.json`; (3) opcional: ruido de odometría en la sim. Mandar texto por `/brazo/comando` al
       firmware 20 (no entiende `/brazo/joint_cmd`) con la WROOM en el env `ros`; los giros con `movimiento.py` / el
       giróscopo o `robot_localization` con `/odom` + IMU; el GPS (±20 m) solo para la rúbrica.
 000b. **Brazo: NO flashear `firmware/brazo`** (el binario `ros` de `d3644c8` en `~/firmware/brazo` de la Pi está viejo).
@@ -86,8 +89,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    (altura de la caja sobre el piso, trocha, eje, ruedas locas, cámaras, pinza). Pendiente: cajón para el limón.
 11. Herramientas: decidir si `/pi-sync` prueba también el Wi-Fi FIUNA (172.16.240.92) cuando no responden Tailscale
    ni la LAN (sin verificar que esa IP siga valiendo).
-12. Recorrido autónomo por hilera (`recorrido.py`) en el robot real: sin probar; la demo pasó a ser un arbolito con
-   marcas (00a). El giróscopo ya se calibra solo al arrancar (13/11).
+12. Recorrido autónomo por hilera (`recorrido.py`) en el robot real: sin probar; la demo (19/11) es afuera con un
+   banderín y una hilera de arbolitos, con `navegacion.py` (00a e). El giróscopo ya se calibra solo al arrancar (13/11).
 13. Red directa celular ↔ Pi para el piso y la demo afuera (datos compartidos del celular o red propia de la Pi): sin
    Wi-Fi de FIUNA no hay Tailscale directo garantizado, y por el relay de São Paulo el joystick tiene lag.
 14. Encoder de J2: confirmar con `e` que cuenta (el 26/10 no contaba; después del arreglo del usuario no se midió).

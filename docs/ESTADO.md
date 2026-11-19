@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-19; el robot, al 18/11)
+# Estado actual (al 2026-11-19 noche; el robot, al 18/11)
 
 Foto del estado: se reescribe en cada `/cerrar`. **El estado va acá, nunca en `CLAUDE.md`.** Historia y mediciones
 con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/2026** (demo; plan día por día en `PENDIENTES.md`).
@@ -6,14 +6,15 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 ## Avance
 - **Recolección autónoma con scripts de `pruebas-esp32`:** primera completa el 13/11 (95 s); el 18/11 `cosechar 3`
   dejó 2 limones en la canasta (~34 s cada uno). Base + cosecha juntas todavía no se probaron. La misión ROS
-  (`ros2_ws/src/mision`) todavía no tiene este enfoque.
+  (`ros2_ws/src/mision`) ya tiene la navegación con el banderín (`navegacion.py`), solo probada en Gazebo.
 - Potencia v0.6 (`CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y el divisor 100 k / 30 k.
   Pi con el power bank: OK.
 - Resumen ilustrado de todas las pruebas: `docs/resumen_pruebas_20261119.pdf`.
 - **Manual v1.1 (19/11)** al día en `docs/manual/` (capítulo nuevo de la demo); `manual.pdf` fuera de git, falta subirlo a Drive.
 
 ## Demo y navegación (en `~/Documentos/pruebas-esp32`, carpeta `27-aruco-arbol`)
-- **Demo:** un solo arbolito en el aula con marcas ArUco; GPS (±20 m) solo para la rúbrica. Espacio: ≥ 4 × 4 m.
+- **Demo (19/11): afuera, un banderín ArUco (ID 0) y una hilera de 2-3 arbolitos**, ida y vuelta (árbol siempre a la
+  izquierda); GPS (±20 m) solo para la rúbrica. Lo de abajo (`pruebas-esp32`) es el enfoque anterior de 4 marcas.
 - `recolectar.py`: homing → reposo → marca → `ir_a_parada.py` (gira con el giróscopo, avanza con las ruedas) →
   `cosechar --limones N`. Tiene que arrancar viendo la marca (~0,9–4 m, a la izquierda).
 - Marcas DICT_4X4_50 de 15 cm, **IDs 0–3 pegadas** (antihorario, cara a 16,5 cm del tronco).
@@ -43,7 +44,10 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 - Detalle del brazo: `pruebas-esp32/notas/ESTADO.md`.
 
 ## ROS 2
-- `brazo_ik` 9 pruebas; `mision` 35; `simulacion` 13. `largo_herramienta` = 0 (MEDIR).
+- `brazo_ik` 9 pruebas; `mision` 55; `simulacion` 17. `largo_herramienta` = 0 (MEDIR).
+- **Navegación con el banderín** (`mision/navegacion.py`, `nodo_banderin`, `nodo_mision navegacion:=true`, hilera en
+  `mision/config/hilera_arboles.json` sin medir): solo en Gazebo. En el real falta la TF de la cámara de navegación
+  (hoy la del urdf) y medir la hilera.
 - `mision`: FSM ESPERAR → APROXIMAR → AGARRAR → RETIRAR → SOLTAR y TF `brazo_base → stereo_camera_link` (12/11).
   `autonomo:=true` (hilera) y `hilera_gps.py` (fix falso): solo simulados.
 - No hay nodo de seguridad separado (S2) ni estados con los nombres de S3 de la guía.
@@ -65,4 +69,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 - Rutas: binarios en `~/firmware/`, scripts en `~/scripts`, logs en `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/`.
 
 ## Simulación (Gazebo Harmonic, notebook)
-- `ros2 launch simulacion sim.launch.py` (`mision:=true`): 12 de 12 limones con la hilera; no tiene el arbolito con marcas.
+- `ros2 launch simulacion sim.launch.py` (`mision:=true`): 12 de 12 limones con la hilera de la guía.
+- **`mundo:=arbolitos mision:=true`** (banderín + 3 árboles, ida y vuelta, cámara del mástil `camara:=nav`, reposo
+  J1 = 0°): 3 poses → 15 de 18 paradas en ±5 cm y ±3° (las 3 que no, +5,5 cm: el detector mide el banderín ~2 % más
+  lejos desde 2,8 m), 15-17 limones de 24, cierre 3-5 cm. CSV en `ros2_ws/src/simulacion/resultados/`. RTF ~0,43.

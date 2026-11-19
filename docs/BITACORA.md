@@ -853,3 +853,31 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   `manual.pdf` sigue fuera de git: subirlo a Drive.
 - LiPo Zeee 3S: carga hasta 12,6 V (4,20 V por celda) en BALANCE a 4 A (0,5C), ~2–2,5 h desde 9,9 V.
 
+
+## 2026-11-19 (noche) — Simulación de la demo afuera: banderín ArUco e hilera de arbolitos (`893ade7`)
+- **Pedido** (prompt armado en la sesión de `pruebas-esp32`): simular en Gazebo la navegación de la demo **afuera** con
+  un banderín ArUco (ID 0) y una hilera de 2-3 arbolitos, ida y vuelta, y medir cada parada contra la pose real.
+  Respuestas del usuario: limones solo hasta 52 cm, `python3-opencv` como dependencia, cámara de navegación en el urdf
+  (`camara:=nav`), navegación dentro de `nodo_mision`, corregir `CLAUDE.md` y la memoria ("aula" → afuera).
+- **`mision/navegacion.py`** (sin ROS): BUSCAR (30° con el giróscopo, 1,5 s, hasta 360°) → UBICAR (mediana de 3 s →
+  banderín y árboles en `odom`) → IR_A_PARADA (directo o por una entrada sobre la línea de paradas, 1 m antes del
+  banderín) → COSECHAR (misión 6 s en ESPERAR) → AVANZAR → VUELTA_U (dos cuartos de vuelta antihorarios) → CIERRE
+  (vuelve frente al banderín y mide el error acumulado). Rechaza caminos con J1 a < 45 cm del banderín o de un tronco.
+  Rectas apuntando al fin del tramo (con 0,5° de error al apuntar quedaba 1,3 cm de costado) y en tramos iguales.
+  Hilera: `mision/config/hilera_arboles.json` (derecha/frente mirando la marca, como `banderin.json`, con lista).
+- **`mision/nodo_banderin`**: `/left/image_rect` → `cv2.aruco` → `solvePnP` IPPE_SQUARE → `/banderin/pose` en
+  `base_link`. `nodo_mision navegacion:=true` publica `/navegacion/estado`.
+- **`simulacion`**: modelos `arbolito` (maceta 33 cm, copa r 10 cm, 60 cm) y `banderin` (textura ID 0 en una malla OBJ:
+  en una caja Gazebo la repite en 6 caras); `mundo_arbolitos.py` (el launch genera el mundo y la hilera con
+  `arboles`/`separacion`); `registro_nav` → `resultados/nav_<fecha>.csv`; urdf `camara:=nav` (57,4 cm, 6,5°, f 672);
+  `limones_sim`/`camara_info_sim` con f y u_min como parámetros; `/sim/cosechado`.
+- **Hallazgos:** (1) con la cámara v1 (0,85 m, 28°) el banderín sale de la imagen a > 1,7 m; (2) **con el reposo
+  J1 = 75° la pinza tapa el centro de la cámara de navegación** (BUSCAR daba la vuelta sin verlo): en este mundo
+  reposo J1 = 0° (`brazo_sim reposo_j1`); (3) dos Gazebo vivos a la vez (un diagnóstico que no se cerró) dan una pose
+  inicial falsa: verificar `ps` antes de lanzar; `ros2 topic hz` no muere con `timeout` (SIGTERM).
+- **Resultados** (3 árboles, 2 lados, RTF ~0,43, ~20 min por corrida): (−2; 0,5; 17°) 6/6 paradas, 17 limones,
+  cierre 2,5/2,0 cm; (−1; −1,5; 115°) 6/6, 15 limones, cierre 4,2/1,1 cm; (−2,5; 1,2; −143°) **3/6** (lado B
+  +5,5-5,6 cm adelante), 17 limones, cierre 2,3/4,6 cm. Rumbo de las paradas < 0,5°. Causa de las 3: el detector mide
+  el banderín ~2 % más lejos (2,23 m contra 2,20; desde 2,8 m, ~5 cm) y toda la hilera queda corrida a lo largo.
+  Propuesto (sin hacer): volver a medir el banderín desde ~1,2 m antes de la parada 1.
+- 81 pruebas `colcon test` (brazo_ik 9, mision 55, simulacion 17). Sin hacer: ruido de odometría (opcional).
