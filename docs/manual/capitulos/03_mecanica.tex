@@ -138,8 +138,8 @@ El brazo es un manipulador \textbf{RRR} (tres articulaciones rotativas) del tipo
   \draw[->,thick] (-1.0,0.3) arc (200:340:1.0 and 0.3) node[right]{$q_1$};
   \node[align=left,font=\small,anchor=west] at (6.6,2.6) {Medidas en mm (entrega R1~E4):\\
     $H_1 = 150$ (altura del hombro)\\ $L_2 = 350{,}22$ (barra verde)\\ $L_3 = 329{,}51$ (antebrazo)\\
-    $L_4 = 338$ (acoplador)\\ $L_{3,0} = L_{3,1} = 40$ (balancines)\\[4pt]
-    Rangos:\\ $q_1 \in [45^\circ, 225^\circ]$\\ $q_2 \in [-25^\circ, 135^\circ]$\\ $q_3 \in [-50^\circ, 50^\circ]$};
+    $L_4 = 338$ (acoplador)\\ $L_{3,0} = 60$, $L_{3,1} = 40$ (balancines)\\[4pt]
+    Rangos:\\ $q_1 \in [-30^\circ, 90^\circ]$\\ $q_2 \in [-25^\circ, 135^\circ]$\\ $q_3 \in [-50^\circ, 50^\circ]$};
 \end{tikzpicture}
 \caption{Esquema lateral del brazo (no a escala). El motor de J3 mueve el balancín rojo de abajo; el acoplador
 amarillo transmite el movimiento al codo. $q_{3O}$, el ángulo del antebrazo respecto de la prolongación de $L_2$, es
@@ -147,18 +147,15 @@ una consecuencia de $q_2$ y $q_3$ por el cierre del cuatro barras.}
 \label{fig:brazo}
 \end{figure}
 
-\begin{pendiente}[Balancín del cuatro barras]
-\archivo{cinematica.py} usa balancines de 40~mm (E4). Según \archivo{ARQUITECTURA.md} §11, el balancín rojo se
-cambió a \textbf{60~mm} el 03/10 para que el mecanismo sea de Grashof. Verificar la medida real y, si cambió,
-actualizar \cod{L30} en \archivo{ros2\_ws/src/brazo\_ik/brazo\_ik/cinematica.py} y volver a correr sus pruebas.
-\end{pendiente}
+El balancín rojo (de entrada) mide \textbf{60~mm} (medido el 17/10; en la E4 era de 40~mm): con 60 el mecanismo es
+de Grashof. Ya está en \cod{L30} de \archivo{ros2\_ws/src/brazo\_ik/brazo\_ik/cinematica.py}.
 
 \subsection{Dónde va montado y qué alcanza}
 El brazo va \textbf{atrás a la izquierda, sobre el eje de tracción}, a unos 6~cm del costado ($y = 0{,}11$~m,
 preliminar). $q_1 = 0$ apunta hacia adelante y crece en sentido antihorario visto desde arriba. El rango de J1
-($45^\circ$ a $225^\circ$) va de adelante-izquierda, pasando por la izquierda y por atrás, hasta atrás-derecha: \textbf{nunca
-cruza el mástil de las cámaras}, que está adelante a la derecha. $q_1 = 90^\circ$ (brazo hacia el costado izquierdo) es
-la marca del banco de pruebas y la pose de cero de J1.
+($-30^\circ$ a $90^\circ$, \cod{Q1\_LIM}) va de adelante-derecha hasta el costado izquierdo: con valores más negativos
+el brazo choca contra el mástil de las cámaras (a $-38^\circ$). $q_1 = 90^\circ$ es el brazo hacia el costado
+izquierdo, donde está el árbol.
 
 La consigna de R1 define la zona de trabajo como una esfera de 30~cm de diámetro centrada a unos 35~cm del suelo.
 Con el robot centrado en el pasillo de la simulación, los limones quedan a unos 0,45~m del eje de J1.
@@ -172,14 +169,14 @@ Con el robot centrado en el pasillo de la simulación, los limones quedan a unos
 \midrule
 Motor & 36GP-555, 160~rpm & 36-555, 58~rpm & 36-555, 58~rpm \\
 Reductora del motor & 50:1 & 139:1 & 139:1 \\
-Transmisión & correa GT2 18 → 90 (5:1) & helicoidales 15 → 75 (5:1) & helicoidales 15 → 75 (5:1) \\
-Velocidad máx. de la articulación & 32~rpm (192~°/s) & 11,6~rpm (70~°/s) & 11,6~rpm (70~°/s) \\
+Transmisión & correa GT2 18 → 84 (4,67:1) & doble helicoidales 15 → 75 (5:1) & doble helicoidales 15 → 75 (5:1) \\
+Velocidad máx. de la articulación & 34~rpm (206~°/s) & 11,6~rpm (70~°/s) & 11,6~rpm (70~°/s) \\
 Encoder & \multicolumn{3}{c}{SCX-555, 16 pulsos por vuelta, cuadratura ×4, alimentado a \textbf{3,3~V}} \\
-Cuentas por vuelta de la articulación & $3200 \times 5 = 16\,000$ & $8896 \times 5 = 44\,480$ & $44\,480$ \\
-Resolución & 44,4 cuentas/° & 123,6 cuentas/° & 123,6 cuentas/° \\
+Cuentas por vuelta de la articulación & $3200 \times 4{,}67 = 14\,933$ & $8896 \times 5 = 44\,480$ & $44\,480$ \\
+Resolución & 41,5 cuentas/° & 123,6 cuentas/° & 123,6 cuentas/° \\
 Corriente (vacío / nominal / trabado) & \multicolumn{3}{c}{0,5~A / 1,3~A / 10~A a 12~V} \\
 Se autobloquea & no & \textbf{no} & \textbf{no} \\
-Estado & medido (02/10) & llega 19--29/10 & llega 19--29/10 \\
+Estado & medido (30/10) & montado; $K$, $\tau$ sin medir & montado; $K$, $\tau$ sin medir \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -212,8 +209,20 @@ La pinza tiene dos servos \textbf{DSSERVO RDS3218} de 20~kg·cm, alimentados con
   \item \textbf{Giro J4} (GPIO~14): rota la pinza alrededor del eje de la herramienta, de $-90^\circ$ a $+90^\circ$
         (\topic{/pinza/giro}). Sirve para desprender el limón retorciendo el pedúnculo.
 \end{itemize}
-La cosecha es: \textbf{agarrar} (cerrar), \textbf{traccionar} (retroceder 1--2~cm), \textbf{girar} J4 y
-\textbf{retirar}. Hoy la misión hace solo agarrar y retirar; el giro queda para después.
+La cosecha es: \textbf{agarrar} (cerrar), \textbf{traccionar} (retroceder 2~cm), \textbf{girar} J4 90°,
+\textbf{arrastrar} con J1 5° y \textbf{retirar}. Así lo hace \cod{punta.py cosechar} (capítulo~\ref{cap:demo}), que
+después deja el limón en una \textbf{canasta sobre la tapa}. La misión de ROS~2 hace solo agarrar y retirar.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Servo} & \textbf{Pulsos medidos} & \textbf{Nota} \\
+\midrule
+Apertura (RDS3218, desde el 18/11) & abierta 500~µs, cerrada 1200~µs & el MG996R anterior vibraba \\
+Giro J4 (muñeca) & cero 1500~µs; $\pm 90^\circ$ en 860 / 2150~µs & \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \begin{figure}[H]
 \centering
@@ -223,7 +232,7 @@ La cosecha es: \textbf{agarrar} (cerrar), \textbf{traccionar} (retroceder 1--2~c
 \end{figure}
 
 \begin{pendiente}
-Pulsos reales de cada servo (\cod{PINZA\_US\_*}, \cod{GIRO\_US\_*}), el porcentaje de cierre que agarra sin aplastar
-(\cod{cierre} en la misión) y \cod{largo\_herramienta}: la distancia horizontal de la muñeca al centro del agarre
-(capítulo~\ref{cap:ik}).
+Los pulsos de arriba están medidos en el firmware de pruebas 20; falta pasarlos a \cod{PINZA\_US\_*} y \cod{GIRO\_US\_*}
+de \archivo{firmware/brazo}. Para la misión de ROS~2 faltan el \cod{cierre} que agarra sin aplastar y
+\cod{largo\_herramienta}: la distancia horizontal de la muñeca al centro del agarre (capítulo~\ref{cap:ik}).
 \end{pendiente}

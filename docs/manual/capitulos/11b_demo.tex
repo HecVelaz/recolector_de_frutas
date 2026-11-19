@@ -1,0 +1,99 @@
+\chapter{La demo: el arbolito con marcas ArUco}\label{cap:demo}
+
+La demo del \textbf{27/11/2026} es \textbf{en el aula}, con \textbf{un solo arbolito} rodeado de marcas ArUco (el
+profesor lo aceptó el 13/11). No hay hilera ni pasillo: el GPS (UP501, $\sigma \approx 21$~m) queda solo para la
+rúbrica, no para navegar. La hilera del capítulo~\ref{cap:mision} sigue en la simulación.
+
+\begin{idea}
+Hoy la recolección autónoma corre con \textbf{scripts de Python en la Pi}, del repositorio de pruebas
+\cod{pruebas-esp32} (carpetas \archivo{20-brazo-coordinado}, \archivo{25-teleop-pi}, \archivo{26-sim-alcance-arbolito}
+y \archivo{27-aruco-arbol}), no con el paquete \cod{mision}. Pasarla a la misión de ROS~2 es lo que falta
+(sección~\ref{sec:demo-falta}). Si no llega, la demo se hace con estos scripts (plan~B).
+\end{idea}
+
+\section{Cómo encuentra el árbol: las marcas}
+
+\begin{itemize}
+  \item Cuatro marcas \textbf{DICT\_4X4\_50} de \textbf{15~cm} (IDs 0--3), pegadas sobre cartón alrededor de la
+        maceta, en sentido antihorario visto de arriba, con la cara a 16,5~cm del tronco. La ID~0 es la parada~1.
+  \item La cámara izquierda las detecta de $\sim$0,9 a $\sim$4~m. Con \cod{cv2.aruco} y \cod{solvePnP} (lado de 150~mm)
+        se obtiene la posición y la orientación de la marca, y de ahí el eje del árbol.
+  \item Para lejos se usa una calibración propia de la cámara, \archivo{27-aruco-arbol/resultados/tf\_navegacion.json}
+        (6 puntos en el piso, $\sim$3~cm de error a 1--2~m). La TF del agarre (capítulo~\ref{cap:vision}) solo vale a
+        menos de 70~cm.
+\end{itemize}
+
+\section{La parada}
+
+El arbolito de la demo mide $\sim$60~cm y tiene los limones entre 32 y 54~cm del piso. La parada se calculó en la
+simulación de alcance (\archivo{26-sim-alcance-arbolito}) y se validó agarrando:
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dato} & \textbf{Valor} \\
+\midrule
+Tronco respecto de J1 & 70~cm a la izquierda y 15~cm adelante \\
+Paradas & 4, cada 90° alrededor del árbol (el árbol siempre a la izquierda) \\
+Cobertura & 100~\% del arbolito con las 4 paradas \\
+Alcance del brazo & centro del limón a 48--65~cm de J1 y 33--54~cm del piso \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{La secuencia: \cod{recolectar.py}}
+
+\begin{enumerate}
+  \item \textbf{Homing} del brazo (finales de carrera; J1 3°, J2 6°, J3 3°) y pose de reposo.
+  \item \textbf{Mirar la marca}: el robot tiene que arrancar viéndola, a $\sim$0,9--4~m y a su izquierda.
+  \item \textbf{Ir a la parada} (\cod{ir\_a\_parada.py}): girar con el \textbf{giróscopo} ($\sim\pm$1°), avanzar
+        con las \textbf{ruedas} ($<$ 1~\% de error en recto) y girar otra vez. Las ruedas patinan en los giros (se
+        pasan $\sim$2° cada 90°): por eso los giros van con la IMU.
+  \item \textbf{Cosechar} (\cod{punta.py cosechar N}): mide un limón con la visión, entra de frente 2,8~cm más allá
+        del centro, cierra la pinza, tira 2~cm, gira la muñeca 90° y arrastra con J1 5° para desprenderlo, sale y lo
+        deja en la \textbf{canasta} sobre la tapa. Confirma con la visión y reintenta si falló.
+\end{enumerate}
+
+\begin{lstlisting}[language=consola]
+# En la Pi, con la visión y el agente de la base corriendo y la WROOM con el env brazo:
+cd ~/scripts/27-aruco-arbol
+python3 tools/recolectar.py            # 3 Enter: 12 V apagados, 12 V encendidos (homing), ir
+python3 tools/ver_marcas.py --tf nav --radio-maceta 165   # solo mirar las marcas
+\end{lstlisting}
+
+\begin{nota}[La altura que da la visión]
+La cinemática real del brazo sube más que el modelo en $z$. La cosecha corrige la altura de la visión con
+$z = 23{,}1 + 0{,}718 \cdot z_\text{visión}$ [cm] (medido con 3 limones y cinta) y un ajuste fino de 9 puntos
+según el lado de la imagen (\archivo{20-brazo-coordinado/resultados/ajuste\_agarre.json}).
+\end{nota}
+
+\section{Resultados}
+
+\begin{center}
+\begin{tabular}{@{}lp{11cm}@{}}
+\toprule
+\textbf{Fecha} & \textbf{Resultado} \\
+\midrule
+13/11 & Primera recolección autónoma completa en 95~s: marca a 1,4~m, girar 85°, avanzar 88~cm, girar 87°, medir y
+  agarrar. Agarró el limón. \\
+18/11 & \cod{cosechar 3}: \textbf{2 de 3} limones en la canasta, $\sim$34~s cada uno. \\
+18/11 & Seguridad de la base con los motores: el HC-SR04 del medio frena a 20~cm a 0,10 y 0,20~m/s; bumpers, seta y
+  vuelco (25°) cortan y quedan enclavados. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Lo que falta para la demo}\label{sec:demo-falta}
+
+\begin{pendiente}[Sin probar en el robot]
+\begin{itemize}[leftmargin=*]
+  \item \textbf{RODEAR} (\cod{recolectar.py --paradas N}): ir a la cara siguiente con la odometría y corregir con su
+        marca.
+  \item \textbf{Banderín único + BUSCAR} (\cod{ir\_a\_parada.py --banderin --buscar}): una sola marca en un palo; gira
+        de a 30° hasta verla. Falta medir \archivo{banderin.json} y que \cod{recolectar.py} lo use.
+  \item \textbf{Base y cosecha juntas} en una misma corrida, y las 4 paradas seguidas.
+  \item Pasar todo a la misión de ROS~2 (\cod{mision}): mandar texto por \topic{/brazo/comando} al firmware 20, que
+        no entiende \topic{/brazo/joint\_cmd}.
+\end{itemize}
+Espacio necesario: al menos 4 × 4~m (mejor 5 × 5).
+\end{pendiente}

@@ -41,7 +41,11 @@
 ssh r2d2@100.116.96.71
 source /opt/ros/jazzy/setup.bash
 
-# --- Agentes micro-ROS (una terminal cada uno)
+# --- Después de prender la Pi (no arrancan solos)
+bash ~/scripts/agente_base.sh     # agente de la base, en segundo plano
+bash ~/scripts/vision.sh          # visión con YOLO v3
+
+# --- Agentes micro-ROS a mano (una terminal cada uno)
 source ~/microros_ws/install/local_setup.bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_*-if00
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
@@ -57,11 +61,14 @@ ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'armar'}"
 ros2 topic pub --once /brazo/joint_cmd sensor_msgs/msg/JointState "{name: [j1], position: [1.57]}"
 ros2 topic pub --once /pinza/cierre std_msgs/msg/Float32 "{data: 50.0}"
 
-# --- Visión
-MODELO=~/vision_estereo/modelos/limon_yolo26n_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh
+# --- Visión a mano
+MODELO=~/vision_estereo/modelos/limon_yolo26n_v3_ncnn_model CLASE=limon ~/vision_estereo/scripts/start_limon.sh
 
-# --- Misión
-ros2 launch mision mision.launch.py x:=... y:=... z:=... roll:=... pitch:=... yaw:=...
+# --- Demo con el arbolito (capítulo de la demo; WROOM con el firmware 20, env brazo)
+cd ~/scripts/27-aruco-arbol && python3 tools/recolectar.py
+
+# --- Misión de ROS 2 (TF del 12/11)
+ros2 launch mision mision.launch.py x:=0.1961 y:=-0.2694 z:=0.3833 roll:=0.0425 pitch:=0.2415 yaw:=1.5810 radio_limon:=0.025
 
 # --- Firmware (en la notebook)
 cd firmware/base && ~/.platformio/penv/bin/pio test -e native && ~/.platformio/penv/bin/pio run -e ros
@@ -74,13 +81,14 @@ ros2 bag record /cmd_vel /odom /imu/data_raw /range/frente /bumpers /base/estado
 
 \begin{lstlisting}
 recolector_de_frutas/
-|-- CLAUDE.md                 estado y reglas del proyecto
+|-- CLAUDE.md                 reglas del proyecto
 |-- docs/
 |   |-- INDICE.md             índice de documentos
 |   |-- ARQUITECTURA.md       arquitectura del objetivo mínimo
 |   |-- CONEXIONES.md         pines, potencia, autonomía, "antes de conectar"
 |   |-- BITACORA.md           bitácora por fecha
 |   |-- html/                 páginas interactivas (todo.html junta todas)
+|   |-- ESTADO.md, PENDIENTES.md  estado de hoy y lo que falta
 |   |-- manual/               este manual (manual.tex)
 |   |-- fotos/                hojas de datos y fotos
 |   |-- TPF R1/, TPF R2/      entregas
@@ -102,5 +110,7 @@ recolector_de_frutas/
   \item \archivo{firmware/base/README.md}, \archivo{firmware/brazo/README.md}: detalle del firmware.
   \item \archivo{ros2\_ws/src/*/README.md}: detalle de cada paquete.
   \item \archivo{\textasciitilde/vision\_estereo/README.md}: detalle de la visión.
-  \item \archivo{docs/BITACORA.md}: por qué se tomó cada decisión.
+  \item \archivo{docs/BITACORA.md}: lo hecho día por día; \archivo{docs/DECISIONES.md}: por qué se decidió cada cosa.
+  \item \archivo{docs/ESTADO.md} y \archivo{docs/PENDIENTES.md}: el estado más reciente (este manual es una foto al 19/11).
+  \item Repositorio \cod{pruebas-esp32}: firmware 20 del brazo y scripts de la demo (\archivo{notas/ESTADO.md}).
 \end{itemize}

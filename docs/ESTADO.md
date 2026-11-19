@@ -10,6 +10,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 - Potencia v0.6 (`CONEXIONES.md`): falta el portafusible, el XT60 en la LiPo y el divisor 100 k / 30 k.
   Pi con el power bank: OK.
 - Resumen ilustrado de todas las pruebas: `docs/resumen_pruebas_20261119.pdf`.
+- **Manual v1.1 (19/11)** al día en `docs/manual/` (capítulo nuevo de la demo); `manual.pdf` fuera de git, falta subirlo a Drive.
 
 ## Demo y navegación (en `~/Documentos/pruebas-esp32`, carpeta `27-aruco-arbol`)
 - **Demo:** un solo arbolito en el aula con marcas ArUco; GPS (±20 m) solo para la rúbrica. Espacio: ≥ 4 × 4 m.
@@ -58,7 +59,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 - UP501 en la Pi (`/dev/ttyAMA0`, 9600, `nmea_navsat_driver ... -r fix:=/gps/fix`): σ ≈ 21 m afuera; adentro sin fix.
 
 ## Pi 5
-- `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); afuera entra sola al hotspot del celular (5 GHz).
+- `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`). En el lab elige **LabEquiposMedicos** (prioridad 10, directo ~6 ms);
+  afuera, el hotspot del celular (5 GHz). FastAPI 0.101 instalado con apt (prueba `~/web_estado.py`, fuera del repo).
   `.commit` `4badf7a` (12/11). Después de reiniciar, a mano: `~/scripts/agente_base.sh` y `~/scripts/vision.sh`.
 - Rutas: binarios en `~/firmware/`, scripts en `~/scripts`, logs en `~/logs`, workspaces en `~/ros/`, venvs en `~/venvs/`.
 

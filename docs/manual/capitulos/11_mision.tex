@@ -14,6 +14,13 @@ El paquete \cod{mision} (\archivo{ros2\_ws/src/mision/}) tiene dos máquinas de 
 Las dos son Python puro, sin ROS (se prueban con \cod{colcon test}: 35 pruebas de la misión, el recorrido y la hilera). \archivo{nodo\_mision.py}
 es el nodo que las conecta con los tópicos.
 
+\begin{pendiente}[La misión todavía no mueve el brazo real]
+La misión está probada en la simulación (12 de 12 limones). En el robot, la WROOM tiene el firmware de pruebas 20, que
+recibe texto por \topic{/brazo/comando} y \textbf{no entiende} \topic{/brazo/joint\_cmd} de \cod{brazo\_ik}. La demo
+corre hoy con los scripts del capítulo~\ref{cap:demo}. Falta llevar ese enfoque (marcas, paradas, cosecha) a esta
+misión, con los estados de la guía.
+\end{pendiente}
+
 \section{La misión (brazo)}
 
 \begin{figure}[H]
@@ -128,8 +135,8 @@ sensores) hasta verlo en la zona útil.
 
 \begin{pendiente}[Parámetros del recorrido para el robot real]
 \cod{ParRecorrido} en \archivo{recorrido.py} usa la calibración vieja de la simulación: $f = 1076{,}5$~px,
-$u_\text{mín} = 271$~px, ventana 0,40--0,95~m. Con las cámaras reales (calibración del soporte) son $f = 654{,}3$~px y
-$u_\text{mín} \approx 163$~px. Hay que pasarlos por parámetro (\cod{f\_px}, \cod{u\_min}, \cod{z\_min}, \cod{z\_max}) al
+$u_\text{mín} = 271$~px, ventana 0,40--0,95~m. Con las cámaras reales (calibración del mástil) son $f = 672{,}1$~px y
+$u_\text{mín} = 280$~px (el brazo tapa la franja izquierda). Hay que pasarlos por parámetro (\cod{f\_px}, \cod{u\_min}, \cod{z\_min}, \cod{z\_max}) al
 probar en el robot.
 \end{pendiente}
 
@@ -190,8 +197,9 @@ propio largo y vuelve al centro.
 
 \section{Hilera definida por GPS}\label{sec:hilera-gps}
 
-La guía R2 (N1) pide que ``la hilera esté definida por GPS y verificada mediante visión''. La demo es afuera, así
-que el GPS UP501 ve satélites, pero erra de 3 a 20~m (el primer fix, el 21/10, dio $\sigma \approx 21$~m con 3
+La guía R2 (N1) pide que ``la hilera esté definida por GPS y verificada mediante visión''. Esto se hizo para una
+demo afuera; desde el 13/11 la demo es en el aula con un arbolito (capítulo~\ref{cap:demo}) y la hilera por GPS queda
+para la simulación y la rúbrica. Afuera, el GPS UP501 ve satélites, pero erra de 3 a 20~m (el primer fix, el 21/10, dio $\sigma \approx 21$~m con 3
 satélites): \textbf{no sirve para seguir el pasillo}, que mide $\sim$1~m. Por eso el GPS solo decide si el robot está
 en el inicio de la hilera; adentro manda la odometría (ruedas, giróscopo y visión).
 
@@ -221,21 +229,23 @@ ojo). N1 también pide \textbf{volver al punto de inicio} al terminar: no está 
 
 \begin{lstlisting}[language=consola]
 # En la Pi, con el agente del brazo y la visión (start_limon.sh) corriendo:
-ros2 launch mision mision.launch.py x:=-0.10 y:=0 z:=0.35 roll:=0 pitch:=0 yaw:=0   # TF medida (MEDIR)
+ros2 launch mision mision.launch.py x:=0.1961 y:=-0.2694 z:=0.3833 \
+  roll:=0.0425 pitch:=0.2415 yaw:=1.5810 radio_limon:=0.025        # TF medida el 12/11
 ros2 topic echo /mision/estado --field data
 
 # Con el recorrido autónomo (también el agente de la base), parámetros del nodo:
 ros2 run mision nodo_mision --ros-args -p autonomo:=true -p largo_herramienta:=0.075 \
-  -p f_px:=654.3 -p u_min:=163.0 -p z_min:=0.40 -p z_max:=0.95
+  -p f_px:=672.1 -p u_min:=280.0 -p z_min:=0.40 -p z_max:=0.95
 # Afuera, con la hilera marcada (sección anterior), sumar:
 #   -p hilera_inicio_lat:=... -p hilera_inicio_lon:=... -p hilera_fin_lat:=... -p hilera_fin_lon:=...
 \end{lstlisting}
 
 \begin{nota}[La TF es obligatoria]
 \archivo{mision.launch.py} \textbf{no arranca} sin los 6 argumentos de la TF \cod{brazo\_base} → \cod{stereo\_camera\_link}
-(x, y, z, roll, pitch, yaw), para no mover el brazo con una TF inventada. Se miden con el soporte rígido de las
-cámaras ya montado: x, y, z con cinta; los ángulos se ajustan hasta que un limón medido a mano dé el mismo punto en
-\cod{brazo\_base}.
+(x, y, z, roll, pitch, yaw), para no mover el brazo con una TF inventada. La del 12/11 se midió con las cámaras en el
+mástil y 9 limones en lugares conocidos, con $\sim$2~cm de error: las cámaras quedan $\sim$14° hacia abajo. Vale
+para el agarre (a menos de 70~cm); para ver las marcas lejos se usa otra calibración (capítulo~\ref{cap:demo}).
+Si el mástil se mueve, hay que medirla de nuevo.
 \end{nota}
 
 {\small

@@ -21,7 +21,9 @@ ros2 topic echo /brazo/ik_estado --field data   # por qué un punto es inalcanza
 \multicolumn{3}{@{}l}{\textbf{Enlace y micro-ROS}} \\
 \topic{/odom} o \topic{/brazo/joint\_states} no aparecen & Agente no corriendo, puerto equivocado o placa sin hora &
   Arrancar el agente con el puerto de \cod{/dev/serial/by-id/}; esperar unos segundos \\
-La S3 no abre sesión & Quedó en modo descarga & \cod{esptool --before no\_reset --after watchdog-reset read-mac} \\
+La S3 no abre sesión & Quedó en modo descarga o esperando tras reiniciar la Pi & 12~V apagados; \cod{pkill -f micro\_ros\_agent}, \cod{esptool --before no\_reset --after watchdog-reset chip-id}, agente \\
+La base se desarma sola & Corte del USB de la S3 (3 el 18/11) & Se reconecta sola pero desarmada: \cod{armar} otra vez; revisar el cable y \cod{dmesg} \\
+\cod{pkill -f} por ssh corta la sesión & El patrón coincide con el propio comando & Poner la primera letra entre corchetes: \cod{pkill -f "[m]icro\_ros\_agent"} \\
 El brazo se reconecta cada $\sim$1~s & Baudios altos en el CH340 & Usar 115\,200 (el agente con \cod{-b 115200} si se cambió) \\
 \cod{pings\_fallidos} o \cod{cortes} suben & USB flojo o la Pi sin energía & Revisar cables; \cod{dmesg}; \cod{vcgencmd get\_throttled} \\
 No se puede flashear & El agente tiene el puerto & Detener el agente antes de \cod{pio run -t upload} \\
@@ -38,6 +40,9 @@ Falla de rueda / atasco & Rueda trabada o encoder desconectado & Revisar; \cod{r
 Encoder cuenta solo, quieto & Entrada al aire (falta pull-up) o ruido & Revisar cableado y pull-ups \\
 \cod{BATERIA\_BAJA} con la batería llena & Seta apretada (divisor en 0~V) o divisor mal & Normal con la seta; si no, medir el divisor \\
 Bumper o seta disparan solos & Ruido (no hay capacitores) & 100~nF de ese pin a GND \\
+\cod{imu\_rec} sube en \topic{/base/estado} & I²C de la IMU colgado (por ejemplo, al cortar la seta los 5~V de la IMU) & Normal: el firmware lo destraba solo; si sube seguido, revisar el cable \\
+\cod{atasco} de la rueda izquierda aislado & Falso contacto del encoder (GPIO 15/16) & Revisar el conector; \cod{r} \\
+\cod{BATERIA\_BAJA} con los 12~V apagados & Sin divisor de la v0.6 la lectura no es confiable & No usarla para saber si hay 12~V: preguntar o medir \\
 \midrule
 \multicolumn{3}{@{}l}{\textbf{Brazo}} \\
 Rechaza movimientos & Desarmado o sin cero & \cod{armar}; \cod{z} en la pose de referencia o \cod{home <n>} \\
@@ -49,16 +54,18 @@ J2 o J3 caen & No se autobloquean & Apoyar el brazo; nunca \cod{l} con el brazo 
 Servo da un salto al encender & GPIO~14 pulsa al arrancar & Conectar los 6~V después de que arranque la WROOM, o pasar la señal al GPIO~13 \\
 \midrule
 \multicolumn{3}{@{}l}{\textbf{Visión y misión}} \\
-Sin \topic{/limon/posicion} con el limón a la vista & Limón en la zona ciega, fuera de 0,38--0,96~m o robot en movimiento & Correr el robot; frenar \\
+Sin \topic{/limon/posicion} con el limón a la vista & Limón en la zona ciega ($u < 280$~px), fuera de 0,40--0,95~m o robot en movimiento & Correr el robot; frenar \\
 Posiciones que saltan & Exposición sin sincronizar, robot moviéndose & Localizar quieto \\
-Cámara no arranca & Cinta CSI & Intercambiar cintas con la Pi apagada \\
+Cámara no arranca & Cinta CSI (dañada o puesta al revés) & \cod{rpicam-hello --list-cameras} tiene que mostrar dos; revisar las cintas con la Pi apagada \\
+Detecta con el modelo genérico & \cod{start\_limon.sh} sin \cod{MODELO} usa el COCO & Lanzar con \cod{bash \textasciitilde/scripts/vision.sh} (v3) \\
 Colores rosados al sol & Cámaras NoIR & Pendiente: probar o sombrear \\
 Misión en FALLA & Ver el motivo en \topic{/mision/estado} & Corregir y reiniciar el nodo \\
 Misión se queda en ESPERAR & Limón inestable, brazo no quieto o fuera de alcance & Ver \topic{/mision/estado}; acercar la base \\
 La simulación mueve el robot real & Falta aislar & \cod{ROS\_AUTOMATIC\_DISCOVERY\_RANGE=}\allowbreak\cod{LOCALHOST} \\
 \midrule
 \multicolumn{3}{@{}l}{\textbf{Energía}} \\
-La Pi se reinicia o \cod{get\_throttled} $\neq$ \cod{0x0} & Power bank al límite o cable largo & Una sola salida, cable corto; bajar carga \\
+La Pi se reinicia o \cod{get\_throttled} $\neq$ \cod{0x0} & Power bank descargado o cable largo & Cargarlo al 100~\%; una sola salida, cable corto \\
+SSH lento o con saltos & Tailscale por relay (hotspot o Wi-Fi de FIUNA) & \cod{tailscale ping}; pasar la Pi a LabEquiposMedicos (sección~\ref{sec:red-pi}) \\
 Salta el fusible & Cortocircuito & \textbf{No} reemplazar sin encontrar el corto \\
 \bottomrule
 \end{longtable}

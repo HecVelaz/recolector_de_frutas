@@ -4,6 +4,11 @@ El paquete \cod{simulacion} (\archivo{ros2\_ws/src/simulacion/}) arma en \textbf
 limoneros y el robot, con \textbf{los mismos tópicos y marcos que los ESP32}. Así \cod{mision}, \cod{brazo\_ik} y la
 visión corren sin cambios, sin hardware.
 
+\begin{nota}[El mundo no tiene el arbolito de la demo]
+La simulación tiene la hilera, no el arbolito con marcas ArUco del aula (capítulo~\ref{cap:demo}). Las marcas y las
+paradas alrededor del árbol se probaron con simulaciones aparte, en \cod{pruebas-esp32}.
+\end{nota}
+
 \section{Qué hay en el mundo}
 \begin{itemize}
   \item Pasillo a lo largo de $+x$, robot en el origen, \textbf{4 limoneros por lado} en $x$ = 1,5 / 3 / 4,5 / 6~m,

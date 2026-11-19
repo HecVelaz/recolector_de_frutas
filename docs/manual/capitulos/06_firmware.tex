@@ -125,15 +125,15 @@ Lo que hace la tarea de control en cada paso (10~ms), para una articulación del
   \item \textbf{Límite de duty}: 40~\% en la puesta en marcha.
 \end{enumerate}
 
-\subsection{Parámetros de J1 (medidos el 02/10)}
+\subsection{Parámetros de J1 (medidos el 02/10 y el 30/10 con el brazo montado)}
 \begin{center}
 \begin{tabular}{@{}lll@{}}
 \toprule
 \textbf{Parámetro} & \textbf{Valor} & \textbf{Significado} \\
 \midrule
 Cuentas por vuelta del motor & 3200 & 16 PPR × 4 × 50 \\
-Relación de la correa & 5 & 18 → 90 dientes \\
-Rango & 45° a 225° & marco de \cod{brazo\_ik} \\
+Relación de la correa & 4,67 & 18 → 84 dientes \\
+Rango & $-30^\circ$ a $90^\circ$ & marco de \cod{brazo\_ik} \\
 Modelo & $K = 1{,}58$, $\tau = 0{,}065$~s & E5 \\
 Zona muerta & 17~\% & medida con el brazo \\
 PI de velocidad & $K_p = 0{,}659$~\%/rpm, $K_i = 4{,}8$ & \\
@@ -181,7 +181,8 @@ Se decide en la S3, sin esperar a la Pi:
 \endhead
 Seta apretada (o cable cortado) & EMERGENCIA: puentes deshabilitados (EN = 0) & Soltar la seta, \cod{r} y \cod{armar} \\
 Inclinación (roll o pitch) $> 25^\circ$ & VUELCO: frena & Nivelar la base y \cod{r} \\
-IMU sin muestras por más de 200~ms & No se mueve (no puede vigilar el vuelco) & Solo, al volver los datos \\
+IMU sin muestras por más de 200~ms & No se mueve (no puede vigilar el vuelco). Si el I²C quedó colgado, lo
+  destraba solo (9 pulsos en SCL, cada 1~s como mucho) y cuenta \cod{imu\_rec} en \topic{/base/estado} & Solo, al volver los datos \\
 Bumper del frente & No avanza; solo puede alejarse en línea recta & Solo, al soltarse \\
 Bumper lateral & No gira (el costado barrería el objeto) & Solo, al soltarse \\
 Ultrasonido del frente sin eco & No avanza; retroceder y girar sí & Solo, al volver el eco \\
@@ -234,6 +235,13 @@ Rueda atascada o encoder con saltos & Base detenida & \cod{r} \\
 \end{longtable}
 
 \section{Firmware del brazo (WROOM)}
+
+\begin{peligro}[La WROOM no tiene este firmware]
+Desde el 11/11 la WROOM tiene el firmware de pruebas \archivo{pruebas-esp32/20-brazo-coordinado} (env \cod{brazo}, por
+serie; hoy \cod{brazo20\_serie\_20261118h.bin}): homing con finales de carrera, franja segura, pose plegada, canasta y la
+pinza RDS3218. Lo usan \cod{punta.py} y la demo (capítulo~\ref{cap:demo}). \textbf{No flashear} \archivo{firmware/brazo}
+hasta pasarle lo de 20: tiene la franja, el homing y el reposo viejos. Lo que sigue describe \archivo{firmware/brazo}.
+\end{peligro}
 
 \subsection{El cero y el homing}
 El encoder solo cuenta \textbf{cuánto se movió}, no dónde está. Al encender, el firmware no sabe el ángulo de cada

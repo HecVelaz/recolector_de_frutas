@@ -102,7 +102,9 @@ Divisor 100~k / 30~k & Baja 12,6~V a 2,91~V para el ADC del GPIO~1 de la S3. Si 
   (36~V), \textbf{cambiarlo antes a 120~k / 8,2~k}: con 42~V el de 30~k pondría $\sim$9~V en el GPIO y lo quema. \\
 Voltímetro / indicador & Muestra la tensión a la vista. Parar a 10,5~V. \\
 Power bank & 20\,000~mAh, 5~V 3~A. Una sola salida, cable incorporado (corto), arriba al lado de la Pi. No cargarlo
-  mientras alimenta la Pi (puede cortar un instante). \\
+  mientras alimenta la Pi (puede cortar un instante). \textbf{Probado el 12/11}: 1~h de uso real (4~W de media, 10,5~W de pico),
+  EXT5V entre 4,96 y 5,13~V y \cod{throttled} en \cod{0x0}. Descargado baja a $\sim$4,83~V y la Pi se apaga: cargarlo
+  al 100~\% antes de cada prueba. \\
 \bottomrule
 \end{longtable}
 

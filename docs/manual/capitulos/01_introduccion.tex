@@ -2,9 +2,10 @@
 
 \section{Qué es Arturito R2D2}
 
-Arturito R2D2 es un robot móvil que recorre el pasillo entre dos hileras de limoneros, encuentra los limones con
-una cámara, calcula dónde están en el espacio y los cosecha con un brazo articulado. Es el trabajo práctico final del
-Grupo~2 para dos materias a la vez:
+Arturito R2D2 es un robot móvil que llega hasta un limonero, encuentra los limones con una cámara, calcula dónde
+están en el espacio y los cosecha con un brazo articulado. Se diseñó para recorrer el pasillo entre dos hileras (así
+está en la simulación); la demo del 27/11/2026 es en el aula, con \textbf{un arbolito y marcas ArUco}
+(capítulo~\ref{cap:demo}). Es el trabajo práctico final del Grupo~2 para dos materias a la vez:
 
 \begin{itemize}
   \item \textbf{Robótica I} evalúa el \textbf{brazo}: un manipulador RRR (tres articulaciones rotativas) tipo
@@ -50,6 +51,7 @@ Entender el ``armar'' y cómo hablan la Pi y los ESP32 & Capítulo~\ref{cap:micr
 Entender cómo se encuentra el limón en 3D & Capítulo~\ref{cap:vision} \\
 Entender cómo se calculan los ángulos del brazo & Capítulo~\ref{cap:ik} \\
 Entender cómo decide el robot cuándo frenar y cuánto avanzar & Capítulo~\ref{cap:mision} \\
+Ver cómo se hace la demo con el arbolito & Capítulo~\ref{cap:demo} \\
 Probar todo sin hardware & Capítulo~\ref{cap:sim} (Gazebo) \\
 Encender el robot por primera vez, paso a paso & Capítulo~\ref{cap:marcha} \\
 Arreglar algo que no anda & Capítulo~\ref{cap:diag} \\
@@ -104,7 +106,8 @@ IMU & Unidad inercial (MPU-6500): acelerómetro y giróscopo. Da el rumbo y dete
 HC-SR04 & Sensor de distancia por ultrasonido (hay tres al frente). \\
 Bumper & Microinterruptor que se aprieta al chocar (hay tres: frente e izquierda y derecha). \\
 Seta & Botón rojo de parada de emergencia. Corta los 12~V de los motores. \\
-Estéreo & Dos cámaras separadas 9~cm: comparando las dos imágenes se calcula la distancia. \\
+Estéreo & Dos cámaras separadas 10~cm: comparando las dos imágenes se calcula la distancia. \\
+ArUco & Marca cuadrada en blanco y negro con un número (ID) que la cámara reconoce y ubica en 3D. Marcan el arbolito. \\
 Disparidad & Cuántos píxeles se corre un punto entre la imagen izquierda y la derecha. Más disparidad = más cerca. \\
 YOLO & Red neuronal que encuentra objetos (limones) en una imagen y les dibuja una caja. \\
 TF & Sistema de ROS~2 que guarda dónde está cada marco de coordenadas (cámara, brazo, base) respecto de los otros. \\

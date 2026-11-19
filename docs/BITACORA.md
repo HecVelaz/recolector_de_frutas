@@ -834,3 +834,22 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
 - **`docs/resumen_pruebas_20261119.pdf`** (16 págs., no técnico): las pruebas 00–27 en orden de fechas, línea de
   tiempo y lo que falta para la demo; hecho con reportlab en `pruebas-esp32` (script fuera del repo) y anotado en
   `INDICE.md`.
+
+## 2026-11-19 (tarde) — Pi: FastAPI y red del laboratorio; manual v1.1
+- **FastAPI en la Pi** con apt (`python3-fastapi` 0.101, `python3-uvicorn` 0.27, Pydantic 1.10): mismo Python 3.12 que
+  `rclpy`, sin venv ni `--break-system-packages`. Prueba `~/web_estado.py` (fuera del repo): nodo `rclpy` en un hilo +
+  FastAPI en el 8000, `GET /estado` con el último `/base/estado`. Anda por Tailscale; da `null` porque la S3 no abrió
+  sesión: agente de la base lanzado a mano (log `/tmp/agente_base.log`), falta el reset de la S3 con 12 V apagados.
+- **Red:** la Pi estaba en el hotspot del celular (Tailscale por el relay DERP de São Paulo, ~190 ms). Al cortarlo
+  entró a FIUNA (todas las Wi-Fi con prioridad 0). `LabEquiposMedicos` pasó a **prioridad 10** (`sudo nmcli connection
+  modify ... autoconnect-priority 10`; hace falta `sudo`): IP local 192.168.1.159, Tailscale directo en 6 ms.
+- Huella SSH de la Pi (ED25519): `SHA256:hEUqR0zzdEsSXpU0WSYQh60J0wPiwVuhECggKj4wEgE` (para quien entre por primera vez;
+  compartir la máquina desde el panel de Tailscale con **Share**). Ubuntu 24.04.5, kernel `6.8.0-1064-raspi`.
+- **Manual v1.1** (`docs/manual/`, 79 págs.): capítulo nuevo `11b_demo.tex` (arbolito con marcas, parada, `recolectar.py`,
+  resultados y lo que falta) y al día mecánica (J1 correa 18→84, rango −30°/90°, doble helicoidales, balancín 60 mm,
+  RDS3218 500/1200 µs), visión (`calibracion_mastil`, v3, u ≥ 280 px), misión (TF del 12/11; no mueve el brazo real),
+  firmware (aviso del firmware 20, `imu_rec`), puesta en marcha (scripts, reset de la S3, red de la Pi), diagnóstico,
+  estado al 19/11 y referencia. Compila sin errores; el único desborde de margen nuevo no es nuevo (diagrama de la FSM).
+  `manual.pdf` sigue fuera de git: subirlo a Drive.
+- LiPo Zeee 3S: carga hasta 12,6 V (4,20 V por celda) en BALANCE a 4 A (0,5C), ~2–2,5 h desde 9,9 V.
+

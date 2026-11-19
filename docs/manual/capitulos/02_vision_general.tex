@@ -129,15 +129,17 @@ teclado (\cod{teleop}) se usa en vez del recorrido autónomo, nunca a la vez.}
   \node[font=\scriptsize,anchor=west] at (0.235,-0.05) {rueda der.};
   \node[font=\scriptsize,anchor=north] at (0.04,-0.09) {\textcolor{rojo}{\cod{base\_link}}};
 \end{tikzpicture}}
-\caption{Vista desde arriba (medidas de la entrega R2~E3 y de la simulación; posiciones del mástil y del brazo
-\textbf{preliminares}). El origen \cod{base\_link} está en el eje de las ruedas de tracción, a 8,5~cm del borde
+\caption{Vista desde arriba (medidas de la entrega R2~E3 y de la simulación). El mástil (Ø~5~cm, cámaras a
+$\sim$58~cm del piso) quedó a $\approx$(330, 245)~mm de J1, a la derecha y adelante. El origen \cod{base\_link} está en el eje de las ruedas de tracción, a 8,5~cm del borde
 trasero. Los limones están a la \textbf{izquierda} del robot: el brazo y las cámaras miran hacia ese lado.}
 \label{fig:planta}
 \end{figure}
 
 \section{Un limón, de principio a fin}
 
-Esta es la secuencia completa de una cosecha autónoma. Cada paso se explica en detalle más adelante.
+Esta es la secuencia completa de una cosecha autónoma \textbf{con la misión de ROS~2 en la hilera} (probada en la
+simulación). La demo con el arbolito usa por ahora otra secuencia, con marcas ArUco y scripts de Python
+(capítulo~\ref{cap:demo}). Cada paso se explica en detalle más adelante.
 
 \begin{figure}[H]
 \centering
@@ -180,7 +182,7 @@ En palabras:
   \item \textbf{AVANZAR}: \cod{recorrido} manda \topic{/cmd\_vel} con 0,10~m/s por el centro del pasillo. La S3
         convierte eso en rpm para cada rueda y las controla con sus encoders.
   \item YOLO ve un limón. Con el ancho de la caja se estima si está a una distancia que el estéreo puede medir
-        (0,38--0,96~m). Si es así, \cod{recorrido} \textbf{frena}: el estéreo necesita el robot quieto porque las dos
+        (0,40--0,95~m). Si es así, \cod{recorrido} \textbf{frena}: el estéreo necesita el robot quieto porque las dos
         cámaras no toman la foto exactamente al mismo tiempo.
   \item Quieto, el estéreo publica la posición 3D del limón en \topic{/limon/posicion}. \cod{mision} junta 5
         muestras que coincidan a menos de 2~cm, pasa el punto al marco del brazo con la TF y pregunta a la

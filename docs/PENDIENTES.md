@@ -13,6 +13,9 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    - **Recortado:** hilera (`recorrido.py`), EKF, app nueva, métricas detalladas, madurez por tamaño, celular como
      sensor. H8 (luz y buzzer) solo si sobra un día y hay piezas.
    - **Plan B:** si la misión ROS no llega, demostrar con `recolectar.py` y presentar la misión ROS como en curso.
+   - **Manual v1.1 (19/11):** subir `docs/manual/manual.pdf` a Drive; actualizar el capítulo de la demo (`11b_demo.tex`) y el
+     de estado después de probar BUSCAR/RODEAR y si la misión ROS llega.
+   - **S3 sin sesión (19/11 tarde):** con 12 V apagados, reset (`esptool --after watchdog-reset chip-id`) y relanzar el agente.
    - **Riesgo:** los cortes del USB de la S3 (la base se desarma; 3 el 18/11). Falta saber si el 27/11 hay además informe (E7/E8).
 00a. **(Con a, b y d se cubre N3 de la guía.)** **Navegación y recolección autónoma (13/11, en `pruebas-esp32`; detalle en su `notas/PENDIENTES.md`), en orden:**
    a) **BUSCAR:** programado el 19/11 (`ir_a_parada.py --banderin --buscar`, gira de a 30°), sin probar en el robot;

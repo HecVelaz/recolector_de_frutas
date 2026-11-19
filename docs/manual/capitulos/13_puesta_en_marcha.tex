@@ -1,8 +1,9 @@
 \chapter{Puesta en marcha, paso a paso}\label{cap:marcha}
 
 Este capítulo es la receta para encender y probar el robot real, en orden. Cada paso se apoya en el anterior: no
-saltear pasos. \textbf{Hasta hoy (14/10) nada de esto se probó con los periféricos reales}: las placas solo se
-probaron solas.
+saltear pasos. \textbf{Al 19/11 se hicieron los pasos 0 a 8} (base en el piso el 13/11, seguridad con los motores el
+18/11, TF el 12/11), pero los pasos 6--8 con el firmware de pruebas 20 del brazo, no con \archivo{firmware/brazo}. Los
+pasos 9 y 10 (misión y recorrido de ROS~2) solo se probaron en la simulación; la demo usa el capítulo~\ref{cap:demo}.
 
 \begin{figure}[H]
 \centering
@@ -41,10 +42,17 @@ probaron solas.
 
 \begin{enumerate}
   \item Selector en \textbf{OFF}. Enchufar el power bank a la Pi y esperar que arranque.
-  \item Conectar por SSH: \cod{ssh r2d2@100.116.96.71}.
+  \item Conectar por SSH: \cod{ssh r2d2@100.116.96.71} (Tailscale; sección~\ref{sec:red-pi}).
   \item Verificar alimentación: \cod{vcgencmd get\_throttled} tiene que dar \cod{0x0}.
   \item Verificar que la Pi tenga el repo y los binarios al día (ver \cod{/pi-sync} en el capítulo~\ref{cap:estado}).
-  \item Arrancar los dos agentes, cada uno en su terminal (sección~\ref{sec:armar}).
+  \item Arrancar el agente de la base y la visión, que \textbf{no arrancan solos} al prender la Pi:
+\begin{lstlisting}[language=consola]
+bash ~/scripts/agente_base.sh     # en segundo plano, log en ~/logs/agente_base.log
+bash ~/scripts/vision.sh          # cámaras + YOLO v3 + estéreo
+\end{lstlisting}
+        Si la S3 no abre sesión (no aparece \topic{/odom}), con los \textbf{12~V apagados}: \cod{pkill -f
+        micro\_ros\_agent}, \cod{esptool --after watchdog-reset chip-id} sobre la S3 y volver a lanzar el agente. El
+        brazo, con el firmware 20, se maneja por serie (\cod{punta.py}), sin agente.
   \item Comprobar las tasas:
 \begin{lstlisting}[language=consola]
 ros2 topic hz /odom                      # 25 Hz
@@ -116,7 +124,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p repeat_rate:=
 \section{Paso 6: brazo con J1}
 Una articulación a la vez, con la fuente limitada a 2--3~A si se puede.
 \begin{enumerate}
-  \item Reflashear la WROOM con los pines v0.5.
+  \item Firmware: hoy la WROOM tiene el de pruebas 20 (capítulo~\ref{cap:firmware}); \textbf{no} flashear
+        \archivo{firmware/brazo} hasta pasarle lo de 20.
   \item \cod{d 1 20} repetido: ver con \cod{e} que la velocidad tenga el mismo signo que el duty.
   \item \cod{v 1 10 3}: lazo de velocidad solo.
   \item Llevar J1 a la marca del banco (brazo hacia la izquierda) y \cod{z 1}. O \cod{home 1} con el final de carrera.
@@ -124,7 +133,7 @@ Una articulación a la vez, con la fuente limitada a 2--3~A si se puede.
   \item Con micro-ROS: \cod{armar} y \topic{/brazo/joint\_cmd}.
 \end{enumerate}
 
-\section{Paso 7: J2 y J3 (cuando lleguen los motores)}
+\section{Paso 7: J2 y J3}
 \begin{enumerate}
   \item Montar con el brazo \textbf{apoyado}: no se sostienen solos.
   \item Medir signos (\cod{ENC\_INVERTIDO}, \cod{MOTOR\_INVERTIDO}) con \cod{d}.
@@ -158,3 +167,19 @@ Una articulación a la vez, con la fuente limitada a 2--3~A si se puede.
   \item Parámetros de la zona útil de la cámara real (\cod{f\_px}, \cod{u\_min}).
   \item \cod{autonomo:=true}, con alguien al lado con la mano en la seta.
 \end{enumerate}
+
+\section{La red de la Pi}\label{sec:red-pi}
+
+\begin{itemize}
+  \item La Pi se maneja siempre por \textbf{Tailscale}: \cod{ssh r2d2@100.116.96.71} (\cod{r2d2-desktop}). La IP no
+        cambia con la red. Para darle acceso a otra persona: en el panel de Tailscale, \textbf{Share} de esa máquina.
+        Huella de la clave SSH de la Pi (ED25519), para comprobarla la primera vez que alguien se conecta:\\
+        \cod{SHA256:hEUqR0zzdEsSXpU0WSYQh60J0wPiwVuhECggKj4wEgE}
+  \item Wi-Fi guardadas: \textbf{LabEquiposMedicos} tiene prioridad 10 (19/11) y es la que elige en el laboratorio
+        (IP local 192.168.1.159); FIUNA y el hotspot del celular (\cod{POCO X6 Pro 5G}) quedan en 0. Afuera entra
+        sola al hotspot.
+  \item Con el hotspot o el Wi-Fi de FIUNA, Tailscale suele ir por un relay (\cod{DERP}, São Paulo, $\sim$190~ms); en
+        LabEquiposMedicos va directo ($\sim$6~ms). \cod{tailscale ping 100.116.96.71} lo muestra.
+  \item Cambiar de red: \cod{sudo nmcli connection up "<nombre>"}; la prioridad con
+        \cod{sudo nmcli connection modify "<nombre>" connection.autoconnect-priority <n>}.
+\end{itemize}
