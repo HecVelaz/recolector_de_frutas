@@ -17,6 +17,8 @@ setup(
         ('share/' + paquete + '/config', glob('config/*')),
         ('share/' + paquete + '/models/limonero', glob('models/limonero/*')),
         ('share/' + paquete + '/models/texturas', glob('models/texturas/*')),
+        ('share/' + paquete + '/models/arbolito', glob('models/arbolito/*')),
+        ('share/' + paquete + '/models/banderin', glob('models/banderin/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -31,6 +33,8 @@ setup(
             'base_sim = simulacion.base_sim:main',
             'limones_sim = simulacion.limones_sim:main',
             'camara_info_sim = simulacion.camara_info_sim:main',
+            'mundo_arbolitos = simulacion.mundo_arbolitos:main',
+            'registro_nav = simulacion.registro_nav:main',
         ],
     },
 )

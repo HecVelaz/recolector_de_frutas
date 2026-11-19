@@ -1,0 +1,343 @@
+<?xml version="1.0"?>
+<!-- GENERADO por simulacion/mundo_arbolitos.py (--arboles 3 --separacion 1.5 --banderin 1.5): no editar a mano.
+     Demo afuera: banderín ArUco ID 0 en el origen mirando a -x y la hilera de arbolitos detrás. -->
+<sdf version="1.9">
+  <world name="arbolitos">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+
+    <!-- FIUNA (aproximado): el GPS simulado da coordenadas de ahí (solo para la rúbrica); x = este, y = norte -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>-25.3320</latitude_deg>
+      <longitude_deg>-57.5190</longitude_deg>
+      <elevation>120</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
+    <scene>
+      <ambient>0.45 0.45 0.45 1</ambient>
+      <background>0.55 0.75 0.95 1</background>
+    </scene>
+
+    <!-- Sol de media tarde, con sombras -->
+    <light type="directional" name="sol">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>1.0 0.97 0.9 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>-0.5 0.4 -0.75</direction>
+    </light>
+
+    <model name="suelo">
+      <static>true</static>
+      <link name="link">
+        <collision name="c"><geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry></collision>
+        <visual name="v">
+          <geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.1 0.1 0.1 1</specular><pbr><metal><albedo_map>model://texturas/tierra.png</albedo_map><roughness>0.95</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+
+    <include>
+      <name>banderin</name>
+      <uri>model://banderin</uri>
+      <pose>0.000 0.000 0 0 0 3.141593</pose>
+    </include>
+
+    <include>
+      <name>arbolito_1</name>
+      <uri>model://arbolito</uri>
+      <pose>1.500 -0.000 0 0 0 -0.000000</pose>
+    </include>
+
+    <include>
+      <name>arbolito_2</name>
+      <uri>model://arbolito</uri>
+      <pose>3.000 -0.000 0 0 0 -0.000000</pose>
+    </include>
+
+    <include>
+      <name>arbolito_3</name>
+      <uri>model://arbolito</uri>
+      <pose>4.500 -0.000 0 0 0 -0.000000</pose>
+    </include>
+
+    <model name="limon_10">
+      <pose>1.620 -0.000 0.370 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_11">
+      <pose>1.585 0.085 0.420 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_12">
+      <pose>1.500 0.120 0.470 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_13">
+      <pose>1.415 0.085 0.520 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_14">
+      <pose>1.380 -0.000 0.320 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_15">
+      <pose>1.415 -0.085 0.370 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_16">
+      <pose>1.500 -0.120 0.420 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_17">
+      <pose>1.585 -0.085 0.470 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_20">
+      <pose>3.120 -0.000 0.420 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_21">
+      <pose>3.085 0.085 0.470 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_22">
+      <pose>3.000 0.120 0.520 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_23">
+      <pose>2.915 0.085 0.320 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_24">
+      <pose>2.880 -0.000 0.370 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_25">
+      <pose>2.915 -0.085 0.420 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_26">
+      <pose>3.000 -0.120 0.470 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_27">
+      <pose>3.085 -0.085 0.520 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_30">
+      <pose>4.620 -0.000 0.470 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_31">
+      <pose>4.585 0.085 0.520 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_32">
+      <pose>4.500 0.120 0.320 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_33">
+      <pose>4.415 0.085 0.370 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_34">
+      <pose>4.380 -0.000 0.420 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_35">
+      <pose>4.415 -0.085 0.470 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_36">
+      <pose>4.500 -0.120 0.520 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+    <model name="limon_37">
+      <pose>4.585 -0.085 0.320 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial><mass>0.1</mass><inertia><ixx>3e-5</ixx><iyy>3e-5</iyy><izz>3e-5</izz></inertia></inertial>
+        <visual name="v">
+          <geometry><ellipsoid><radii>0.028 0.028 0.034</radii></ellipsoid></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/limon.png</albedo_map><roughness>0.5</roughness><metalness>0</metalness></metal></pbr></material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

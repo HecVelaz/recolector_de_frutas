@@ -12,6 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + paquete]),
         ('share/' + paquete, ['package.xml']),
         ('share/' + paquete + '/launch', glob('launch/*.launch.py')),
+        ('share/' + paquete + '/config', glob('config/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,6 +25,7 @@ setup(
         'console_scripts': [
             'nodo_mision = mision.nodo_mision:main',
             'marcar_gps = mision.marcar_gps:main',
+            'nodo_banderin = mision.nodo_banderin:main',
         ],
     },
 )

@@ -34,6 +34,8 @@ TS = 0.02             # 50 Hz
 # (adelante a la derecha) al ir a un limón y volver (girado a la derecha, a -75°, lo atravesaba). Buscado simulando
 # los recorridos a los 12 limones: ninguno pasa a menos de 33 cm del mástil, y queda a 17 cm de la vista de las cámaras
 # 17/10: q2/q3 pasan de (110°, -30°) a (94°, -50°) porque con el balancín de 60 mm el de antes no cierra (provisorio)
+# Parámetro reposo_j1 (°): en el mundo de los arbolitos va a 0 (hacia adelante): con la cámara de navegación del
+# mástil (57 cm, mirando a la izquierda) la pinza en 75° tapa el centro de la imagen y BUSCAR no ve el banderín
 REPOSO = [math.radians(75.0), math.radians(94.0), math.radians(-50.0)]
 K_POS = 5.0  # 1/s: velocidad = la de la consigna + K_POS * error (K_POS * TS << 1: estable a 50 Hz)
 V_LIM = 1.0  # rad/s, límite de las articulaciones en el urdf
@@ -85,8 +87,9 @@ class BrazoSim(Node):
         self.medido = {}       # articulaciones de Gazebo (j1, j2, j3o, j_nivel) rad
         self.previo = {}       # consigna del ciclo anterior, para su velocidad
         self.v = [0.0] * 3
-        self.consigna = list(REPOSO)  # actuador, se acerca al objetivo a VEL_MAX
-        self.objetivo = list(REPOSO)
+        reposo = [math.radians(self.declare_parameter('reposo_j1', math.degrees(REPOSO[0])).value)] + REPOSO[1:]
+        self.consigna = list(reposo)  # actuador, se acerca al objetivo a VEL_MAX
+        self.objetivo = list(reposo)
         self.vel = [0.0] * 3          # velocidad de la consigna
         self.dedos = DEDO_ABIERTO  # m, cada dedo
         self.giro = 0.0            # rad (J4)

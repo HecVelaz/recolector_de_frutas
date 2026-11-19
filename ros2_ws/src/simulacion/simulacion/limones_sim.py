@@ -15,9 +15,12 @@ usaba un DetachableJoint, pero con las articulaciones movidas por velocidad la u
 atrasaba hasta 26 cm al girar J1.
 
 Las posiciones de los limones salen del mundo (no se mueven hasta que se agarran) y la del robot, de Gazebo (pose
-real de `arturito`, /world/hilera/dynamic_pose/info), no de `odom`: la base patina cuando el brazo se mueve (la
+real de `arturito`, /world/<mundo>/dynamic_pose/info), no de `odom`: la base patina cuando el brazo se mueve (la
 reacción la gira) y la odometría no se entera. Con odom la visión simulada ubicaba mal los limones y el agarre quedaba
 corrido, cada vez más.
+
+Cámara: f, u_min y z_max son parámetros (por defecto la calibración v1 del urdf; con camara:=nav, la del mástil:
+f = 672 px y u >= 280). Al soltar un limón publica su nombre en /sim/cosechado (std_msgs/String) para el registro.
 """
 
 import math
@@ -31,6 +34,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
 from sensor_msgs.msg import JointState
+from std_msgs.msg import String
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 import tf2_geometry_msgs  # noqa: F401  (registra PointStamped en tf2)
 from tf2_ros import Buffer, TransformException, TransformListener
@@ -56,6 +60,11 @@ def a_robot(pose, p):
     return rotar((-x, -y, -z, w), (p[0] - t[0], p[1] - t[1], p[2] - t[2]))
 
 
+def nombre_mundo(archivo):
+    """<world name=...> del SDF (los servicios de Gazebo van por /world/<nombre>/...)."""
+    return ET.parse(archivo).getroot().find('world').get('name')
+
+
 def leer_limones(archivo):
     """Modelos limon_N del mundo -> {N: (x, y, z)} [m] (los limon_fijo_* no cuentan)."""
     limones = {}
@@ -70,20 +79,20 @@ F, CX, CY, ANCHO, ALTO = 1076.537901, 320.0, 240.0, 640, 480  # como camara_info
 U_MIN = 271  # min_disparity + disparity_range - 1 del disparity_node: a la izquierda de esto no hay disparidad
 
 
-def visible(p, z_min, z_max, u_min=U_MIN):
+def visible(p, z_min, z_max, u_min=U_MIN, f=F):
     """Punto en el marco óptico (x derecha, y abajo, z adelante): ¿lo podría localizar el estéreo?"""
     x, y, z = p
     if not z_min <= z <= z_max:
         return False
-    u, v = CX + F * x / z, CY + F * y / z
+    u, v = CX + f * x / z, CY + f * y / z
     return u_min <= u < ANCHO and 0 <= v < ALTO
 
 
-def caja_yolo(c, radio):
+def caja_yolo(c, radio, f=F):
     """Centro del limón en el marco óptico -> Detection2D como la de detector_node (caja en píxeles)."""
     d = Detection2D()
-    d.bbox.center.position.x, d.bbox.center.position.y = CX + F * c[0] / c[2], CY + F * c[1] / c[2]
-    d.bbox.size_x = d.bbox.size_y = F * 2 * radio / c[2]
+    d.bbox.center.position.x, d.bbox.center.position.y = CX + f * c[0] / c[2], CY + f * c[1] / c[2]
+    d.bbox.size_x = d.bbox.size_y = f * 2 * radio / c[2]
     h = ObjectHypothesisWithPose()
     h.hypothesis.class_id, h.hypothesis.score = 'limon', 0.9
     d.results.append(h)
@@ -107,7 +116,7 @@ def rutas_gz():
 class GazeboPoses:
     """Pose real del robot y set_pose de Gazebo."""
 
-    def __init__(self):
+    def __init__(self, mundo='hilera'):
         rutas_gz()
         from gz.msgs10.boolean_pb2 import Boolean
         from gz.msgs10.pose_pb2 import Pose
@@ -115,7 +124,8 @@ class GazeboPoses:
         from gz.transport13 import Node as NodoGz
         self.Boolean, self.Pose, self.nodo = Boolean, Pose, NodoGz()
         self.robot = None  # ((x, y, z), (qx, qy, qz, qw)) de arturito en el mundo
-        self.nodo.subscribe(Pose_V, '/world/hilera/dynamic_pose/info', self._al_poses)
+        self.mundo = mundo
+        self.nodo.subscribe(Pose_V, f'/world/{mundo}/dynamic_pose/info', self._al_poses)
 
     def _al_poses(self, msg):
         for p in msg.pose:
@@ -128,7 +138,7 @@ class GazeboPoses:
         pedido = self.Pose(name=nombre)
         pedido.position.x, pedido.position.y, pedido.position.z = p
         pedido.orientation.w = 1.0
-        return self.nodo.request('/world/hilera/set_pose', pedido, self.Pose, self.Boolean, 100)[0]
+        return self.nodo.request(f'/world/{self.mundo}/set_pose', pedido, self.Pose, self.Boolean, 100)[0]
 
 
 class LimonesSim(Node):
@@ -136,21 +146,25 @@ class LimonesSim(Node):
     def __init__(self):
         super().__init__('limones_sim')
         mundo = str(Path(get_package_share_directory('simulacion')) / 'worlds' / 'hilera.sdf')
-        self.limones = leer_limones(self.declare_parameter('mundo', mundo).value)
+        mundo = self.declare_parameter('mundo', mundo).value
+        self.limones = leer_limones(mundo)
         self.radio = self.declare_parameter('radio_limon', 0.03).value
         self.z_min = self.declare_parameter('z_min', 0.40).value
         self.z_max = self.declare_parameter('z_max', 0.95).value
+        self.f = self.declare_parameter('f', F).value          # px de la cámara izquierda
+        self.u_min = self.declare_parameter('u_min', float(U_MIN)).value
         self.dist_agarre = self.declare_parameter('dist_agarre', 0.03).value  # m, TCP -> centro del limón
         # false: /limon/posicion lo da la cadena real (cámaras de Gazebo + YOLO); acá queda solo el agarre
         self.publicar_vision = self.declare_parameter('publicar_vision', True).value
         self.enganchado = None
         self.cosechados = set()
-        self.gz = GazeboPoses()
+        self.gz = GazeboPoses(nombre_mundo(mundo))
 
         self.tf = Buffer()
         self.tf_listener = TransformListener(self.tf, self)
         self.pub_pos = self.create_publisher(PointStamped, '/limon/posicion', 10)
         self.pub_det = self.create_publisher(Detection2DArray, '/yolo/detecciones', 10)
+        self.pub_cosechado = self.create_publisher(String, '/sim/cosechado', 10)
         self.create_subscription(JointState, '/joint_states', self.al_joints, 10)
         self.pose_prev = None  # pose del robot en la "imagen" anterior: quieto = no se movió
         self.create_timer(1.0 / 5.0, self.ver)
@@ -186,9 +200,9 @@ class LimonesSim(Node):
             c = self.en_marco(p, 'camera')
             if c is None:
                 continue
-            if visible(c, 0.2, 2.0, u_min=0):
-                cajas.detections.append(caja_yolo(c, self.radio))
-            if visible(c, self.z_min, self.z_max):
+            if visible(c, 0.2, 2.0, u_min=0, f=self.f):
+                cajas.detections.append(caja_yolo(c, self.radio, self.f))
+            if visible(c, self.z_min, self.z_max, self.u_min, self.f):
                 vistos.append(c)
         self.pub_det.publish(cajas)
         if vistos and quieto:
@@ -231,6 +245,7 @@ class LimonesSim(Node):
         elif self.enganchado is not None and apertura > 0.035:
             self.get_logger().info(f'limon_{self.enganchado} soltado: cosechado')
             self.cosechados.add(self.enganchado)
+            self.pub_cosechado.publish(String(data=f'limon_{self.enganchado}'))
             self.enganchado = None
 
 

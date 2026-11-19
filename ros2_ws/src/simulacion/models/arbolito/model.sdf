@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!-- Arbolito de la demo (26-sim-alcance-arbolito de pruebas-esp32): ~60 cm de alto, en una maceta/caja con las caras a
+     16,5 cm del eje (33 cm de lado; alto 20 cm: MEDIR). Copa de 10 cm de radio: los limones medidos cuelgan a 10-14 cm
+     del tronco (13/11; la consigna suponía 20 cm), entre 32 y 52 cm del piso. Sin frutos: los limones son modelos del
+     mundo (mundo_arbolitos.py). La copa no tiene colisión (hojas); la maceta y el tronco sí. -->
+<sdf version="1.9">
+  <model name="arbolito">
+    <static>true</static>
+    <link name="link">
+      <collision name="maceta_c">
+        <pose>0 0 0.10 0 0 0</pose>
+        <geometry><box><size>0.33 0.33 0.20</size></box></geometry>
+      </collision>
+      <visual name="maceta">
+        <pose>0 0 0.10 0 0 0</pose>
+        <geometry><box><size>0.33 0.33 0.20</size></box></geometry>
+        <material><ambient>0.55 0.3 0.15 1</ambient><diffuse>0.55 0.3 0.15 1</diffuse></material>
+      </visual>
+      <collision name="tronco_c">
+        <pose>0 0 0.32 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.24</length></cylinder></geometry>
+      </collision>
+      <visual name="tronco">
+        <pose>0 0 0.32 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.24</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/corteza.png</albedo_map><roughness>0.9</roughness><metalness>0</metalness></metal></pbr></material>
+      </visual>
+      <visual name="copa">
+        <pose>0 0 0.47 0 0 0</pose>
+        <geometry><ellipsoid><radii>0.10 0.10 0.13</radii></ellipsoid></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>1 1 1 1</diffuse><specular>0.15 0.15 0.15 1</specular><pbr><metal><albedo_map>model://texturas/hojas.png</albedo_map><roughness>0.8</roughness><metalness>0</metalness></metal></pbr></material>
+      </visual>
+    </link>
+  </model>
+</sdf>

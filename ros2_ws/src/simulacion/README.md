@@ -10,6 +10,7 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
 | 3 | Cámaras estéreo de Gazebo + cadena de visión real (`vision:=yolo`) | **parcial**: estéreo OK, YOLO no reconoce los limones sintéticos sobre la copa |
 | 4 | Agarre + `mision` completa con "visión" simulada (`limones_sim`) | **hecha** |
 | 5 | Ultrasonidos, bumpers y `/base/estado` imitando el firmware de la base (`base_sim`) | **hecha** |
+| 6 | **Demo afuera** (`mundo:=arbolitos`): banderín ArUco + hilera de 2-3 arbolitos, navegación con odometría, giróscopo y la marca | **hecha**: 15 de 18 paradas en ±5 cm (ver Resultados) |
 
 ## Mundo (`worlds/hilera.sdf`)
 
@@ -30,6 +31,47 @@ probar `mision`, `brazo_ik` y la visión sin hardware. Se arma por etapas:
   la geometría de la base, el brazo y el mástil). Corrido hacia un costado el brazo ya no los alcanza: `mision` se
   queda en ESPERAR con "limón fuera de alcance".
 - `spherical_coordinates` en la FIUNA (aproximado): `/gps/fix` da lat/lon reales; x = este, y = norte.
+
+## Demo: banderín y arbolitos (`mundo:=arbolitos`)
+
+La demo del 27/11 es **afuera**: un solo banderín ArUco y una hilera de 2 o 3 arbolitos (`hilera.sdf` es la opción B
+de la guía y no la representa). Lo hecho en el robot real está en `pruebas-esp32` (`27-aruco-arbol`: banderín,
+BUSCAR, plan girar / avanzar / girar; `26-sim-alcance-arbolito`: el arbolito y la parada).
+
+- **Mundo** (`simulacion/mundo_arbolitos.py`, lo genera el launch con `arboles` y `separacion`; `worlds/arbolitos.sdf`
+  es el de 3 árboles): tierra y sol direccional con sombras. Banderín (`models/banderin`) en el origen mirando a -x:
+  marca DICT_4X4_50 ID 0 de 150 mm con 5 cm de margen blanco (`aruco_0.png`, `cv2.aruco`), en un palo, centro a
+  0,30 m del piso (**MEDIR**: la consigna dice 20-40 cm). Árboles detrás, en x = 1,5 / 3 / 4,5 m (separación 1,5 m,
+  el banderín 1,5 m antes del árbol 1, sobre la prolongación de la hilera). Arbolito (`models/arbolito`): maceta de
+  33 × 33 cm (caras a 16,5 cm del eje; alto 20 cm **MEDIR**), ~60 cm de alto, copa de 10 cm de radio. Limones
+  `limon_<10·árbol + j>`: 8 por árbol, cada 45°, a 12 cm del eje (medido: 10-14 cm), de 32 a 52 cm del piso (el
+  brazo simulado no llega más arriba: `Q3_LIM` de `brazo_ik`, provisorio).
+- **Cámara** (`camara:=nav` del urdf, solo en este mundo): la real del mástil medida el 13/11, a 57,4 cm del piso,
+  6,5° abajo, f = 672 px. Con la v1 (0,85 m, 28°) el banderín se sale de la imagen a más de ~1,7 m. `limones_sim` y
+  `camara_info_sim` usan la misma f (zona con disparidad u ≥ 280 px).
+- **Detector** (`mision/nodo_banderin`): `/left/image_rect` → `cv2.aruco` → `solvePnP` (IPPE_SQUARE, 150 mm) →
+  `/banderin/pose` (PoseStamped en `base_link`, por la TF del urdf).
+- **Navegación** (`mision/navegacion.py`, sin ROS; `nodo_mision` con `navegacion:=true`): BUSCAR (de a 30° a la
+  izquierda con el giróscopo, mira 1,5 s, hasta 360°) → UBICAR (mediana de 3 s → banderín y árboles en `odom`, con
+  `mision/config/hilera_arboles.json`: lo medido con cinta mirando la marca de frente) → IR_A_PARADA (directo o,
+  si el camino pasa cerca del banderín, por una entrada sobre la línea de paradas 1 m antes de la marca) →
+  COSECHAR (la misión, hasta 6 s seguidos en ESPERAR) → AVANZAR (en recta por odometría) … → VUELTA_U (rodea el
+  último árbol en sentido antihorario, dos cuartos de vuelta) → … → CIERRE (vuelve frente al banderín, lo busca y
+  mide el error acumulado de la odometría). **Parada**: eje del árbol a 70 cm a la izquierda de J1 y 15 cm adelante;
+  el árbol siempre a la izquierda. Giros con el giróscopo, rectas con las ruedas en tramos ≤ 1,5 m; nunca pasa J1 a
+  menos de 45 cm del banderín o de un tronco (si no, FALLA con el motivo). La base solo se mueve con la misión en
+  ESPERAR. Usa solo `/odom`, `/imu/data_raw` y la marca.
+- **Registro** (`registro_nav`): con la pose **real** de Gazebo (solo para medir), el error de cada parada (adelante,
+  costado, rumbo; cumple con ±5 cm y ±3°), los limones cosechados por árbol (`/sim/cosechado`) y el error del
+  CIERRE → `resultados/nav_<fecha>.csv`.
+
+```bash
+ros2 launch simulacion sim.launch.py mundo:=arbolitos mision:=true                 # 3 árboles, ida y vuelta
+ros2 launch simulacion sim.launch.py mundo:=arbolitos mision:=true gui:=false arboles:=2 lados:=1 \
+    separacion:=1.5 pose:=-2.0,0.5,17     # pose inicial x,y [m],rumbo [°]; el banderín está en el origen, mira a -x
+ros2 topic echo /navegacion/estado        # (con ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST)
+```
+El robot tiene que arrancar del lado de la cara impresa (x < 0), a 1-3 m del banderín: desde atrás no la ve.
 
 ## Robot (`urdf/arturito.urdf.xacro`)
 
@@ -191,8 +233,34 @@ viejo armado engaña a la misión, y varios Gazebo a la vez publican en los mism
 
 ## Resultados
 
+### Demo con el banderín (`mundo:=arbolitos`, 3 árboles, 2 lados, 19/11)
+
+Notebook, sin ventana (factor de tiempo real ~0,43 con la cámara), ~20 min reales por corrida. Error de cada parada
+contra la pose real de Gazebo (eje del árbol respecto de J1 menos la parada: + = el árbol quedó más adelante / más a
+la izquierda) y error acumulado de la odometría que midió el CIERRE con el banderín (`resultados/nav_*.csv`):
+
+| Pose inicial (x, y, rumbo) | UBICAR (error del banderín) | Paradas 1A / 2A / 3A / 3B / 2B / 1B: adelante, costado [cm] | Rumbo | Limones (árbol 1/2/3) | CIERRE | Criterio |
+|---|---|---|---|---|---|---|
+| (−2,0; 0,5) m, 17° (`nav_20261119_190458`) | a 2,1 m: 2,8 cm, 0,4° | −2,5 +1,8 / −2,5 +2,8 / −2,5 +3,9 / +3,8 −4,1 / +3,3 −2,7 / +3,4 −1,6 | ≤ 0,5° | 5 / 6 / 6 (17 de 24) | +2,5 −2,0 cm, +0,6° | **6 de 6** |
+| (−1,0; −1,5) m, 115° (`nav_20261119_192730`) | a 1,8 m: 3,5 cm, 0,0° | −1,2 −3,0 / −1,1 −3,0 / −1,2 −2,8 / +2,5 +2,6 / +2,1 +3,0 / +2,1 +3,1 | ≤ 0,3° | 5 / 5 / 5 (15 de 24) | +4,2 +1,1 cm, +0,2° | **6 de 6** |
+| (−2,5; 1,2) m, −143° (`nav_20261119_194904`) | a 2,8 m: 5,9 cm, 0,3° | −4,8 +3,0 / −4,8 +3,8 / −4,8 +4,6 / **+5,6** −4,8 / **+5,5** −3,8 / **+5,6** −2,9 | ≤ 0,4° | 5 / 6 / 6 (17 de 24) | +2,3 −4,6 cm, +0,6° | **3 de 6** |
+
+- **Lo que no cumple** (corrida 3, paradas 3B, 2B y 1B: 0,5-0,6 cm de más adelante): no es la odometría (el CIERRE
+  mide 3-5 cm de error acumulado en todo el recorrido) sino **UBICAR**: el detector mide el banderín ~2 % más lejos
+  de lo real (2,23 m contra 2,20 m de frente; desde 2,8 m, ~5 cm), así que toda la hilera queda corrida ~5 cm a lo
+  largo de su eje. En el lado A eso es "−4,8 adelante" y en el B, con el robot al revés, "+5,6". El error de rumbo
+  del banderín (0,3-0,4°) suma ~1 cm de costado por árbol. Rumbo de las paradas: siempre < 0,5°.
+- Rectas y giros (giróscopo): el rumbo estimado coincide con el real a ±0,1° después de 12 pasos de BUSCAR.
+- **Brazo en reposo**: con el reposo de la hilera (J1 = 75°) la pinza tapa el centro de la cámara de navegación y BUSCAR
+  no veía el banderín (dio la vuelta entera); en este mundo el reposo es J1 = 0° (`brazo_sim reposo_j1`, `reposo` de
+  la misión). En el robot real el brazo espera plegado sobre la canasta, fuera de la vista.
+- Limones: 5-6 de 8 por árbol con los dos lados; quedan los que miran a lo largo de la hilera (hacia los árboles vecinos), que no se alcanzan desde ninguna de las dos paradas.
+- Sin hacer: ruido o patinaje de la odometría (opcional); ver el sesgo del detector con el robot real (la calibración
+  de navegación del 13/11 tiene 27 mm de residuo medio).
+
 | Fecha | Prueba | Resultado |
 |---|---|---|
+| 2026-11-19 | **Demo con el banderín** (arriba): 3 árboles, 2 lados, 3 poses iniciales. Encuentra el banderín (BUSCAR hasta 240°), llega a las 6 paradas y cosecha 15-17 limones de 24; 15 de 18 paradas dentro de ±5 cm y ±3° (las 3 que no, por 0,6 cm: sesgo de distancia del detector desde 2,8 m). 81 pruebas `colcon test` | parcial |
 | 2026-09-29 | **Recorrido autónomo** (`mision:=true autonomo:=true`), sin ventana: recorre la hilera sola hasta x = 7,32 m en ~9 min simulados y cosecha **12 de 12**; esquiva la caja por la derecha y el balde por la izquierda sin tocarlos; vuelve al centro (±1 cm) y retrocede a buscar los limones que quedaron atrás (árboles 2 y 3). Antes: 5/12 (la odometría de ruedas se desviaba 13 cm en los giros: ahora rumbo del giróscopo), 8/12 (árbol 3 pasado de largo) y 11/12 (terminaba el corrimiento torcido). `limones_sim` publica `/yolo/detecciones` (también en movimiento) y `/limon/posicion` solo con el robot quieto; HC-SR04 los 3 al frente; cono sacado. 46 pruebas `colcon test` (mision, simulacion, brazo_ik) | OK |
 | 2026-09-29 | Etapa 5 (`base_sim`, 3 HC-SR04, 3 bumpers con resorte): frena a 0,20 m de la caja; bumper contra un escalón de 8 cm (el ultrasonido no lo ve): no avanza ni gira, retrocede y se suelta; watchdog 300 ms (11,5 cm con la rampa); seta enclavada hasta `r`. Misión en las 4 marcas: **12 de 12**. Tiempo real 0,3-0,75 (antes 0,8-0,95: los 3 `gpu_lidar` y `base_sim`). 36 pruebas `colcon test` | OK |
 | 2026-09-29 | Reposo girado a la izquierda (75°, 110°, -30°): el de la derecha atravesaba el mástil (2 mm del eje). 12 de 12 | OK |

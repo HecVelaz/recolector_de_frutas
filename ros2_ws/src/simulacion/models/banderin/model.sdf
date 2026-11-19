@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!-- Banderín de la demo: marca ArUco DICT_4X4_50, ID 0, cuadrado negro de 150 mm con 5 cm de margen blanco
+     (aruco_0.png: cv2.aruco.drawMarker de 240 px + 80 px de borde = 400 px para 250 mm), sobre una tabla rígida en un
+     palo. La cara impresa mira a +x del modelo. Centro de la marca a 0,30 m del piso (la consigna: 20-40 cm; MEDIR el
+     banderín real). La textura va en una malla (marca.obj) con las coordenadas puestas a mano: en una caja Gazebo la
+     repite en las 6 caras y atrás se vería espejada. -->
+<sdf version="1.9">
+  <model name="banderin">
+    <static>true</static>
+    <link name="link">
+      <visual name="marca">
+        <pose>0.001 0 0.30 0 0 0</pose>
+        <geometry><mesh><uri>model://banderin/marca.obj</uri></mesh></geometry>
+      </visual>
+      <visual name="tabla">
+        <pose>-0.005 0 0.30 0 0 0</pose>
+        <geometry><box><size>0.01 0.26 0.26</size></box></geometry>
+        <material><ambient>0.6 0.5 0.4 1</ambient><diffuse>0.6 0.5 0.4 1</diffuse></material>
+      </visual>
+      <collision name="tabla_c">
+        <pose>-0.005 0 0.30 0 0 0</pose>
+        <geometry><box><size>0.01 0.26 0.26</size></box></geometry>
+      </collision>
+      <visual name="palo">
+        <pose>-0.02 0 0.24 0 0 0</pose>
+        <geometry><cylinder><radius>0.01</radius><length>0.48</length></cylinder></geometry>
+        <material><ambient>0.4 0.3 0.2 1</ambient><diffuse>0.4 0.3 0.2 1</diffuse></material>
+      </visual>
+      <collision name="palo_c">
+        <pose>-0.02 0 0.24 0 0 0</pose>
+        <geometry><cylinder><radius>0.01</radius><length>0.48</length></cylinder></geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

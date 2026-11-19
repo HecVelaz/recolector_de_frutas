@@ -1,0 +1,10 @@
+{
+  "nota": "Hilera de la demo (navegacion.py). Mirando el banderín DE FRENTE, medido en el piso con cinta hasta el EJE de cada arbolito, en el orden en que se cosechan: derecha_mm hacia la derecha de quien mira la marca (izquierda: negativo), frente_mm hacia quien la mira (árbol detrás de la marca: negativo). Como 27-aruco-arbol/banderin.json de pruebas-esp32, con una lista de árboles. Por defecto: banderín sobre la prolongación de la hilera, 1,5 m antes del árbol 1, mirando hacia afuera, árboles cada 1,5 m. MEDIR en la demo.",
+  "id": 0,
+  "lado_mm": 150,
+  "arboles": [
+    {"derecha_mm": 0, "frente_mm": -1500},
+    {"derecha_mm": 0, "frente_mm": -3000},
+    {"derecha_mm": 0, "frente_mm": -4500}
+  ]
+}

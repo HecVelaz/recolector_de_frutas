@@ -354,10 +354,21 @@
        caigan ahí y al alcance de J1 (±75°). Del lado izquierdo, pegada a la fila, quedaba demasiado cerca: los 3
        limones ocupaban ~26° y la zona útil de la imagen tiene ~19°. Tolerancia de parada: ±2 cm.
        "camera" es el marco óptico, con la misma rotación que publica limon.launch.py de vision_estereo:
-       /limon/posicion viene ahí. -->
-  <xacro:property name="mastil_x" value="${frente - 0.06}"/>          <!-- a ~6 cm del frente (MEDIR) -->
-  <xacro:property name="mastil_y" value="${-(ancho_ancho/2 - 0.03)}"/> <!-- a ~3 cm del costado derecho (MEDIR) -->
-  <xacro:property name="mastil_alto" value="0.85"/>                    <!-- cámara izquierda sobre el piso (MEDIR) -->
+       /limon/posicion viene ahí.
+       camara:=nav (mundo arbolitos): la cámara real del mástil, medida con la marca ArUco el 13/11 (pruebas-esp32,
+       27-aruco-arbol, ajuste_nav): en el marco de J1 (x derecha, y adelante, z arriba desde la tapa) x 241, y 86,
+       z 344 mm (57,4 cm del piso), 6,5° hacia abajo, mirando 3,8° hacia adelante de la izquierda; f = 672,1 px y
+       baseline 100,3 mm (vision_estereo/config/calibracion_mastil). Con la v1 (0,85 m, 28° abajo) el banderín se sale
+       de la imagen a más de ~1,7 m. -->
+  <xacro:arg name="camara" default="v1"/>
+  <xacro:property name="nav" value="${'$(arg camara)' == 'nav'}"/>
+  <xacro:property name="mastil_x" value="${brazo_x + 0.086 if nav else frente - 0.06}"/>  <!-- v1: a ~6 cm del frente (MEDIR) -->
+  <xacro:property name="mastil_y" value="${brazo_y - 0.241 if nav else -(ancho_ancho/2 - 0.03)}"/> <!-- v1: a ~3 cm del costado derecho (MEDIR) -->
+  <xacro:property name="mastil_alto" value="${0.574 if nav else 0.85}"/>  <!-- cámara izquierda sobre el piso (v1: MEDIR) -->
+  <xacro:property name="cam_pitch" value="${radians(6.5 if nav else 28)}"/>
+  <xacro:property name="cam_yaw" value="${radians(86.2 if nav else 94)}"/>
+  <xacro:property name="cam_f" value="${672.126313 if nav else 1076.537901}"/>  <!-- px -->
+  <xacro:property name="cam_b" value="${0.100327 if nav else 0.099258}"/>      <!-- m entre cámaras -->
   <!-- Mástil y cámaras dibujados (solo visual): para ver si el brazo las tapa o las toca al moverse -->
   <link name="mastil">
     <visual><origin xyz="0 0 ${(mastil_alto - radio - alto)/2}"/>
@@ -369,16 +380,16 @@
   </joint>
   <link name="stereo_camera_link">
     <!-- barra de las cámaras (99 mm entre ejes) y los dos "ojos", mirando por +x -->
-    <visual><origin xyz="-0.015 -0.0496 0"/><geometry><box size="0.02 0.14 0.02"/></geometry>
+    <visual><origin xyz="-0.015 ${-cam_b/2} 0"/><geometry><box size="0.02 0.14 0.02"/></geometry>
       <material name="negro"/></visual>
     <visual><origin xyz="0.005 0 0" rpy="0 ${pi/2} 0"/><geometry><cylinder radius="0.01" length="0.02"/></geometry>
       <material name="azul"/></visual>
-    <visual><origin xyz="0.005 -0.099258 0" rpy="0 ${pi/2} 0"/><geometry><cylinder radius="0.01" length="0.02"/></geometry>
+    <visual><origin xyz="0.005 ${-cam_b} 0" rpy="0 ${pi/2} 0"/><geometry><cylinder radius="0.01" length="0.02"/></geometry>
       <material name="azul"/></visual>
   </link>
   <joint name="stereo_camera_joint" type="fixed">
     <parent link="base_link"/><child link="stereo_camera_link"/>
-    <origin xyz="${mastil_x} ${mastil_y} ${mastil_alto - radio}" rpy="0 ${radians(28)} ${radians(94)}"/>
+    <origin xyz="${mastil_x} ${mastil_y} ${mastil_alto - radio}" rpy="0 ${cam_pitch} ${cam_yaw}"/>
   </joint>
   <link name="camera"/>
   <joint name="camera_optical_joint" type="fixed">
@@ -398,7 +409,7 @@
       <topic>${topico}</topic>
       <gz_frame_id>${marco}</gz_frame_id>
       <camera>
-        <horizontal_fov>${2*atan(320/1076.537901)}</horizontal_fov>
+        <horizontal_fov>${2*atan(320/cam_f)}</horizontal_fov>
         <image><width>640</width><height>480</height><format>R8G8B8</format></image>
         <clip><near>0.05</near><far>10</far></clip>
       </camera>
@@ -407,7 +418,7 @@
   <xacro:if value="$(arg camaras)">
     <gazebo reference="stereo_camera_link">
       <xacro:camara nombre="cam_izq" topico="/left/image_rect" marco="camera" y="0"/>
-      <xacro:camara nombre="cam_der" topico="/right/image_rect" marco="camera_der" y="-0.099258"/>
+      <xacro:camara nombre="cam_der" topico="/right/image_rect" marco="camera_der" y="${-cam_b}"/>
     </gazebo>
   </xacro:if>
 

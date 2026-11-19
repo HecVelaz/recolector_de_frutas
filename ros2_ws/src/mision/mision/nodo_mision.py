@@ -15,6 +15,10 @@ Suscribe  /odom nav_msgs/Odometry (avance), /imu/data_raw sensor_msgs/Imu (rumbo
           /yolo/detecciones vision_msgs/Detection2DArray (clase `clase_limon`)
 Publica   /cmd_vel geometry_msgs/Twist (10 Hz, siempre: el watchdog de la base es de 300 ms), /base/comando (armar),
           /recorrido/estado std_msgs/String
+Con navegacion:=true recorre la hilera de arbolitos guiado por el banderín ArUco (navegacion.py; la hilera en
+`hilera`, JSON, con `arboles` (0 = todos) y `lados` 1|2). No se usa junto con autonomo:
+Suscribe  /odom (avance), /imu/data_raw (rumbo), /banderin/pose geometry_msgs/PoseStamped (nodo_banderin, base_link)
+Publica   /cmd_vel (10 Hz, siempre), /base/comando (armar), /navegacion/estado std_msgs/String
 Con la hilera definida por GPS (hilera_inicio_lat/lon y, opcional, hilera_fin_lat/lon; medirlos con marcar_gps):
 Suscribe  /gps/fix sensor_msgs/NavSatFix (nmea_navsat_driver en la Pi)
 Publica   /hilera/estado std_msgs/String (1 Hz: distancia al inicio, σ, avance y corrimiento lateral)
@@ -23,9 +27,12 @@ Al cerrarse (Ctrl+C o ros2 launch) manda `s` al brazo y a la base: si no, seguir
 """
 
 import math
+from pathlib import Path
 import time
 
-from geometry_msgs.msg import PointStamped, Twist
+from ament_index_python.packages import get_package_share_directory
+
+from geometry_msgs.msg import PointStamped, PoseStamped, Twist
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
@@ -39,6 +46,7 @@ from tf2_ros import Buffer, TransformException, TransformListener
 
 from mision.fsm import centro_desde_superficie, Mision, Parametros
 from mision.hilera_gps import HileraGps, ParHilera
+from mision.navegacion import cargar_hilera, Navegacion, ParNav
 from mision.recorrido import OdometriaGiro, ParRecorrido, Recorrido
 
 
@@ -70,7 +78,28 @@ class NodoMision(Node):
                                  lambda m: self.mision.al_joint_cmd(self.ordenar(m.name, m.position), self.t()), 10)
         self.create_subscription(JointState, '/brazo/joint_states', self.al_joints, 10)
         self.recorrido = None
-        if self.declare_parameter('autonomo', False).value:
+        self.nav = None
+        if self.declare_parameter('navegacion', False).value:
+            par_n = ParNav()
+            for k, v in vars(par_n).items():
+                val = self.declare_parameter(k, list(v) if isinstance(v, tuple) else v).value
+                setattr(par_n, k, tuple(val) if isinstance(v, tuple) else val)
+            ruta = str(Path(get_package_share_directory('mision')) / 'config' / 'hilera_arboles.json')
+            hilera = cargar_hilera(self.declare_parameter('hilera', ruta).value,
+                                   self.declare_parameter('arboles', 0).value)
+            self.pubs.update({
+                'cmd_vel': self.create_publisher(Twist, '/cmd_vel', 10),
+                'comando_base': self.create_publisher(String, '/base/comando', 10),
+                'estado_recorrido': self.create_publisher(String, '/navegacion/estado', 10),
+            })
+            self.nav = Navegacion(self.enviar_recorrido, hilera, self.declare_parameter('lados', 2).value, par_n)
+            self.odo = OdometriaGiro()
+            self.create_subscription(Odometry, '/odom', self.al_odom, 10)
+            self.create_subscription(Imu, '/imu/data_raw',
+                                     lambda m: self.odo.al_giro(m.angular_velocity.z,
+                                                                Time.from_msg(m.header.stamp).nanoseconds * 1e-9), 50)
+            self.create_subscription(PoseStamped, '/banderin/pose', self.al_banderin, 10)
+        elif self.declare_parameter('autonomo', False).value:
             base_r = ParRecorrido(largo_herramienta=par.largo_herramienta)
             par_r = ParRecorrido(**{k: self.declare_parameter(k, v).value for k, v in vars(base_r).items()
                                     if k != 'largo_herramienta'}, largo_herramienta=par.largo_herramienta)
@@ -108,7 +137,8 @@ class NodoMision(Node):
             if self.recorrido:
                 self.recorrido.al_gps(False, self.t())  # hasta tener un fix en el inicio
         self.create_timer(0.1, self.paso)
-        self.get_logger().info(f'mision lista (marco {self.marco}{", recorrido autónomo" if self.recorrido else ""})'
+        modo = ', recorrido autónomo' if self.recorrido else ', navegación con el banderín' if self.nav else ''
+        self.get_logger().info(f'mision lista (marco {self.marco}{modo})'
                                ': esperando /brazo/estado')
 
     def paso(self):
@@ -117,6 +147,10 @@ class NodoMision(Node):
             self.recorrido.al_estado_mision(self.mision.estado, t)
             self.recorrido.paso(t)
             self.mision.base_quieta = self.recorrido.base_quieta(t)
+        if self.nav:
+            self.nav.al_estado_mision(self.mision.estado, t)
+            self.nav.paso(t)
+            self.mision.base_quieta = self.nav.base_quieta(t)
         self.mision.paso(t)
 
     def al_gps(self, m):
@@ -140,11 +174,18 @@ class NodoMision(Node):
         self.mision.al_estado_base(m.data, self.t())  # seta: desarma el brazo
         if self.recorrido:
             self.recorrido.al_estado_base(m.data, self.t())
+        if self.nav:
+            self.nav.al_estado_base(m.data, self.t())
 
     def al_odom(self, m):
         p, q = m.pose.pose.position, m.pose.pose.orientation
         self.odo.al_odom(p.x, p.y, math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)))
-        self.recorrido.al_odom(self.odo.x, self.odo.y, self.odo.rumbo, self.t())
+        (self.recorrido or self.nav).al_odom(self.odo.x, self.odo.y, self.odo.rumbo, self.t())
+
+    def al_banderin(self, m):
+        q = m.pose.orientation
+        self.nav.al_marca(m.pose.position.x, m.pose.position.y, 2 * math.atan2(q.z, q.w),
+                          Time.from_msg(m.header.stamp).nanoseconds * 1e-9, self.t())
 
     def al_detecciones(self, m):
         cajas = [(d.bbox.center.position.x, d.bbox.size_x) for d in m.detections
@@ -164,7 +205,7 @@ class NodoMision(Node):
             self.pubs['comando_base'].publish(String(data=valor))
         else:
             self.pubs['estado_recorrido'].publish(String(data=valor))
-            self.get_logger().info('recorrido: ' + valor)
+            self.get_logger().info(('navegación: ' if self.nav else 'recorrido: ') + valor)
 
     def t(self):
         return self.get_clock().now().nanoseconds * 1e-9
@@ -228,7 +269,7 @@ def main(args=None):
         pass
     finally:
         nodo.enviar('comando', 's')  # detener J1-J3; la pinza queda como está
-        if nodo.recorrido:
+        if nodo.recorrido or nodo.nav:
             nodo.enviar_recorrido('cmd_vel', (0.0, 0.0))
             nodo.pubs['comando_base'].publish(String(data='s'))
         time.sleep(0.3)  # que DDS lo entregue antes de destruir el publicador
