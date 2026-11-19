@@ -5,26 +5,27 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
 000. **Plan hasta la demo del 27/11** (17/11; robot = usuario, software = Claude en paralelo, probado en Gazebo):
    | Días | Robot | Software |
    |---|---|---|
-   | 18–19/11 | Seguridad con los motores andando (00a d) | BUSCAR (00a a) y paradas de seguridad en `movimiento.py` |
-   | 20–21/11 | Pegar las marcas 1–3, probar BUSCAR, decidir dónde soltar | RODEAR (00a b) y soltar (00a c) |
+   | 18–19/11 | ~~Seguridad con los motores (00a d)~~ ✓; `cosechar N` y canasta ✓ | BUSCAR y RODEAR programados (sin probar) |
+   | 20–21/11 | Medir `banderin.json`; probar BUSCAR, RODEAR y base + cosecha juntas | Misión ROS (00a e) en Gazebo |
    | 22–23/11 | Recolección en las 4 paradas | Misión ROS (00a e) con los estados de S3; nodo `seguridad` aparte (S2) |
    | 24–25/11 | WROOM al env `ros`; probar la misión ROS | Rosbag por misión (S5), GPS en el registro, estado y alarmas en `teleop_web.py` (S6) |
    | 26/11 | Ensayo general y video de respaldo | Ajustes |
    - **Recortado:** hilera (`recorrido.py`), EKF, app nueva, métricas detalladas, madurez por tamaño, celular como
      sensor. H8 (luz y buzzer) solo si sobra un día y hay piezas.
    - **Plan B:** si la misión ROS no llega, demostrar con `recolectar.py` y presentar la misión ROS como en curso.
-   - **Riesgo:** los cortes del USB de la S3 (la base se desarma). Falta saber si el 27/11 hay además informe (E7/E8).
+   - **Riesgo:** los cortes del USB de la S3 (la base se desarma; 3 el 18/11). Falta saber si el 27/11 hay además informe (E7/E8).
 00a. **(Con a, b y d se cubre N3 de la guía.)** **Navegación y recolección autónoma (13/11, en `pruebas-esp32`; detalle en su `notas/PENDIENTES.md`), en orden:**
-   a) **BUSCAR:** si no ve la marca, girar de a ~20° con el giróscopo; si no aparece en 360°, avanzar ~1 m esquivando
-      con los HC-SR04. Hoy `recolectar.py` tiene que arrancar viendo la marca.
-   b) **RODEAR:** pegar las marcas ID 1–3 (antihorario) e ir de parada en parada con arcos de 90°, el árbol a la izquierda.
-   c) **Soltar el limón:** el lugar todavía no está decidido.
-   d) **Seguridad con los motores andando:** HC-SR04 < 20 cm, bumper, vuelco y los cortes del USB de la S3.
+   a) **BUSCAR:** programado el 19/11 (`ir_a_parada.py --banderin --buscar`, gira de a 30°), sin probar en el robot;
+      falta medir `27/banderin.json`, que `recolectar.py` lo use y el esquive si no aparece en 360°.
+   b) **RODEAR:** marcas 1–3 pegadas; `--rodear N` / `recolectar.py --paradas N` programados, sin probar en el robot.
+   c) ~~**Soltar el limón**~~ (18/11): canasta sobre la tapa, `soltar` 28–30 s ida y vuelta. Falta probar el ajuste
+      fino en una cosecha y base + cosecha juntas.
+   d) ~~**Seguridad con los motores**~~ (18/11): HC-SR04 del medio, bumpers, seta y vuelco OK. Quedan los cortes del USB (16).
    e) **Llevarlo a la misión ROS** (`ros2_ws/src/mision`), primero en Gazebo: mandar texto por `/brazo/comando` al
       firmware 20 (no entiende `/brazo/joint_cmd`) con la WROOM en el env `ros`; los giros con `movimiento.py` / el
       giróscopo o `robot_localization` con `/odom` + IMU; el GPS (±20 m) solo para la rúbrica.
 000b. **Brazo: NO flashear `firmware/brazo`** (el binario `ros` de `d3644c8` en `~/firmware/brazo` de la Pi está viejo).
-   Desde el 11/11 la WROOM tiene `pruebas-esp32/20-brazo-coordinado` (env `brazo`, serie, desde el 13/11; el `ros` en `respaldo_wroom_20261112.bin`) (franja, caja, homing 3/6/3, pinza y
+   Desde el 11/11 la WROOM tiene `pruebas-esp32/20-brazo-coordinado` (env `brazo`, serie; hoy `brazo20_serie_20261118h.bin`, pinza RDS3218 500/1200; el `ros` en `respaldo_wroom_20261112.bin`) (franja, caja, homing 3/6/3, pinza y
    muñeca; lo usa el teleop `25-teleop-pi`). Falta pasar todo eso a `firmware/brazo` (pendiente "f" de
    `pruebas-esp32/notas/PENDIENTES.md`) y recién ahí flashearlo. Respaldo de 20: `~/firmware/brazo/respaldo_wroom_20261111.bin`.
 
@@ -46,8 +47,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
 2. Cablear según `docs/CONEXIONES.md` v0.6 (LiPo → fusible 20 A → seta → selector WEG → bus 12 V → motores; power bank → Pi → ESP32 por USB; GND común) y su lista
    "Antes de conectar". Base con ruedas en el aire: hecha el 20/10. **13/11: env `ros` con IMU, HC-SR04,
-   bumpers y seta OK en ROS, y odometría en el piso medida (recto < 1 %).** Falta: parada real por watchdog, corriente
-   con peso y las pruebas de seguridad con los motores (00a d); confirmar si el prisionero de la rueda derecha se arregló.
+   bumpers y seta OK en ROS, y odometría en el piso medida (recto < 1 %).** Seguridad con motores OK (18/11). Falta: parada real por watchdog, corriente
+   con peso; confirmar si el prisionero de la rueda derecha se arregló y el falso contacto del encoder izquierdo.
    Armar las placas según `docs/html/placa_s3.html` y `docs/html/placa_wroom.html` (orden de armado y prueba en cada página); en la S3,
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 2b. **Tarea VA de R2 (si no se entregó):** corregir en Colab §6.1 (16 de 20, no 15), volver a poner "Autor: FB",
@@ -89,4 +90,5 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
 14. Encoder de J2: confirmar con `e` que cuenta (el 26/10 no contaba; después del arreglo del usuario no se midió).
 15. Finales de carrera del brazo: montar 3 microinterruptores (GPIO 32/33/27), medir `HOME_Q` con `z` + `e`, signo de
    `HOME_RPM` y `HOME_J23_VERIFICADO = true`; J2/J3 cerca de la pose de cero, homing de J3 antes que J2.
-16. Enlace de la base: `pings_fallidos` y `cortes` suben (82 y 4 en ~1 h; el brazo, 0): mirar `~/logs/agente_base.log`.
+16. Enlace de la base: `pings_fallidos` y `cortes` suben (82 y 4 en ~1 h; 3 cortes el 18/11 al apretar la seta y mover
+   la base; el brazo, 0): mirar `~/logs/agente_base.log`.

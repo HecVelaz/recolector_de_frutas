@@ -42,3 +42,9 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 - **Plan hasta la demo del 27/11 (17/11, usuario):** prioridad a la demo con el arbolito (BUSCAR, RODEAR, soltar,
   seguridad) y a pasarla a ROS; afuera la hilera, el EKF, la app nueva y las métricas detalladas.
 
+- **Seguridad de la base (18/11, usuario):** solo el HC-SR04 del medio frena (tope lineal 50 → 20 cm); los de las
+  esquinas solo publican. Bumpers, seta y vuelco enclavan hasta `r`.
+- **Soltar el limón en una canasta sobre la tapa (18/11, usuario)**, con la pose plegada del brazo (J1 hasta 130).
+  Pinza con el servo RDS3218 (el MG996R vibraba): abierta 500 µs, cerrada 1200.
+- **Banderín único (19/11; detalle en `pruebas-esp32/notas/DECISIONES.md`):** una sola marca alcanza para ubicar el
+  árbol (la pose da posición y rumbo); los limones se agarran siempre con la visión. Meta: cosecha con navegación el 27/11.

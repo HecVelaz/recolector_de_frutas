@@ -809,3 +809,28 @@ Resumen; el detalle y las cifras completas están en `pruebas-esp32/notas/BITACO
   Plan B: demostrar con `recolectar.py` si la misión ROS no llega. `CLAUDE.md`: fecha y "la demo es en el aula con un
   arbolito y marcas ArUco" (antes "al aire libre"). Commits `ecaaace`, `612aafb`, `2f10b5c`, `77b02d0`.
 
+
+## 2026-11-18 / 19 — Seguridad de la base, IMU, cosecha con la visión, canasta, banderín (en `pruebas-esp32`)
+Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y sus decisiones.
+- **Base (`cc96d1f`, este repo):** recuperación de la IMU con el I2C colgado sin reiniciar (9 pulsos en SCL + STOP,
+  reinicia Wire y el MPU conservando el bias, cada 1 s como mucho; `imu_rec` en `/base/estado`). Probada en placa: la
+  seta corta los 5 V de la IMU y al soltarla vuelve sola (`imu_rec=1`). En la S3: `base_ros_20261117_imu`.
+- **Seguridad con los motores (PENDIENTES 00a d, hecha):** frena solo el HC-SR04 del medio (tope lineal 50 → 20 cm);
+  en el piso para a 20 cm justos a 0,10 y 0,20 m/s. Bumpers (frente para el avance, costados cortan el giro), seta y
+  vuelco (25,8–26,6° de pitch) OK, enclavados; `r` por `/base/comando` rearma. Herramientas `prueba_frenado.py` y
+  `ver_inclinacion.py` (`25-teleop-pi`). HC-SR04 derecho cambiado por el usuario.
+- A vigilar: un `atasco` aislado del encoder izquierdo (falso contacto, GPIO 15/16); 3 cortes del USB de la S3 el 18/11.
+  Los "reinicios" de la Pi eran apagados del usuario (powerbank OK). La cámara derecha no aparecía: cinta al revés.
+- **Brazo (firmware 20, `brazo20_serie_20261118h.bin`):** pinza nueva **RDS3218** (el MG996R vibraba; abierta 500 µs,
+  cerrada 1200); pose plegada y **`soltar` en una canasta sobre la tapa** (12,5–14 s; 28–30 s ida y vuelta con `mvp`);
+  homing que acepta J2/J3 a ≤ 2° sin quedar firmes; velocidad 1 por defecto.
+- **Cosecha con la visión (`punta.py cosechar N`):** altura corregida `z = 23,1 + 0,718·z_visión` (3 limones con
+  cinta); entra 2,8 cm más allá del centro, desprende (tirar 2 cm, muñeca 90°, J1 +5°), va a la canasta, confirma con
+  la visión y reintenta. **Primera cosecha de 3: 2 en la canasta, ~34 s cada uno.** Ajuste fino de 9 puntos (costado
+  según el lado de la imagen, ±2,4 → ±1,6 cm), sin probar en una cosecha.
+- **RODEAR** (`ir_a_parada.py --rodear`) y **banderín único + BUSCAR** (`--banderin --buscar`: una sola marca en un
+  palo, girar de a 30° hasta verla) programados y simulados; sin probar en el robot. Marcas 1–3 pegadas.
+  `banderin.json` sin medir. Espacio para la prueba: mínimo 4 × 4 m (mejor 5 × 5).
+- **`docs/resumen_pruebas_20261119.pdf`** (16 págs., no técnico): las pruebas 00–27 en orden de fechas, línea de
+  tiempo y lo que falta para la demo; hecho con reportlab en `pruebas-esp32` (script fuera del repo) y anotado en
+  `INDICE.md`.
