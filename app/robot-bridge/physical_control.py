@@ -36,6 +36,26 @@ BASE_STOP_TIMEOUT = 1.5
 HOME_TIMEOUT = 120
 PARK_TIMEOUT = 30
 PARK_COMMAND = 'mv 3 17 4'
+# Homing rechazado por el firmware con el cero ya conocido (20/11): el brazo frenado se asienta abajo (J2 2,2°, J3 2,9°),
+# fuera de la franja del cuatro barras (con J2 < 3,4° J3 puede llegar a ~1°), o J2 quedó más arriba de 25°. Como pide el
+# firmware, primero "j 2 <grados>" (también valida la franja) y otra vez "h". Un solo intento por homing
+HOME_RECOVERY_TIMEOUT = 10
+HOME_RECOVERY_TOLERANCE = .7
+ANGLES = re.compile(r'(?:^|;)q=(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:;|$)')
+
+
+def home_recovery(detail, state):
+    """Destino de J2 para volver a intentar el homing tras el rechazo `detail` del firmware, o None."""
+    angles = ANGLES.search(state or '')
+    if not isinstance(detail, str) or angles is None:
+        return None
+    q3 = float(angles.group(3))
+    if 'fuera de la franja' in detail:
+        # Borde de arriba de la franja: J3 <= ~J2 desde J2 5,8° (config.h FRANJA_ARRIBA), con 1° de margen
+        return round(min(20., max(6., q3 + 2.)), 1)
+    if 'Bajarla antes' in detail:
+        return 10.
+    return None
 JOINT_STATES = re.compile(r'(?:^|;)e=([0-6]),([0-6]),([0-6])(?:;|$)')
 REFERENCED = re.compile(r'(?:^|;)c=111(?:;|$)')
 
@@ -155,6 +175,8 @@ class PhysicalControl:
         self.last_stop = (None, None)
         self.arm_settling_until = 0
         self.home_started = self.home_completed = self.park_started = None
+        self.home_recovery = None      # (inicio, destino de J2) mientras J2 vuelve a la franja
+        self.home_retried = False
         self.bench = False
         self.autonomous = False
         self.home_marker = home_marker
@@ -253,6 +275,8 @@ class PhysicalControl:
         self.last_sequence = None
         self.arm_settling_until = 0
         self.home_started = self.home_completed = self.park_started = None
+        self.home_recovery = None
+        self.home_retried = False
         self.bench = False
         self.autonomous = False
         self.arm_motion = None
@@ -433,6 +457,20 @@ class PhysicalControl:
                         self.home_marker.touch()
                     self.home_started = self.clock()
                     self.arm.send('h')
+                elif self.home_recovery is not None:
+                    started, target = self.home_recovery
+                    received_at, reply = self.arm.home_feedback()
+                    if received_at is not None and received_at >= started and reply in ('park_failed', 'failed'):
+                        raise HTTPException(409, self.arm.home_detail or 'El brazo rechazó volver a la franja')
+                    angles = ANGLES.search(self.snapshot().get('arm_state') or '')
+                    joints = JOINT_STATES.search(self.snapshot().get('arm_state') or '')
+                    if (angles and joints and joints.group(2) in '23'
+                            and abs(float(angles.group(2)) - target) <= HOME_RECOVERY_TOLERANCE):
+                        self.home_recovery = None
+                        self.home_started = self.clock()
+                        self.arm.send('h')
+                    elif self.clock() - started >= HOME_RECOVERY_TIMEOUT:
+                        raise HTTPException(409, f'J2 no llegó a {target:.1f}° para reintentar el homing')
                 else:
                     received_at, reply = self.arm.home_feedback()
                     if self.park_started is not None:
@@ -450,6 +488,15 @@ class PhysicalControl:
                     elif received_at is not None and received_at >= self.home_started:
                         if reply == 'failed':
                             detail = self.arm.home_error
+                            target = None if self.home_retried else home_recovery(
+                                detail, self.snapshot().get('arm_state'))
+                            if target is not None:
+                                self.home_retried = True
+                                self.home_recovery = (self.clock(), target)
+                                self.arm.send(f'j 2 {target:.1f}')
+                                self.deadline = input_started_at + SESSION_LEASE
+                                self.input_deadline = input_started_at + LEASE
+                                return 'active', False
                             raise HTTPException(409, detail if isinstance(detail, str) and detail else 'El controlador interrumpió el homing')
                         state = self.snapshot().get('arm_state') or ''
                         joints = JOINT_STATES.search(state)

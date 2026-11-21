@@ -189,6 +189,54 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.control.home_unverified)
         await self.control.open('different-owner', OpenManual(mode='arm', operator_present=True))
 
+    async def test_homing_outside_the_band_raises_j2_and_retries_once(self):
+        # 20/11: el brazo frenado quedó en J2 2,2° y J3 2,9° con el cero conocido; el firmware rechaza "h"
+        self.evidence['arm_state'] = 'q=1.13,2.23,2.91;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
+        self.arm.home_error = self.arm.home_detail = ('Homing: J2 y J3 fuera de la franja (2.05° afuera): '
+                                                      'volver adentro con "j" antes.')
+        await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.home_feedback.return_value = (self.now + .01, 'failed')
+        self.now += .05
+        self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('active', False))
+        self.arm.send.assert_called_with('j 2 6.0')
+        self.now += .05
+        self.evidence['arm_state'] = 'q=1.13,4.10,2.91;e=4,1,4;c=111;fc=000;pz=500;mn=1500'   # subiendo
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('j 2 6.0')
+        self.now += .05
+        self.evidence['arm_state'] = 'q=1.13,5.95,2.91;e=4,3,4;c=111;fc=000;pz=500;mn=1500'   # llegó
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('h')
+        self.now += .05
+        self.control.input('owner', ManualInput(motion='home'))   # la respuesta vieja ("failed") no cuenta
+        self.assertIsNotNone(self.control.owner)
+        self.evidence['arm_state'] = 'q=3,6,3;e=3,3,3;c=111;fc=000;pz=500;mn=1500'
+        self.arm.home_feedback.return_value = (self.now + .01, 'completed')
+        self.now += .05
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with(PARK_COMMAND)
+        self.arm.home_feedback.return_value = (self.now + .01, 'parked')
+        self.now += .05
+        self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('completed', False))
+        self.assertEqual([c.args[0] for c in self.arm.send.call_args_list], ['h', 'j 2 6.0', 'h', PARK_COMMAND])
+
+    async def test_homing_retry_stops_if_the_firmware_rejects_it_again(self):
+        self.evidence['arm_state'] = 'q=1.13,2.23,2.91;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
+        self.arm.home_error = self.arm.home_detail = 'Homing: J2 y J3 fuera de la franja (2.05° afuera)'
+        await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.home_feedback.return_value = (self.now + .01, 'failed')
+        self.now += .05
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.home_detail = 'Fuera de rango: J2 puede ir de +4.4° a +5.0°'
+        self.arm.home_feedback.return_value = (self.now + .01, 'park_failed')
+        self.now += .05
+        with self.assertRaisesRegex(HTTPException, 'Fuera de rango'):
+            self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('s')
+        self.assertIsNone(self.control.owner)
+
     async def test_homing_heartbeat_loss_interrupts_firmware(self):
         await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
         self.control.input('owner', ManualInput(motion='home'))
