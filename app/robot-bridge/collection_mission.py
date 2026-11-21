@@ -27,6 +27,10 @@ MEASURE_SECONDS = 8.     # 21/11: 5 -> 8 s (con el v4 y la disparidad a ~1-2 Hz 
 MV_TIMEOUT = 90.         # TIMEOUT_MV de recolectar.py
 MV_RETRIES = 2           # punta.ejecutar: cortes por atraso con carga
 RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés')
+# 21/11: plegando para la canasta J3 quedó en 78,4 (pedido 80; cerca del punto muerto del cuatro barras está dura) y el
+# mv siguiente cortó por "sin cuentas" porque J3 no subía esos 1,6°. Si una articulación ya está a menos de esto de su
+# destino, se reintenta una vez dejándola donde está (con el encoder suelto de verdad la diferencia sería mayor)
+STUCK_NEAR_DEG = 2.
 ORIGIN_SECONDS = 3.      # medición del limón para el cero
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
@@ -241,12 +245,23 @@ class CollectionMission:
     async def move(self, owner, q, passing=False):
         """Como punta.ejecutar con un punto: mv (o mvp de paso) y, si corta por atraso con carga, repetir desde donde
         quedó hasta MV_RETRIES veces. Los cortes de seguridad (franja, caja, plegado) no se repiten."""
-        command = f"{'mvp' if passing else 'mv'} {q[0]:.2f} {q[1]:.2f} {q[2]:.2f}"
+        nudged = False
         for attempt in range(MV_RETRIES + 1):
+            command = f"{'mvp' if passing else 'mv'} {q[0]:.2f} {q[1]:.2f} {q[2]:.2f}"
             try:
                 await self.arm_instruction(owner, command, 'parked', MV_TIMEOUT)
                 return
             except ArmRejected as error:
+                if 'sin cuentas' in str(error) and not nudged:
+                    now = arm_angles(self.control.snapshot().get('arm_state'))
+                    # La trabada es la que tenía que moverse un poco (0,3-2°): las que ya llegaron no cuentan y si
+                    # la que no llega está lejos, el corte es de verdad
+                    short = [.3 < abs(a - b) < STUCK_NEAR_DEG for a, b in zip(now, q)]
+                    if any(short):
+                        q = tuple(a if stuck else b for a, b, stuck in zip(now, q, short))
+                        nudged = True
+                        await self.settle(owner, .5)
+                        continue
                 if attempt == MV_RETRIES or not any(text in str(error) for text in RETRY_ON):
                     raise
             await self.settle(owner, .5)
@@ -281,14 +296,9 @@ class CollectionMission:
     async def recover_to_basket(self, owner, original):
         """Como punta.recuperar_a_canasta: lo que tenga la pinza a la canasta, si el camino entra en el modelo."""
         s = arm_angles(self.control.snapshot().get('arm_state'))
-        if s[0] > original.k.Q1_LIM[1]:
-            path = [original.CANASTA]
-        else:
-            up = (s[0],) + tuple(original.CAMINO_CANASTA[0][1:])
-            path = [up] + list(original.CAMINO_CANASTA)
-            if (original.con_zona(original.revisar_camino, s, up) + original.con_zona(original.revisar_camino, up, path[1])
-                    + original.con_zona(original.revisar_camino, path[1], path[2])):
-                return False
+        path = await self.in_thread(owner, basket_path, original, s)   # el modelo tarda: sin trabar el lazo de la base
+        if path is None:
+            return False
         self.update('RECUPERACION', 'Llevando lo que tiene la pinza a la canasta.')
         for index, q in enumerate(path):
             await self.move(owner, q, passing=True)
@@ -496,6 +506,18 @@ def base_refusal(snapshot, linear):
     if fields[:1] != ['ARMADA']:
         return f'La base dejó de estar armada ({" ".join(fields[:3]) or "sin estado"}).'
     return None
+
+
+def basket_path(original, s):
+    """Camino de punta.recuperar_a_canasta desde los ángulos s, o None si no entra en el modelo."""
+    if s[0] > original.k.Q1_LIM[1]:
+        return [original.CANASTA]
+    up = (s[0],) + tuple(original.CAMINO_CANASTA[0][1:])
+    path = [up] + list(original.CAMINO_CANASTA)
+    if (original.con_zona(original.revisar_camino, s, up) + original.con_zona(original.revisar_camino, up, path[1])
+            + original.con_zona(original.revisar_camino, path[1], path[2])):
+        return None
+    return path
 
 
 def stopped_near(arrival, odom):
