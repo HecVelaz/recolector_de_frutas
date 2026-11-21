@@ -41,7 +41,10 @@ J1_MAX_NORMAL, FOLDED_Q2, FOLDED_Q3_MIN = 118., (42.3, 50.7), 78.3
 ORIGIN_SECONDS = 3.      # medición del limón para el cero
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
-LEMON_STOP_MM = (-550., 150.)
+LEMON_STOP_MM = (-500., 150.)   # parada fija de respaldo (21/11: antes -550; a 57 cm la pinza quedó 3 cm corta)
+# Pedido del usuario (21/11): cosechar con el limón a 50-55 cm de J1. Si ya está en REACH_MM y tiene plan, la base no
+# se mueve; si no, se acerca en la dirección del limón hasta dejarlo a STOP_RADIUS_MM
+STOP_RADIUS_MM, REACH_MM = 520., (480., 550.)
 ZONE_M, ZONE_DEG = .04, 5.
 # Al llegar a la parada se sabe dónde tiene que estar el limón del cero: solo vale uno a menos de esto de ahí. El
 # estéreo a veces mide el follaje delante del limón (21/11: el mismo limón a 42 y a 77 cm, alternando); ese punto
@@ -161,6 +164,27 @@ class CollectionMission:
             if self.control.owner == owner:
                 self.control.stop()
             self.save_log()
+
+    async def approach(self, owner, navigation, original, target, to_basket):
+        """(pasos de la base, dónde va a quedar el limón respecto de J1) para cosechar `target` (mm, marco del brazo)
+        con el limón a 50-55 cm: sin moverse si ya está en REACH_MM y tiene plan; si no, acercándose en su dirección
+        hasta STOP_RADIUS_MM, o a la parada fija. Nunca retrocede. owner None: todavía sin el mando de la base."""
+        angles = arm_angles(self.control.snapshot().get('arm_state'))
+        r = math.hypot(target[0], target[1])
+        if REACH_MM[0] <= r <= REACH_MM[1]:
+            plan, _ = await self.plan(owner, original, 'planear_agarre_tol', angles, target, to_basket)
+            if plan is not None:
+                return [], target
+        for stop in ((target[0] * STOP_RADIUS_MM / r, target[1] * STOP_RADIUS_MM / r), LEMON_STOP_MM):
+            steps = navigation.planear(target[:2], 0., stop, orientar=False)
+            if any(kind == 'recto' and not 0 < value <= navigation.MAX_RECTO for kind, value in steps):
+                continue
+            expected = (stop[0], stop[1], target[2]) if steps else target
+            plan, _ = await self.plan(owner, original, 'planear_agarre_tol', original.REPOSO, expected, to_basket)
+            if plan is not None:
+                return steps, expected
+        raise RuntimeError('Reubicá el Móvil: no hay un acercamiento sin retroceder que deje el limón a 50-55 cm '
+                           'con plan de agarre')
 
     async def arm_to_rest(self, owner, original):
         """El brazo al reposo desde donde quedó. Plegado (canasta), como el final de punta.cosechar pero sin volver a
@@ -508,36 +532,43 @@ class CollectionMission:
             navigation, grasp, tf = planners.result()
             lemon = origin['lemon_in_arm']
             target = (lemon['x_mm'], lemon['y_mm'], lemon['z_mm'])
-            # 21/11: si el limón ya se alcanza desde donde está, la base no se mueve (un limón casi a la altura de J1
-            # pedía retroceder 12 cm hasta la parada, y atrás no hay sensores)
-            reach = await self.plan(None, grasp, 'planear_agarre_tol',
-                                    arm_angles(self.control.snapshot().get('arm_state')), target, to_basket)
-            if reach[0] is not None:
-                steps, expected = [], target
-            else:
-                steps = navigation.planear(target[:2], 0., LEMON_STOP_MM, orientar=False)
-                expected = (LEMON_STOP_MM[0], LEMON_STOP_MM[1], target[2])
-            if any(kind == 'recto' and not 0 < value <= navigation.MAX_RECTO for kind, value in steps):
-                raise RuntimeError('Reubicá el Móvil: el limón no se alcanza desde acá y el acercamiento es largo '
-                                   'o requiere retroceder')
+            steps, expected = await self.approach(None, navigation, grasp, target, to_basket)
             if monotonic() >= self.deadline:
                 raise RuntimeError('Se perdió la supervisión de Arturito')
             recorder = await self.start_recording()
             await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
-            stage = 'acercamiento'
-            self.update('NAVEGANDO', ('Acercándose al limón: ' + navigation.texto(steps)) if steps
-                        else 'El limón se alcanza desde acá: el Móvil no se mueve.')
-            for kind, value in steps:
-                await self.drive_step(owner, kind, value)
-            await self.settle(owner, 1.)
-            self.zone = source_value(self.control.snapshot(), 'odom')
-            if self.zone is None:
-                raise RuntimeError('Falta odometría reciente al llegar')
-            self.cycle(owner)
-            stage = 'cosecha'
-            done = await self.harvest(owner, grasp, tf, lemons, to_basket, expected)
-            if done:
-                origin['used'] = True   # ese limón ya no está: para recolectar de nuevo, otro cero
+            done = 0
+            while True:
+                stage = 'acercamiento'
+                self.update('NAVEGANDO', ('Acercándose al limón: ' + navigation.texto(steps)) if steps
+                            else 'El limón se alcanza desde acá: el Móvil no se mueve.')
+                for kind, value in steps:
+                    await self.drive_step(owner, kind, value)
+                await self.settle(owner, 1.)
+                self.zone = source_value(self.control.snapshot(), 'odom')
+                if self.zone is None:
+                    raise RuntimeError('Falta odometría reciente al llegar')
+                self.cycle(owner)
+                stage = 'cosecha'
+                picked_now = await self.harvest(owner, grasp, tf, 1, to_basket, expected)
+                done += picked_now
+                if done:
+                    origin['used'] = True   # ese limón ya no está: para recolectar de nuevo, otro cero
+                self.zone = None
+                if done >= lemons or not to_basket or not picked_now:
+                    break
+                # Pedido del usuario (21/11): el siguiente limón, medido desde acá (el brazo quedó en reposo)
+                stage = 'búsqueda del siguiente limón'
+                self.update('BUSCANDO', f'Buscando el siguiente limón ({done} de {lemons} en la canasta).')
+                remaining = await self.measure_lemons(owner, grasp, tf)
+                if not remaining:
+                    break
+                target = min(remaining, key=lambda l: math.hypot(l[0], l[1]))
+                try:
+                    steps, expected = await self.approach(owner, navigation, grasp, target, to_basket)
+                except RuntimeError as error:
+                    self.update('BUSCANDO', f'El siguiente limón no se puede cosechar desde acá: {error}')
+                    break
             self.zone = None
             stage = 'regreso al cero'
             await self.return_home(owner, navigation, grasp, origin)

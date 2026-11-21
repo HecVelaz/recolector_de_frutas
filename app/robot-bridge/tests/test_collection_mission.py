@@ -32,9 +32,11 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.navigation = Mock(MAX_RECTO=1500)
         self.navigation.texto.side_effect = lambda steps: str(steps)
 
-    def planners(self, reachable=False):
+    def planners(self, feasible=lambda target: True):
         grasp = Mock(REPOSO=(3., 17., 4.))
-        grasp.planear_agarre_tol.return_value = ([('servo', 'pz a')], []) if reachable else (None, ['lejos'])
+        grasp.planear_agarre_tol.side_effect = lambda s, target, basket: (
+            ([('servo', 'pz a')], []) if feasible(target) else (None, ['lejos']))
+        self.grasp = grasp
         return patch.object(self.mission, 'planners', return_value=(self.navigation, grasp, None))
 
     async def test_requires_a_lemon_origin_a_referenced_arm_and_no_motion_since(self):
@@ -79,7 +81,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(self.mission.start('operator', self.origin)['active'])
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'RECUPERACION')
-        self.navigation.planear.assert_called_once_with((-575., 290.), 0., LEMON_STOP_MM, orientar=False)
+        self.assertEqual(self.navigation.planear.call_count, 2)   # en su dirección y la parada fija: las dos retroceden
         self.control.open.assert_not_called()
         self.assertEqual(len(list((Path(self.temp.name) / 'missions').glob('*.json'))), 1)
 
@@ -93,7 +95,10 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
         async def harvest(owner, original, tf, count, to_basket, expected):
             self.assertIsNotNone(self.mission.zone)   # el brazo solo actúa con la zona de agarre fijada
-            self.assertEqual(expected, (LEMON_STOP_MM[0], LEMON_STOP_MM[1], 128.))   # el limón del cero, ya en la parada
+            r = math.hypot(-575., 290.)   # a 64 cm: se acerca en su dirección hasta dejarlo a 52 cm de J1
+            self.assertAlmostEqual(expected[0], -575. * 520. / r)
+            self.assertAlmostEqual(expected[1], 290. * 520. / r)
+            self.assertEqual(expected[2], 128.)
             return 1
 
         with (self.planners(), patch.object(self.mission, 'drive_step', side_effect=drive),
@@ -117,7 +122,8 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             expectations.append(expected)
             return 1
 
-        with (self.planners(reachable=True), patch.object(self.mission, 'drive_step', side_effect=drive),
+        self.origin = make_lemon_origin((-500., 150., 128.), 1, self.odom)   # a 52 cm de J1: ya está para cosechar
+        with (self.planners(), patch.object(self.mission, 'drive_step', side_effect=drive),
               patch.object(self.mission, 'harvest', side_effect=harvest),
               patch.object(self.mission, 'settle', new=AsyncMock()),
               patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
@@ -125,10 +131,39 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.navigation.planear.assert_not_called()
         self.assertEqual(driven, [])
-        self.assertEqual(expectations, [(-575., 290., 128.)])   # el limón del cero, donde está
+        self.assertEqual(expectations, [(-500., 150., 128.)])   # el limón del cero, donde está
         self.assertTrue(self.origin['used'])
         with self.assertRaisesRegex(HTTPException, 'ya se cosechó'):
             self.mission.start('operator', self.origin)
+
+    async def test_two_lemons_are_harvested_one_after_the_other(self):
+        # Pedido del usuario (21/11): cosechado el primero, medir desde ahí, acercarse al siguiente y cosecharlo
+        self.origin = make_lemon_origin((-500., 150., 128.), 2, self.odom)
+        second = (-700., 300., 140.)   # a 76 cm: hace falta acercarse
+        self.navigation.planear.return_value = [('recto', 80.)]
+        driven, targets = [], []
+
+        async def drive(owner, kind, value):
+            driven.append((kind, value))
+
+        async def harvest(owner, original, tf, count, to_basket, expected):
+            self.assertEqual(count, 1)
+            targets.append(expected)
+            return 1
+
+        with (self.planners(), patch.object(self.mission, 'drive_step', side_effect=drive),
+              patch.object(self.mission, 'harvest', side_effect=harvest),
+              patch.object(self.mission, 'measure_lemons', new=AsyncMock(return_value=[second])),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', self.origin, lemons=2)
+            await self.mission.task
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+        self.assertIn('2 de 2 en la canasta', self.mission.status['message'])
+        self.assertEqual(targets[0], (-500., 150., 128.))   # el primero sin moverse
+        r = math.hypot(*second[:2])
+        self.assertAlmostEqual(targets[1][0], second[0] * 520. / r)   # el segundo, acercándose a 52 cm
+        self.assertEqual(driven, [('recto', 80.)])
 
     async def test_reverse_is_slow_and_forward_keeps_its_speed(self):
         self.mission.deadline = self.mission.run_until = float('inf')
