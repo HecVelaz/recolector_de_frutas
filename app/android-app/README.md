@@ -8,16 +8,18 @@ Actualización 0.4.1: [telemetría real, vigencia de datos y alarmas](PRIORIDAD_
 
 Preparación de etapa 9: [condiciones obligatorias para permitir control](CONDICIONES_CONTROL.md).
 
-## Operación con Arturito 0.9.0
+## Operación con Arturito 0.9.1
 
 1. En **Conexión**, comprobá el enlace con la Raspberry Pi.
 2. En **Control → Modo manual**, seleccioná Móvil, brazo o ambos. El puente
    anuncia la velocidad máxima de tracción. El deslizador de esta instalación
    llega a 25 cm/s.
-3. Para usar los joysticks del brazo, completá el homing con el brazo abajo y
-   recogido y mantené presionado hasta que informe reposo. Los ceros se fijan
-   en los finales de carrera. Al retirarse de ellos queda en J1 3°, J2 6° y
-   J3 3°. Después pasa a reposo en J1 3°, J2 17° y J3 4°.
+3. Para usar los joysticks del brazo o recolectar, tocá **Hacer homing** con el
+   brazo abajo y recogido y confirmá. Sigue solo: busca los finales de carrera,
+   fija los ceros (J1 3°, J2 6° y J3 3° al retirarse) y lleva el brazo al reposo
+   (J1 3°, J2 17°, J3 4°). Al confirmar la llegada aparece el aviso **Brazo en
+   reposo** con los ángulos medidos. **Cancelar homing**, cerrar la app o perder
+   la conexión lo detienen y el brazo queda frenado (`s`).
 4. En **Visión**, consultá los limones localizados. Las coordenadas XYZ se
    expresan en centímetros respecto a la cámara izquierda. Podés consultar
    las posiciones sin encender la vista de video.

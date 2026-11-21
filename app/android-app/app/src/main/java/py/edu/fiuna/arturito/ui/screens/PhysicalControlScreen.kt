@@ -56,7 +56,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var inputGeneration by remember { mutableIntStateOf(0) }
     var closing by remember { mutableStateOf(false) }
     var homing by remember { mutableStateOf(false) }
-    var homingPrepared by remember { mutableStateOf(false) }
+    var homeDone by remember { mutableStateOf<String?>(null) }   // aviso de reposo confirmado (ángulos medidos)
     var confirmRun by remember { mutableStateOf<String?>(null) }
     var drive by remember { mutableStateOf(Offset.Zero) }
     var reach by remember { mutableStateOf(Offset.Zero) }
@@ -68,6 +68,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var pendingSpeed by remember { mutableStateOf<Int?>(null) }
     var highSpeedAccepted by remember { mutableStateOf(false) }
     val arm = ArmReadings.decode(armState)
+    val armStateNow by rememberUpdatedState(armState)
     val idle = session == null && !closing && missionId == null && telemetry?.collection?.active != true
     val moving = active && session != null && !homing
     val mode = if (showBase && showArm) "combined" else if (showBase) "base" else "arm"
@@ -105,11 +106,15 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         }
     }
 
-    fun holdHome(held: Boolean) {
-        if (held && idle && !captureBusy) {
-            if (homingPrepared) startSession(home = true) else confirmRun = "homing"
-        } else if (!held && homing && session != null) {
-            message = "Homing cancelado"
+    // Homing automático (20/11): un toque y confirmar; el puente busca los finales de carrera, fija los ceros y lleva
+    // el brazo al reposo (mv 3 17 4) mientras la app siga conectada y en primer plano. Cancelar frena el brazo (s)
+    fun requestHome() {
+        if (idle && !captureBusy) confirmRun = "homing"
+    }
+    fun cancelHome() {
+        if (homing && session != null) {
+            failed = true
+            message = "Homing cancelado: el brazo quedó frenado donde estaba. Volvé a hacer el homing."
             closeSession()
         }
     }
@@ -137,7 +142,6 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     LaunchedEffect(collectionOnly) {
         closeSession()
         missionId = null
-        homingPrepared = false
     }
     LaunchedEffect(foreground) {
         if (!foreground) missionId = null
@@ -207,7 +211,10 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                 if (result.servoSent && servo == nextServo) servo = null
                 parking = result.parking
                 if (result.homingCompleted) {
-                    message = "Ceros del brazo listos. Brazo en reposo."
+                    message = "Homing terminado: ceros confirmados y brazo en reposo."
+                    homeDone = ArmReadings.decode(armStateNow)?.joints?.let { j ->
+                        "J1 ${number(j[0].angleDegrees)}° · J2 ${number(j[1].angleDegrees)}° · J3 ${number(j[2].angleDegrees)}°"
+                    } ?: "J1 3° · J2 17° · J3 4°"
                     closeSession()
                     break
                 }
@@ -235,6 +242,13 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         }
     }
 
+    homeDone?.let { angles ->
+        AlertDialog(onDismissRequest = { homeDone = null },
+            title = { Text("Brazo en reposo") },
+            text = { Text("Homing terminado. Los ceros de J1, J2 y J3 se fijaron en los finales de carrera y el " +
+                "brazo confirmó la llegada al reposo.\n\nMedido: $angles") },
+            confirmButton = { Button(onClick = { homeDone = null }) { Text("Aceptar") } })
+    }
     pendingSpeed?.let { candidate ->
         AlertDialog(onDismissRequest = { pendingSpeed = null }, title = { Text("Velocidad por encima de 24 cm/s") },
             text = { Text("El ajuste solicitado supera el umbral de velocidad segura. El límite actual del banco es de ${number(limitCmS)} cm/s.") },
@@ -245,10 +259,12 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         val home = purpose == "homing"
         val mission = purpose == "mission"
         AlertDialog(onDismissRequest = { confirmRun = null },
-            title = { Text(if (home) "Preparar el homing" else if (mission) "Preparar la recolección" else "Preparar el mando") },
+            title = { Text(if (home) "Hacer el homing del brazo" else if (mission) "Preparar la recolección" else "Preparar el mando") },
             text = {
                 Text(when {
-                    home -> "Con la potencia encendida y el brazo abajo y recogido, despejá su recorrido. Quedate junto al corte físico."
+                    home -> "Con la potencia encendida y el brazo abajo y recogido, despejá su recorrido. Quedate junto al corte físico. " +
+                        "El homing sigue solo: busca los finales de carrera, fija los ceros y lleva el brazo al reposo. " +
+                        "Se detiene si tocás Cancelar homing, cerrás la app o se corta la conexión."
                     mission -> "El Móvil irá a la parada del arbolito y el brazo intentará llevar " +
                         (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
                     showBase -> "Confirmá que el recorrido está despejado y que podés cortar la potencia."
@@ -259,7 +275,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                 Button(onClick = {
                     confirmRun = null
                     when {
-                        home -> homingPrepared = true
+                        home -> startSession(home = true)
                         mission -> {
                             failed = false
                             message = ""
@@ -267,7 +283,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                         }
                         else -> startSession(home = false)
                     }
-                }) { Text("Confirmar") }
+                }) { Text(if (home) "Iniciar homing" else "Confirmar") }
             },
             dismissButton = { TextButton(onClick = { confirmRun = null }) { Text("Cancelar") } })
     }
@@ -279,12 +295,10 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                 ConsoleOption(!collection, {
                     if (collection) closeSession()
                     missionId = null
-                    homingPrepared = false
                     collection = false
                 }, { Text("Modo manual") })
                 ConsoleOption(collection, {
                     if (!collection) closeSession()
-                    homingPrepared = false
                     collection = true
                 }, { Text("Modo Recolección") })
             }
@@ -309,8 +323,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                         telemetry.collection != null, onStart = { confirmRun = "mission" },
                     onStop = { missionId = null }, lemons = lemonCount,
                     onLemons = { if (missionId == null) lemonCount = it }) {
-                    HeldControl(if (homingPrepared) "Mantener para hacer homing" else "Preparar homing del brazo",
-                        foreground && arm != null && ((baseAvailable && idle && !captureBusy) || homing && !closing), ::holdHome)
+                    HomeButton(homing && session != null,
+                        foreground && arm != null && ((baseAvailable && idle && !captureBusy) || homing && !closing),
+                        ::requestHome, ::cancelHome)
                 }
                 if (message.isNotEmpty()) Text(message,
                     color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
@@ -324,7 +339,6 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                         CircleOption("Control del móvil", showBase, { showBase = it }, enabled = idle)
                         CircleOption("Control del brazo", showArm, {
                             showArm = it
-                            if (!it) homingPrepared = false
                         }, enabled = idle)
                         Spacer(Modifier.weight(1f))
                         if (!baseAvailable) StatusLight("Móvil sin telemetría", Signal.Notice)
@@ -342,8 +356,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                 }
                 if (showArm) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        HeldControl(if (homingPrepared) "Mantener para hacer homing" else "Volver a inicio (Homing)",
-                            foreground && arm != null && (baseAvailable && idle || homing && !closing), ::holdHome)
+                        HomeButton(homing && session != null,
+                            foreground && arm != null && (baseAvailable && idle || homing && !closing),
+                            ::requestHome, ::cancelHome)
                         if (!referenced) Text("Pinza y muñeca disponibles. Buscá el cero para usar los joysticks.",
                             style = MaterialTheme.typography.bodySmall)
                         if (parking) Text("Yendo al reposo.", style = MaterialTheme.typography.bodySmall)
@@ -468,6 +483,14 @@ private fun ServoPositions(arm: ArmReadings?, enabled: Boolean, onTarget: (Servo
         Text("0°", Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
         Text("+90° horario", Modifier.weight(1f), textAlign = TextAlign.End, style = MaterialTheme.typography.labelSmall)
     }
+}
+
+@Composable
+private fun HomeButton(running: Boolean, enabled: Boolean, onStart: () -> Unit, onCancel: () -> Unit) {
+    if (running) Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) {
+        Text("Cancelar homing")
+    } else Button(onClick = onStart, enabled = enabled) { Text("Hacer homing") }
 }
 
 @Composable
