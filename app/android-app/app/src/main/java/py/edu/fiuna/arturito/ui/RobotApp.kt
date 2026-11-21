@@ -96,6 +96,22 @@ fun RobotApp(initialTab: String = "Control", dark: Boolean = false, onToggleThem
         if (bridgeEnabled && foreground && !inspection) bridge.observe(address, token)
     }
 
+    // Pitidos de alerta en cualquier pestaña mientras haya telemetría (sin conexión, todo queda "sin dato").
+    var alertSound by remember { mutableStateOf(inspection || preferences.getBoolean("alertSound", true)) }
+    val currentAlertSound by rememberUpdatedState(alertSound)
+    val sounds = remember(context) { if (inspection) null else AlertSounds(context.applicationContext) }
+    DisposableEffect(sounds) { onDispose { sounds?.release() } }
+    LaunchedEffect(bridgeEnabled, sounds) {
+        if (!bridgeEnabled || sounds == null) return@LaunchedEffect
+        val tracker = AlertSoundTracker()
+        while (true) {
+            // El seguimiento corre aunque esté silenciado: al reactivar no suenan las alertas que ya estaban.
+            tracker.update(sensorLooks(bridge.telemetry), android.os.SystemClock.elapsedRealtime())
+                ?.let { if (currentAlertSound) sounds.play(it) }
+            delay(250)
+        }
+    }
+
     val sessionEnabled = bridge.controlStatus?.state in listOf("enabled", "active")
     val telemetry = bridge.telemetry
     val physical = telemetry?.physicalManual == true
@@ -197,7 +213,9 @@ fun RobotApp(initialTab: String = "Control", dark: Boolean = false, onToggleThem
                                         bridgeEnabled = false
                                     })
                                 bridgeEnabled && tab == "Mapa" -> BridgeMapScreen(bridge, fenceSession, fenceStorage, address, token)
-                                bridgeEnabled && tab == "Estado" -> RobotDashboard(bridge)
+                                bridgeEnabled && tab == "Estado" -> RobotDashboard(bridge, alertSound) {
+                                    alertSound = it; preferences.edit().putBoolean("alertSound", it).apply()
+                                }
                                 bridgeEnabled && tab in listOf("Control", "Misión") && localTunnel && telemetry?.controlDryRun != true ->
                                     PhysicalControlScreen(address, token, telemetry?.armState,
                                         telemetry?.manualArmReady == true,

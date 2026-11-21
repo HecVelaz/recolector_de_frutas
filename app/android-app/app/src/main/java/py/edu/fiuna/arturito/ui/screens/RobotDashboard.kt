@@ -12,6 +12,9 @@ import androidx.compose.ui.unit.dp
 import py.edu.fiuna.arturito.data.BridgeConnection
 import py.edu.fiuna.arturito.data.SensorReading
 import py.edu.fiuna.arturito.model.ArmReadings
+import py.edu.fiuna.arturito.model.SensorAlert
+import py.edu.fiuna.arturito.model.SensorLook
+import py.edu.fiuna.arturito.model.sensorLooks
 import py.edu.fiuna.arturito.model.mobileDiagnosticRows
 import py.edu.fiuna.arturito.model.mobileWording
 import py.edu.fiuna.arturito.ui.components.*
@@ -58,7 +61,37 @@ private fun py.edu.fiuna.arturito.data.BridgeTelemetry?.sourcesLight(key: String
 }
 
 @Composable
-fun RobotDashboard(bridge: BridgeConnection) {
+private fun SensorAlertsCard(looks: Map<SensorAlert, SensorLook>, sound: Boolean, onSound: (Boolean) -> Unit) {
+    SectionCard("Sensores del Móvil") {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            RobotSensorDiagram(looks, Modifier.weight(1.3f).height(320.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (sound) "Sonidos de alerta activados" else "Sonidos de alerta silenciados",
+                        style = MaterialTheme.typography.titleSmall)
+                    Switch(sound, onSound)
+                }
+                val active = looks.filterValues { it == SensorLook.ACTIVE }.keys.sortedBy { it.ordinal }
+                when {
+                    looks.values.all { it == SensorLook.NO_DATA } -> StatusLight("Sin lecturas de los sensores", Signal.Off)
+                    active.isEmpty() -> StatusLight("Ningún sensor activo", Signal.Ready)
+                    else -> for (alert in active) StatusLight(alert.label, if (alert.group <= 1) Signal.Fault else Signal.Notice)
+                }
+                val missing = looks.filterValues { it == SensorLook.NO_DATA }.keys
+                if (missing.isNotEmpty() && missing.size < looks.size)
+                    Text("Sin dato (en gris): " + missing.sortedBy { it.ordinal }.joinToString { it.short },
+                        style = MaterialTheme.typography.bodySmall)
+                Text("Solo avisa: la detención por seta, vuelco, bumpers y el ultrasonido frontal la hace el " +
+                    "controlador del robot, con o sin la app.", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+fun RobotDashboard(bridge: BridgeConnection, alertSound: Boolean = true, onAlertSound: (Boolean) -> Unit = {}) {
     val data = bridge.telemetry
     val battery = data?.batteryVoltage
     val mobileRows = mobileDiagnosticRows(data?.baseState)
@@ -67,6 +100,7 @@ fun RobotDashboard(bridge: BridgeConnection) {
     var details by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ConnectionLights(bridge)
+        SensorAlertsCard(sensorLooks(data), alertSound, onAlertSound)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionCard("Alimentación", Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
