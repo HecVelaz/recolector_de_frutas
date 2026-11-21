@@ -152,16 +152,34 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
 
     LaunchedEffect(missionId, address, token) {
         val id = missionId ?: return@LaunchedEffect
+        var started = false
         try {
             client.startCollection(address, token, id, lemonCount)
-            while (client.collectionHeartbeat(address, token, id).active) delay(250)
+            started = true
+            // 21/11: un latido que tarda más de 450 ms no corta la misión; se reintenta mientras el último correcto
+            // tenga menos de 1 s (el puente espera 1,25 s antes de detenerla por falta de supervisión)
+            var lastOk = SystemClock.elapsedRealtime()
+            while (true) {
+                val status = try {
+                    client.collectionHeartbeat(address, token, id).also { lastOk = SystemClock.elapsedRealtime() }
+                } catch (error: IOException) {
+                    if (SystemClock.elapsedRealtime() - lastOk >= 1000) throw error
+                    continue
+                }
+                if (!status.active) break
+                delay(250)
+            }
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
             if (missionId == id) {
                 failed = true
-                message = if (error is IOException) "Se perdió el enlace de supervisión."
-                    else error.message ?: "Se interrumpió la recolección."
+                val cause = error.message?.takeIf { it.isNotBlank() } ?: error.javaClass.simpleName
+                message = when {
+                    error is IOException && !started -> "No se pudo iniciar: el puente no respondió ($cause)."
+                    error is IOException -> "Se perdió el enlace de supervisión ($cause)."
+                    else -> error.message ?: "Se interrumpió la recolección."
+                }
             }
         } finally {
             withContext(NonCancellable) {

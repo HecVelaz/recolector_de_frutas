@@ -208,6 +208,14 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                                                       home_marker=data_dir / 'arm-homing-pending')
                 marker_tools = os.environ.get('ARTURITO_MARKER_TOOLS') or Path.home() / 'scripts/27-aruco-arbol/tools'
                 collection = CollectionMission(physical_controller, stereo, data_dir, marker_tools)
+
+                async def preload():   # punta.py, numpy y la calibración ya cargados antes del primer cero o misión
+                    try:
+                        await asyncio.to_thread(collection.planners)
+                    except Exception:
+                        logging.exception('No se pudieron precargar los planificadores')
+
+                preloading = asyncio.create_task(preload())
         task = asyncio.create_task(poll()) if source == 'estado' else None
         trial_monitor = asyncio.create_task(monitor_trial()) if base_link is not None else None
         physical_monitor = asyncio.create_task(monitor_physical()) if physical_controller is not None else None
@@ -249,6 +257,18 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             raise HTTPException(401, 'Clave de conexión incorrecta')
 
     if physical_manual:
+        @app.middleware('http')
+        async def log_commands(request: Request, call_next):
+            """Cada pedido de mando, cero o misión en bridge.log: método, ruta, código y tiempo (21/11)."""
+            watched = request.method != 'GET' and request.url.path.startswith(
+                ('/api/v1/mission', '/api/v1/physical/session', '/api/v1/navigation'))
+            started = time.monotonic()
+            response = await call_next(request)
+            if watched:
+                print(f'{time.strftime("%H:%M:%S")} {request.method} {request.url.path} -> {response.status_code} '
+                      f'en {1000 * (time.monotonic() - started):.0f} ms', flush=True)
+            return response
+
         from physical_control import DRIVE_LIMITS, mount_physical_control
         mount_physical_control(app, lambda: physical_controller, authorize)
 
