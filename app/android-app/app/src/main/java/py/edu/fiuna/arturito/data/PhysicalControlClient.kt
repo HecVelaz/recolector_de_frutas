@@ -42,6 +42,10 @@ class PhysicalControlClient {
             addProperty("to_basket", true)
         }, handshake).decodeCollectionStatus()
 
+    /** Brazo al reposo y Móvil al cero (21/11); se supervisa con los mismos latidos que la recolección. */
+    suspend fun startReturn(address: String, token: String, id: String): CollectionStatus =
+        request(address, token, id, "mission/return", "POST", JsonObject(), handshake).decodeCollectionStatus()
+
     suspend fun collectionHeartbeat(address: String, token: String, id: String): CollectionStatus =
         request(address, token, id, "mission/heartbeat", "POST", JsonObject(), client).decodeCollectionStatus()
 

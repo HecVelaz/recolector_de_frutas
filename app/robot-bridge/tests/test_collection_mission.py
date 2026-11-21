@@ -6,8 +6,8 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi import HTTPException
-from collection_mission import (LEMON_STOP_MM, REVERSE_M_S, CollectionMission, make_lemon_origin,
-                                stopped_near)
+from collection_mission import (GRASP_RAISE_MM, LEMON_STOP_MM, REVERSE_M_S, CollectionMission, home_steps,
+                                make_lemon_origin, stopped_near)
 
 
 class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
@@ -33,7 +33,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.navigation.texto.side_effect = lambda steps: str(steps)
 
     def planners(self):
-        return patch.object(self.mission, 'planners', return_value=(self.navigation, Mock(), None))
+        return patch.object(self.mission, 'planners', return_value=(self.navigation, Mock(REPOSO=(3., 17., 4.)), None))
 
     async def test_requires_a_lemon_origin_a_referenced_arm_and_no_motion_since(self):
         with self.assertRaisesRegex(HTTPException, 'limón'):
@@ -69,7 +69,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             with self.assertRaisesRegex(ValueError, 'quieto'):
                 await self.mission.measure_origin(lambda: False)
         self.assertEqual(seen, 2)
-        self.assertEqual([round(v) for v in lemon], [-500, 200, 100])
+        self.assertEqual([round(v) for v in lemon], [-500, 200, round(100 + GRASP_RAISE_MM / 1.43)])   # 2 cm más arriba
 
     async def test_plan_rejects_reverse_before_enabling_the_robot(self):
         self.navigation.planear.return_value = [('recto', -100.)]
@@ -100,7 +100,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
               patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
             self.mission.start('operator', self.origin)
             await self.mission.task
-        self.assertEqual(driven, steps + [('giro', 10.), ('recto', -142.), ('giro', -10.)])
+        self.assertEqual(driven, steps)   # la odometría simulada no se mueve: ya está en el cero
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('volvió al cero', self.mission.status['message'])
         self.assertIsNone(self.mission.zone)
@@ -147,9 +147,57 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.mission.measure_frames = AsyncMock(return_value=frames)
         expected = (LEMON_STOP_MM[0], LEMON_STOP_MM[1], 128.)
         found = await self.mission.measure_lemons('mision', grasp, None, near=expected)
-        self.assertEqual([tuple(round(v) for v in lemon) for lemon in found], [real])
+        self.assertEqual([tuple(round(v) for v in lemon) for lemon in found],
+                         [(-548, 152, round(130 + GRASP_RAISE_MM / 1.43))])   # el real, 2 cm más arriba
         self.mission.measure_frames = AsyncMock(return_value=[[phantom]] * 8)
         self.assertEqual(await self.mission.measure_lemons('mision', grasp, None, near=expected), [])
+
+    def test_going_home_retraces_an_approach_from_the_odometry(self):
+        # Acercamiento: girar 58° a la izquierda, avanzar 8 cm, girar 58° a la derecha (21/11)
+        yaw = math.radians(58)
+        arrived = dict(self.odom, x_m=.08 * math.cos(yaw), y_m=.08 * math.sin(yaw), yaw_rad=0.)
+        steps = home_steps(self.origin, arrived)
+        self.assertEqual([kind for kind, _ in steps], ['giro', 'recto', 'giro'])
+        self.assertAlmostEqual(steps[0][1], 58.)
+        self.assertAlmostEqual(steps[1][1], -80.)
+        self.assertAlmostEqual(steps[2][1], -58.)
+        self.assertEqual(home_steps(self.origin, dict(self.odom, yaw_rad=math.radians(.5))), [])
+        self.assertEqual(home_steps(self.origin, dict(self.odom, yaw_rad=math.radians(-12))), [('giro', 12.)])
+
+    async def test_a_failed_harvest_still_brings_the_arm_to_rest_and_the_base_home(self):
+        self.navigation.planear.return_value = [('recto', 100.)]
+
+        async def open_robot(owner, body, *, autonomous):
+            self.control.owner = owner
+
+        self.control.open.side_effect = open_robot
+
+        async def harvest(*args):
+            raise RuntimeError('MV_ERROR sin cuentas')
+
+        home = AsyncMock()
+        with (self.planners(), patch.object(self.mission, 'drive_step', new=AsyncMock()),
+              patch.object(self.mission, 'harvest', side_effect=harvest),
+              patch.object(self.mission, 'return_home', new=home),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', self.origin)
+            await self.mission.task
+        home.assert_awaited_once()
+        self.assertEqual(self.mission.status['state'], 'RECUPERACION')
+        self.assertIn('volvió al reposo y el Móvil al cero', self.mission.status['message'])
+
+    async def test_return_requires_a_zero_and_a_referenced_arm(self):
+        with self.assertRaisesRegex(HTTPException, 'cero'):
+            self.mission.start_return('operator', None)
+        self.control.arm_ready.return_value = False
+        with self.assertRaisesRegex(HTTPException, 'homing'):
+            self.mission.start_return('operator', self.origin)
+
+    def test_grasp_point_is_raised_two_real_centimetres(self):
+        from collection_mission import raised
+        self.assertEqual(GRASP_RAISE_MM, 20.)
+        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + 20. / 1.43)
 
     def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
         arrival = dict(self.odom, x_m=.2)

@@ -41,6 +41,9 @@ ZONE_M, ZONE_DEG = .04, 5.
 # fantasma queda descartado y el brazo no va a buscarlo al aire
 EXPECTED_RADIUS_MM = 120.   # mientras actúa el brazo, el Móvil quieto a menos de esto de donde llegó
 REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atrás no hay sensores)
+# Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
+# de punta, 1 mm de z son ~1,43 mm reales)
+GRASP_RAISE_MM = 20.
 
 
 class ArmRejected(RuntimeError):
@@ -57,7 +60,7 @@ class CollectionMission:
         self.run_until = 0.
         self.stop_requested = False
         self.events = []
-        self.status = {'state': 'INACTIVO', 'message': 'Prepará el cero del Móvil y el reposo del brazo.'}
+        self.status = {'state': 'INACTIVO', 'message': 'Sin recolección en curso.'}
         self._planners = None
 
     @property
@@ -102,6 +105,88 @@ class CollectionMission:
         self.update('BUSCANDO', 'Planeando el acercamiento al limón más cercano.')
         self.task = asyncio.create_task(self.run(self.owner, origin, lemons, to_basket))
         return self.snapshot()
+
+    def start_return(self, operator, origin):
+        """«Volver al cero»: el brazo al reposo (si tiene referencia) y el Móvil al cero por la odometría."""
+        self.control.tick()
+        if self.active or self.control.owner is not None:
+            raise HTTPException(409, 'Detené el mando antes de volver al cero')
+        if not origin or origin.get('kind') != 'lemon':
+            raise HTTPException(409, 'No hay un cero guardado: calculalo con el limón a la vista')
+        start = self.control.snapshot()
+        if not self.control.arm_ready(start.get('arm_state')):
+            raise HTTPException(409, 'El brazo no tiene referencia: hacé el homing antes de mover el Móvil')
+        if not source_value(start, 'odom'):
+            raise HTTPException(409, 'Falta odometría reciente')
+        self.owner, self.operator = f'regreso-{uuid4()}', operator
+        self.deadline = monotonic() + 1.25
+        self.run_until = monotonic() + 150.
+        self.stop_requested = False
+        self.zone = None
+        self.events = []
+        self.update('NAVEGANDO', 'Volviendo al reposo y al cero.')
+        self.task = asyncio.create_task(self.run_return(self.owner, origin))
+        return self.snapshot()
+
+    async def run_return(self, owner, origin):
+        try:
+            planners = asyncio.create_task(asyncio.to_thread(self.planners))
+            while not planners.done():
+                if monotonic() >= self.deadline:
+                    raise RuntimeError('Se perdió la supervisión de Arturito')
+                await asyncio.sleep(.05)
+            navigation, grasp, _ = planners.result()
+            await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
+            await self.return_home(owner, navigation, grasp, origin)
+            self.update('FINALIZADO', 'El brazo está en reposo y el Móvil volvió al cero' + self.home_error(origin) + '.')
+        except asyncio.CancelledError:
+            self.update('INACTIVO', 'Regreso al cero detenido por el operador.')
+        except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
+            detail = error.detail if isinstance(error, HTTPException) else str(error)
+            self.update('RECUPERACION', f'No se pudo volver al cero. {detail}')
+        except Exception:
+            logging.exception('Falló el regreso al cero')
+            self.update('RECUPERACION', 'Falló el regreso al cero. Consultá el registro de la Raspberry Pi.')
+        finally:
+            if self.control.owner == owner:
+                self.control.stop()
+            self.save_log()
+
+    async def arm_to_rest(self, owner, original):
+        """El brazo al reposo desde donde quedó. Plegado (canasta), como el final de punta.cosechar pero sin volver a
+        pedirle a J3 la zona dura de 80°; si no, con punta.planear_q. False si no hay un camino seguro."""
+        s = arm_angles(self.control.snapshot().get('arm_state'))
+        if max(abs(a - b) for a, b in zip(s, original.REPOSO)) <= 3.:
+            return True
+        if s[1] >= original.SOLTAR_Q2_MIN_PY and s[2] >= 78.:
+            path = ([(100., s[1], s[2])] if s[0] > 100.5 else []) + [(100., 46.7, 50.), tuple(original.REPOSO)]
+        else:
+            path, _ = await self.in_thread(owner, lambda: original.con_margen(
+                original.MARGEN_SALIDA_CARGA, original.planear_q, s, original.REPOSO))
+            if path is None:
+                return False
+        self.update('NAVEGANDO', 'Brazo al reposo')
+        for index, q in enumerate(path):
+            await self.move(owner, q, passing=index < len(path) - 1)
+        return True
+
+    async def return_home(self, owner, navigation, original, origin):
+        """Brazo al reposo y Móvil al cero desandando por la odometría (girar, retroceder recto, girar)."""
+        if not await self.arm_to_rest(owner, original):
+            raise RuntimeError('No hay un camino seguro del brazo al reposo: hacé el homing antes de mover el Móvil.')
+        odom = source_value(self.control.snapshot(), 'odom')
+        if odom is None:
+            raise RuntimeError('Falta odometría reciente para volver al cero')
+        steps = home_steps(origin, odom)
+        self.update('NAVEGANDO', 'Volviendo al cero: ' + (navigation.texto(steps) or 'ya está en el cero'))
+        for kind, value in steps:
+            await self.drive_step(owner, kind, value)
+        await self.settle(owner, 1.)
+
+    def home_error(self, origin):
+        delta = with_displacement(origin, source_value(self.control.snapshot(), 'odom'))['displacement']
+        return '' if delta is None else (f' (a {math.hypot(delta["x_m"], delta["y_m"]) * 100:.1f} cm y '
+                                         f'{abs(delta["yaw_deg"]):.0f}° del cero, según la odometría)')
 
     def heartbeat(self, operator):
         if self.active and self.operator == operator:
@@ -208,7 +293,7 @@ class CollectionMission:
                 raise ValueError('Mantené quieto el Móvil y soltá los mandos para fijar el cero.')
 
         groups = group_lemons(await self.collect_frames(ORIGIN_SECONDS, tick), grasp.AGRUPAR_MM, grasp.MIN_POSICIONES)
-        lemons = [grasp.limon_de_cara(tf, face, n, spread) for face, n, spread in groups
+        lemons = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
                   if spread <= grasp.DISPERSION_MAX]
         if not lemons:
             raise ValueError('No veo un limón estable: dejá el limonero a la vista de la cámara izquierda (40-95 cm).')
@@ -221,7 +306,7 @@ class CollectionMission:
         EXPECTED_RADIUS_MM de ahí, y alcanza con punta.MIN_POSICIONES posiciones aunque haya lecturas repartidas."""
         groups = group_lemons(await self.measure_frames(owner), original.AGRUPAR_MM, original.MIN_POSICIONES,
                               min_fraction=0. if near is not None else .3)
-        lemons = [original.limon_de_cara(tf, face, n, spread) for face, n, spread in groups
+        lemons = [raised(original.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
                   if spread <= original.DISPERSION_MAX]
         if near is not None:
             lemons = [lemon for lemon in lemons if math.dist(lemon, near) <= EXPECTED_RADIUS_MM]
@@ -403,14 +488,8 @@ class CollectionMission:
             done = await self.harvest(owner, grasp, tf, lemons, to_basket, expected)
             self.zone = None
             stage = 'regreso al cero'
-            back = [(kind, -value) for kind, value in reversed(steps)]
-            self.update('NAVEGANDO', 'Volviendo al cero: ' + navigation.texto(back))
-            for kind, value in back:
-                await self.drive_step(owner, kind, value)
-            await self.settle(owner, 1.)
-            delta = with_displacement(origin, source_value(self.control.snapshot(), 'odom'))['displacement']
-            error = '' if delta is None else (f' (a {math.hypot(delta["x_m"], delta["y_m"]) * 100:.1f} cm y '
-                                              f'{abs(delta["yaw_deg"]):.0f}° del cero, según la odometría)')
+            await self.return_home(owner, navigation, grasp, origin)
+            error = self.home_error(origin)
             picked = ('el limón quedó en la pinza' if not to_basket else
                       f'{done} de {lemons} en la canasta' + ('' if done == lemons else
                                                              '; no quedan más limones con plan de agarre a la vista'))
@@ -420,6 +499,19 @@ class CollectionMission:
         except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
             detail = error.detail if isinstance(error, HTTPException) else str(error)
             self.update('RECUPERACION', f'La recolección se detuvo durante {stage}. {detail}')
+            # Pedido del usuario (21/11): si falla la cosecha y la misión conserva el mando, volver igual al cero
+            if stage == 'cosecha' and self.control.owner == owner:
+                self.zone = None
+                try:
+                    await self.return_home(owner, navigation, grasp, origin)
+                    self.update('RECUPERACION', f'La recolección se detuvo durante cosecha ({detail}). El brazo '
+                                f'volvió al reposo y el Móvil al cero{self.home_error(origin)}.')
+                except asyncio.CancelledError:
+                    self.update('INACTIVO', 'Regreso al cero detenido por el operador.')
+                except (RuntimeError, HTTPException, ValueError) as second:
+                    reason = second.detail if isinstance(second, HTTPException) else str(second)
+                    self.update('RECUPERACION', f'La recolección se detuvo durante cosecha ({detail}) y no pudo '
+                                f'volver al cero: {reason}')
         except Exception:
             logging.exception('Falló la recolección')
             self.update('RECUPERACION', 'Falló la recolección. Consultá el registro de la Raspberry Pi.')
@@ -506,6 +598,29 @@ def base_refusal(snapshot, linear):
     if fields[:1] != ['ARMADA']:
         return f'La base dejó de estar armada ({" ".join(fields[:3]) or "sin estado"}).'
     return None
+
+
+def raised(lemon):
+    """Punto de agarre GRASP_RAISE_MM (reales) más arriba."""
+    x, y, z = lemon
+    return x, y, z + GRASP_RAISE_MM / 1.43
+
+
+def home_steps(origin, odom):
+    """Pasos para volver al cero desde la odometría actual: mirar en la dirección en que se vino, retroceder recto
+    hasta el cero y recuperar el rumbo del cero (desanda un acercamiento girar - avanzar - girar)."""
+    start = origin['odom_origin']
+    dx, dy = odom['x_m'] - start['x_m'], odom['y_m'] - start['y_m']
+    def wrap_deg(angle):
+        return math.degrees(math.atan2(math.sin(angle), math.cos(angle)))
+    steps = []
+    if math.hypot(dx, dy) > .03:
+        travel = math.atan2(dy, dx)
+        steps += [('giro', wrap_deg(travel - odom['yaw_rad'])), ('recto', -math.hypot(dx, dy) * 1000),
+                  ('giro', wrap_deg(start['yaw_rad'] - travel))]
+    else:
+        steps.append(('giro', wrap_deg(start['yaw_rad'] - odom['yaw_rad'])))
+    return [(kind, value) for kind, value in steps if kind == 'recto' or abs(value) >= 1.5]
 
 
 def basket_path(original, s):

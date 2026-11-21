@@ -25,6 +25,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     homingStatus: String?, mission: CollectionStatus?, missionRequested: Boolean, canStart: Boolean,
     onStart: () -> Unit, onStop: () -> Unit, lemons: Int = 1, onLemons: (Int) -> Unit = {},
     address: String = "", token: String = "", video: Boolean = false,
+    canReturn: Boolean = false, onReturn: () -> Unit = {},
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("Cero del robot", Modifier.weight(1f)) {
@@ -81,8 +82,13 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
             Text("$lemons", style = MaterialTheme.typography.titleMedium)
             OutlinedButton(onClick = { onLemons(lemons + 1) }, enabled = !missionRequested && lemons < MAX_LEMONS) { Text("+") }
         }
-        if (missionRequested) Button(onClick = onStop) { Text("Detener recolección") }
-        else Button(onClick = onStart, enabled = canStart) { Text("Iniciar recolección") }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (missionRequested) Button(onClick = onStop) { Text("Detener") }
+            else {
+                Button(onClick = onStart, enabled = canStart) { Text("Iniciar recolección") }
+                OutlinedButton(onClick = onReturn, enabled = canReturn) { Text("Volver al cero") }
+            }
+        }
     }
     Button(onClick = onMap) { Text("Abrir mapa de trabajo") }
 }

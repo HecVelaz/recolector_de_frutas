@@ -293,6 +293,14 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                 raise HTTPException(409, 'Confirmá la supervisión local y esperá a que termine la medición')
             return collection.start(operator, navigation_origin, body.lemons, body.to_basket)
 
+        @app.post('/api/v1/mission/return')
+        async def return_home(request: Request):
+            """Brazo al reposo y Móvil al cero (21/11); usa el mismo latido y la misma parada que la recolección."""
+            operator = mission_operator(request)
+            if origin_capture.locked():
+                raise HTTPException(409, 'Esperá a que termine la medición')
+            return collection.start_return(operator, navigation_origin)
+
         @app.post('/api/v1/mission/heartbeat')
         async def mission_heartbeat(request: Request):
             return collection.heartbeat(mission_operator(request))

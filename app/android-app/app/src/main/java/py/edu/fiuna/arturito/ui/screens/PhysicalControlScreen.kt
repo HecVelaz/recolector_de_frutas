@@ -46,6 +46,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var collection by remember(collectionOnly) { mutableStateOf(collectionOnly) }
     var missionId by remember { mutableStateOf<String?>(null) }
     var lemonCount by remember { mutableIntStateOf(1) }
+    var returning by remember { mutableStateOf(false) }   // la "misión" en curso es volver al cero
     var captureBusy by remember { mutableStateOf(false) }
     var parking by remember { mutableStateOf(false) }
     var showBase by remember { mutableStateOf(false) }
@@ -154,7 +155,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         val id = missionId ?: return@LaunchedEffect
         var started = false
         try {
-            client.startCollection(address, token, id, lemonCount)
+            if (returning) client.startReturn(address, token, id) else client.startCollection(address, token, id, lemonCount)
             started = true
             // 21/11: un latido que tarda más de 450 ms no corta la misión; se reintenta mientras el último correcto
             // tenga menos de 1 s (el puente espera 1,25 s antes de detenerla por falta de supervisión)
@@ -177,6 +178,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                 val cause = error.message?.takeIf { it.isNotBlank() } ?: error.javaClass.simpleName
                 message = when {
                     error is IOException && !started -> "No se pudo iniciar: el puente no respondió ($cause)."
+                    error is IOException && returning -> "Se perdió el enlace durante el regreso al cero ($cause)."
                     error is IOException -> "Se perdió el enlace de supervisión ($cause)."
                     else -> error.message ?: "Se interrumpió la recolección."
                 }
@@ -276,8 +278,10 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     confirmRun?.let { purpose ->
         val home = purpose == "homing"
         val mission = purpose == "mission"
+        val goHome = purpose == "return"
         AlertDialog(onDismissRequest = { confirmRun = null },
-            title = { Text(if (home) "Hacer el homing del brazo" else if (mission) "Preparar la recolección" else "Preparar el mando") },
+            title = { Text(if (home) "Hacer el homing del brazo" else if (mission) "Preparar la recolección"
+                else if (goHome) "Volver al cero" else "Preparar el mando") },
             text = {
                 Text(when {
                     home -> "Con la potencia encendida y el brazo abajo y recogido, despejá su recorrido. Quedate junto al corte físico. " +
@@ -286,6 +290,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     mission -> "El Móvil se acercará al limón más cercano, el brazo intentará llevar " +
                         (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta y el Móvil " +
                         "volverá al cero desandando el camino. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
+                    goHome -> "El brazo vuelve al reposo y el Móvil al cero: gira y retrocede en línea recta por donde " +
+                        "vino. Despejá detrás del robot y quedate junto al corte físico."
                     showBase -> "Confirmá que el recorrido está despejado y que podés cortar la potencia."
                     else -> "Confirmá que el recorrido del brazo está despejado y que podés cortar la potencia."
                 })
@@ -295,9 +301,10 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     confirmRun = null
                     when {
                         home -> startSession(home = true)
-                        mission -> {
+                        mission || goHome -> {
                             failed = false
                             message = ""
+                            returning = goHome
                             missionId = UUID.randomUUID().toString()
                         }
                         else -> startSession(home = false)
@@ -341,6 +348,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                         telemetry?.navigationOrigin != null && telemetry.stereo?.status in listOf("located", "searching") &&
                         telemetry.collection != null, onStart = { confirmRun = "mission" },
                     onStop = { missionId = null }, lemons = lemonCount,
+                    canReturn = baseAvailable && idle && !captureBusy && referenced && telemetry?.navigationOrigin != null,
+                    onReturn = { confirmRun = "return" },
                     onLemons = { if (missionId == null) lemonCount = it },
                     address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,
