@@ -23,7 +23,7 @@ from physical_control import OpenManual
 from vision_3d import with_displacement
 
 MAX_LEMONS = 5
-MEASURE_SECONDS = 5.     # como recolectar.py / punta.cosechar
+MEASURE_SECONDS = 8.     # 21/11: 5 -> 8 s (con el v4 y la disparidad a ~1-2 Hz llegan menos posiciones)
 MV_TIMEOUT = 90.         # TIMEOUT_MV de recolectar.py
 MV_RETRIES = 2           # punta.ejecutar: cortes por atraso con carga
 RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés')
@@ -31,7 +31,11 @@ ORIGIN_SECONDS = 3.      # medición del limón para el cero
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
 LEMON_STOP_MM = (-550., 150.)
-ZONE_M, ZONE_DEG = .04, 5.   # mientras actúa el brazo, el Móvil quieto a menos de esto de donde llegó
+ZONE_M, ZONE_DEG = .04, 5.
+# Al llegar a la parada se sabe dónde tiene que estar el limón del cero: solo vale uno a menos de esto de ahí. El
+# estéreo a veces mide el follaje delante del limón (21/11: el mismo limón a 42 y a 77 cm, alternando); ese punto
+# fantasma queda descartado y el brazo no va a buscarlo al aire
+EXPECTED_RADIUS_MM = 120.   # mientras actúa el brazo, el Móvil quieto a menos de esto de donde llegó
 REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atrás no hay sensores)
 
 
@@ -206,12 +210,18 @@ class CollectionMission:
             raise ValueError('No veo un limón estable: dejá el limonero a la vista de la cámara izquierda (40-95 cm).')
         return min(lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
 
-    async def measure_lemons(self, owner, original, tf):
+    async def measure_lemons(self, owner, original, tf, near=None):
         """Como punta.medir_limones: agrupa los limones de todas las imágenes y da sus puntos de agarre (mm, marco del
-        brazo) con las correcciones de punta.limon_de_cara (z de la visión, adelante, izquierda, arriba y ajuste fino)."""
-        groups = group_lemons(await self.measure_frames(owner), original.AGRUPAR_MM, original.MIN_POSICIONES)
-        return [original.limon_de_cara(tf, face, n, spread) for face, n, spread in groups
-                if spread <= original.DISPERSION_MAX]
+        brazo) con las correcciones de punta.limon_de_cara (z de la visión, adelante, izquierda, arriba y ajuste fino).
+        near: dónde tiene que estar el limón (mm, marco del brazo). Entonces solo vale el que está a menos de
+        EXPECTED_RADIUS_MM de ahí, y alcanza con punta.MIN_POSICIONES posiciones aunque haya lecturas repartidas."""
+        groups = group_lemons(await self.measure_frames(owner), original.AGRUPAR_MM, original.MIN_POSICIONES,
+                              min_fraction=0. if near is not None else .3)
+        lemons = [original.limon_de_cara(tf, face, n, spread) for face, n, spread in groups
+                  if spread <= original.DISPERSION_MAX]
+        if near is not None:
+            lemons = [lemon for lemon in lemons if math.dist(lemon, near) <= EXPECTED_RADIUS_MM]
+        return lemons
 
     async def arm_instruction(self, owner, command, expected, timeout):
         self.cycle(owner)
@@ -286,14 +296,21 @@ class CollectionMission:
         await self.arm_instruction(owner, 'mn 0', 'servo_ready', 8.)
         return True
 
-    async def harvest(self, owner, original, tf, count, to_basket):
+    async def harvest(self, owner, original, tf, count, to_basket, expected=None):
         """Como punta.cosechar: mide todos los limones, agarra el más cercano con plan, lo deja en la canasta y vuelve a
         medir desde ahí (confirma que ya no está en el árbol; hasta punta.MAX_INTENTOS por limón). Al final, al reposo.
-        Sin canasta: uno solo y queda en la pinza. Devuelve cuántos dejó."""
+        Sin canasta: uno solo y queda en la pinza. expected: dónde tiene que estar el primer limón (al llegar a la
+        parada); la primera medición solo acepta ese. Devuelve cuántos dejó."""
         done, pending, attempts, discarded = 0, None, 0, []
+        near = expected
         while True:
             self.update('BUSCANDO', f'Midiendo los limones con estéreo ({done} de {count} en la canasta).')
-            lemons = await self.measure_lemons(owner, original, tf)
+            lemons = await self.measure_lemons(owner, original, tf, near)
+            if near is not None and not lemons:
+                raise RuntimeError('No encuentro el limón donde debería estar al llegar (a menos de '
+                                   f'{EXPECTED_RADIUS_MM / 10:.0f} cm de la posición esperada). Revisá que se vea '
+                                   'completo y que no lo tapen hojas; volvé a calcular el cero.')
+            near = None
             if pending is not None:
                 still = [lemon for lemon in lemons if math.dist(lemon, pending) < original.VERIFICAR_MM]
                 if still:
@@ -372,7 +389,8 @@ class CollectionMission:
                 raise RuntimeError('Falta odometría reciente al llegar')
             self.cycle(owner)
             stage = 'cosecha'
-            done = await self.harvest(owner, grasp, tf, lemons, to_basket)
+            expected = (LEMON_STOP_MM[0], LEMON_STOP_MM[1], lemon['z_mm'])
+            done = await self.harvest(owner, grasp, tf, lemons, to_basket, expected)
             self.zone = None
             stage = 'regreso al cero'
             back = [(kind, -value) for kind, value in reversed(steps)]
@@ -497,7 +515,7 @@ def make_lemon_origin(lemon, seen, odom):
             'odom_origin': {key: odom[key] for key in ('x_m', 'y_m', 'yaw_rad')}}
 
 
-def group_lemons(frames, join_mm, min_views):
+def group_lemons(frames, join_mm, min_views, min_fraction=.3):
     """Igual que punta.Vision.medir_todos: cada posición va al grupo más cercano a menos de join_mm (si no, abre otro);
     quedan los grupos vistos en al menos max(min_views, 30 % de las imágenes). [(mediana mm, n, dispersión mm), ...]
     de más a menos visto."""
@@ -513,7 +531,7 @@ def group_lemons(frames, join_mm, min_views):
                 group[1].append(v)
             else:
                 groups.append([v.copy(), [v]])
-    minimum = max(min_views, .3 * len(frames))
+    minimum = max(min_views, min_fraction * len(frames))
     result = []
     for _, points in groups:
         if len(points) < minimum:

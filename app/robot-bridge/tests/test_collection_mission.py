@@ -89,8 +89,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         async def drive(owner, kind, value):
             driven.append((kind, value))
 
-        async def harvest(owner, original, tf, count, to_basket):
+        async def harvest(owner, original, tf, count, to_basket, expected):
             self.assertIsNotNone(self.mission.zone)   # el brazo solo actúa con la zona de agarre fijada
+            self.assertEqual(expected, (LEMON_STOP_MM[0], LEMON_STOP_MM[1], 128.))   # el limón del cero, ya en la parada
             return 1
 
         with (self.planners(), patch.object(self.mission, 'drive_step', side_effect=drive),
@@ -136,6 +137,19 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.control.snapshot.return_value = {'base_state': 'DESARMADA modo=parado seguridad=SETA', 'sources': []}
         with self.assertRaisesRegex(RuntimeError, 'seguridad .SETA.'):
             self.mission.cycle('mision', .1)
+
+    async def test_at_the_stop_only_the_expected_lemon_counts_not_the_foliage_in_front(self):
+        # 21/11: ya en la parada el estéreo alternó el mismo limón a 77 cm y un punto del follaje a 42 cm
+        grasp = Mock(AGRUPAR_MM=35., MIN_POSICIONES=3, DISPERSION_MAX=10.)
+        grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
+        real, phantom = (-548., 152., 130.), (-250., 60., 120.)
+        frames = [[real] if k % 2 else [phantom] for k in range(8)]   # 4 y 4: ninguno llega al 30 % de 8 + ruido
+        self.mission.measure_frames = AsyncMock(return_value=frames)
+        expected = (LEMON_STOP_MM[0], LEMON_STOP_MM[1], 128.)
+        found = await self.mission.measure_lemons('mision', grasp, None, near=expected)
+        self.assertEqual([tuple(round(v) for v in lemon) for lemon in found], [real])
+        self.mission.measure_frames = AsyncMock(return_value=[[phantom]] * 8)
+        self.assertEqual(await self.mission.measure_lemons('mision', grasp, None, near=expected), [])
 
     def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
         arrival = dict(self.odom, x_m=.2)
