@@ -8,10 +8,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
-enum class RobotCamera(val id: String, val label: String) {
-    LEFT("left", "Izquierda"),
-    RIGHT("right", "Derecha"),
-    DETECTIONS("detections", "Detecciones")
+/** Vistas del puente (20/11). En las tres se marcan los limones detectados con su distancia. */
+enum class RobotCamera(val id: String, val label: String, val description: String) {
+    LEFT("left", "Izquierdo", "Cámara izquierda con las detecciones de YOLO"),
+    CENTER("center", "Central", "Mapa de profundidad del estéreo: cerca en rojo, lejos en azul"),
+    RIGHT("right", "Derecho", "Cámara derecha con los limones del estéreo")
 }
 
 class RobotVision {

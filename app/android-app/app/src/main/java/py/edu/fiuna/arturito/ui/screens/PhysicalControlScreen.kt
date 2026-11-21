@@ -322,7 +322,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                         telemetry?.navigationOrigin != null && telemetry.stereo?.status in listOf("located", "searching") &&
                         telemetry.collection != null, onStart = { confirmRun = "mission" },
                     onStop = { missionId = null }, lemons = lemonCount,
-                    onLemons = { if (missionId == null) lemonCount = it }) {
+                    onLemons = { if (missionId == null) lemonCount = it },
+                    address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,
                         foreground && arm != null && ((baseAvailable && idle && !captureBusy) || homing && !closing),
                         ::requestHome, ::cancelHome)

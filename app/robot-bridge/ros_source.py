@@ -15,7 +15,7 @@ class RosReader:
         from rclpy.executors import SingleThreadedExecutor
         from rclpy.qos import qos_profile_sensor_data
         from rclpy.signals import SignalHandlerOptions
-        from sensor_msgs.msg import BatteryState, CompressedImage, Image, Imu, Range
+        from sensor_msgs.msg import BatteryState, Image, Imu, Range
         from nav_msgs.msg import Odometry
         from std_msgs.msg import String, UInt8
         self.rclpy = rclpy
@@ -72,38 +72,63 @@ class RosReader:
         for key, suffix in [('range_front','frente'),('range_left','izq'),('range_right','der')]:
             subscribe(Range, '/range/'+suffix, distance(key))
         if camera_frames is not None:
-            for key in ('left', 'right'):
-                subscribe(CompressedImage, CAMERAS[key], lambda m, name=key: camera_frames.put(name, m.data))
             try:
                 import cv2
                 import numpy as np
             except ImportError:
                 pass
             else:
-                last_conversion = -math.inf
+                from sensor_msgs.msg import CameraInfo
+                from stereo_msgs.msg import DisparityImage
+                import vision
+                projection = {'left': None, 'right': None}   # matriz P de cada cámara rectificada
+                last_conversion = {key: -math.inf for key in CAMERAS}
 
-                def detections(image):
-                    nonlocal last_conversion
+                def lemons():
+                    if stereo is None:
+                        return []
+                    seen = stereo.snapshot()
+                    return seen['lemons'] if seen['frame_id'] == 'camera' else []
+
+                def due(key):
                     now = camera_frames.clock()
-                    if now - last_conversion < .25:
-                        return
-                    last_conversion = now
-                    if (image.encoding not in ('bgr8', 'rgb8') or not 0 < image.width <= 1920
-                            or not 0 < image.height <= 1080 or image.step < image.width * 3
-                            or len(image.data) != image.step * image.height):
-                        camera_frames.put('detections', b'')
-                        return
-                    pixels = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.step)
-                    pixels = pixels[:, :image.width * 3].reshape(image.height, image.width, 3)
-                    try:
-                        if image.encoding == 'rgb8':
-                            pixels = cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
-                        success, jpeg = cv2.imencode('.jpg', pixels, [cv2.IMWRITE_JPEG_QUALITY, 70])
-                        camera_frames.put('detections', jpeg.tobytes() if success else b'')
-                    except cv2.error:
-                        camera_frames.put('detections', b'')
+                    if now - last_conversion[key] < .25:   # ~4 imágenes por segundo por vista
+                        return False
+                    last_conversion[key] = now
+                    return True
 
-                subscribe(Image, CAMERAS['detections'], detections)
+                def show(key, picture, p):
+                    try:
+                        camera_frames.put(key, b'' if picture is None else
+                                          vision.encode(cv2, vision.draw_lemons(cv2, picture, lemons(), p)))
+                    except cv2.error:
+                        camera_frames.put(key, b'')
+
+                def info(key):
+                    def callback(m):
+                        p = [float(v) for v in m.p]
+                        projection[key] = p if len(p) == 12 and p[0] > 0 and p[10] == 1 else None
+                    return callback
+
+                def camera(key):
+                    def callback(image):
+                        if due(key):
+                            show(key, vision.image_to_bgr(cv2, np, image), projection[key if key == 'right' else 'left'])
+                    return callback
+
+                def depth(message):
+                    if not due('center'):
+                        return
+                    disparity = vision.disparity_to_array(np, message)
+                    picture = None if disparity is None else vision.depth_view(
+                        cv2, np, disparity, message.min_disparity, message.max_disparity)
+                    show('center', picture, projection['left'])
+
+                subscribe(CameraInfo, '/left/camera_info', info('left'))
+                subscribe(CameraInfo, '/right/camera_info', info('right'))
+                subscribe(Image, CAMERAS['left'], camera('left'))
+                subscribe(Image, CAMERAS['right'], camera('right'))
+                subscribe(DisparityImage, CAMERAS['center'], depth)
         if stereo is not None:
             from geometry_msgs.msg import PoseArray
             from stereo_msgs.msg import DisparityImage

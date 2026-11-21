@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import py.edu.fiuna.arturito.data.CollectionStatus
 import py.edu.fiuna.arturito.data.NavigationOrigin
+import py.edu.fiuna.arturito.data.RobotCamera
 import py.edu.fiuna.arturito.data.StereoReading
 import py.edu.fiuna.arturito.ui.components.DetailRow
 import py.edu.fiuna.arturito.ui.components.SectionCard
@@ -23,6 +24,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     canCapture: Boolean, capturing: Boolean, onCapture: () -> Unit, onMap: () -> Unit,
     homingStatus: String?, mission: CollectionStatus?, missionRequested: Boolean, canStart: Boolean,
     onStart: () -> Unit, onStop: () -> Unit, lemons: Int = 1, onLemons: (Int) -> Unit = {},
+    address: String = "", token: String = "", video: Boolean = false,
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("Cero del robot", Modifier.weight(1f)) {
@@ -49,7 +51,15 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
         }
     }
     SectionCard("Visión estéreo", Modifier.fillMaxWidth(), compact = true) {
-        StereoTargets(stereo)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CameraFeed(address, token, RobotCamera.CENTER, video, Modifier.fillMaxWidth().aspectRatio(4f / 3f))
+                Text(RobotCamera.CENTER.description, style = MaterialTheme.typography.bodySmall)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                StereoTargets(stereo)
+            }
+        }
     }
     SectionCard("Recolección del arbolito", Modifier.fillMaxWidth(), compact = true) {
         mission?.let { status ->

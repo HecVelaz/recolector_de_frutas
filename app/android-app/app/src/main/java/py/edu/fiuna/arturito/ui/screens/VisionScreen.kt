@@ -17,15 +17,13 @@ import py.edu.fiuna.arturito.data.RobotVision
 import py.edu.fiuna.arturito.data.StereoReading
 import py.edu.fiuna.arturito.ui.components.*
 
+/** Último cuadro de una vista mientras [streaming]; se pide cada [periodMs] (el puente renueva cada ~250 ms). */
 @Composable
-fun VisionScreen(address: String, token: String, active: Boolean, stereo: StereoReading? = null) {
+fun rememberCameraFrame(address: String, token: String, camera: RobotCamera, streaming: Boolean,
+    periodMs: Long = 300): Pair<Bitmap?, Boolean> {
     val vision = remember { RobotVision() }
-    var camera by remember { mutableStateOf(RobotCamera.LEFT) }
-    var enabled by remember { mutableStateOf(false) }
-    val streaming = active && enabled
     var frame by remember(address, token, streaming, camera) { mutableStateOf<Bitmap?>(null) }
     var error by remember(address, token, streaming, camera) { mutableStateOf(false) }
-    LaunchedEffect(active) { if (!active) enabled = false }
     LaunchedEffect(address, token, streaming, camera) {
         if (!streaming) return@LaunchedEffect
         while (true) {
@@ -38,9 +36,39 @@ fun VisionScreen(address: String, token: String, active: Boolean, stereo: Stereo
                 frame = null
                 error = true
             }
-            delay(1200)
+            delay(periodMs)
         }
     }
+    return frame to error
+}
+
+/** El video de una vista, o un texto mientras no llega. */
+@Composable
+fun CameraFeed(address: String, token: String, camera: RobotCamera, streaming: Boolean, modifier: Modifier = Modifier) {
+    val (frame, error) = rememberCameraFrame(address, token, camera, streaming)
+    Surface(modifier, color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) {
+        Box(contentAlignment = Alignment.Center) {
+            if (frame != null) {
+                Image(remember(frame) { frame.asImageBitmap() }, "Cámara ${camera.label}",
+                    Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            } else {
+                Text(when {
+                    !streaming -> "Video en espera"
+                    error -> "Imagen no disponible"
+                    else -> "Esperando imagen"
+                }, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+fun VisionScreen(address: String, token: String, active: Boolean, stereo: StereoReading? = null) {
+    var camera by remember { mutableStateOf(RobotCamera.LEFT) }
+    var enabled by remember { mutableStateOf(false) }
+    val streaming = active && enabled
+    val (frame, error) = rememberCameraFrame(address, token, camera, streaming)
+    LaunchedEffect(active) { if (!active) enabled = false }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             RobotCamera.entries.forEach { choice ->
@@ -58,6 +86,7 @@ fun VisionScreen(address: String, token: String, active: Boolean, stereo: Stereo
                 streaming -> "Conectando"
                 else -> "Apagadas"
             }, if (frame != null) Signal.Ready else if (streaming) Signal.Notice else Signal.Off)
+            if (streaming) Text(camera.description, style = MaterialTheme.typography.bodySmall)
         }
         Surface(Modifier.fillMaxWidth().weight(1f), color = MaterialTheme.colorScheme.surfaceVariant,
             shape = MaterialTheme.shapes.medium) {
@@ -75,7 +104,7 @@ fun VisionScreen(address: String, token: String, active: Boolean, stereo: Stereo
                     }, when {
                         !active -> "Conectá Arturito al robot para ver sus cámaras."
                         !enabled -> "Activá Ver cámaras cuando quieras recibir imágenes."
-                        else -> camera.label
+                        else -> camera.description
                     }, Modifier.fillMaxSize())
                 }
             }
