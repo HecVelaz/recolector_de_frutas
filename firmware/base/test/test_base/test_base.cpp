@@ -86,7 +86,7 @@ void test_odometria_circulo_completo_vuelve() {
 // Todo en orden: nada al frente (INFINITY = eco largo), IMU con datos, batería cargada
 static EntradasSeguridad tranquilo() { return {{false, false, false}, INFINITY, false, 0, 0, 0, 12.4f, true}; }  // LiPo 3S cargada
 
-void test_seta_enclava_hasta_rearmar() {
+void test_seta_dura_lo_que_dura_apretada() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
   in.seta = true;
@@ -95,19 +95,14 @@ void test_seta_enclava_hasta_rearmar() {
   TEST_ASSERT_EQUAL(SeguridadBase::Estado::Emergencia, s.estado());
   TEST_ASSERT_TRUE(s.deshabilitar());
   TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
-  in.seta = false;  // soltar la seta no alcanza
-  v = 0.2f;
-  TEST_ASSERT_FALSE(s.filtrar(in, v, w));
-  in.seta = true;
-  TEST_ASSERT_FALSE(s.rearmar(in));  // con la seta apretada no rearma
-  in.seta = false;
-  TEST_ASSERT_TRUE(s.rearmar(in));
+  in.seta = false;  // al soltarla sale sola (desde el 21/11 no hay rearme)
   v = 0.2f;
   TEST_ASSERT_TRUE(s.filtrar(in, v, w));
-  TEST_ASSERT_EQUAL_FLOAT(0.2f, v);
+  TEST_ASSERT_EQUAL(SeguridadBase::Estado::Ok, s.estado());
+  TEST_ASSERT_FALSE(s.deshabilitar());
 }
 
-void test_vuelco_enclava() {
+void test_vuelco_sale_solo_con_histeresis() {
   SeguridadBase s(CFG_SEG);
   EntradasSeguridad in = tranquilo();
   in.roll = 40.0f;
@@ -115,9 +110,16 @@ void test_vuelco_enclava() {
   TEST_ASSERT_FALSE(s.filtrar(in, v, w));
   TEST_ASSERT_EQUAL(SeguridadBase::Estado::Vuelco, s.estado());
   TEST_ASSERT_FALSE(s.deshabilitar());  // vuelco: frena, pero no corta los puentes
-  TEST_ASSERT_FALSE(s.rearmar(in));
-  in.roll = 2.0f;
-  TEST_ASSERT_TRUE(s.rearmar(in));
+  in.roll = 23.5f;  // bajo los 25° pero dentro de la histéresis: sigue volcada
+  v = 0.1f;
+  TEST_ASSERT_FALSE(s.filtrar(in, v, w));
+  TEST_ASSERT_EQUAL(SeguridadBase::Estado::Vuelco, s.estado());
+  in.roll = 21.0f;  // menos de 22°: sale sola
+  v = 0.1f;
+  TEST_ASSERT_TRUE(s.filtrar(in, v, w));
+  TEST_ASSERT_EQUAL(SeguridadBase::Estado::Ok, s.estado());
+  in.roll = 23.5f;  // y para volver a entrar hacen falta 25°
+  TEST_ASSERT_TRUE(s.filtrar(in, v, w));
 }
 
 void test_bumper_delantero_solo_deja_retroceder_recto() {
@@ -205,7 +207,6 @@ void test_sin_imu_no_se_mueve() {
   TEST_ASSERT_EQUAL(SeguridadBase::Estado::SinImu, s.estado());
   TEST_ASSERT_EQUAL_FLOAT(0.0f, v);
   TEST_ASSERT_EQUAL_FLOAT(0.0f, w);
-  TEST_ASSERT_FALSE(s.rearmar(in));
   in.imuValida = true;  // vuelven los datos: sigue sola
   v = 0.1f;
   TEST_ASSERT_TRUE(s.filtrar(in, v, w));
@@ -304,8 +305,8 @@ int main() {
   RUN_TEST(test_odometria_recta);
   RUN_TEST(test_odometria_giro_90);
   RUN_TEST(test_odometria_circulo_completo_vuelve);
-  RUN_TEST(test_seta_enclava_hasta_rearmar);
-  RUN_TEST(test_vuelco_enclava);
+  RUN_TEST(test_seta_dura_lo_que_dura_apretada);
+  RUN_TEST(test_vuelco_sale_solo_con_histeresis);
   RUN_TEST(test_bumper_delantero_solo_deja_retroceder_recto);
   RUN_TEST(test_bumper_lateral_no_deja_girar);
   RUN_TEST(test_obstaculo_al_frente);

@@ -57,7 +57,7 @@ int tick = 0;
 
 // Armado por sesión: después de cada conexión con el agente, /cmd_vel y los comandos que mueven quedan
 // bloqueados hasta recibir "armar" por /base/comando (un publicador que siguiera mandando no retoma solo el
-// movimiento al reconectar). Detener, liberar, rearmar la seguridad y diagnóstico se aceptan siempre.
+// movimiento al reconectar), y lo mismo tras la seta o el vuelco. Detener, liberar y diagnóstico se aceptan siempre.
 bool armado = false;
 uint32_t ultimoAvisoMs = 0;
 
@@ -153,6 +153,13 @@ void alTimer(rcl_timer_t *t, int64_t) {
   tick++;
   EstadoBase e;
   baseLeer(e);
+
+  // Seta o vuelco (sin enclavar desde el 21/11): la base se desarma, así al soltar la seta un /cmd_vel que siga
+  // llegando no la mueve; para seguir hace falta "armar" otra vez (el puente lo manda al abrir cada sesión).
+  if (armado && (e.seg == SeguridadBase::Estado::Emergencia || e.seg == SeguridadBase::Estado::Vuelco)) {
+    armado = false;
+    out->println(">> Seta o vuelco: base DESARMADA (enviar 'armar' para seguir).");
+  }
 
   if (e.imuValida) {
     imuMsg.header.stamp = ahora;

@@ -196,7 +196,7 @@ GND común: un cable del GND de la S3 y otro del de la WROOM a la bornera de GND
 - **Seta (ya está, 09/10: hongo de 22 mm modular, giro para liberar; `fotos/llaves/`), con 2 bloques NC 1-2 apilados (AdvanCon SIB2-BE102, `hongo.jpeg`):** el bloque A (arriba) corta el + del bus de 12 V,
   entre el fusible y el selector (19/10): los cinco IBT-2 y el buck de los servos quedan sin tensión (corte por hardware,
   aunque se cuelgue el firmware; los motores quedan en rueda libre: no frena). El bloque B (abajo) avisa a la S3 por el
-  GPIO 47 (HIGH = apretada o cable cortado): la S3 pasa a EMERGENCIA y no rearranca sola al soltarla (`r` y `armar`).
+  GPIO 47 (HIGH = apretada o cable cortado): la S3 pasa a EMERGENCIA y se desarma; al soltarla sale sola de EMERGENCIA (sin `r` desde el 21/11), pero no se mueve hasta un `armar` nuevo.
   **El bloque está pensado para alterna (`10(6)A 400V~`), sin dato para continua:** a 12 V corta una emergencia, pero
   cada corte con carga gasta los contactos y una NC soldada no corta. Solo para emergencias (el ON/OFF diario es el
   selector, con los motores quietos) y probarla cada tanto (apretada: 0 V en la bornera +12 V). Cable grueso ida y vuelta

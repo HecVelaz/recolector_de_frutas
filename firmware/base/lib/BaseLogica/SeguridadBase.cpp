@@ -12,6 +12,9 @@ const char *SeguridadBase::texto(Estado e) {
   }
 }
 
+// Para salir del vuelco hay que bajar 3° del límite: cerca de 25° no titila entre VUELCO y ok.
+static constexpr float HISTERESIS_VUELCO = 3.0f;
+
 static bool nivelada(const EntradasSeguridad &in, float inclMax) {
   return fabsf(in.roll) < inclMax && fabsf(in.pitch) < inclMax;
 }
@@ -19,9 +22,13 @@ static bool nivelada(const EntradasSeguridad &in, float inclMax) {
 bool SeguridadBase::filtrar(const EntradasSeguridad &in, float &v, float &w) {
   bateriaBaja_ = isfinite(in.bateria) && in.bateria < cfg_.bateriaMin;
 
-  // Enclavados: primero la seta, después el vuelco
+  // Seta y vuelco duran lo que dura la causa (sin enclavar ni rearme desde el 21/11, a pedido del usuario). Que el
+  // robot no arranque solo al soltar la seta lo cuidan main.cpp (anula el comando) y capa_ros.cpp (desarma).
+  const bool yaVolcada = estado_ == Estado::Vuelco;
   if (in.seta) estado_ = Estado::Emergencia;
-  else if (estado_ != Estado::Emergencia && in.imuValida && !nivelada(in, cfg_.inclMax)) estado_ = Estado::Vuelco;
+  else if (in.imuValida && !nivelada(in, yaVolcada ? cfg_.inclMax - HISTERESIS_VUELCO : cfg_.inclMax))
+    estado_ = Estado::Vuelco;
+  else if (estado_ == Estado::Emergencia || yaVolcada) estado_ = Estado::Ok;  // causa despejada: sigue abajo
 
   bloqAdelante_ = bloqAtras_ = frenteSinDato_ = false;
   if (estado_ == Estado::Emergencia || estado_ == Estado::Vuelco) {
@@ -66,11 +73,5 @@ bool SeguridadBase::filtrar(const EntradasSeguridad &in, float &v, float &w) {
   }
   if (bloqAdelante_ && v > 0.0f) v = 0.0f;
   if (bloqAtras_ && v < 0.0f) v = 0.0f;
-  return true;
-}
-
-bool SeguridadBase::rearmar(const EntradasSeguridad &in) {
-  if (in.seta || !in.imuValida || !nivelada(in, cfg_.inclMax)) return false;
-  estado_ = Estado::Ok;
   return true;
 }

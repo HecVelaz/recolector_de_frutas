@@ -35,7 +35,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 - **En la S3: `base_ros_20261117_imu`** (env `ros`, `cc96d1f`): la IMU se recupera sola de un I2C colgado. Flasheo
   con `--after watchdog-reset`. Watchdog de 300 ms: `/cmd_vel` continuo.
 - **Seguridad con motores probada (18/11):** frena el HC-SR04 del medio (para a 20 cm); bumpers, seta y vuelco (25°)
-  enclavan; `r` por `/base/comando` rearma.
+  frenan. **Desde el 21/11 (sin flashear todavía) seta y vuelco no enclavan ni hay `r`:** desarman la base y hace falta `armar`.
 - Odometría: recto < 1 %; giros con el giróscopo (~±1°); al volver al cero queda ~4° de rumbo.
 - A vigilar: cortes del USB de la S3 (se reconecta desarmada). Si no conecta tras reiniciar la Pi: `pkill -f
   micro_ros_agent`, `esptool ... --after watchdog-reset chip-id`, agente. `BATERIA_BAJA` no indica si hay 12 V.

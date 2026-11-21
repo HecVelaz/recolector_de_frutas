@@ -27,7 +27,8 @@ struct EntradasSeguridad {
 
 class SeguridadBase {
  public:
-  // EMERGENCIA (seta) y VUELCO quedan enclavados: se salen solo con rearmar() y la causa ya despejada.
+  // EMERGENCIA (seta) y VUELCO duran lo que dura la causa (sin enclavar desde el 21/11). Salir del vuelco pide 3°
+  // menos que entrar.
   enum class Estado : uint8_t { Ok, Emergencia, Vuelco, SinComandos, SinImu };
 
   explicit SeguridadBase(const ConfigSeguridad &cfg) : cfg_(cfg) {}
@@ -35,9 +36,6 @@ class SeguridadBase {
   // Evalúa las entradas y recorta el comando (v, w). Devuelve true si los motores pueden estar habilitados;
   // false = puentes deshabilitados (emergencia) o parada (v = w = 0).
   bool filtrar(const EntradasSeguridad &in, float &v, float &w);
-
-  // Rearme manual: borra EMERGENCIA y VUELCO solo si la causa ya no está (seta suelta, base nivelada).
-  bool rearmar(const EntradasSeguridad &in);
 
   void fijarWatchdog(uint32_t ms) { cfg_.sinCmdMs = ms; }
   uint32_t watchdog() const { return cfg_.sinCmdMs; }

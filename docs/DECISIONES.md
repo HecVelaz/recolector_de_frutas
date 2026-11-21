@@ -55,3 +55,8 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 - **Simulación de la demo (19/11):** limones solo hasta 52 cm (usuario; el brazo simulado no llega más arriba por
   `Q3_LIM`, provisorio); cámara de navegación real en el urdf como `camara:=nav` (la v1 queda para la hilera);
   reposo del brazo J1 = 0° en ese mundo (a 75° la pinza tapa la cámara; el real espera sobre la canasta).
+- **Seta y vuelco sin enclavar, sin `r` (21/11, usuario):** reemplaza "enclavan hasta `r`". Duran lo que dura la
+  causa (vuelco con 3° de histéresis: entra a 25°, sale bajo 22°). Para que el robot no arranque solo al soltar la
+  seta: el firmware anula el comando en curso y la capa ROS desarma la base (hace falta un `armar` nuevo; el puente
+  lo manda al abrir cada sesión). Las fallas de rueda, que borraba `r`, ahora las borra `s`. La seta sigue cortando
+  los 12 V por hardware (bloque A).

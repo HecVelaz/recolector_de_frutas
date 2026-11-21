@@ -45,7 +45,7 @@ fun sensorLooks(data: BridgeTelemetry?): Map<SensorAlert, SensorLook> {
         tiltDegrees(fresh["imu"]!!.value!!.asJsonObject.getAsJsonArray("acceleration_m_s2").map { it.asDouble })
     }.getOrNull()
     // ponytail: inclinación de una sola muestra (sin filtro); un golpe andando puede dar un aviso corto.
-    // El vuelco real lo marca el firmware (filtrado y enclavado hasta `r`) con seguridad=VUELCO.
+    // El vuelco real lo marca el firmware (filtrado, con 3° de histéresis) con seguridad=VUELCO.
     val vuelco = base?.contains("seguridad=VUELCO") == true
     fun bumper(bit: Int) = look(mask != null, mask != null && mask and (1 shl bit) != 0)  // bit 0 frente, 1 izq, 2 der
     return mapOf(

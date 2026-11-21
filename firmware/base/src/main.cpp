@@ -198,7 +198,10 @@ void tareaControl(void *) {
     const bool puede = seg.filtrar(in, v, w);
     if (modo == Modo::Cmd) dif.fijarRampa(v, w);
     // Vencido el watchdog, el comando viejo se anula: no vuelve solo cuando llega otro mensaje
-    if (seg.estado() == SeguridadBase::Estado::SinComandos && modo != Modo::Libre) {
+    // Igual con la seta o el vuelco (sin enclavar desde el 21/11): al soltar la seta no retoma el comando anterior
+    const SeguridadBase::Estado es = seg.estado();
+    if ((es == SeguridadBase::Estado::SinComandos || es == SeguridadBase::Estado::Emergencia ||
+         es == SeguridadBase::Estado::Vuelco) && modo != Modo::Libre) {
       modo = Modo::Parado;
       cortarEnMs = 0;
     }
@@ -264,9 +267,8 @@ void ayuda() {
   out->println("  w <izq> <der> [s] rpm de cada rueda (lazo de velocidad solo). Ej: w 20 20");
   out->printf("  d <izq> <der>    lazo abierto en %% (máx %.0f); se corta a los %lu ms si no se repite\n", JOG_DUTY_MAX,
                 (unsigned long)JOG_MS);
-  out->println("  s                detener (freno)");
+  out->println("  s                detener (freno) y borrar fallas de las ruedas");
   out->println("  l                liberar: puentes deshabilitados (rueda libre)");
-  out->println("  r                rearmar tras seta o vuelco (con la causa despejada) y borrar fallas");
   out->println("  cal              calibrar el giroscopio (robot quieto, 2 s)");
   out->println("  odo0             odometría a cero");
   out->println("  log [hz]         CSV (t_ms,v,w,rpm_ref_izq,rpm_izq,rpm_ref_der,rpm_der,u_izq,u_der,x,y,th); log 0 apaga");
@@ -415,24 +417,13 @@ void ejecutar(char *linea) {
     portENTER_CRITICAL(&mux);
     modo = cmd[0] == 'l' ? Modo::Libre : Modo::Parado;
     cortarEnMs = 0;
+    if (cmd[0] == 's') {  // detener también borra las fallas de las ruedas (antes lo hacía "r", que ya no existe)
+      rueda[0].borrarFalla();
+      rueda[1].borrarFalla();
+    }
     aceptado();
     portEXIT_CRITICAL(&mux);
     out->println(cmd[0] == 'l' ? ">> Liberado (rueda libre)." : ">> Detenido.");
-  } else if (!strcmp(cmd, "r")) {
-    bool ok;
-    portENTER_CRITICAL(&mux);
-    const EntradasSeguridad in = {{sens.bumper[0], sens.bumper[1], sens.bumper[2]}, sens.dist[0],
-                                  sens.seta, sens.roll, sens.pitch, 0, sens.bateria, sens.imuValida};
-    ok = seg.rearmar(in);
-    if (ok) {
-      rueda[0].borrarFalla();
-      rueda[1].borrarFalla();
-      modo = Modo::Parado;
-      cortarEnMs = 0;
-      aceptado();
-    }
-    portEXIT_CRITICAL(&mux);
-    out->println(ok ? ">> Rearmado." : ">> No se puede rearmar: seta apretada, base no nivelada o IMU sin datos.");
   } else if (!strcmp(cmd, "cal")) {
     if (!imuOk) {
       out->println(">> IMU sin responder.");
@@ -702,13 +693,12 @@ void loop() {
   const ControlArticulacion::Falla f[2] = {rueda[0].falla(), rueda[1].falla()};
   portEXIT_CRITICAL(&mux);
   if (es != previo) {
-    out->printf(">> Seguridad: %s%s\n", SeguridadBase::texto(es),
-                  (es == SeguridadBase::Estado::Emergencia || es == SeguridadBase::Estado::Vuelco) ? " (r para rearmar)" : "");
+    out->printf(">> Seguridad: %s\n", SeguridadBase::texto(es));
     previo = es;
   }
   for (int i = 0; i < 2; i++) {
     if (f[i] != fPrev[i] && f[i] != ControlArticulacion::Falla::Ninguna)
-      out->printf(">> Rueda %s: FALLA %s. Base detenida; r para borrar.\n", LADO[i], ControlArticulacion::texto(f[i]));
+      out->printf(">> Rueda %s: FALLA %s. Base detenida; s para borrar.\n", LADO[i], ControlArticulacion::texto(f[i]));
     fPrev[i] = f[i];
   }
 
