@@ -31,6 +31,9 @@ ARM_MOTIONS = {'j1+': 'jv 0.15 0 0', 'j1-': 'jv -0.15 0 0',
 SERVOS = {'gripper_open': 'pz a', 'gripper_close': 'pz c', 'wrist_left': 'mn a',
           'wrist_center': 'mn 0', 'wrist_right': 'mn b'}
 LEASE = .22
+# Homing (21/11): lo hace el firmware a 1,5-5 °/s; con la Pi cargada un aviso de la app a veces tardaba > 0,22 s y
+# cortaba el homing ya terminado. Soltar el botón lo sigue cortando, como mucho 1 s después
+HOME_LEASE = 1.0
 SESSION_LEASE = 3.0
 BASE_STOP_TIMEOUT = 1.5
 HOME_TIMEOUT = 120
@@ -355,7 +358,10 @@ class PhysicalControl:
             raise
         now = self.clock()
         self.deadline = now + SESSION_LEASE
-        self.input_deadline = now + LEASE
+        self.input_deadline = now + self.lease()
+
+    def lease(self):
+        return HOME_LEASE if self.mode == 'homing' else LEASE
 
     def mission_velocity(self, owner, linear, angular):
         self.tick()
@@ -495,7 +501,7 @@ class PhysicalControl:
                                 self.home_recovery = (self.clock(), target)
                                 self.arm.send(f'j 2 {target:.1f}')
                                 self.deadline = input_started_at + SESSION_LEASE
-                                self.input_deadline = input_started_at + LEASE
+                                self.input_deadline = input_started_at + self.lease()
                                 return 'active', False
                             raise HTTPException(409, detail if isinstance(detail, str) and detail else 'El controlador interrumpió el homing')
                         state = self.snapshot().get('arm_state') or ''
@@ -513,7 +519,7 @@ class PhysicalControl:
                 command = body.joints.command() if body.joints else ARM_MOTIONS.get(body.arm_motion or body.motion)
                 servo_sent = self.drive_arm(command, servo)
             self.deadline = input_started_at + SESSION_LEASE
-            self.input_deadline = input_started_at + LEASE
+            self.input_deadline = input_started_at + self.lease()
             return 'active', servo_sent
         except BaseException:
             self.stop()

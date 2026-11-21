@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from fastapi import HTTPException
 
 from base_session import BaseSession, BaseSessionState
-from physical_control import ArmAxes, DriveAxes, LEASE, LINEAR_LIMIT, PARK_COMMAND, SESSION_LEASE, ManualInput, OpenManual, PhysicalControl
+from physical_control import ArmAxes, DriveAxes, HOME_LEASE, LEASE, LINEAR_LIMIT, PARK_COMMAND, SESSION_LEASE, ManualInput, OpenManual, PhysicalControl
 
 
 class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
@@ -240,7 +240,10 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
     async def test_homing_heartbeat_loss_interrupts_firmware(self):
         await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
         self.control.input('owner', ManualInput(motion='home'))
-        self.now += LEASE + .01
+        self.now += LEASE + .01   # un aviso atrasado (Pi cargada) no corta el homing
+        self.control.tick()
+        self.assertEqual('owner', self.control.owner)
+        self.now += HOME_LEASE
         self.control.tick()
         self.arm.send.assert_called_with('s')
         self.assertIsNone(self.control.owner)
