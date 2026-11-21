@@ -387,14 +387,21 @@ class CollectionMission:
     async def measure_lemons(self, owner, original, tf, near=None):
         """Como punta.medir_limones: agrupa los limones de todas las imágenes y da sus puntos de agarre (mm, marco del
         brazo) con las correcciones de punta.limon_de_cara (z de la visión, adelante, izquierda, arriba y ajuste fino).
-        near: dónde tiene que estar el limón (mm, marco del brazo). Entonces solo vale el que está a menos de
-        EXPECTED_RADIUS_MM de ahí, y alcanza con punta.MIN_POSICIONES posiciones aunque haya lecturas repartidas."""
+        near: dónde tiene que estar el limón (mm, marco del brazo). Entonces alcanza con punta.MIN_POSICIONES
+        posiciones aunque haya lecturas repartidas, y van primero los que están a menos de EXPECTED_RADIUS_MM de ahí;
+        si no hay ninguno, todos (21/11, pedido del usuario: la profundidad del cero puede errar 10-25 cm; al llegar se
+        cosecha lo que se mide ahí si el brazo tiene plan)."""
         groups = group_lemons(await self.measure_frames(owner), original.AGRUPAR_MM, original.MIN_POSICIONES,
                               min_fraction=0. if near is not None else .3)
         lemons = [raised(original.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
                   if spread <= original.DISPERSION_MAX]
         if near is not None:
-            lemons = [lemon for lemon in lemons if math.dist(lemon, near) <= EXPECTED_RADIUS_MM]
+            close = [lemon for lemon in lemons if math.dist(lemon, near) <= EXPECTED_RADIUS_MM]
+            if lemons and not close:
+                miss = min(math.dist(lemon, near) for lemon in lemons) / 10
+                self.update('BUSCANDO', f'El limón estaba a {miss:.0f} cm de donde se esperaba: se cosecha según la '
+                            'medición de acá, si el brazo llega.')
+            return close or lemons
         return lemons
 
     async def arm_instruction(self, owner, command, expected, timeout):
@@ -489,10 +496,6 @@ class CollectionMission:
         while True:
             self.update('BUSCANDO', f'Midiendo los limones con estéreo ({done} de {count} en la canasta).')
             lemons = await self.measure_lemons(owner, original, tf, near)
-            if near is not None and not lemons:
-                raise RuntimeError('No encuentro el limón donde debería estar al llegar (a menos de '
-                                   f'{EXPECTED_RADIUS_MM / 10:.0f} cm de la posición esperada). Revisá que se vea '
-                                   'completo y que no lo tapen hojas; volvé a calcular el cero.')
             near = None
             if pending is not None:
                 still = [lemon for lemon in lemons if math.dist(lemon, pending) < original.VERIFICAR_MM]

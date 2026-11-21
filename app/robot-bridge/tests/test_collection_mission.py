@@ -274,8 +274,11 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         found = await self.mission.measure_lemons('mision', grasp, None, near=expected)
         self.assertEqual([tuple(round(v) for v in lemon) for lemon in found],
                          [(-548, 152, round(130 + GRASP_RAISE_MM / 1.43))])   # el real, 2 cm más arriba
+        # Sin ninguno donde se esperaba (21/11): lo medido ahí; el plan de agarre descarta lo que el brazo no alcanza
         self.mission.measure_frames = AsyncMock(return_value=[[phantom]] * 8)
-        self.assertEqual(await self.mission.measure_lemons('mision', grasp, None, near=expected), [])
+        found = await self.mission.measure_lemons('mision', grasp, None, near=expected)
+        self.assertEqual([round(v) for v in found[0][:2]], [-250, 60])
+        self.assertIn('se cosecha según la medición de acá', self.mission.status['message'])
 
     def test_going_home_retraces_an_approach_from_the_odometry(self):
         # Acercamiento: girar 58° a la izquierda, avanzar 8 cm, girar 58° a la derecha (21/11)
