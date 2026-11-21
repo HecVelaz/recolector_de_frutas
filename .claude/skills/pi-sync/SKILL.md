@@ -35,6 +35,7 @@ ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 __pycache__/
+.pytest_cache/
 *.mp4
 app/android-app/
 app/.codex-build/
