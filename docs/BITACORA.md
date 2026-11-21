@@ -881,3 +881,22 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   el banderín ~2 % más lejos (2,23 m contra 2,20; desde 2,8 m, ~5 cm) y toda la hilera queda corrida a lo largo.
   Propuesto (sin hacer): volver a medir el banderín desde ~1,2 m antes de la parada 1.
 - 81 pruebas `colcon test` (brazo_ik 9, mision 55, simulacion 17). Sin hacer: ruido de odometría (opcional).
+
+## 2026-11-20 / 21 — App Arturito: recolección desde la tablet (detalle en `pruebas-esp32/notas/BITACORA.md`)
+- La app y el puente de Mathias (hechos con Codex) pasaron a `app/` (app 0.8.0 → 0.11.1, puente 64 → 92 pruebas,
+  `b707a8e`…`ac7c6ef`). WROOM al micro-ROS actual del 20 (`750ba4c`); visión v4; Pi con la fuente oficial de 27 W
+  (con el power bank se reiniciaba por bajo voltaje).
+- **Misión del puente** (`collection_mission.py`): limón a 50–55 cm de J1 (si ya está y tiene plan no se mueve; si no,
+  se acerca en su dirección hasta 53,5 cm, nunca retrocede); en la parada solo vale el limón a < 12 cm de donde se
+  esperaba (el estéreo daba un punto del follaje a 42 cm); agarre de `punta.py` (+2 cm, `GRASP_RAISE_MM`) y canasta;
+  el siguiente limón se mide desde ahí; al final (o tras un fallo) brazo al reposo y base al cero por la odometría
+  (girar, retroceder recto a ≤ 6 cm/s, girar). Usa `~/scripts/27-aruco-arbol/tools` y `~/scripts/20-brazo-coordinado/tools`
+  de la Pi; los planificadores corren en otro proceso (en un hilo el estado de la base envejecía y se cortaba la sesión).
+- Registros: `~/arturito-bridge-0.4.0/data/missions/` (eventos + rosbag); pedidos con tiempos en
+  `~/arturito-bridge-0.9.0/bridge.log`. Reiniciar el puente borra el cero (se puede pasar con `ARTURITO_RESTORE_ORIGIN_JSON`).
+- **Resultados:** 1 limón a la canasta y vuelta al cero (0,9 cm / 4°, ~2 min); con 2, 1 de 2 (el bajo, ~30 cm del
+  piso, falló dos veces).
+- **App 0.12.0** (21/11, `d57b174`, `d514d7d`): en Estado, dibujo del robot que ilumina cada sensor activo y 8 pitidos
+  (SoundPool, `model/SensorAlerts.kt`): ultrasonidos a ≤ 20 cm (se repiten cada 1,5 s), bumpers por bit, IMU > 25° o
+  `VUELCO`, seta; prioridad seta > IMU > bumpers > ultrasonidos; en cualquier pestaña mientras haya conexión; se
+  puede silenciar. Instalada; sin probar con el robot.
