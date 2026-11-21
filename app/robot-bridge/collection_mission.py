@@ -46,6 +46,7 @@ LEMON_STOP_MM = (-500., 150.)   # parada fija de respaldo (21/11: antes -550; a 
 # se mueve; si no, se acerca en la dirección del limón hasta dejarlo a STOP_RADIUS_MM
 STOP_RADIUS_MM, REACH_MM = 535., (500., 550.)   # 21/11: con 520 un limón bajo quedó en 499 mm y punta.py necesita
                                                 # r > ~500 para entrar de frente desde 10 cm
+MIN_BEARING_DEG = 8.   # J1 no baja de 3°: con el limón a 3° o más adelante de J1 hay agarre a 13-21 cm de z (21/11)
 ZONE_M, ZONE_DEG = .04, 5.
 # Al llegar a la parada se sabe dónde tiene que estar el limón del cero: solo vale uno a menos de esto de ahí. El
 # estéreo a veces mide el follaje delante del limón (21/11: el mismo limón a 42 y a 77 cm, alternando); ese punto
@@ -176,7 +177,11 @@ class CollectionMission:
             plan, _ = await self.plan(owner, original, 'planear_agarre_tol', angles, target, to_basket)
             if plan is not None:
                 return [], target
-        for stop in ((target[0] * STOP_RADIUS_MM / r, target[1] * STOP_RADIUS_MM / r), LEMON_STOP_MM):
+        # 21/11: con el limón justo a la izquierda de J1 (y ≈ -2 cm) la parada en su dirección pedía J1 = 1,4° (mín. 3°)
+        # y no había agarre: probar también a la misma distancia pero con el limón al menos MIN_BEARING_DEG adelante
+        bearing = max(math.atan2(target[1], -target[0]), math.radians(MIN_BEARING_DEG))
+        ahead = (-STOP_RADIUS_MM * math.cos(bearing), STOP_RADIUS_MM * math.sin(bearing))
+        for stop in ((target[0] * STOP_RADIUS_MM / r, target[1] * STOP_RADIUS_MM / r), ahead, LEMON_STOP_MM):
             steps = navigation.planear(target[:2], 0., stop, orientar=False)
             if any(kind == 'recto' and not 0 < value <= navigation.MAX_RECTO for kind, value in steps):
                 continue

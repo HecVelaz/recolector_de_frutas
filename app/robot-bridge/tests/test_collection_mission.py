@@ -81,7 +81,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(self.mission.start('operator', self.origin)['active'])
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'RECUPERACION')
-        self.assertEqual(self.navigation.planear.call_count, 2)   # en su dirección y la parada fija: las dos retroceden
+        self.assertEqual(self.navigation.planear.call_count, 3)   # su dirección, la de 8° adelante y la fija: todas retroceden
         self.control.open.assert_not_called()
         self.assertEqual(len(list((Path(self.temp.name) / 'missions').glob('*.json'))), 1)
 
