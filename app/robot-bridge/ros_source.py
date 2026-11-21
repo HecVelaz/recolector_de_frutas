@@ -79,8 +79,12 @@ class RosReader:
                 pass
             else:
                 from sensor_msgs.msg import CameraInfo
-                from stereo_msgs.msg import DisparityImage
                 import vision
+                try:
+                    from vision_msgs.msg import Detection2DArray
+                except ImportError:
+                    Detection2DArray = None
+                boxes = {'at': -math.inf, 'list': []}   # última salida de YOLO (sobre /left/image_rect)
                 projection = {'left': None, 'right': None}   # matriz P de cada cámara rectificada
                 last_conversion = {key: -math.inf for key in CAMERAS}
 
@@ -99,6 +103,8 @@ class RosReader:
 
                 def show(key, picture, p):
                     try:
+                        if picture is not None and key == 'center' and camera_frames.clock() - boxes['at'] <= 1.:
+                            vision.draw_boxes(cv2, picture, boxes['list'])
                         camera_frames.put(key, b'' if picture is None else
                                           vision.encode(cv2, vision.draw_lemons(cv2, picture, lemons(), p)))
                     except cv2.error:
@@ -116,19 +122,22 @@ class RosReader:
                             show(key, vision.image_to_bgr(cv2, np, image), projection[key if key == 'right' else 'left'])
                     return callback
 
-                def depth(message):
-                    if not due('center'):
-                        return
-                    disparity = vision.disparity_to_array(np, message)
-                    picture = None if disparity is None else vision.depth_view(
-                        cv2, np, disparity, message.min_disparity, message.max_disparity)
-                    show('center', picture, projection['left'])
-
                 subscribe(CameraInfo, '/left/camera_info', info('left'))
                 subscribe(CameraInfo, '/right/camera_info', info('right'))
                 subscribe(Image, CAMERAS['left'], camera('left'))
+                def detections(message):
+                    found = []
+                    for d in message.detections[:20]:
+                        best = max(d.results, key=lambda r: r.hypothesis.score, default=None)
+                        values = (d.bbox.center.position.x, d.bbox.center.position.y, d.bbox.size_x, d.bbox.size_y)
+                        if best is not None and all(map(math.isfinite, values)) and values[2] > 0 and values[3] > 0:
+                            found.append(values + (best.hypothesis.class_id[:20], float(best.hypothesis.score)))
+                    boxes['at'], boxes['list'] = camera_frames.clock(), found
+
+                if Detection2DArray is not None:
+                    subscribe(Detection2DArray, '/yolo/detecciones', detections)
+                subscribe(Image, CAMERAS['center'], camera('center'))
                 subscribe(Image, CAMERAS['right'], camera('right'))
-                subscribe(DisparityImage, CAMERAS['center'], depth)
         if stereo is not None:
             from geometry_msgs.msg import PoseArray
             from stereo_msgs.msg import DisparityImage

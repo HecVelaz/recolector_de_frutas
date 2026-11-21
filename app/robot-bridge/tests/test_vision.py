@@ -69,21 +69,13 @@ class ViewsTest(unittest.TestCase):
         self.assertIsNone(vision.project({'x_m': 0., 'y_m': 0., 'z_m': 0.}, P_LEFT))
 
     @unittest.skipUnless(HAS_CV, 'opencv')
-    def test_marks_lemons_and_colors_depth(self):
+    def test_marks_lemons(self):
         image = np.zeros((480, 640, 3), np.uint8)
         lemon = {'x_m': -.123, 'y_m': -.002, 'z_m': .447}
         vision.draw_lemons(cv2, image, [lemon], P_LEFT)
         u, v, radius = (round(x) for x in vision.project(lemon, P_LEFT))
         self.assertTrue((image[v, u - radius] == vision.MARK_COLOR).all())     # el borde del círculo
-        disparity = np.full((480, 640), np.nan, np.float32)
-        disparity[:, :320] = 175.   # cerca
-        disparity[:, 320:400] = 75.  # lejos
-        depth = vision.depth_view(cv2, np, disparity, 70., 181.)
-        self.assertTrue((depth[:, 400:] == 0).all())                  # sin dato: negro
-        near, far = depth[0, 0].astype(int), depth[0, 350].astype(int)
-        self.assertGreater(near[2], near[0])                          # cerca: rojo > azul
-        self.assertGreater(far[0], far[2])                            # lejos: azul > rojo
-        jpeg = vision.encode(cv2, depth)
+        jpeg = vision.encode(cv2, image)
         self.assertTrue(jpeg.startswith(b'\xff\xd8') and jpeg.endswith(b'\xff\xd9'))
 
     @unittest.skipUnless(HAS_CV, 'opencv')
@@ -93,7 +85,10 @@ class ViewsTest(unittest.TestCase):
         self.assertEqual(vision.image_to_bgr(cv2, np, bgra).tolist(), [[[1, 2, 3], [4, 5, 6]]])
         self.assertIsNone(vision.image_to_bgr(cv2, np, SimpleNamespace(encoding='16UC1', width=1, height=1, step=2,
                                                                        data=b'00')))
-        values = np.array([[70., 181.]], '<f4')
-        message = SimpleNamespace(image=SimpleNamespace(encoding='32FC1', width=2, height=1, step=8,
-                                                        is_bigendian=0, data=values.tobytes()))
-        self.assertEqual(vision.disparity_to_array(np, message).tolist(), [[70., 181.]])
+
+    @unittest.skipUnless(HAS_CV, 'opencv')
+    def test_draws_yolo_boxes(self):
+        image = np.zeros((480, 640, 3), np.uint8)
+        vision.draw_boxes(cv2, image, [(200., 240., 40., 50., 'limon', .87)])
+        self.assertTrue((image[240, 180] == (255, 120, 0)).all())   # borde izquierdo de la caja
+        self.assertTrue((image[240, 200] == 0).all())               # adentro queda la imagen

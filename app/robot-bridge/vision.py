@@ -1,7 +1,7 @@
 """Último JPEG por vista de cámara y dibujo de los limones. Independiente de las órdenes.
 
-Vistas (20/11): izquierda = la imagen anotada por YOLO; central = mapa de profundidad (disparidad del estéreo en
-colores, cerca = cálido); derecha = la imagen rectificada derecha. En las tres se marcan los limones de /limon/todos
+Vistas (20/11): izquierda = la imagen anotada por YOLO; central = la imagen normal (izquierda rectificada, la que
+usa el estéreo y sobre la que corre YOLO, con sus cajas de /yolo/detecciones); derecha = la imagen rectificada derecha. En las tres se marcan los limones de /limon/todos
 (metros, marco óptico `camera` de la izquierda rectificada) proyectados con la matriz P de cada cámara y su distancia.
 """
 
@@ -10,7 +10,7 @@ import time
 
 CAMERAS = {
     'left': '/yolo/left/image_annotated',
-    'center': '/disparity',
+    'center': '/left/image_rect',
     'right': '/right/image_rect',
 }
 MAX_JPEG_BYTES = 1_048_576
@@ -77,14 +77,17 @@ def draw_lemons(cv2, image, points, p):
     return image
 
 
-def depth_view(cv2, np, disparity, d_min, d_max):
-    """Disparidad (px, float) en colores: más disparidad = más cerca = más cálido; sin dato = negro."""
-    d = np.nan_to_num(np.asarray(disparity, dtype=np.float32), nan=0., posinf=0., neginf=0.)
-    valid = (d >= d_min) & (d <= d_max) & (d > 0)
-    scaled = np.clip((d - d_min) * (255. / max(d_max - d_min, 1e-6)), 0, 255).astype(np.uint8)
-    colored = cv2.applyColorMap(scaled, getattr(cv2, 'COLORMAP_TURBO', cv2.COLORMAP_JET))
-    colored[~valid] = 0
-    return colored
+def draw_boxes(cv2, image, boxes):
+    """Cajas de YOLO [(u centro, v centro, ancho, alto, clase, confianza), ...] en píxeles de esa misma imagen."""
+    for u, v, w, h, name, score in boxes:
+        top_left = (round(u - w / 2), round(v - h / 2))
+        bottom_right = (round(u + w / 2), round(v + h / 2))
+        cv2.rectangle(image, top_left, bottom_right, (255, 120, 0), 2)
+        label = f'{name} {score:.2f}'
+        origin = (top_left[0], max(14, top_left[1] - 6))
+        cv2.putText(image, label, origin, cv2.FONT_HERSHEY_SIMPLEX, .55, (0, 0, 0), 4, cv2.LINE_AA)
+        cv2.putText(image, label, origin, cv2.FONT_HERSHEY_SIMPLEX, .55, (255, 120, 0), 1, cv2.LINE_AA)
+    return image
 
 
 def image_to_bgr(cv2, np, image):
@@ -98,17 +101,6 @@ def image_to_bgr(cv2, np, image):
     conversion = {'rgb8': cv2.COLOR_RGB2BGR, 'bgra8': cv2.COLOR_BGRA2BGR, 'rgba8': cv2.COLOR_RGBA2BGR,
                   'mono8': cv2.COLOR_GRAY2BGR}.get(image.encoding)
     return cv2.cvtColor(pixels, conversion) if conversion is not None else pixels.copy()
-
-
-def disparity_to_array(np, message):
-    """stereo_msgs/DisparityImage (32FC1) -> arreglo float32, o None."""
-    image = message.image
-    if (image.encoding != '32FC1' or not 0 < image.width <= 1920 or not 0 < image.height <= 1080
-            or image.step < image.width * 4 or len(image.data) != image.step * image.height):
-        return None
-    dtype = np.dtype('>f4' if image.is_bigendian else '<f4')
-    rows = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.step)
-    return rows[:, :image.width * 4].copy().view(dtype).reshape(image.height, image.width).astype(np.float32)
 
 
 def encode(cv2, image):

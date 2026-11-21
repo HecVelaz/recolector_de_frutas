@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 /** Vistas del puente (20/11). En las tres se marcan los limones detectados con su distancia. */
 enum class RobotCamera(val id: String, val label: String, val description: String) {
     LEFT("left", "Izquierdo", "Cámara izquierda con las detecciones de YOLO"),
-    CENTER("center", "Central", "Mapa de profundidad del estéreo: cerca en rojo, lejos en azul"),
+    CENTER("center", "Central", "Imagen normal con los limones detectados y su distancia"),
     RIGHT("right", "Derecho", "Cámara derecha con los limones del estéreo")
 }
 
