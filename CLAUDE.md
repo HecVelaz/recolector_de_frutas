@@ -67,5 +67,6 @@ YOLO, lo localiza con estéreo y lo agarra** (`docs/ARQUITECTURA.md`). **Fecha l
 ## Estructura
 - `firmware/lib/` drivers y lógica compartidos; `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
 - `ros2_ws/src/`: `brazo_ik` (cinemática inversa), `mision` (FSM de la demo y TF cámara → brazo), `simulacion` (Gazebo Harmonic).
+- `app/`: `android-app/` (app Arturito de la tablet) y `robot-bridge/` (puente FastAPI de la Pi, puerto 8001).
 - `docs/`: consignas, `TPF R1/` y `TPF R2/` (una carpeta por entrega), `fotos/`, `html/`, `manual/`, estado, decisiones y bitácora.
 - Pi 5: `r2d2@100.116.96.71` (Tailscale `r2d2-desktop`); copia del repo por rsync con `/pi-sync`.

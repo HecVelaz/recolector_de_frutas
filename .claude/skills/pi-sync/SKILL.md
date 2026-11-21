@@ -36,6 +36,11 @@ ros2_ws/install/
 ros2_ws/log/
 __pycache__/
 *.mp4
+app/android-app/
+app/.codex-build/
+app/robot-bridge/.venv/
+app/robot-bridge/data/
+app/robot-bridge/*.zip
 EOF
 ```
 Sin `--delete` (en la Pi puede haber cosas que no están acá). Si la lista se ve bien, repetir sin `-n`.

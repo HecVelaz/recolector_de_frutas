@@ -1,0 +1,18 @@
+# Compilación del firmware micro-ROS del brazo hecha por Codex (19/11): copia de las fuentes, ZIPs y el respaldo
+# de la flash de la WROOM (respaldo_wroom_pre_microros_20261119.bin). Queda solo en local y en la Pi
+# (~/arturito-build/20261119).
+.codex-build/
+
+# Android: APK, caches y ruta local del SDK
+android-app/app/build/
+android-app/.gradle/
+android-app/.kotlin/
+android-app/.idea/
+android-app/local.properties
+android-app/hs_err_pid*.log
+android-app/replay_pid*.log
+
+# Puente: entorno virtual (el de Mathias es de Windows), clave y geocerca de la Pi, paquetes
+robot-bridge/.venv/
+robot-bridge/data/
+robot-bridge/*.zip

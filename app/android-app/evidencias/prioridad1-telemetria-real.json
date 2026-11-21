@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "timestamp_ms": 1795117087811,
+  "source": "ros2",
+  "simulated": false,
+  "upstream_available": true,
+  "base_state": "DESARMADA modo=parado seguridad=EMERGENCIA (seta) SETA BATERIA_BAJA imu=SIN_DATOS rueda_izq=ninguna rueda_der=ninguna imu_rec=2 enlace: pings_fallidos=140 cortes=4",
+  "base_freshness_known": true,
+  "gps": null,
+  "battery_voltage": 0.05,
+  "alarms": [
+    "Seta de emergencia informada por la base",
+    "Seguridad de la base: EMERGENCIA (seta)",
+    "Brazo y servos: sin mensajes",
+    "IMU: sin mensajes",
+    "Distancia frontal: medición inválida",
+    "Distancia izquierda: medición inválida",
+    "Distancia derecha: medición inválida",
+    "La base informa batería baja",
+    "La base informa IMU sin datos válidos"
+  ],
+  "commands_enabled": false,
+  "geofence_enforced": false,
+  "sources": [
+    {
+      "key": "base",
+      "topic": "/base/estado",
+      "label": "Base",
+      "status": "fresh",
+      "age_ms": 101,
+      "value": "DESARMADA modo=parado seguridad=EMERGENCIA (seta) SETA BATERIA_BAJA imu=SIN_DATOS rueda_izq=ninguna rueda_der=ninguna imu_rec=2 enlace: pings_fallidos=140 cortes=4",
+      "reason": null
+    },
+    {
+      "key": "arm",
+      "topic": "/brazo/estado",
+      "label": "Brazo y servos",
+      "status": "waiting",
+      "age_ms": null,
+      "value": null,
+      "reason": "Todavía no se recibieron mensajes"
+    },
+    {
+      "key": "battery",
+      "topic": "/battery",
+      "label": "Batería",
+      "status": "fresh",
+      "age_ms": 103,
+      "value": 0.04766667261719704,
+      "reason": null
+    },
+    {
+      "key": "imu",
+      "topic": "/imu/data_raw",
+      "label": "IMU",
+      "status": "waiting",
+      "age_ms": null,
+      "value": null,
+      "reason": "Todavía no se recibieron mensajes"
+    },
+    {
+      "key": "odom",
+      "topic": "/odom",
+      "label": "Odometría de ruedas",
+      "status": "fresh",
+      "age_ms": 26,
+      "value": {
+        "x_m": -0.0001133330661104992,
+        "y_m": 4.013870835706257e-08,
+        "linear_m_s": 0.0,
+        "angular_rad_s": 0.0,
+        "frame_id": "odom",
+        "child_frame_id": "base_link"
+      },
+      "reason": null
+    },
+    {
+      "key": "bumpers",
+      "topic": "/bumpers",
+      "label": "Bumpers",
+      "status": "fresh",
+      "age_ms": 9,
+      "value": 0,
+      "reason": null
+    },
+    {
+      "key": "range_front",
+      "topic": "/range/frente",
+      "label": "Distancia frontal",
+      "status": "invalid",
+      "age_ms": 9,
+      "value": null,
+      "reason": "Sin eco o distancia inválida"
+    },
+    {
+      "key": "range_left",
+      "topic": "/range/izq",
+      "label": "Distancia izquierda",
+      "status": "invalid",
+      "age_ms": 9,
+      "value": null,
+      "reason": "Sin eco o distancia inválida"
+    },
+    {
+      "key": "range_right",
+      "topic": "/range/der",
+      "label": "Distancia derecha",
+      "status": "invalid",
+      "age_ms": 9,
+      "value": null,
+      "reason": "Sin eco o distancia inválida"
+    }
+  ],
+  "boards": {
+    "base": {
+      "status": "fresh",
+      "age_ms": 101
+    },
+    "arm": {
+      "status": "waiting",
+      "age_ms": null
+    }
+  },
+  "alarm_details": [
+    {
+      "code": "SETA",
+      "severity": "critical",
+      "message": "Seta de emergencia informada por la base",
+      "source": "base"
+    },
+    {
+      "code": "SEGURIDAD_BASE",
+      "severity": "critical",
+      "message": "Seguridad de la base: EMERGENCIA (seta)",
+      "source": "base"
+    },
+    {
+      "code": "ARM_WAITING",
+      "severity": "warning",
+      "message": "Brazo y servos: sin mensajes",
+      "source": "arm"
+    },
+    {
+      "code": "IMU_WAITING",
+      "severity": "warning",
+      "message": "IMU: sin mensajes",
+      "source": "imu"
+    },
+    {
+      "code": "RANGE_FRONT_INVALID",
+      "severity": "warning",
+      "message": "Distancia frontal: medición inválida",
+      "source": "range_front"
+    },
+    {
+      "code": "RANGE_LEFT_INVALID",
+      "severity": "warning",
+      "message": "Distancia izquierda: medición inválida",
+      "source": "range_left"
+    },
+    {
+      "code": "RANGE_RIGHT_INVALID",
+      "severity": "warning",
+      "message": "Distancia derecha: medición inválida",
+      "source": "range_right"
+    },
+    {
+      "code": "BATERIA_BAJA",
+      "severity": "warning",
+      "message": "La base informa batería baja",
+      "source": "base"
+    },
+    {
+      "code": "IMU_SIN_DATOS",
+      "severity": "warning",
+      "message": "La base informa IMU sin datos válidos",
+      "source": "base"
+    }
+  ],
+  "arm_state": null
+}

@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Arturito</string>
+    <string name="welcome_title">Arturito R2D2</string>
+    <string name="welcome_subtitle">Robot recolector de frutas</string>
+    <string name="project_ready">Proyecto Android nativo listo</string>
+    <string name="stage_description">Etapa 2 · Kotlin y Jetpack Compose</string>
+</resources>

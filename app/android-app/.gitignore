@@ -1,0 +1,8 @@
+.gradle/
+.kotlin/
+.idea/
+**/build/
+local.properties
+*.iml
+hs_err_pid*.log
+*.hprof

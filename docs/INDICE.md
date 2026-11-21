@@ -58,3 +58,7 @@ terceros quedan fuera de git (`.gitignore`).
   EncoderPCNT, HCSR04, MPU9250, UP501). `firmware/brazo/` y `firmware/base/`: un proyecto PlatformIO por placa.
 - `ros2_ws/src/brazo_ik/`: nodo de cinemática inversa; `ros2_ws/src/mision/`: FSM de la demo y TF cámara → brazo. `ros2_ws/src/simulacion/`: Gazebo Harmonic (hilera + robot). `vision/entrenamiento_limon/`: cuaderno de Colab del
   detector. `graphify-out/`: grafo del repo (local, fuera de git).
+- `app/` (traída el 20/11 de la carpeta de Mathias, hecha con Codex): `android-app/` = app **Arturito** (Kotlin +
+  Compose, tablet Xiaomi Pad 5; telemetría, mapa y geocerca, mando manual, visión, recolección) y `robot-bridge/` =
+  puente FastAPI de la Pi (puerto 8001, `API_V1.md`) entre la app y ROS 2. `.codex-build/` (local, fuera de git):
+  compilación micro-ROS del brazo del 19/11 y respaldo de la flash de la WROOM.
