@@ -50,17 +50,17 @@ fun RobotSensorDiagram(looks: Map<SensorAlert, SensorLook>, modifier: Modifier =
         withTransform({
             translate((size.width - 440f * scale) / 2, (size.height - 360f * scale) / 2)
             scale(scale, scale, Offset.Zero)
-        }) { robot(looks, measurer, ink) }
+        }) { robot(looks, measurer, ink, scale) }
     }
 }
 
-private fun DrawScope.robot(looks: Map<SensorAlert, SensorLook>, measurer: TextMeasurer, ink: Color) {
+private fun DrawScope.robot(looks: Map<SensorAlert, SensorLook>, measurer: TextMeasurer, ink: Color, scale: Float) {
     fun look(alert: SensorAlert) = looks[alert] ?: SensorLook.NO_DATA
     fun color(alert: SensorAlert, on: Color, off: Color) = when (look(alert)) {
         SensorLook.ACTIVE -> on; SensorLook.NORMAL -> off; SensorLook.NO_DATA -> NO_DATA
     }
     fun label(text: String, x: Float, y: Float, color: Color = ink, bold: Boolean = false, size: Int = 12) {
-        val layout = measurer.measure(text, TextStyle(color = color, fontSize = size.sp,
+        val layout = measurer.measure(text, TextStyle(color = color, fontSize = (size / scale).sp,  // el lienzo ya está escalado
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Medium))
         drawText(layout, topLeft = Offset(x - layout.size.width / 2f, y - layout.size.height / 2f))
     }
@@ -103,10 +103,10 @@ private fun DrawScope.robot(looks: Map<SensorAlert, SensorLook>, measurer: TextM
     bumper(SensorAlert.BUMPER_FRENTE, Offset(244f, 121f), Offset(300f, 121f))
     bumper(SensorAlert.BUMPER_IZQ, Offset(91f, 165f), Offset(91f, 235f))
     bumper(SensorAlert.BUMPER_DER, Offset(349f, 165f), Offset(349f, 235f))
-    label("Bumper", 44f, 192f, bold = look(SensorAlert.BUMPER_IZQ) == SensorLook.ACTIVE)
-    label("izquierdo", 44f, 208f, bold = look(SensorAlert.BUMPER_IZQ) == SensorLook.ACTIVE)
-    label("Bumper", 396f, 192f, bold = look(SensorAlert.BUMPER_DER) == SensorLook.ACTIVE)
-    label("derecho", 396f, 208f, bold = look(SensorAlert.BUMPER_DER) == SensorLook.ACTIVE)
+    label("Bumper", 44f, 189f, bold = look(SensorAlert.BUMPER_IZQ) == SensorLook.ACTIVE)
+    label("izquierdo", 44f, 211f, bold = look(SensorAlert.BUMPER_IZQ) == SensorLook.ACTIVE)
+    label("Bumper", 396f, 189f, bold = look(SensorAlert.BUMPER_DER) == SensorLook.ACTIVE)
+    label("derecho", 396f, 211f, bold = look(SensorAlert.BUMPER_DER) == SensorLook.ACTIVE)
     label("Bumper frontal", 220f, 150f, Color.White, bold = look(SensorAlert.BUMPER_FRENTE) == SensorLook.ACTIVE, size = 11)
 
     // IMU y seta, en la parte de atrás.
