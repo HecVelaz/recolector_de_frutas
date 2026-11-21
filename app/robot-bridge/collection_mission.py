@@ -116,7 +116,10 @@ class CollectionMission:
             raise RuntimeError('La recolección superó el tiempo permitido')
         if monotonic() >= self.deadline:
             raise RuntimeError('Se perdió la supervisión de Arturito')
-        self.control.mission_velocity(owner, linear, angular)
+        try:
+            self.control.mission_velocity(owner, linear, angular)
+        except HTTPException as error:
+            raise RuntimeError(base_refusal(self.control.snapshot(), linear) or error.detail) from error
         if self.zone is not None and not stopped_near(self.zone, source_value(self.control.snapshot(), 'odom')):
             raise RuntimeError('El Móvil salió de la zona de agarre o dejó de estar detenido')
 
@@ -457,6 +460,24 @@ def arm_angles(state):
     if len(angles) != 3 or not all(map(math.isfinite, angles)):
         raise HTTPException(409, 'Los ángulos del brazo no son válidos')
     return angles
+
+
+def base_refusal(snapshot, linear):
+    """Por qué la base no aceptó el movimiento, en palabras del operador (o None si no se sabe)."""
+    fields = (snapshot.get('base_state') or '').split()
+    def distance(key):
+        value = source_value(snapshot, key) if snapshot.get('sources') else None
+        return f' a {value["meters"] * 100:.0f} cm' if isinstance(value, dict) and value.get('kind') == 'distance' else ''
+    if linear > 0 and any(field.startswith('no_avanza') for field in fields):
+        return f'Obstáculo adelante{distance("range_front")}: el Móvil no puede avanzar. Despejá el frente y volvé a calcular el cero.'
+    if linear < 0 and 'no_retrocede' in fields:
+        return 'El Móvil no puede retroceder (bloqueo atrás): revisá los bumpers y despejá detrás.'
+    safety = next((field.split('=', 1)[1] for field in fields if field.startswith('seguridad=')), None)
+    if safety not in (None, 'ok'):
+        return f'La base frenó por seguridad ({safety}): {" ".join(fields[:3])}'
+    if fields[:1] != ['ARMADA']:
+        return f'La base dejó de estar armada ({" ".join(fields[:3]) or "sin estado"}).'
+    return None
 
 
 def stopped_near(arrival, odom):

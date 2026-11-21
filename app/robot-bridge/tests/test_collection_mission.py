@@ -124,6 +124,19 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         await self.mission.drive_step('mision', 'recto', 300.)
         self.assertEqual(speeds[0], .10)
 
+    async def test_a_blocked_base_explains_the_obstacle_ahead(self):
+        self.mission.deadline = self.mission.run_until = float('inf')
+        self.control.mission_velocity.side_effect = HTTPException(409, 'La base rechazó el movimiento')
+        self.control.snapshot.return_value = {
+            'base_state': 'ARMADA modo=v/w seguridad=ok no_avanza imu=ok',
+            'sources': [{'key': 'range_front', 'status': 'fresh', 'age_ms': 30,
+                         'value': {'kind': 'distance', 'meters': .175}}]}
+        with self.assertRaisesRegex(RuntimeError, 'Obstáculo adelante a 18 cm'):
+            self.mission.cycle('mision', .1)
+        self.control.snapshot.return_value = {'base_state': 'DESARMADA modo=parado seguridad=SETA', 'sources': []}
+        with self.assertRaisesRegex(RuntimeError, 'seguridad .SETA.'):
+            self.mission.cycle('mision', .1)
+
     def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
         arrival = dict(self.odom, x_m=.2)
         self.assertTrue(stopped_near(arrival, dict(arrival, x_m=.23)))
