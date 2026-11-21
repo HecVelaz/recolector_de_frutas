@@ -2,13 +2,32 @@
 
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
 
+0000. **Recolección desde la app Arturito (20–21/11; detalle en `pruebas-esp32/notas/PENDIENTES.md`), en orden:**
+   1. **El limón bajo (~30 cm del piso) no se agarra** (2 intentos; el alto, a ~46 cm, al primero con
+      `GRASP_RAISE_MM` = +2 cm). Preguntar qué hizo la pinza (por debajo / arriba / corta / lo empujó) y, según eso,
+      corregir la altura según la del limón (`punta.AGARRAR_ARRIBA_H/MM` hoy cubre 35–50 cm del piso) o entrar más
+      hondo. Después repetir con 2–3 limones y 1–2 intentos.
+   2. **Varios limones sin perder de vista a los demás:** hoy se acerca al más cercano y mide el siguiente desde ahí;
+      falta elegir la parada para que los otros sigan en la imagen (y recalcular al acercarse).
+   3. **Rumbo al volver al cero (~4°):** el último giro con la odometría en vez del giróscopo, o corregir con el yaw de
+      `/odom`. Probar la vuelta tras un acercamiento con giros grandes (87°).
+   4. **Firmware del brazo para la demo:** la WROOM quedó en micro-ROS (`62695d4a`, la app funciona), pero
+      `recolectar.py`, `punta.py` sesión y `joystick.py` necesitan el serie (`brazo20_serie_20261119.bin`). Decidir
+      cuál queda (la app ya hace el cero con el limón; el banderín y RODEAR siguen en `recolectar.py`).
+   5. **Carga de la Pi** (load 7–9 con 4 núcleos): bajar los fps de las cámaras o pausar el video de Misión durante la
+      recolección; medir la disparidad (~1,5 Hz).
+   6. Afuera: power bank que dé 5 V / 5 A para la Pi (con el PB2020MI se reiniciaba por bajo voltaje).
+   7. Push de `recolector_de_frutas`, `vision_estereo` y `pruebas-esp32` cuando el usuario lo pida.
+   8. **App 0.12.0 (alertas con sonido, ya instalada):** probar con el robot: tapar cada ultrasonido
+      a < 20 cm, apretar cada bumper y la seta, inclinar la base > 25°; ver que se ilumine el elemento correcto y
+      suene su pitido (los ultrasonidos cada 1,5 s), que la seta tape a los demás y que el interruptor silencie.
 000. **Plan hasta la demo del 27/11** (17/11; robot = usuario, software = Claude en paralelo, probado en Gazebo):
    | Días | Robot | Software |
    |---|---|---|
    | 18–19/11 | ~~Seguridad con los motores (00a d)~~ ✓; `cosechar N` y canasta ✓ | BUSCAR y RODEAR programados (sin probar) |
-   | 20–21/11 | Medir `banderin.json`; probar BUSCAR, RODEAR y base + cosecha juntas | ~~Misión ROS (00a e) en Gazebo~~: navegación con banderín e hilera hecha (19/11, 15/18 paradas) |
+   | 20–21/11 | ~~Medir `banderin.json`; probar BUSCAR, RODEAR~~ → se usó en la app Arturito: base + cosecha juntas ✓ (1 limón; 1 de 2) | ~~Misión ROS (00a e) en Gazebo~~: navegación con banderín e hilera hecha (19/11, 15/18 paradas) |
    | 22–23/11 | Recolección en las 4 paradas | Misión ROS (00a e) con los estados de S3; nodo `seguridad` aparte (S2) |
-   | 24–25/11 | WROOM al env `ros`; probar la misión ROS | Rosbag por misión (S5), GPS en el registro, estado y alarmas en `teleop_web.py` (S6) |
+   | 24–25/11 | ~~WROOM al env `ros`~~ (20/11); probar la misión ROS | Rosbag por misión (S5), GPS en el registro, estado y alarmas en `teleop_web.py` (S6) |
    | 26/11 | Ensayo general y video de respaldo | Ajustes |
    - **Recortado:** hilera (`recorrido.py`), EKF, app nueva, métricas detalladas, madurez por tamaño, celular como
      sensor. H8 (luz y buzzer) solo si sobra un día y hay piezas.
@@ -31,7 +50,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
       firmware 20 (no entiende `/brazo/joint_cmd`) con la WROOM en el env `ros`; los giros con `movimiento.py` / el
       giróscopo o `robot_localization` con `/odom` + IMU; el GPS (±20 m) solo para la rúbrica.
 000b. **Brazo: NO flashear `firmware/brazo`** (el binario `ros` de `d3644c8` en `~/firmware/brazo` de la Pi está viejo).
-   Desde el 11/11 la WROOM tiene `pruebas-esp32/20-brazo-coordinado` (env `brazo`, serie; hoy `brazo20_serie_20261118h.bin`, pinza RDS3218 500/1200; el `ros` en `respaldo_wroom_20261112.bin`) (franja, caja, homing 3/6/3, pinza y
+   Desde el 11/11 la WROOM tiene `pruebas-esp32/20-brazo-coordinado` (desde el 20/11 env `ros`, micro-ROS, fuente `750ba4c`; el serie en `brazo20_serie_20261119.bin`; pinza RDS3218 500/1200) (franja, caja, homing 3/6/3, pinza y
    muñeca; lo usa el teleop `25-teleop-pi`). Falta pasar todo eso a `firmware/brazo` (pendiente "f" de
    `pruebas-esp32/notas/PENDIENTES.md`) y recién ahí flashearlo. Respaldo de 20: `~/firmware/brazo/respaldo_wroom_20261111.bin`.
 
@@ -46,8 +65,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    (4.4 y pie de la Figura 16: PB2020MI y 22,5 W; subir `potencia_v06.png` nuevo con el mismo ID y cambiar el `=w`);
    b) el `.drawio`/PNG de la entrega sigue con **divisor 100 k / 27 k** (no se tocó por ser una entrega: preguntar).
    `placa_s3` ya está republicada con 30 k (16/10).
-0b. ~~**Alimentación de la Pi**~~ (12/11): prueba real de 1 h con el power bank OK (EXT5V ≥ 4,96 V, `0x0`; ESTADO).
-   Cargarlo al 100 % antes de la demo.
+0b. **Alimentación de la Pi:** el 12/11 la prueba de 1 h con el power bank dio OK, pero el 21/11, con la app
+   (visión v4 + puente), se reiniciaba por bajo voltaje; con la fuente oficial de 27 W, `0x0`. Ver 0000.6.
 1. Potencia v0.6 (`docs/CONEXIONES.md`): el fusible de 20 A y la seta (2 bloques NC) ya están: falta el portafusible; cambiar el Deans de la LiPo por XT60
    (sin capacitores en el bus desde el 19/10). Armar el divisor
    100 k / 30 k antes de conectar la LiPo. Prueba integrada mínima: lista en `CONEXIONES.md`.
@@ -59,7 +78,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    antes medir la tira roja (V) de la Freenove y probar si sus LEDs cargan los pines de los bumpers y la seta.
 2b. **Tarea VA de R2 (si no se entregó):** corregir en Colab §6.1 (16 de 20, no 15), volver a poner "Autor: FB",
    §11 (mismo limonero, una foto repetida) y §5.2 (≈ 1,0). Detalle en la bitácora 11/11.
-2c. **Detector v3 (amarillos):** ya en la Pi (12/11) y detecta con las NoIR. Falta compararlo con la v2 en cifras
+2c. **Detector:** desde el 20/11 el **v4** (comparado con el v3 en la bitácora de `pruebas-esp32`). Del v3 faltaba compararlo con la v2 en cifras
    (confianza mediana, 20 cuadros, como el 28/10) y afuera al sol; confirmar el color de los limones de la demo.
 3. Visión: estéreo recalibrado en el mástil y probado en el arbusto (12/11, `calibracion_mastil`). TF cámara → brazo
    **medida el 12/11** (9 puntos, ~2 cm; valores en el docstring de `mision.launch.py`, `radio_limon:=0.025`); el error
