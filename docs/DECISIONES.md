@@ -60,3 +60,6 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
   seta: el firmware anula el comando en curso y la capa ROS desarma la base (hace falta un `armar` nuevo; el puente
   lo manda al abrir cada sesión). Las fallas de rueda, que borraba `r`, ahora las borra `s`. La seta sigue cortando
   los 12 V por hardware (bloque A).
+- **Homing desde la app con 1 s de tolerancia (21/11):** el puente corta el homing si pasa más de 1 s sin aviso de
+  la app (los demás mandos siguen con 0,22 s); el homing lo hace el firmware a 1,5–5 °/s.
+- **Ajuste fino del agarre solo con los puntos del 21/11** (detector v4); los 9 del 18/11 (v3) en `resultados/ajuste_viejo/`.

@@ -3,6 +3,11 @@
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
 
 0000. **Recolección desde la app Arturito (20–21/11; detalle en `pruebas-esp32/notas/PENDIENTES.md`), en orden:**
+   0. **Primero (21/11, al cerrar):** la Pi quedó offline y la tablet fuera del USB; revisar, `arrancar_pi.sh` si se
+      reinició, túnel + `adb reverse`. Después: homing desde la app (ya tolera 1 s), cero y **cosecha con el ajuste
+      fino nuevo** (5 puntos); probar la **seta suelta sin `r`** (debe volver a `sin comandos` sola) y las alertas 0.12.0.
+      Si falla abajo: 2–3 puntos más de `ajustar` a 30–35 cm del piso (limón a 50–53 cm de J1) y del otro lado de la imagen.
+      Adaptar `base_sim` y el teleop 25 (todavía esperan `r`).
    1. **El limón bajo (~30 cm del piso) no se agarra** (2 intentos; el alto, a ~46 cm, al primero con
       `GRASP_RAISE_MM` = +2 cm). Preguntar qué hizo la pinza (por debajo / arriba / corta / lo empujó) y, según eso,
       corregir la altura según la del limón (`punta.AGARRAR_ARRIBA_H/MM` hoy cubre 35–50 cm del piso) o entrar más

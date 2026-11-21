@@ -900,3 +900,31 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   (SoundPool, `model/SensorAlerts.kt`): ultrasonidos a ≤ 20 cm (se repiten cada 1,5 s), bumpers por bit, IMU > 25° o
   `VUELCO`, seta; prioridad seta > IMU > bumpers > ultrasonidos; en cualquier pestaña mientras haya conexión; se
   puede silenciar. Instalada; sin probar con el robot.
+
+## 2026-11-21 (madrugada, 2) — Seta y vuelco sin `r`, ajuste fino del agarre, homing tolerante
+- **Docs:** `/verificar-robot` antes del push (firmware 20/20 y 18/18 sin warnings, `colcon test` 81, rutas OK;
+  fallaban ESTADO > 80 líneas y la Pi atrasada); ESTADO achicado; push `ac7c6ef..5f34709`; `/pi-sync` (95 archivos,
+  `mision` y `simulacion` compilados en la Pi, `.commit` `e630789`; la skill excluye ahora `.pytest_cache/`).
+- **Prueba de la app 0.12.0 con el robot:** conectada, los 8 sensores con dato; la seta se encendió y quedó
+  enclavada al soltarla (firmware de entonces), rearmada con `r` por `/base/comando`.
+- **Seta y vuelco sin enclavar (`ff9172d`, pedido del usuario; ver DECISIONES):** `SeguridadBase` sin `rearmar()`;
+  vuelco con 3° de histéresis; `main.cpp` anula el comando en emergencia o vuelco; `capa_ros.cpp` desarma la base
+  (hace falta `armar`); `s` borra las fallas de rueda; sin comando `r`. Pruebas 20/20, `esp32s3` y `ros` sin warnings.
+  **S3 flasheada** con `~/firmware/base_ros_20261121_sin_r` (respaldo: `~/firmware/base_ros_20261117_imu`); abre
+  sesión. La prueba de la seta suelta sin `r` quedó sin hacer.
+- **Ajuste fino del agarre (`punta.py ajustar`, firmware serie):** 5 puntos en
+  `20/resultados/ajuste_20261121.csv` (los 9 del 18/11, con el v3, en `resultados/ajuste_viejo/`). `ajuste fin`:
+  adelante constante **+2,7 cm** (±3,3 → ±2,3 cm), izquierda ~+2,4 cm con altura y lado (±2,9 → ±0,4), arriba sin
+  corrección (±2,1; el punto 5 pedía +4,6, distinto al resto). El punto bajo (27 cm) quedó con J2 en su tope (80°);
+  a 45–46 cm de J1 y 27 cm del piso no llega (franja). `GRASP_RAISE_MM` (+2 cm) se deja.
+- **Error al flashear:** `brazo20_serie_20261119.bin` es una **imagen completa** (va en 0x0); grabada en 0x10000
+  la WROOM quedó en bucle de `SW_RESET` (12 V apagados); arreglado regrabando en 0x0. El micro-ROS
+  (`~/arturito-build/20261120/firmware.bin`) es solo la app (0x10000). WROOM de vuelta al micro-ROS al terminar.
+  `punta.py` sin terminal: `~/ajuste/iniciar.sh` (lee comandos de `~/ajuste/in.txt`) y `~/ajuste/consola.sh`
+  (`ssh -t r2d2@100.116.96.71 ajuste/consola.sh`).
+- **Homing desde la app cortado** ("Homing interrumpido por falta de comunicación"): el puente exigía un aviso cada
+  0,22 s y la Pi cargada a veces se atrasaba; el brazo terminó (c=111) pero quedó `arm-homing-pending`. **`HOME_LEASE`
+  = 1 s** solo en el homing (`bdf6857`, 92 pruebas en la Pi). Puente reiniciado con `~/arturito-bridge-0.9.0/lanzar_puente.sh`
+  (respaldo `physical_control.py.antes_home_lease_20261121`); carga el ajuste de 5 puntos. Un `pkill -f` sin anclar
+  cortó la propia sesión ssh (el patrón estaba en el comando).
+- **Al final la Pi quedó offline** (Tailscale "last seen 1m") y la tablet desconectada del USB: sin diagnosticar.
