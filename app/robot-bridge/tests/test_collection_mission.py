@@ -75,6 +75,19 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(seen, 2)
         self.assertEqual([round(v) for v in lemon], [-500, 200, round(100 + GRASP_RAISE_MM / 1.43)])   # 2 cm más arriba
 
+    async def test_measure_origin_accepts_two_rough_views(self):
+        # 21/11: un limón lejos (~95 cm) da 2 lecturas con ~20 mm de diferencia: alcanza para el cero
+        grasp = Mock(AGRUPAR_MM=35., MIN_POSICIONES=3, DISPERSION_MAX=10.)
+        grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
+        frames = [(1., 'camera', [{'x_m': -.7, 'y_m': .3, 'z_m': .2}]), (2., 'camera', [{'x_m': -.7, 'y_m': .3, 'z_m': .22}])]
+        self.stereo.target_frame.side_effect = frames + [frames[-1]] * 200
+        with (patch.object(self.mission, 'planners', return_value=(None, grasp, None)),
+              patch('collection_mission.ORIGIN_SECONDS', .3), patch('collection_mission.monotonic',
+                                                                    side_effect=[0.] + [k * .01 for k in range(500)])):
+            lemon, seen = await self.mission.measure_origin(lambda: True)
+        self.assertEqual(seen, 1)
+        self.assertEqual(round(lemon[0]), -700)
+
     async def test_plan_rejects_reverse_before_enabling_the_robot(self):
         self.navigation.planear.return_value = [('recto', -100.)]
         with self.planners():

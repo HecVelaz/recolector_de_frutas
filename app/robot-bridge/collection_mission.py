@@ -39,6 +39,10 @@ STUCK_NEAR_DEG = 2.
 # (config.h SOLTAR_*): si J2 y J3 ya están dentro de esa zona, se quedan donde están y solo gira J1
 J1_MAX_NORMAL, FOLDED_Q2, FOLDED_Q3_MIN = 118., (42.3, 50.7), 78.3
 ORIGIN_SECONDS = 4.5      # medición del limón para el cero (21/11: con 3 s y la estéreo a ~1 Hz a veces juntaba solo 2 de las 3 lecturas; la app corta a los 5 s)
+# 21/11: el cero solo sirve para planear el acercamiento; al llegar, la cosecha vuelve a medir con el criterio estricto
+# de punta (MIN_POSICIONES, DISPERSION_MAX) y a menos de EXPECTED_RADIUS_MM. Por eso acá alcanza con menos (un limón a
+# ~95 cm de la cámara daba 2 lecturas en 3 s y no se podía fijar el cero sin acercar el robot a mano).
+ORIGIN_MIN_VIEWS, ORIGIN_SPREAD_MM = 2, 30.
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
 LEMON_STOP_MM = (-500., 150.)   # parada fija de respaldo (21/11: antes -550; a 57 cm la pinza quedó 3 cm corta)
@@ -359,9 +363,9 @@ class CollectionMission:
             if not still():
                 raise ValueError('Mantené quieto el Móvil y soltá los mandos para fijar el cero.')
 
-        groups = group_lemons(await self.collect_frames(ORIGIN_SECONDS, tick), grasp.AGRUPAR_MM, grasp.MIN_POSICIONES)
+        groups = group_lemons(await self.collect_frames(ORIGIN_SECONDS, tick), grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
         lemons = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
-                  if spread <= grasp.DISPERSION_MAX]
+                  if spread <= ORIGIN_SPREAD_MM]
         if not lemons:
             raise ValueError('No veo un limón estable: dejá el limonero a la vista de la cámara izquierda (40-95 cm).')
         return min(lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
