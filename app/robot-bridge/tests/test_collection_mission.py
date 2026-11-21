@@ -95,9 +95,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
         async def harvest(owner, original, tf, count, to_basket, expected):
             self.assertIsNotNone(self.mission.zone)   # el brazo solo actúa con la zona de agarre fijada
-            r = math.hypot(-575., 290.)   # a 64 cm: se acerca en su dirección hasta dejarlo a 52 cm de J1
-            self.assertAlmostEqual(expected[0], -575. * 520. / r)
-            self.assertAlmostEqual(expected[1], 290. * 520. / r)
+            r = math.hypot(-575., 290.)   # a 64 cm: se acerca en su dirección hasta dejarlo a 53,5 cm de J1
+            self.assertAlmostEqual(expected[0], -575. * 535. / r)
+            self.assertAlmostEqual(expected[1], 290. * 535. / r)
             self.assertEqual(expected[2], 128.)
             return 1
 
@@ -162,8 +162,31 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('2 de 2 en la canasta', self.mission.status['message'])
         self.assertEqual(targets[0], (-500., 150., 128.))   # el primero sin moverse
         r = math.hypot(*second[:2])
-        self.assertAlmostEqual(targets[1][0], second[0] * 520. / r)   # el segundo, acercándose a 52 cm
+        self.assertAlmostEqual(targets[1][0], second[0] * 535. / r)   # el segundo, acercándose a 53,5 cm
         self.assertEqual(driven, [('recto', 80.)])
+
+    async def test_a_next_lemon_without_plan_ends_normally_and_goes_home(self):
+        self.origin = make_lemon_origin((-520., 150., 128.), 2, self.odom)
+        calls = []
+
+        async def harvest(owner, original, tf, count, to_basket, expected):
+            calls.append(expected)
+            if len(calls) == 2:
+                raise RuntimeError('Ningún limón tiene plan de agarre')
+            return 1
+
+        home = AsyncMock()
+        with (self.planners(), patch.object(self.mission, 'drive_step', new=AsyncMock()),
+              patch.object(self.mission, 'harvest', side_effect=harvest),
+              patch.object(self.mission, 'measure_lemons', new=AsyncMock(return_value=[(-525., 140., 40.)])),
+              patch.object(self.mission, 'return_home', new=home),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', self.origin, lemons=2)
+            await self.mission.task
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+        self.assertIn('1 de 2 en la canasta', self.mission.status['message'])
+        home.assert_awaited_once()
 
     async def test_reverse_is_slow_and_forward_keeps_its_speed(self):
         self.mission.deadline = self.mission.run_until = float('inf')

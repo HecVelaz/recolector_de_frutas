@@ -44,7 +44,8 @@ ORIGIN_SECONDS = 3.      # medición del limón para el cero
 LEMON_STOP_MM = (-500., 150.)   # parada fija de respaldo (21/11: antes -550; a 57 cm la pinza quedó 3 cm corta)
 # Pedido del usuario (21/11): cosechar con el limón a 50-55 cm de J1. Si ya está en REACH_MM y tiene plan, la base no
 # se mueve; si no, se acerca en la dirección del limón hasta dejarlo a STOP_RADIUS_MM
-STOP_RADIUS_MM, REACH_MM = 520., (480., 550.)
+STOP_RADIUS_MM, REACH_MM = 535., (500., 550.)   # 21/11: con 520 un limón bajo quedó en 499 mm y punta.py necesita
+                                                # r > ~500 para entrar de frente desde 10 cm
 ZONE_M, ZONE_DEG = .04, 5.
 # Al llegar a la parada se sabe dónde tiene que estar el limón del cero: solo vale uno a menos de esto de ahí. El
 # estéreo a veces mide el follaje delante del limón (21/11: el mismo limón a 42 y a 77 cm, alternando); ese punto
@@ -550,7 +551,15 @@ class CollectionMission:
                     raise RuntimeError('Falta odometría reciente al llegar')
                 self.cycle(owner)
                 stage = 'cosecha'
-                picked_now = await self.harvest(owner, grasp, tf, 1, to_basket, expected)
+                try:
+                    picked_now = await self.harvest(owner, grasp, tf, 1, to_basket, expected)
+                except RuntimeError as error:
+                    # Del segundo en adelante, un limón sin plan o que no está donde se esperaba no es una falla:
+                    # se termina con lo cosechado y se vuelve al cero (los cortes del brazo siguen siendo fallas)
+                    if not done or isinstance(error, ArmRejected):
+                        raise
+                    self.update('BUSCANDO', f'El siguiente limón no se puede cosechar desde acá: {error}')
+                    picked_now = 0
                 done += picked_now
                 if done:
                     origin['used'] = True   # ese limón ya no está: para recolectar de nuevo, otro cero
@@ -575,7 +584,7 @@ class CollectionMission:
             error = self.home_error(origin)
             picked = ('el limón quedó en la pinza' if not to_basket else
                       f'{done} de {lemons} en la canasta' + ('' if done == lemons else
-                                                             '; no quedan más limones con plan de agarre a la vista'))
+                                                             '; el siguiente no se puede cosechar desde acá'))
             self.update('FINALIZADO', f'Recolección terminada: {picked}. El Móvil volvió al cero{error}.')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Recolección detenida por el operador.')
