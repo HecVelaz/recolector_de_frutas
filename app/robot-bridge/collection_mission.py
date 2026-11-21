@@ -83,6 +83,8 @@ class CollectionMission:
             raise HTTPException(409, 'Detené el mando antes de iniciar la recolección')
         if not origin or origin.get('kind') != 'lemon':
             raise HTTPException(409, 'Calculá primero el cero del Móvil con el limón a la vista')
+        if origin.get('used'):
+            raise HTTPException(409, 'El limón de este cero ya se cosechó: calculá el cero de nuevo')
         start = self.control.snapshot()
         arm = start.get('arm_state')
         if not self.control.arm_ready(arm) or max(abs(a - b) for a, b in zip(arm_angles(arm), (3, 17, 4))) > 3:
@@ -467,15 +469,30 @@ class CollectionMission:
                 await asyncio.sleep(.05)
             navigation, grasp, tf = planners.result()
             lemon = origin['lemon_in_arm']
-            steps = navigation.planear((lemon['x_mm'], lemon['y_mm']), 0., LEMON_STOP_MM, orientar=False)
+            target = (lemon['x_mm'], lemon['y_mm'], lemon['z_mm'])
+            # 21/11: si el limón ya se alcanza desde donde está, la base no se mueve (un limón casi a la altura de J1
+            # pedía retroceder 12 cm hasta la parada, y atrás no hay sensores)
+            reach = asyncio.create_task(asyncio.to_thread(
+                grasp.planear_agarre_tol, arm_angles(self.control.snapshot().get('arm_state')), target, to_basket))
+            while not reach.done():
+                if monotonic() >= self.deadline:
+                    raise RuntimeError('Se perdió la supervisión de Arturito')
+                await asyncio.sleep(.05)
+            if reach.result()[0] is not None:
+                steps, expected = [], target
+            else:
+                steps = navigation.planear(target[:2], 0., LEMON_STOP_MM, orientar=False)
+                expected = (LEMON_STOP_MM[0], LEMON_STOP_MM[1], target[2])
             if any(kind == 'recto' and not 0 < value <= navigation.MAX_RECTO for kind, value in steps):
-                raise RuntimeError('Reubicá el Móvil: el acercamiento es largo o requiere retroceder')
+                raise RuntimeError('Reubicá el Móvil: el limón no se alcanza desde acá y el acercamiento es largo '
+                                   'o requiere retroceder')
             if monotonic() >= self.deadline:
                 raise RuntimeError('Se perdió la supervisión de Arturito')
             recorder = await self.start_recording()
             await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
             stage = 'acercamiento'
-            self.update('NAVEGANDO', 'Acercándose al limón: ' + navigation.texto(steps))
+            self.update('NAVEGANDO', ('Acercándose al limón: ' + navigation.texto(steps)) if steps
+                        else 'El limón se alcanza desde acá: el Móvil no se mueve.')
             for kind, value in steps:
                 await self.drive_step(owner, kind, value)
             await self.settle(owner, 1.)
@@ -484,8 +501,9 @@ class CollectionMission:
                 raise RuntimeError('Falta odometría reciente al llegar')
             self.cycle(owner)
             stage = 'cosecha'
-            expected = (LEMON_STOP_MM[0], LEMON_STOP_MM[1], lemon['z_mm'])
             done = await self.harvest(owner, grasp, tf, lemons, to_basket, expected)
+            if done:
+                origin['used'] = True   # ese limón ya no está: para recolectar de nuevo, otro cero
             self.zone = None
             stage = 'regreso al cero'
             await self.return_home(owner, navigation, grasp, origin)

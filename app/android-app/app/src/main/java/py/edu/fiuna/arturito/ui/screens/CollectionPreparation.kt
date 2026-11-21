@@ -34,6 +34,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
             Button(onClick = onCapture, enabled = canCapture) {
                 Text(if (capturing) "Midiendo el limón…" else "Calcular cero con el limón")
             }
+            if (origin?.used == true) StatusLight("Ese limón ya se cosechó: calculá un cero nuevo", Signal.Notice)
             if (origin != null) {
                 DetailRow("Limón más cercano", "a ${cm(origin.distanceM)} cm del brazo")
                 DetailRow("Respecto del brazo",

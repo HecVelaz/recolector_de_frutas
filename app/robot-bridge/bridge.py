@@ -328,6 +328,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                 return odom
 
             async with origin_capture:
+                navigation_origin = None   # 21/11: si la medición falla no queda el cero anterior (su limón ya no está)
                 if stationary_pose() is None:
                     raise HTTPException(409, 'Mantené el Móvil quieto y soltá los mandos para fijar el cero')
                 # 21/11: el cero es la pose actual respecto del limón más cercano (ya no la marca ArUco)

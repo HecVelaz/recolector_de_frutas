@@ -32,8 +32,10 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.navigation = Mock(MAX_RECTO=1500)
         self.navigation.texto.side_effect = lambda steps: str(steps)
 
-    def planners(self):
-        return patch.object(self.mission, 'planners', return_value=(self.navigation, Mock(REPOSO=(3., 17., 4.)), None))
+    def planners(self, reachable=False):
+        grasp = Mock(REPOSO=(3., 17., 4.))
+        grasp.planear_agarre_tol.return_value = ([('servo', 'pz a')], []) if reachable else (None, ['lejos'])
+        return patch.object(self.mission, 'planners', return_value=(self.navigation, grasp, None))
 
     async def test_requires_a_lemon_origin_a_referenced_arm_and_no_motion_since(self):
         with self.assertRaisesRegex(HTTPException, 'limón'):
@@ -104,6 +106,29 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('volvió al cero', self.mission.status['message'])
         self.assertIsNone(self.mission.zone)
+
+    async def test_a_lemon_already_in_reach_is_picked_without_moving_and_its_zero_is_used(self):
+        driven, expectations = [], []
+
+        async def drive(owner, kind, value):
+            driven.append((kind, value))
+
+        async def harvest(owner, original, tf, count, to_basket, expected):
+            expectations.append(expected)
+            return 1
+
+        with (self.planners(reachable=True), patch.object(self.mission, 'drive_step', side_effect=drive),
+              patch.object(self.mission, 'harvest', side_effect=harvest),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', self.origin)
+            await self.mission.task
+        self.navigation.planear.assert_not_called()
+        self.assertEqual(driven, [])
+        self.assertEqual(expectations, [(-575., 290., 128.)])   # el limón del cero, donde está
+        self.assertTrue(self.origin['used'])
+        with self.assertRaisesRegex(HTTPException, 'ya se cosechó'):
+            self.mission.start('operator', self.origin)
 
     async def test_reverse_is_slow_and_forward_keeps_its_speed(self):
         self.mission.deadline = self.mission.run_until = float('inf')

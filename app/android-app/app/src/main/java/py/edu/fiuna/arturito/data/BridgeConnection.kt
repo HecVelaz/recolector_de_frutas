@@ -37,7 +37,7 @@ data class CollectionStatus(val state: String, val message: String, val active: 
 /** Cero del Móvil (21/11): su pose respecto del limón más cercano. El limón va en mm en el marco del brazo
  * (x a la derecha, y adelante, z del modelo; altura real ≈ 256 + 1,43·z mm del piso). */
 data class NavigationOrigin(val lemonXmm: Double, val lemonYmm: Double, val lemonZmm: Double, val lemonsSeen: Int,
-    val distanceM: Double, val displacement: LocalPose?) {
+    val distanceM: Double, val displacement: LocalPose?, val used: Boolean = false) {
     val lemonHeightM: Double get() = (256 + 1.43 * lemonZmm) / 1000
 }
 
@@ -46,7 +46,8 @@ internal fun JsonObject.decodeNavigationOrigin(): NavigationOrigin {
     val lemon = getAsJsonObject("lemon_in_arm")
     return NavigationOrigin(lemon.get("x_mm").asDouble, lemon.get("y_mm").asDouble, lemon.get("z_mm").asDouble,
         get("lemons_seen").asInt, get("distance_m").asDouble,
-        get("displacement")?.takeIf { it.isJsonObject }?.asJsonObject?.pose())
+        get("displacement")?.takeIf { it.isJsonObject }?.asJsonObject?.pose(),
+        get("used")?.takeIf { it.isJsonPrimitive }?.asBoolean ?: false)
 }
 
 internal fun JsonObject.decodeCollectionStatus() = CollectionStatus(get("state").asString, get("message").asString,

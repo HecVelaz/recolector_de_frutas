@@ -345,7 +345,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                         else -> null
                     }, mission = telemetry?.collection, missionRequested = missionId != null,
                     canStart = baseAvailable && idle && !captureBusy && referenced &&
-                        telemetry?.navigationOrigin != null && telemetry.stereo?.status in listOf("located", "searching") &&
+                        telemetry?.navigationOrigin?.used == false && telemetry.stereo?.status in listOf("located", "searching") &&
                         telemetry.collection != null, onStart = { confirmRun = "mission" },
                     onStop = { missionId = null }, lemons = lemonCount,
                     canReturn = baseAvailable && idle && !captureBusy && referenced && telemetry?.navigationOrigin != null,
