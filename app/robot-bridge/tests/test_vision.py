@@ -92,3 +92,15 @@ class ViewsTest(unittest.TestCase):
         vision.draw_boxes(cv2, image, [(200., 240., 40., 50., 'limon', .87)])
         self.assertTrue((image[240, 180] == (255, 120, 0)).all())   # borde izquierdo de la caja
         self.assertTrue((image[240, 200] == 0).all())               # adentro queda la imagen
+
+
+class OnDemandTest(unittest.TestCase):
+    def test_views_are_built_only_while_requested(self):
+        now = [10.]
+        frames = CameraFrames(clock=lambda: now[0])
+        self.assertFalse(frames.wanted('center'))           # nadie la pidió todavía
+        self.assertIsNone(frames.latest('center'))          # el primer pedido devuelve 204 y la activa
+        self.assertTrue(frames.wanted('center'))
+        self.assertFalse(frames.wanted('left'))
+        now[0] += 3.1
+        self.assertFalse(frames.wanted('center'))           # 3 s sin pedidos: se deja de armar

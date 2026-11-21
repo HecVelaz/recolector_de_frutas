@@ -20,11 +20,21 @@ JPEG_QUALITY = 70
 
 
 class CameraFrames:
-    def __init__(self, *, clock=time.monotonic, stale_after=1.5):
+    """Último JPEG de cada vista. Las vistas se arman solo mientras alguien las pide (21/11): convertir y comprimir las
+    tres todo el tiempo le quitaba ~media CPU de la Pi al detector y a la disparidad."""
+
+    def __init__(self, *, clock=time.monotonic, stale_after=1.5, wanted_for=3.):
         self.clock = clock
         self.stale_after = stale_after
+        self.wanted_for = wanted_for
         self.lock = threading.Lock()
         self.frames = {}
+        self.requested = {}
+
+    def wanted(self, key):
+        """True si la vista se pidió en los últimos `wanted_for` s (si no, no vale la pena armarla)."""
+        with self.lock:
+            return self.clock() - self.requested.get(key, -float('inf')) <= self.wanted_for
 
     def put(self, key, payload):
         if key not in CAMERAS:
@@ -39,6 +49,7 @@ class CameraFrames:
 
     def latest(self, key):
         with self.lock:
+            self.requested[key] = self.clock()
             item = self.frames.get(key)
             if item is None or self.clock() - item[0] > self.stale_after:
                 return None

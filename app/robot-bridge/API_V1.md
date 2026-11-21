@@ -2,7 +2,11 @@
 
 ## Cámaras
 
-`GET /api/v1/vision/{camera}/frame` requiere el mismo token que la telemetría.
+`GET /api/v1/vision/{camera}/frame` requiere el mismo token que la telemetría. Las vistas son `left`
+(imagen anotada por YOLO), `center` (izquierda rectificada con las cajas de YOLO) y `right` (derecha
+rectificada); en las tres se marcan los limones de `/limon/todos` con su distancia. El puente se suscribe a
+cada imagen solo mientras alguien la pide (3 s desde el último pedido): el primer pedido devuelve `204` y
+el siguiente ya trae el cuadro. La imagen del ArUco se recibe solo durante «Calcular cero del robot».
 Los valores de `camera` son `left`, `right` y `detections`. La última vista muestra
 la cámara izquierda anotada por el detector ROS. El puente devuelve `200` con
 `image/jpeg` si hay un fotograma reciente, `204` si falta o caducó, y `404` para

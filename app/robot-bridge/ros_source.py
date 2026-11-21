@@ -28,6 +28,11 @@ class RosReader:
         self.error = None
         self.stopped = threading.Event()
         self.marker = None
+        self.marker_measuring = False
+        # Suscripciones a imágenes grandes (~1 MB) que solo existen mientras hacen falta (21/11): rclpy deserializa cada
+        # mensaje aunque el callback lo descarte, y eso le quitaba ~2/3 de un núcleo de la Pi a la visión.
+        # nombre -> (tipo, tópico, callback, qos, ¿hace falta?); un timer del propio nodo las crea y las destruye
+        self.on_demand, self.active = {}, {}
 
         def subscribe(kind, topic, callback):
             self.node.create_subscription(kind, topic, callback, qos_profile_sensor_data)
@@ -95,6 +100,8 @@ class RosReader:
                     return seen['lemons'] if seen['frame_id'] == 'camera' else []
 
                 def due(key):
+                    if not camera_frames.wanted(key):   # nadie la está mirando: no gastar CPU
+                        return False
                     now = camera_frames.clock()
                     if now - last_conversion[key] < .25:   # ~4 imágenes por segundo por vista
                         return False
@@ -124,7 +131,7 @@ class RosReader:
 
                 subscribe(CameraInfo, '/left/camera_info', info('left'))
                 subscribe(CameraInfo, '/right/camera_info', info('right'))
-                subscribe(Image, CAMERAS['left'], camera('left'))
+
                 def detections(message):
                     found = []
                     for d in message.detections[:20]:
@@ -136,12 +143,15 @@ class RosReader:
 
                 if Detection2DArray is not None:
                     subscribe(Detection2DArray, '/yolo/detecciones', detections)
-                subscribe(Image, CAMERAS['center'], camera('center'))
-                subscribe(Image, CAMERAS['right'], camera('right'))
+                for key in CAMERAS:
+                    self.on_demand['view_' + key] = (Image, CAMERAS[key], camera(key), qos_profile_sensor_data,
+                                                     lambda key=key: camera_frames.wanted(key))
         if stereo is not None:
             from geometry_msgs.msg import PoseArray
             from stereo_msgs.msg import DisparityImage
-            subscribe(DisparityImage, '/disparity', lambda m: stereo.disparity())
+            # Solo interesa que llegue (el estéreo está midiendo): sin deserializar la imagen de 1,2 MB
+            self.node.create_subscription(DisparityImage, '/disparity', lambda m: stereo.disparity(),
+                                          qos_profile_sensor_data, raw=True)
             subscribe(PoseArray, '/limon/todos', lambda m: stereo.positions(
                 m.header.frame_id, ((pose.position.x, pose.position.y, pose.position.z) for pose in m.poses)))
         if marker_tools is not None:
@@ -151,11 +161,29 @@ class RosReader:
                 module = module_from_spec(spec)
                 try:
                     spec.loader.exec_module(module)
+                    before = set(self.node.subscriptions)
                     self.marker = module.Marcas(self.node)
                 except (ImportError, OSError, AttributeError, ValueError) as error:
                     self.node.get_logger().error(f'No se pudo cargar la calibración ArUco: {error}')
+                else:
+                    # La imagen de marcas.py solo hace falta mientras se mide el ArUco (Calcular cero del robot)
+                    for sub in set(self.node.subscriptions) - before:
+                        if sub.msg_type is Image:
+                            self.on_demand['marker'] = (Image, sub.topic_name, sub.callback, sub.qos_profile,
+                                                        lambda: self.marker_measuring)
+                            self.node.destroy_subscription(sub)
+        if self.on_demand:
+            self.node.create_timer(.25, self._update_subscriptions)
         self.thread = threading.Thread(target=self._run, name='arturito-ros-observer', daemon=True)
         self.thread.start()
+
+    def _update_subscriptions(self):
+        """En el hilo del executor: crea las suscripciones que hacen falta y destruye las que no."""
+        for name, (kind, topic, callback, qos, needed) in self.on_demand.items():
+            if needed() and name not in self.active:
+                self.active[name] = self.node.create_subscription(kind, topic, callback, qos)
+            elif not needed() and name in self.active:
+                self.node.destroy_subscription(self.active.pop(name))
 
     def measure_marker(self, still):
         def wait(seconds):
@@ -165,10 +193,16 @@ class RosReader:
                     raise ValueError('Mantené quieto el Móvil y soltá los mandos para fijar el cero.')
                 sleep(.05)
 
+        self.marker_measuring = True
         try:
+            if 'marker' in self.on_demand:
+                until = monotonic() + 2.
+                while 'marker' not in self.active and monotonic() < until:   # el timer la crea en <= 0,25 s
+                    sleep(.05)
             return self.marker.medir(wait, seg=3., minimo=5)
         finally:
             self.marker.juntar = False
+            self.marker_measuring = False
 
     @property
     def available(self):
