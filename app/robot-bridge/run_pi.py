@@ -58,7 +58,10 @@ def main():
         from bridge import create_app
         target = create_app(source='ros2', control_dry_run=False, base_zero_test=args.bench_base_zero,
                             base_pulse_test=args.bench_base_pulse, physical_manual=args.physical_manual)
-    uvicorn.run(target, host=args.host, port=args.port, access_log=False, proxy_headers=False)
+    # 21/11: con el keep-alive de 5 s de uvicorn, la tablet (adb reverse + túnel ssh) no se enteraba del cierre y el
+    # primer pedido tras 5 s quietos (p. ej. «Iniciar recolección» después del cero) moría: había que tocar dos veces.
+    # 600 s > los 5 min que OkHttp guarda una conexión ociosa: cierra siempre la tablet primero.
+    uvicorn.run(target, host=args.host, port=args.port, access_log=False, proxy_headers=False, timeout_keep_alive=600)
 
 
 if __name__ == '__main__':
