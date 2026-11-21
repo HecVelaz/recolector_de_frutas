@@ -411,3 +411,25 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
                             or re.match(r'^(pz|mn) (w )?-?\w+$', command), command)
         self.assertIn('mvp', {c.split()[0] for c in sent})
         self.assertEqual(sent[-1], 'pz a')   # soltó en la canasta
+
+
+class PlannerProcessTest(unittest.IsolatedAsyncioTestCase):
+    """21/11: los planificadores corren en otro proceso para no acaparar el intérprete del puente."""
+
+    @unittest.skipUnless(HAS_NUMPY and (PUNTA_DIR / 'punta.py').is_file(), 'falta punta.py de pruebas-esp32')
+    async def test_real_planners_run_in_their_own_process(self):
+        tools = PUNTA_DIR.parent.parent / '27-aruco-arbol/tools'
+        mission = CollectionMission(Mock(), Mock(), tempfile.mkdtemp(), tools)
+        self.addCleanup(mission.close)
+        mission.deadline = float('inf')
+        sys.path.insert(0, str(PUNTA_DIR))
+        self.addCleanup(sys.path.remove, str(PUNTA_DIR))
+        punta = importlib.import_module('punta')
+        await asyncio.wrap_future(mission.warm())
+        plan, reasons = await mission.plan(None, punta, 'planear_agarre_tol', punta.REPOSO, punta.TAREA_A, True)
+        self.assertIsNotNone(plan, reasons)
+        local, _ = punta.planear_agarre_tol(punta.REPOSO, punta.TAREA_A, True)
+        self.assertEqual(plan, local)
+        self.assertIsNotNone(await mission.plan(None, punta, 'basket_path', (40., 30., 30.)))
+        rest, _ = await mission.plan(None, punta, 'rest_plan', (40., 30., 30.))
+        self.assertEqual(tuple(rest[-1]), tuple(punta.REPOSO))

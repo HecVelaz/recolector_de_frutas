@@ -212,6 +212,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                 async def preload():   # punta.py, numpy y la calibración ya cargados antes del primer cero o misión
                     try:
                         await asyncio.to_thread(collection.planners)
+                        await asyncio.wrap_future(collection.warm())   # y el proceso de los planificadores
                     except Exception:
                         logging.exception('No se pudieron precargar los planificadores')
 
@@ -224,6 +225,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
         finally:
             if collection is not None:
                 await collection.stop()
+                collection.close()
             if physical_monitor:
                 physical_monitor.cancel()
                 try:

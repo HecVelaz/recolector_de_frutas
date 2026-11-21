@@ -7,13 +7,16 @@ desandando el mismo camino.
 """
 
 import asyncio
+import concurrent.futures
 from datetime import datetime, timezone
 import json
 import logging
 import math
 from pathlib import Path
+import multiprocessing
 import signal
 import sys
+import types
 from time import monotonic
 from uuid import uuid4
 
@@ -62,6 +65,7 @@ class CollectionMission:
         self.events = []
         self.status = {'state': 'INACTIVO', 'message': 'Sin recolección en curso.'}
         self._planners = None
+        self._pool = None
 
     @property
     def active(self):
@@ -163,8 +167,7 @@ class CollectionMission:
         if s[1] >= original.SOLTAR_Q2_MIN_PY and s[2] >= 78.:
             path = ([(100., s[1], s[2])] if s[0] > 100.5 else []) + [(100., 46.7, 50.), tuple(original.REPOSO)]
         else:
-            path, _ = await self.in_thread(owner, lambda: original.con_margen(
-                original.MARGEN_SALIDA_CARGA, original.planear_q, s, original.REPOSO))
+            path, _ = await self.plan(owner, original, 'rest_plan', s)
             if path is None:
                 return False
         self.update('NAVEGANDO', 'Brazo al reposo')
@@ -252,11 +255,39 @@ class CollectionMission:
             raise RuntimeError('El Móvil no completó el movimiento en el tiempo permitido')
         await self.settle(owner, 1.)
 
-    async def in_thread(self, owner, function, *args):
-        """Cálculo largo (planificadores de punta.py) sin dejar de mandar el cero a la base (watchdog de 300 ms)."""
-        work = asyncio.create_task(asyncio.to_thread(function, *args))
+    def pool(self):
+        """Un proceso aparte para los planificadores de punta.py (21/11): en un hilo acaparaban el intérprete del puente
+        y el estado de la base "envejecía" más de 650 ms aunque llegaba bien, y la sesión se cortaba."""
+        if self._pool is None:
+            paths = [str(self.tools), str(self.tools.parent.parent / '20-brazo-coordinado/tools')]
+            self._pool = concurrent.futures.ProcessPoolExecutor(
+                1, mp_context=multiprocessing.get_context('spawn'), initializer=_planner_init, initargs=(paths,))
+        return self._pool
+
+    def warm(self):
+        """Arranca el proceso de los planificadores (y carga punta.py) antes de que haga falta."""
+        return self.pool().submit(_planner_call, 'ping')
+
+    def close(self):
+        if self._pool is not None:
+            self._pool.shutdown(wait=False, cancel_futures=True)
+
+    async def plan(self, owner, original, name, *args):
+        """Planificador de punta.py (planear_agarre_tol, basket_path, rest_plan) en el proceso aparte, renovando mientras
+        tanto la orden a la base (owner) o solo controlando la supervisión (owner None). Con planificadores simulados
+        (pruebas), en un hilo."""
+        if isinstance(original, types.ModuleType):
+            work = asyncio.get_running_loop().run_in_executor(self.pool(), _planner_call, name, *args)
+        else:
+            function = {'basket_path': lambda *a: basket_path(original, *a),
+                        'rest_plan': lambda q: original.con_margen(original.MARGEN_SALIDA_CARGA, original.planear_q,
+                                                                   q, original.REPOSO)}.get(name) or getattr(original, name)
+            work = asyncio.ensure_future(asyncio.to_thread(function, *args))
         while not work.done():
-            self.cycle(owner)
+            if owner is not None:
+                self.cycle(owner)
+            elif monotonic() >= self.deadline:
+                raise RuntimeError('Se perdió la supervisión de Arturito')
             await asyncio.sleep(.05)
         return work.result()
 
@@ -383,7 +414,7 @@ class CollectionMission:
     async def recover_to_basket(self, owner, original):
         """Como punta.recuperar_a_canasta: lo que tenga la pinza a la canasta, si el camino entra en el modelo."""
         s = arm_angles(self.control.snapshot().get('arm_state'))
-        path = await self.in_thread(owner, basket_path, original, s)   # el modelo tarda: sin trabar el lazo de la base
+        path = await self.plan(owner, original, 'basket_path', s)   # el modelo tarda: sin trabar el lazo de la base
         if path is None:
             return False
         self.update('RECUPERACION', 'Llevando lo que tiene la pinza a la canasta.')
@@ -434,7 +465,7 @@ class CollectionMission:
                 before, s = [('desplegar', [original.DESPLEGAR])], original.DESPLEGAR
             plan = reasons = None
             for lemon in candidates:
-                plan, reasons = await self.in_thread(owner, original.planear_agarre_tol, s, lemon, to_basket)
+                plan, reasons = await self.plan(owner, original, 'planear_agarre_tol', s, lemon, to_basket)
                 if plan is not None:
                     break
                 discarded.append(lemon)
@@ -472,13 +503,9 @@ class CollectionMission:
             target = (lemon['x_mm'], lemon['y_mm'], lemon['z_mm'])
             # 21/11: si el limón ya se alcanza desde donde está, la base no se mueve (un limón casi a la altura de J1
             # pedía retroceder 12 cm hasta la parada, y atrás no hay sensores)
-            reach = asyncio.create_task(asyncio.to_thread(
-                grasp.planear_agarre_tol, arm_angles(self.control.snapshot().get('arm_state')), target, to_basket))
-            while not reach.done():
-                if monotonic() >= self.deadline:
-                    raise RuntimeError('Se perdió la supervisión de Arturito')
-                await asyncio.sleep(.05)
-            if reach.result()[0] is not None:
+            reach = await self.plan(None, grasp, 'planear_agarre_tol',
+                                    arm_angles(self.control.snapshot().get('arm_state')), target, to_basket)
+            if reach[0] is not None:
                 steps, expected = [], target
             else:
                 steps = navigation.planear(target[:2], 0., LEMON_STOP_MM, orientar=False)
@@ -616,6 +643,32 @@ def base_refusal(snapshot, linear):
     if fields[:1] != ['ARMADA']:
         return f'La base dejó de estar armada ({" ".join(fields[:3]) or "sin estado"}).'
     return None
+
+
+def _planner_init(paths):
+    """En el proceso de los planificadores: punta.py e ir_a_parada.py de las herramientas originales."""
+    import contextlib
+    import io
+    for path in paths:
+        if path not in sys.path:
+            sys.path.append(path)
+    with contextlib.redirect_stdout(io.StringIO()):
+        import punta  # noqa: F401
+
+
+def _planner_call(name, *args):
+    """En el proceso de los planificadores. Los resultados son listas de tuplas y textos (se pueden enviar)."""
+    import contextlib
+    import io
+    import punta
+    with contextlib.redirect_stdout(io.StringIO()):
+        if name == 'ping':
+            return True
+        if name == 'basket_path':
+            return basket_path(punta, *args)
+        if name == 'rest_plan':
+            return punta.con_margen(punta.MARGEN_SALIDA_CARGA, punta.planear_q, args[0], punta.REPOSO)
+        return getattr(punta, name)(*args)
 
 
 def raised(lemon):
