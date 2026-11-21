@@ -6,10 +6,13 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi import HTTPException
-from collection_mission import CollectionMission, stopped_in_zone
+from collection_mission import (LEMON_STOP_MM, REVERSE_M_S, CollectionMission, make_lemon_origin,
+                                stopped_near)
 
 
 class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
+    """21/11: cero relativo al limón más cercano; acercarse, cosechar y volver al cero desandando el camino."""
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -20,54 +23,117 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.stereo = Mock()
         self.stereo.snapshot.return_value = {'status': 'located'}
         self.mission = CollectionMission(self.control, self.stereo, self.temp.name, self.temp.name)
-        self.odom = {'x_m': 0., 'y_m': 0., 'yaw_rad': 0.}
-        self.origin = {'marker_id': 0, 'odom_origin': dict(self.odom),
-                       'marker_in_arm': {'x_m': -1., 'y_m': 0., 'z_m': 0., 'normal_deg': 0.}}
+        self.odom = {'x_m': 0., 'y_m': 0., 'yaw_rad': 0., 'linear_m_s': 0., 'angular_rad_s': 0.}
+        self.origin = make_lemon_origin((-575., 290., 128.), 1, self.odom)
         self.control.snapshot.return_value = {
             'arm_state': 'q=3,17,4;e=3,3,3;c=111',
             'sources': [{'key': 'odom', 'status': 'fresh', 'age_ms': 10, 'value': self.odom}],
         }
+        self.navigation = Mock(MAX_RECTO=1500)
+        self.navigation.texto.side_effect = lambda steps: str(steps)
 
-    async def test_requires_a_current_origin_and_a_referenced_arm(self):
-        with self.assertRaisesRegex(HTTPException, 'ArUco'):
+    def planners(self):
+        return patch.object(self.mission, 'planners', return_value=(self.navigation, Mock(), None))
+
+    async def test_requires_a_lemon_origin_a_referenced_arm_and_no_motion_since(self):
+        with self.assertRaisesRegex(HTTPException, 'limón'):
             self.mission.start('operator', None)
+        with self.assertRaisesRegex(HTTPException, 'limón'):
+            self.mission.start('operator', {'marker_id': 0, 'odom_origin': dict(self.odom)})   # cero ArUco viejo
         self.control.arm_ready.return_value = False
         with self.assertRaisesRegex(HTTPException, 'homing'):
             self.mission.start('operator', self.origin)
-        self.control.open.assert_not_called()
-
-    async def test_retry_from_outside_the_work_zone_is_rejected(self):
-        self.odom.update(x_m=.4, linear_m_s=0., angular_rad_s=0.)
-        navigation = Mock()
-        navigation.tronco_desde.return_value = (-700., 150.)
-        with patch.object(self.mission, 'load_planners', return_value=(navigation, Mock())):
+        self.control.arm_ready.return_value = True
+        self.odom['x_m'] = .1
+        with self.assertRaisesRegex(HTTPException, 'se movió desde el cero'):
             self.mission.start('operator', self.origin)
-            await self.mission.task
-        self.assertIn('fuera de la parada', self.mission.status['message'])
         self.control.open.assert_not_called()
 
-    def test_actuator_requires_stationary_odometry_inside_local_work_zone(self):
-        parked = dict(self.odom, x_m=.2, linear_m_s=0., angular_rad_s=0.)
-        self.assertTrue(stopped_in_zone(self.origin, (-700., 350.), parked))
-        self.assertFalse(stopped_in_zone(self.origin, (-400., 350.), parked))
-        self.assertFalse(stopped_in_zone(self.origin, (-700., 350.), dict(parked, linear_m_s=.02)))
-        turned = dict(self.odom, yaw_rad=math.pi / 2, linear_m_s=0., angular_rad_s=0.)
-        self.assertTrue(stopped_in_zone(self.origin, (-75., -785.), turned))
+    def test_origin_keeps_the_nearest_lemon_and_the_odometry(self):
+        origin = make_lemon_origin((-575.4, 290., 128.), 3, dict(self.odom, x_m=.5, yaw_rad=.1))
+        self.assertEqual(origin['kind'], 'lemon')
+        self.assertEqual(origin['lemon_in_arm'], {'x_mm': -575.4, 'y_mm': 290., 'z_mm': 128.})
+        self.assertEqual(origin['odom_origin'], {'x_m': .5, 'y_m': 0., 'yaw_rad': .1})
+        self.assertAlmostEqual(origin['distance_m'], math.hypot(.5754, .29))
+
+    async def test_measure_origin_picks_the_lemon_closest_to_j1(self):
+        grasp = Mock(AGRUPAR_MM=35., MIN_POSICIONES=3, DISPERSION_MAX=10.)
+        grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
+        frames = [(float(k), 'camera', [{'x_m': -.7, 'y_m': .3, 'z_m': .2}, {'x_m': -.5, 'y_m': .2, 'z_m': .1}])
+                  for k in range(1, 30)]
+        self.stereo.target_frame.side_effect = frames + [frames[-1]] * 200
+        with (patch.object(self.mission, 'planners', return_value=(None, grasp, None)),
+              patch('collection_mission.ORIGIN_SECONDS', .3), patch('collection_mission.monotonic',
+                                                                    side_effect=[0.] + [k * .01 for k in range(500)])):
+            lemon, seen = await self.mission.measure_origin(lambda: True)
+            with self.assertRaisesRegex(ValueError, 'quieto'):
+                await self.mission.measure_origin(lambda: False)
+        self.assertEqual(seen, 2)
+        self.assertEqual([round(v) for v in lemon], [-500, 200, 100])
 
     async def test_plan_rejects_reverse_before_enabling_the_robot(self):
-        navigation = Mock(MAX_RECTO=1500)
-        navigation.planear.return_value = [('recto', -100.)]
-        with patch.object(self.mission, 'load_planners', return_value=(navigation, Mock())):
+        self.navigation.planear.return_value = [('recto', -100.)]
+        with self.planners():
             self.assertTrue(self.mission.start('operator', self.origin)['active'])
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'RECUPERACION')
+        self.navigation.planear.assert_called_once_with((-575., 290.), 0., LEMON_STOP_MM, orientar=False)
         self.control.open.assert_not_called()
         self.assertEqual(len(list((Path(self.temp.name) / 'missions').glob('*.json'))), 1)
 
+    async def test_approaches_harvests_one_lemon_and_returns_to_zero_retracing_the_path(self):
+        steps = [('giro', 10.), ('recto', 142.), ('giro', -10.)]
+        self.navigation.planear.return_value = steps
+        driven = []
+
+        async def drive(owner, kind, value):
+            driven.append((kind, value))
+
+        async def harvest(owner, original, tf, count, to_basket):
+            self.assertIsNotNone(self.mission.zone)   # el brazo solo actúa con la zona de agarre fijada
+            return 1
+
+        with (self.planners(), patch.object(self.mission, 'drive_step', side_effect=drive),
+              patch.object(self.mission, 'harvest', side_effect=harvest),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', self.origin)
+            await self.mission.task
+        self.assertEqual(driven, steps + [('giro', 10.), ('recto', -142.), ('giro', -10.)])
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+        self.assertIn('volvió al cero', self.mission.status['message'])
+        self.assertIsNone(self.mission.zone)
+
+    async def test_reverse_is_slow_and_forward_keeps_its_speed(self):
+        self.mission.deadline = self.mission.run_until = float('inf')
+        self.mission.settle = AsyncMock()
+        sample = dict(self.odom)
+        self.control.snapshot.side_effect = lambda: {'sources': [{'key': 'odom', 'status': 'fresh', 'age_ms': 1,
+                                                                  'value': dict(sample)}]}
+        speeds = []
+
+        def velocity(owner, linear, angular):
+            speeds.append(linear)
+            sample['x_m'] += .05
+
+        self.control.mission_velocity.side_effect = velocity
+        await self.mission.drive_step('mision', 'recto', -200.)
+        self.assertTrue(all(-REVERSE_M_S <= v < 0 for v in speeds))
+        speeds.clear()
+        sample['x_m'] = 0.
+        await self.mission.drive_step('mision', 'recto', 300.)
+        self.assertEqual(speeds[0], .10)
+
+    def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
+        arrival = dict(self.odom, x_m=.2)
+        self.assertTrue(stopped_near(arrival, dict(arrival, x_m=.23)))
+        self.assertFalse(stopped_near(arrival, dict(arrival, x_m=.25)))
+        self.assertFalse(stopped_near(arrival, dict(arrival, linear_m_s=.02)))
+        self.assertFalse(stopped_near(arrival, dict(arrival, yaw_rad=math.radians(6))))
+        self.assertFalse(stopped_near(arrival, None))
+
     async def test_stop_releases_owned_control_during_collection(self):
-        navigation = Mock(MAX_RECTO=1500)
-        navigation.planear.return_value = []
-        navigation.texto.return_value = 'El Móvil ya está en la parada'
+        self.navigation.planear.return_value = []
 
         async def open_robot(owner, body, *, autonomous):
             self.assertTrue(autonomous)
@@ -80,8 +146,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             started.set()
             await asyncio.sleep(5)
 
-        with (patch.object(self.mission, 'load_planners', return_value=(navigation, Mock())),
-              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None)),
+        with (self.planners(), patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None)),
               patch.object(self.mission, 'settle', side_effect=settle)):
             self.mission.start('operator', self.origin)
             await asyncio.wait_for(started.wait(), 2)

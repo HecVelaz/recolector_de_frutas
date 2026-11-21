@@ -28,15 +28,17 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("Cero del robot", Modifier.weight(1f)) {
-            Text("Dejá el Móvil quieto y mostrá el ArUco de 15 cm a la cámara izquierda.")
+            Text("Dejá el Móvil quieto con el limonero a la vista de la cámara izquierda (a 40–95 cm). " +
+                "El cero es la posición actual respecto del limón más cercano.")
             Button(onClick = onCapture, enabled = canCapture) {
-                Text(if (capturing) "Midiendo la marca…" else "Calcular cero del robot")
+                Text(if (capturing) "Midiendo el limón…" else "Calcular cero con el limón")
             }
             if (origin != null) {
-                DetailRow("Marca", "ArUco ${origin.markerId} · ${cm(origin.distanceM)} cm")
-                DetailRow("Posición inicial respecto a la marca",
-                    "X ${cm(origin.atMarker.xM)} · Y ${cm(origin.atMarker.yM)} cm")
-                DetailRow("Rumbo respecto a la marca", "${origin.atMarker.yawDegrees.toInt()}°")
+                DetailRow("Limón más cercano", "a ${cm(origin.distanceM)} cm del brazo")
+                DetailRow("Respecto del brazo",
+                    "${cm(-origin.lemonXmm / 1000)} cm a la izquierda · ${cm(origin.lemonYmm / 1000)} cm adelante")
+                DetailRow("Altura del limón", "~${cm(origin.lemonHeightM)} cm del piso")
+                DetailRow("Limones a la vista", "${origin.lemonsSeen}")
                 origin.displacement?.let { delta ->
                     DetailRow("Desplazamiento desde cero", "X ${cm(delta.xM)} · Y ${cm(delta.yM)} cm")
                 }

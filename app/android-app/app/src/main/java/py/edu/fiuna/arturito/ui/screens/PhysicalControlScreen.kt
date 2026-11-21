@@ -127,7 +127,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
             message = ""
             try {
                 client.captureOrigin(address, token)
-                message = "Cero del Móvil guardado desde la posición actual."
+                message = "Cero guardado: la posición actual respecto del limón más cercano."
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
@@ -265,8 +265,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     home -> "Con la potencia encendida y el brazo abajo y recogido, despejá su recorrido. Quedate junto al corte físico. " +
                         "El homing sigue solo: busca los finales de carrera, fija los ceros y lleva el brazo al reposo. " +
                         "Se detiene si tocás Cancelar homing, cerrás la app o se corta la conexión."
-                    mission -> "El Móvil irá a la parada del arbolito y el brazo intentará llevar " +
-                        (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
+                    mission -> "El Móvil se acercará al limón más cercano, el brazo intentará llevar " +
+                        (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta y el Móvil " +
+                        "volverá al cero desandando el camino. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
                     showBase -> "Confirmá que el recorrido está despejado y que podés cortar la potencia."
                     else -> "Confirmá que el recorrido del brazo está despejado y que podés cortar la potencia."
                 })

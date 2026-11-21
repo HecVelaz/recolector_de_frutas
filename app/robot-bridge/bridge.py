@@ -285,12 +285,12 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
         async def capture_origin(request: Request):
             nonlocal navigation_origin
             authorize(request.headers)
-            if reader is None or not reader.available or reader.marker is None:
-                raise HTTPException(503, 'La cámara rectificada y la calibración ArUco deben estar disponibles')
+            if reader is None or not reader.available or collection is None:
+                raise HTTPException(503, 'La visión estéreo y las herramientas de recolección deben estar disponibles')
             if origin_capture.locked():
-                raise HTTPException(409, 'Ya se está midiendo la marca')
-            if collection is not None and collection.active:
-                raise HTTPException(409, 'Detené la recolección antes de volver a medir la marca')
+                raise HTTPException(409, 'Ya se está midiendo el limón')
+            if collection.active:
+                raise HTTPException(409, 'Detené la recolección antes de volver a calcular el cero')
 
             def stationary_pose():
                 odom = current_odometry(250)
@@ -302,16 +302,16 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             async with origin_capture:
                 if stationary_pose() is None:
                     raise HTTPException(409, 'Mantené el Móvil quieto y soltá los mandos para fijar el cero')
+                # 21/11: el cero es la pose actual respecto del limón más cercano (ya no la marca ArUco)
                 try:
-                    marker = await asyncio.to_thread(reader.measure_marker, still=lambda: stationary_pose() is not None)
-                except ValueError as error:
+                    lemon, seen = await collection.measure_origin(lambda: stationary_pose() is not None)
+                except (ValueError, RuntimeError, ImportError, OSError) as error:
                     raise HTTPException(409, str(error)) from error
                 odom = stationary_pose()
                 if odom is None:
                     raise HTTPException(409, 'No se pudo confirmar que el Móvil está quieto')
-                if marker is None:
-                    raise HTTPException(409, 'No se vio una marca ArUco de 15 cm. Mostrala completa a la cámara izquierda.')
-                navigation_origin = make_origin(marker, odom)
+                from collection_mission import make_lemon_origin
+                navigation_origin = make_lemon_origin(lemon, seen, odom)
                 return with_displacement(navigation_origin, odom)
 
     def snapshot():

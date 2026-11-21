@@ -1,4 +1,10 @@
-"""Una recolección de la demo original, con los transportes del puente ROS."""
+"""Recolección con los transportes del puente ROS (21/11: cero relativo al limón más cercano).
+
+El cero del Móvil es su pose cuando el operador pide «Calcular cero»: se mide el limón más cercano con el estéreo y se
+guarda junto con la odometría de ese instante. «Iniciar recolección» acerca el Móvil hasta dejar ese limón en
+LEMON_STOP_MM respecto de J1 (sin cambiar el rumbo ni retroceder), cosecha como punta.cosechar y vuelve al cero
+desandando el mismo camino.
+"""
 
 import asyncio
 from datetime import datetime, timezone
@@ -14,13 +20,19 @@ from uuid import uuid4
 from fastapi import HTTPException
 
 from physical_control import OpenManual
-from vision_3d import BASE_CENTER, with_displacement
+from vision_3d import with_displacement
 
 MAX_LEMONS = 5
 MEASURE_SECONDS = 5.     # como recolectar.py / punta.cosechar
 MV_TIMEOUT = 90.         # TIMEOUT_MV de recolectar.py
 MV_RETRIES = 2           # punta.ejecutar: cortes por atraso con carga
 RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés')
+ORIGIN_SECONDS = 3.      # medición del limón para el cero
+# Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
+# reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
+LEMON_STOP_MM = (-550., 150.)
+ZONE_M, ZONE_DEG = .04, 5.   # mientras actúa el brazo, el Móvil quieto a menos de esto de donde llegó
+REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atrás no hay sensores)
 
 
 class ArmRejected(RuntimeError):
@@ -38,6 +50,7 @@ class CollectionMission:
         self.stop_requested = False
         self.events = []
         self.status = {'state': 'INACTIVO', 'message': 'Prepará el cero del Móvil y el reposo del brazo.'}
+        self._planners = None
 
     @property
     def active(self):
@@ -57,10 +70,8 @@ class CollectionMission:
         self.control.tick()
         if self.active or self.control.owner is not None:
             raise HTTPException(409, 'Detené el mando antes de iniciar la recolección')
-        if not origin:
-            raise HTTPException(409, 'Calculá primero el cero del Móvil con el ArUco')
-        if origin['marker_id'] not in (0, 1, 2, 3):
-            raise HTTPException(409, 'Para la demo usá una de las marcas del arbolito, ID 0 a 3')
+        if not origin or origin.get('kind') != 'lemon':
+            raise HTTPException(409, 'Calculá primero el cero del Móvil con el limón a la vista')
         start = self.control.snapshot()
         arm = start.get('arm_state')
         if not self.control.arm_ready(arm) or max(abs(a - b) for a, b in zip(arm_angles(arm), (3, 17, 4))) > 3:
@@ -69,7 +80,8 @@ class CollectionMission:
         if not odom:
             raise HTTPException(409, 'Falta odometría reciente')
         delta = with_displacement(origin, odom)['displacement']
-        resume = math.hypot(delta['x_m'], delta['y_m']) > .035 or abs(delta['yaw_deg']) > 4
+        if math.hypot(delta['x_m'], delta['y_m']) > .035 or abs(delta['yaw_deg']) > 4:
+            raise HTTPException(409, 'El Móvil se movió desde el cero: volvé a calcularlo con el limón a la vista')
         if self.stereo.snapshot()['status'] == 'waiting':
             raise HTTPException(409, 'Esperá a que la visión estéreo reciba profundidad')
         self.owner, self.operator = f'mision-{uuid4()}', operator
@@ -79,8 +91,8 @@ class CollectionMission:
         self.stop_requested = False
         self.zone = None
         self.events = []
-        self.update('BUSCANDO', 'Validando la parada del arbolito con la calibración original.')
-        self.task = asyncio.create_task(self.run(self.owner, origin, resume, lemons, to_basket))
+        self.update('BUSCANDO', 'Planeando el acercamiento al limón más cercano.')
+        self.task = asyncio.create_task(self.run(self.owner, origin, lemons, to_basket))
         return self.snapshot()
 
     def heartbeat(self, operator):
@@ -105,10 +117,8 @@ class CollectionMission:
         if monotonic() >= self.deadline:
             raise RuntimeError('Se perdió la supervisión de Arturito')
         self.control.mission_velocity(owner, linear, angular)
-        if self.zone is not None:
-            origin, trunk = self.zone
-            if not stopped_in_zone(origin, trunk, source_value(self.control.snapshot(), 'odom')):
-                raise RuntimeError('El Móvil salió de la zona de agarre o dejó de estar detenido')
+        if self.zone is not None and not stopped_near(self.zone, source_value(self.control.snapshot(), 'odom')):
+            raise RuntimeError('El Móvil salió de la zona de agarre o dejó de estar detenido')
 
     async def settle(self, owner, seconds):
         until = monotonic() + seconds
@@ -126,12 +136,13 @@ class CollectionMission:
             sample = source_value(self.control.snapshot(), 'odom' if kind == 'recto' else 'imu')
             if not sample:
                 raise RuntimeError('Se perdió la realimentación del Móvil')
-            if kind == 'recto':
+            if kind == 'recto':   # value < 0: atrás (solo al desandar el camino), más despacio
                 measured = math.hypot(sample['x_m'] - first['x_m'], sample['y_m'] - first['y_m'])
-                remaining = value / 1000 - measured
+                remaining = abs(value) / 1000 - measured
                 if remaining <= 0:
                     break
-                self.cycle(owner, min(.10, max(.03, remaining)))
+                top = .10 if value > 0 else REVERSE_M_S
+                self.cycle(owner, math.copysign(min(top, max(.03, remaining)), value))
             else:
                 measured = sample['gyro_yaw_rad'] - first['gyro_yaw_rad']
                 remaining = math.radians(abs(value)) - math.copysign(1., value) * measured
@@ -140,7 +151,7 @@ class CollectionMission:
                 self.cycle(owner, angular=math.copysign(min(.5, max(.12, 1.5 * remaining)), value))
             await asyncio.sleep(.05)
         else:
-            raise RuntimeError('El Móvil no llegó a la parada en el tiempo permitido')
+            raise RuntimeError('El Móvil no completó el movimiento en el tiempo permitido')
         await self.settle(owner, 1.)
 
     async def in_thread(self, owner, function, *args):
@@ -153,10 +164,13 @@ class CollectionMission:
 
     async def measure_frames(self, owner, seconds=MEASURE_SECONDS):
         """Las imágenes de /limon/todos de `seconds` s: [[(x, y, z) mm, ...], ...], marco `camera`."""
+        return await self.collect_frames(seconds, lambda: self.cycle(owner))
+
+    async def collect_frames(self, seconds, tick):
         frames, previous = [], monotonic()
         until = previous + seconds
         while monotonic() < until:
-            self.cycle(owner)
+            tick()
             stamp, frame_id, points = self.stereo.target_frame()
             if stamp is not None and stamp > previous:
                 if points and frame_id != 'camera':
@@ -165,6 +179,29 @@ class CollectionMission:
                 previous = stamp
             await asyncio.sleep(.05)
         return frames
+
+    def planners(self):
+        """(ir_a_parada, punta, tf cámara -> brazo), cargados una sola vez."""
+        if self._planners is None:
+            navigation, grasp = self.load_planners()
+            self._planners = navigation, grasp, grasp.cargar_tf_agarre()
+        return self._planners
+
+    async def measure_origin(self, still):
+        """Para «Calcular cero»: el limón más cercano a J1 (mm, marco del brazo, con las correcciones de punta) y
+        cuántos limones estables se ven. still() False en cualquier momento corta (el Móvil tiene que estar quieto)."""
+        _, grasp, tf = await asyncio.to_thread(self.planners)
+
+        def tick():
+            if not still():
+                raise ValueError('Mantené quieto el Móvil y soltá los mandos para fijar el cero.')
+
+        groups = group_lemons(await self.collect_frames(ORIGIN_SECONDS, tick), grasp.AGRUPAR_MM, grasp.MIN_POSICIONES)
+        lemons = [grasp.limon_de_cara(tf, face, n, spread) for face, n, spread in groups
+                  if spread <= grasp.DISPERSION_MAX]
+        if not lemons:
+            raise ValueError('No veo un limón estable: dejá el limonero a la vista de la cámara izquierda (40-95 cm).')
+        return min(lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
 
     async def measure_lemons(self, owner, original, tf):
         """Como punta.medir_limones: agrupa los limones de todas las imágenes y da sus puntos de agarre (mm, marco del
@@ -304,48 +341,49 @@ class CollectionMission:
             await self.move(owner, q, passing=index < len(path) - 1)
         return done
 
-    async def run(self, owner, origin, resume, lemons=1, to_basket=True):
-        stage = 'validación del recorrido'
+    async def run(self, owner, origin, lemons=1, to_basket=True):
+        stage = 'planificación del acercamiento'
         recorder = None
         try:
-            planners = asyncio.create_task(asyncio.to_thread(self.load_planners))
+            planners = asyncio.create_task(asyncio.to_thread(self.planners))
             while not planners.done():
                 if monotonic() >= self.deadline:
                     raise RuntimeError('Se perdió la supervisión de Arturito')
                 await asyncio.sleep(.05)
-            navigation, grasp = planners.result()
-            tf = await asyncio.to_thread(grasp.cargar_tf_agarre)
-            mark = origin['marker_in_arm']
-            pos = [mark[axis] * 1000 for axis in ('x_m', 'y_m', 'z_m')]
-            trunk = navigation.tronco_desde(pos, mark['normal_deg'], 165.)
-            if resume:
-                if not stopped_in_zone(origin, trunk, source_value(self.control.snapshot(), 'odom')):
-                    raise RuntimeError('El Móvil se movió fuera de la parada. Volvé a medir el ArUco.')
-                steps = []
-            else:
-                steps = navigation.planear(trunk, mark['normal_deg'], (-700., 150.))
+            navigation, grasp, tf = planners.result()
+            lemon = origin['lemon_in_arm']
+            steps = navigation.planear((lemon['x_mm'], lemon['y_mm']), 0., LEMON_STOP_MM, orientar=False)
             if any(kind == 'recto' and not 0 < value <= navigation.MAX_RECTO for kind, value in steps):
-                raise RuntimeError('Reubicá el Móvil: el recorrido calculado es largo o requiere retroceder')
+                raise RuntimeError('Reubicá el Móvil: el acercamiento es largo o requiere retroceder')
             if monotonic() >= self.deadline:
                 raise RuntimeError('Se perdió la supervisión de Arturito')
             recorder = await self.start_recording()
             await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
-            stage = 'aproximación'
-            self.update('NAVEGANDO', navigation.texto(steps))
+            stage = 'acercamiento'
+            self.update('NAVEGANDO', 'Acercándose al limón: ' + navigation.texto(steps))
             for kind, value in steps:
                 await self.drive_step(owner, kind, value)
             await self.settle(owner, 1.)
-            self.zone = (origin, trunk)
+            self.zone = source_value(self.control.snapshot(), 'odom')
+            if self.zone is None:
+                raise RuntimeError('Falta odometría reciente al llegar')
             self.cycle(owner)
             stage = 'cosecha'
             done = await self.harvest(owner, grasp, tf, lemons, to_basket)
-            if not to_basket:
-                self.update('FINALIZADO', 'Recolección terminada. El limón quedó en la pinza.')
-            elif done == lemons:
-                self.update('FINALIZADO', f'Recolección terminada: {done} de {lemons} en la canasta.')
-            else:
-                self.update('FINALIZADO', f'Recolección terminada: {done} de {lemons} en la canasta; '
-                            'no quedan más limones con plan de agarre a la vista.')
+            self.zone = None
+            stage = 'regreso al cero'
+            back = [(kind, -value) for kind, value in reversed(steps)]
+            self.update('NAVEGANDO', 'Volviendo al cero: ' + navigation.texto(back))
+            for kind, value in back:
+                await self.drive_step(owner, kind, value)
+            await self.settle(owner, 1.)
+            delta = with_displacement(origin, source_value(self.control.snapshot(), 'odom'))['displacement']
+            error = '' if delta is None else (f' (a {math.hypot(delta["x_m"], delta["y_m"]) * 100:.1f} cm y '
+                                              f'{abs(delta["yaw_deg"]):.0f}° del cero, según la odometría)')
+            picked = ('el limón quedó en la pinza' if not to_basket else
+                      f'{done} de {lemons} en la canasta' + ('' if done == lemons else
+                                                             '; no quedan más limones con plan de agarre a la vista'))
+            self.update('FINALIZADO', f'Recolección terminada: {picked}. El Móvil volvió al cero{error}.')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Recolección detenida por el operador.')
         except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
@@ -421,18 +459,21 @@ def arm_angles(state):
     return angles
 
 
-def stopped_in_zone(origin, trunk_mm, odom):
-    if (odom is None or abs(odom['linear_m_s']) > .005 or abs(odom['angular_rad_s']) > .02):
+def stopped_near(arrival, odom):
+    """El Móvil quieto y a menos de ZONE_M / ZONE_DEG de la pose `arrival` (odometría) donde se detuvo."""
+    if odom is None or abs(odom['linear_m_s']) > .005 or abs(odom['angular_rad_s']) > .02:
         return False
-    relative = with_displacement(origin, odom)['displacement']
-    yaw = math.radians(relative['yaw_deg'])
-    cx, cy = BASE_CENTER
-    x = trunk_mm[0] / 1000 - cx + relative['y_m']
-    y = trunk_mm[1] / 1000 - cy - relative['x_m']
-    # La navegación original expresa x a la derecha y y hacia adelante.
-    tree_x = math.cos(yaw) * x + math.sin(yaw) * y + cx
-    tree_y = -math.sin(yaw) * x + math.cos(yaw) * y + cy
-    return math.hypot(tree_x + .70, tree_y - .15) <= .13
+    turn = odom['yaw_rad'] - arrival['yaw_rad']
+    return (math.hypot(odom['x_m'] - arrival['x_m'], odom['y_m'] - arrival['y_m']) <= ZONE_M
+            and abs(math.degrees(math.atan2(math.sin(turn), math.cos(turn)))) <= ZONE_DEG)
+
+
+def make_lemon_origin(lemon, seen, odom):
+    """Cero del Móvil: el limón más cercano (mm, marco del brazo) y la odometría de ese instante."""
+    x, y, z = (float(v) for v in lemon)
+    return {'kind': 'lemon', 'lemon_in_arm': {'x_mm': x, 'y_mm': y, 'z_mm': z}, 'lemons_seen': int(seen),
+            'distance_m': math.hypot(x, y) / 1000,
+            'odom_origin': {key: odom[key] for key in ('x_m', 'y_m', 'yaw_rad')}}
 
 
 def group_lemons(frames, join_mm, min_views):

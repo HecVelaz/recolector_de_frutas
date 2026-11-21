@@ -14,18 +14,24 @@ un nombre inválido. Los fotogramas caducan después de 1,5 segundos.
 
 La telemetría `stereo` indica si se recibe disparidad y publica los limones
 recientes de `/limon/todos` en metros, en el marco óptico de la cámara
-izquierda. `POST /api/v1/navigation/origin` mide el ArUco original de 15 cm
-durante tres segundos con el Móvil quieto. Guarda el centro y rumbo del
-Móvil respecto a la marca y usa la odometría de ese instante como cero de
-desplazamiento. Medí de nuevo después de reiniciar el puente.
+izquierda. `POST /api/v1/navigation/origin` (21/11) mide durante tres segundos,
+con el Móvil quieto, el limón más cercano a J1 (estéreo + correcciones de
+`punta.limon_de_cara`) y guarda el cero: `{kind: "lemon", lemon_in_arm: {x_mm,
+y_mm, z_mm}, lemons_seen, distance_m, odom_origin}`, con la odometría de ese
+instante como cero de desplazamiento. Medí de nuevo después de reiniciar el puente.
 
 ## Recolección del arbolito
 
 Con el cero medido y el brazo en reposo, `POST /api/v1/mission/session`
-con `operator_present: true` abre una recolección supervisada. Usa la
-calibración y los planificadores de las carpetas originales
-`~/scripts/27-aruco-arbol/tools` y `~/scripts/20-brazo-coordinado/tools`.
-Se aproxima a una parada y cosecha como `punta.cosechar`: mide todos los limones de
+con `operator_present: true` abre una recolección supervisada. Usa
+`ir_a_parada.planear` y `punta.py` de `~/scripts/27-aruco-arbol/tools` y
+`~/scripts/20-brazo-coordinado/tools`. Rechaza el inicio si el Móvil se movió
+más de 3,5 cm o 4° desde el cero. El acercamiento deja el limón del cero en
+(-550, 150) mm respecto de J1, sin cambiar el rumbo ni retroceder; el brazo
+solo actúa con el Móvil quieto a menos de 4 cm y 5° de donde llegó. Al terminar
+la cosecha, el Móvil vuelve al cero desandando los mismos pasos (marcha atrás a
+6 cm/s como máximo) e informa la diferencia con el cero según la odometría.
+Cosecha como `punta.cosechar`: mide todos los limones de
 `/limon/todos` durante 5 s, los agrupa y corrige con `punta.limon_de_cara` (z de la visión,
 adelante, izquierda, arriba y ajuste fino), planea con `punta.planear_agarre_tol` el más
 cercano, ejecuta el plan como `punta.correr_tarea` (comandos sueltos, servos, `mvp` en los

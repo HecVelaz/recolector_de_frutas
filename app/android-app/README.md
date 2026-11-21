@@ -8,7 +8,7 @@ Actualización 0.4.1: [telemetría real, vigencia de datos y alarmas](PRIORIDAD_
 
 Preparación de etapa 9: [condiciones obligatorias para permitir control](CONDICIONES_CONTROL.md).
 
-## Operación con Arturito 0.9.1
+## Operación con Arturito 0.10.0
 
 1. En **Conexión**, comprobá el enlace con la Raspberry Pi.
 2. En **Control → Modo manual**, seleccioná Móvil, brazo o ambos. El puente
@@ -23,18 +23,15 @@ Preparación de etapa 9: [condiciones obligatorias para permitir control](CONDIC
 4. En **Visión**, consultá los limones localizados. Las coordenadas XYZ se
    expresan en centímetros respecto a la cámara izquierda. Podés consultar
    las posiciones sin encender la vista de video.
-5. En **Modo Recolección**, con el Móvil quieto y el ArUco de 15 cm completo
-   en la cámara izquierda, pulsá **Calcular cero del robot**. Para la demo,
-   usá la marca original fijada en la maceta. Calculá el cero de nuevo si
-   reposicionás el robot antes de iniciar la recolección.
-6. Elegí cuántos **limones a la canasta** (1 a 5). **Iniciar recolección**
-   aproxima el Móvil a la parada del arbolito. Con el Móvil detenido en esa
-   zona, el brazo mide todos los limones, agarra el más cercano que tenga
-   plan, lo deja en la canasta y vuelve a medir desde ahí (como `cosechar` de
-   `punta.py`). Al final vuelve al reposo. **Detener recolección** interrumpe
-   el ensayo. Los eventos y el rosbag se guardan en la Pi.
-   Requiere en la WROOM el firmware micro-ROS de `20-brazo-coordinado` actual
-   (con `mvp`): el grabado el 19/11 es del 11/11 y no lo tiene.
+5. En **Misión** (o **Control → Modo Recolección**), con el Móvil quieto y el limonero a la vista de la
+   cámara izquierda (40–95 cm), pulsá **Calcular cero con el limón**. El cero es la posición actual del
+   Móvil respecto del limón más cercano (se mide 3 s con el estéreo). Calculalo de nuevo si movés el Móvil.
+6. **Iniciar recolección** acerca el Móvil hasta dejar ese limón a 55 cm a la izquierda y 15 cm adelante
+   de J1 (sin cambiar el rumbo ni retroceder). Con el Móvil quieto, el brazo vuelve a medir, agarra el
+   limón más cercano con plan, lo deja en la canasta y vuelve al reposo. Después el Móvil **vuelve al cero
+   desandando el mismo camino** (la marcha atrás va a 6 cm/s). **Detener recolección** interrumpe el
+   ensayo. Los eventos y el rosbag se guardan en la Pi.
+   Requiere en la WROOM el firmware micro-ROS de `20-brazo-coordinado` actual (con `mvp`).
 
 El control y la misión usan el túnel local y los nodos ROS 2 de la Pi.
 [Contrato del puente y registro](../robot-bridge/API_V1.md).

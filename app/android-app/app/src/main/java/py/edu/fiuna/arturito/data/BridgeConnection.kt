@@ -34,13 +34,19 @@ data class Position3D(val xM: Double, val yM: Double, val zM: Double)
 data class StereoReading(val status: String, val frameId: String?, val lemons: List<Position3D>)
 data class LocalPose(val xM: Double, val yM: Double, val yawDegrees: Double)
 data class CollectionStatus(val state: String, val message: String, val active: Boolean, val events: List<String>)
-data class NavigationOrigin(val markerId: Int, val distanceM: Double, val atMarker: LocalPose,
-    val displacement: LocalPose?)
+/** Cero del Móvil (21/11): su pose respecto del limón más cercano. El limón va en mm en el marco del brazo
+ * (x a la derecha, y adelante, z del modelo; altura real ≈ 256 + 1,43·z mm del piso). */
+data class NavigationOrigin(val lemonXmm: Double, val lemonYmm: Double, val lemonZmm: Double, val lemonsSeen: Int,
+    val distanceM: Double, val displacement: LocalPose?) {
+    val lemonHeightM: Double get() = (256 + 1.43 * lemonZmm) / 1000
+}
 
 internal fun JsonObject.decodeNavigationOrigin(): NavigationOrigin {
     fun JsonObject.pose() = LocalPose(get("x_m").asDouble, get("y_m").asDouble, get("yaw_deg").asDouble)
-    return NavigationOrigin(get("marker_id").asInt, get("distance_m").asDouble,
-        getAsJsonObject("at_marker").pose(), get("displacement")?.takeIf { it.isJsonObject }?.asJsonObject?.pose())
+    val lemon = getAsJsonObject("lemon_in_arm")
+    return NavigationOrigin(lemon.get("x_mm").asDouble, lemon.get("y_mm").asDouble, lemon.get("z_mm").asDouble,
+        get("lemons_seen").asInt, get("distance_m").asDouble,
+        get("displacement")?.takeIf { it.isJsonObject }?.asJsonObject?.pose())
 }
 
 internal fun JsonObject.decodeCollectionStatus() = CollectionStatus(get("state").asString, get("message").asString,
@@ -128,7 +134,7 @@ object BridgeProtocol {
             gate, dryRun, output, physical, root.get("manual_arm_ready")?.asBoolean,
             root.get("manual_analog")?.asBoolean == true, manualLimit,
             root.get("manual_servo_positions")?.asBoolean == true, stereo,
-            root.getAsJsonObject("navigation_origin")?.decodeNavigationOrigin(),
+            root.getAsJsonObject("navigation_origin")?.let { runCatching { it.decodeNavigationOrigin() }.getOrNull() },
             root.getAsJsonObject("collection")?.decodeCollectionStatus())
     }
 }
