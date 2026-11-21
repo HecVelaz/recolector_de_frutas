@@ -57,7 +57,7 @@ class BaseSessionTest(unittest.TestCase):
 
     def test_arming_timeout_ignores_late_confirmation(self):
         self.begin()
-        self.now += 1.0
+        self.now += 2.0
         self.session.update(**self.feedback())
         self.assertEqual(self.session.state, BaseSessionState.STOPPED)
         self.assertEqual(self.events, [(0, 0), 'arm', (0, 0), 'disarm'])

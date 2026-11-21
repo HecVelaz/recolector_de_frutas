@@ -7,6 +7,9 @@ from time import monotonic
 from control_gate import MAX_AGE_BY_SOURCE_MS
 from ros_base_output import MAX_ANGULAR_RAD_S, MAX_LINEAR_M_S
 
+# Con /base/estado a 2 Hz, 1 s eran 2 muestras y perder una cortaba el armado (21/11): 2 s son 4
+CONFIRM_S = 2.0
+
 
 class BaseSessionState(str, Enum):
     DISARMED = 'disarmed'
@@ -57,7 +60,7 @@ class BaseSession:
             self.stop()
             return
         if self.state == BaseSessionState.ARMING:
-            if now >= self.arm_requested_at + 1.0:
+            if now >= self.arm_requested_at + CONFIRM_S:
                 self.stop()
             elif self.arm_requested_at < received_at and self.stopped_base(base_state, True):
                 self.send_zero()
@@ -68,7 +71,7 @@ class BaseSession:
         if fields[:1] != ['ARMADA']:
             self.stop()
         elif self.state == BaseSessionState.VERIFYING_ZERO:
-            if now >= self.first_zero_at + 1.0:
+            if now >= self.first_zero_at + CONFIRM_S:
                 self.stop()
             elif (received_at > self.first_zero_at
                   and fields[1:3] in (['modo=parado', 'seguridad=ok'], ['modo=v/w', 'seguridad=ok'])):

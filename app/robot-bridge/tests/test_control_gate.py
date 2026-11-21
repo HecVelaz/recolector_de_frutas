@@ -31,13 +31,13 @@ class EvaluateTest(unittest.TestCase):
         self.assertIn('CONTROL_DISABLED',decision.reasons)
 
     def test_stale_low_battery_and_unhomed_block(self):
-        data=real_snapshot(); data['sources'][0]['age_ms']=651
+        data=real_snapshot(); data['sources'][0]['age_ms']=1101
         data['battery_voltage']=9; data['arm_state']=data['arm_state'].replace('c=111','c=000')
         decision=evaluate(data,feature_enabled=True,authenticated=True,app_foreground=True,physical_ready=True)
         self.assertTrue({'BASE_TOO_OLD','BATTERY_TOO_LOW_OR_UNKNOWN','ARM_NOT_HOMED'} <= set(decision.reasons))
 
     def test_each_source_expires_at_its_own_limit(self):
-        for key, limit in (('base', 650), ('battery', 1250), ('arm', 500), ('imu', 500), ('range_front', 500)):
+        for key, limit in (('base', 1100), ('battery', 1250), ('arm', 500), ('imu', 500), ('range_front', 500)):
             with self.subTest(source=key):
                 data = real_snapshot()
                 reading = next(item for item in data['sources'] if item['key'] == key)

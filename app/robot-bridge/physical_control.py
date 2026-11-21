@@ -349,7 +349,8 @@ class PhysicalControl:
                     if self.owner == owner:
                         trial.update(**self.base_feedback(starting=True))
                 if self.owner != owner or trial.state != BaseSessionState.ARMED:
-                    raise HTTPException(409, 'El Móvil no confirmó el mando a velocidad cero')
+                    why = '; '.join(self.blockers(body.mode, starting=True)) or (self.base.feedback()[0] or 'sin estado')[:70]
+                    raise HTTPException(409, f'El Móvil no confirmó el mando a velocidad cero ({why})')
             elif body.mode == 'arm':
                 self.arm.send('jv 0 0 0')
         except BaseException:
