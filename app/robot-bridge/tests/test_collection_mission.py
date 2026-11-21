@@ -335,18 +335,23 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.run_task('mision', self.original, [('tirar', [(1, 2, 3)])])
         self.assertEqual(self.control.arm.sent, ['vel 0.5 4 0.5', 'mvp 1.00 2.00 3.00', 'vel 1 4 0.5'])
 
-    async def test_a_joint_stuck_just_short_of_its_target_is_left_there_once(self):
-        # 21/11: J3 quedó en 78,37 (pedido 80) y el mv a la canasta cortó por "sin cuentas"
-        self.angles[:] = [99.97, 46.79, 78.37]
-        self.control.arm = FakeArm(['sin cuentas del encoder (¿suelto o trabada?)'])
+    async def test_into_the_basket_only_j1_turns_when_the_arm_is_already_folded(self):
+        # 21/11: J3 en 79,96 y J2 en 46,76; el mv a (130, 46,7, 80) cortaba J3 por "sin cuentas"
+        self.angles[:] = [99.92, 46.76, 79.96]
         await self.mission.move('mision', (130., 46.7, 80.), passing=True)
-        self.assertEqual(self.control.arm.sent, ['mvp 130.00 46.70 80.00', 'mvp 130.00 46.70 78.37'])
+        self.assertEqual(self.control.arm.sent, ['mvp 130.00 46.76 79.96'])
+        self.angles[:] = [99.92, 46.76, 70.]   # sin plegar: el destino queda como está (el firmware lo rechaza)
+        self.control.arm = FakeArm()
+        await self.mission.move('mision', (130., 46.7, 80.), passing=True)
+        self.assertEqual(self.control.arm.sent, ['mvp 130.00 46.70 80.00'])
+
+    async def test_a_joint_stuck_near_its_target_is_left_there_once(self):
+        self.angles[:] = [60., 46.79, 78.37]
+        self.control.arm = FakeArm(['sin cuentas del encoder (¿suelto o trabada?)'])
+        await self.mission.move('mision', (100., 46.7, 80.), passing=True)
+        self.assertEqual(self.control.arm.sent, ['mvp 100.00 46.70 80.00', 'mvp 100.00 46.79 78.37'])
         self.control.arm = FakeArm(['sin cuentas del encoder', 'sin cuentas del encoder'])
-        with self.assertRaises(ArmRejected):   # una sola vez; y nunca si la que no llega está lejos
-            await self.mission.move('mision', (130., 46.7, 80.), passing=True)
-        self.angles[:] = [99.97, 46.79, 60.]
-        self.control.arm = FakeArm(['sin cuentas del encoder'])
-        with self.assertRaises(ArmRejected):
+        with self.assertRaises(ArmRejected):   # una sola vez
             await self.mission.move('mision', (100., 46.7, 80.), passing=True)
 
     def test_arm_link_reads_pass_points_and_safety_rejections(self):

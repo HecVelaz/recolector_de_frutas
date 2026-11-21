@@ -34,6 +34,10 @@ RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés')
 # mv siguiente cortó por "sin cuentas" porque J3 no subía esos 1,6°. Si una articulación ya está a menos de esto de su
 # destino, se reintenta una vez dejándola donde está (con el encoder suelto de verdad la diferencia sería mayor)
 STUCK_NEAR_DEG = 2.
+# 21/11 (2.ª vez): J3 llegó a 79,96 y, al girar J1 hacia la canasta, el firmware igual la cortó por "sin cuentas" (con
+# destino 80 intentaba corregir 0,04° en la zona dura). Con J1 pasada J1_MAX_NORMAL el brazo tiene que estar plegado
+# (config.h SOLTAR_*): si J2 y J3 ya están dentro de esa zona, se quedan donde están y solo gira J1
+J1_MAX_NORMAL, FOLDED_Q2, FOLDED_Q3_MIN = 118., (42.3, 50.7), 78.3
 ORIGIN_SECONDS = 3.      # medición del limón para el cero
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
@@ -363,6 +367,9 @@ class CollectionMission:
     async def move(self, owner, q, passing=False):
         """Como punta.ejecutar con un punto: mv (o mvp de paso) y, si corta por atraso con carga, repetir desde donde
         quedó hasta MV_RETRIES veces. Los cortes de seguridad (franja, caja, plegado) no se repiten."""
+        now = arm_angles(self.control.snapshot().get('arm_state'))
+        if q[0] > J1_MAX_NORMAL and FOLDED_Q2[0] <= now[1] <= FOLDED_Q2[1] and now[2] >= FOLDED_Q3_MIN:
+            q = (q[0], now[1], now[2])
         nudged = False
         for attempt in range(MV_RETRIES + 1):
             command = f"{'mvp' if passing else 'mv'} {q[0]:.2f} {q[1]:.2f} {q[2]:.2f}"
@@ -372,11 +379,11 @@ class CollectionMission:
             except ArmRejected as error:
                 if 'sin cuentas' in str(error) and not nudged:
                     now = arm_angles(self.control.snapshot().get('arm_state'))
-                    # La trabada es la que tenía que moverse un poco (0,3-2°): las que ya llegaron no cuentan y si
-                    # la que no llega está lejos, el corte es de verdad
-                    short = [.3 < abs(a - b) < STUCK_NEAR_DEG for a, b in zip(now, q)]
-                    if any(short):
-                        q = tuple(a if stuck else b for a, b, stuck in zip(now, q, short))
+                    # Las que están a menos de STUCK_NEAR_DEG de su destino se quedan donde están y se reintenta una
+                    # vez lo que falta (si la que no llega está lejos y trabada de verdad, vuelve a cortar)
+                    near = [abs(a - b) < STUCK_NEAR_DEG for a, b in zip(now, q)]
+                    if any(near) and not all(near):
+                        q = tuple(a if close else b for a, b, close in zip(now, q, near))
                         nudged = True
                         await self.settle(owner, .5)
                         continue
