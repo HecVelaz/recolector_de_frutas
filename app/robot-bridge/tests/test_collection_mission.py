@@ -40,9 +40,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         return patch.object(self.mission, 'planners', return_value=(self.navigation, grasp, None))
 
     async def test_requires_a_lemon_origin_a_referenced_arm_and_no_motion_since(self):
-        with self.assertRaisesRegex(HTTPException, 'limón'):
+        with self.assertRaisesRegex(HTTPException, 'cero'):
             self.mission.start('operator', None)
-        with self.assertRaisesRegex(HTTPException, 'limón'):
+        with self.assertRaisesRegex(HTTPException, 'cero'):
             self.mission.start('operator', {'marker_id': 0, 'odom_origin': dict(self.odom)})   # cero ArUco viejo
         self.control.arm_ready.return_value = False
         with self.assertRaisesRegex(HTTPException, 'homing'):
@@ -124,6 +124,35 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('volvió al cero', self.mission.status['message'])
         self.assertIsNone(self.mission.zone)
+
+    async def search_run(self, sightings):
+        """Cero sin limón (21/11): la misión gira a los rumbos de búsqueda; sightings = lo que ve en cada uno."""
+        driven = []
+
+        async def drive(owner, kind, value):
+            self.assertTrue(self.control.open.await_count)   # solo gira con el mando de la base abierto
+            driven.append((kind, value))
+
+        with (self.planners(), patch.object(self.mission, 'drive_step', side_effect=drive),
+              patch.object(self.mission, 'harvest', new=AsyncMock(return_value=1)),
+              patch.object(self.mission, 'measure_frames', new=AsyncMock(return_value=[])),
+              patch('collection_mission.nearest_rough', side_effect=sightings),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', make_lemon_origin(None, 0, self.odom))
+            await self.mission.task
+        return driven
+
+    async def test_without_a_lemon_in_the_zero_it_turns_to_find_one(self):
+        driven = await self.search_run([(None, 0), ((-500., 150., 128.), 1)])   # lo ve a 25° a la izquierda
+        self.assertEqual(driven, [('giro', 15.), ('giro', 10.)])   # a 52 cm: se cosecha sin acercarse
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+
+    async def test_search_without_lemons_goes_back_to_the_zero_heading(self):
+        driven = await self.search_run([(None, 0)] * 4)
+        self.assertEqual([value for _, value in driven], [15., 10., -40., -10., 25.])
+        self.assertEqual(self.mission.status['state'], 'RECUPERACION')
+        self.assertIn('No encontré limones girando ±25°', self.mission.status['message'])
 
     async def test_a_lemon_already_in_reach_is_picked_without_moving_and_its_zero_is_used(self):
         driven, expectations = [], []

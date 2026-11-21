@@ -127,8 +127,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
             failed = false
             message = ""
             try {
-                client.captureOrigin(address, token)
-                message = "Cero guardado: la posición actual respecto del limón más cercano."
+                val origin = client.captureOrigin(address, token)
+                message = if (origin.hasLemon) "Cero guardado: la posición actual respecto del limón más cercano."
+                    else "Cero guardado sin limón a la vista: al iniciar la recolección lo busca girando ±25°."
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {

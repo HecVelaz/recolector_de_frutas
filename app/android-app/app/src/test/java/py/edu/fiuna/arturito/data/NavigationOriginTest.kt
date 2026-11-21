@@ -17,5 +17,15 @@ class NavigationOriginTest {
         assertEquals(0.644, origin.distanceM, 1e-9)
         assertEquals(0.439, origin.lemonHeightM, 1e-3)   // 256 + 1,43·128 mm del piso
         assertEquals(1.5, checkNotNull(origin.displacement).yawDegrees, 1e-9)
+        assertTrue(origin.hasLemon)
+    }
+
+    @Test fun decodesAZeroWithoutLemon() {   // 21/11: la recolección lo busca girando
+        val json = """{"kind":"pose","lemon_in_arm":null,"lemons_seen":0,"distance_m":0.0,
+            "odom_origin":{"x_m":0.0,"y_m":0.0,"yaw_rad":0.0},"displacement":null}"""
+        val origin = JsonParser.parseString(json).asJsonObject.decodeNavigationOrigin()
+        assertFalse(origin.hasLemon)
+        assertEquals(0, origin.lemonsSeen)
+        assertNull(origin.displacement)
     }
 }

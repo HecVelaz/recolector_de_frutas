@@ -43,6 +43,9 @@ ORIGIN_SECONDS = 3.8      # medición del limón para el cero (21/11: 3 s juntab
 # de punta (MIN_POSICIONES, DISPERSION_MAX) y a menos de EXPECTED_RADIUS_MM. Por eso acá alcanza con menos (un limón a
 # ~95 cm de la cámara daba 2 lecturas en 3 s y no se podía fijar el cero sin acercar el robot a mano).
 ORIGIN_MIN_VIEWS, ORIGIN_SPREAD_MM = 2, 30.
+# 21/11: cero sin limón a la vista -> la recolección lo busca girando sobre el lugar a estos rumbos (° respecto del
+# cero, + a la izquierda), quieta y midiendo en cada uno como el cero; si no ve ninguno vuelve al rumbo del cero
+SEARCH_HEADINGS_DEG = (15., 25., -15., -25.)
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
 LEMON_STOP_MM = (-500., 150.)   # parada fija de respaldo (21/11: antes -550; a 57 cm la pinza quedó 3 cm corta)
@@ -98,8 +101,8 @@ class CollectionMission:
         self.control.tick()
         if self.active or self.control.owner is not None:
             raise HTTPException(409, 'Detené el mando antes de iniciar la recolección')
-        if not origin or origin.get('kind') != 'lemon':
-            raise HTTPException(409, 'Calculá primero el cero del Móvil con el limón a la vista')
+        if not origin or 'lemon_in_arm' not in origin:   # sin cero o un cero ArUco viejo
+            raise HTTPException(409, 'Calculá primero el cero del Móvil')
         if origin.get('used'):
             raise HTTPException(409, 'El limón de este cero ya se cosechó: calculá el cero de nuevo')
         start = self.control.snapshot()
@@ -117,7 +120,7 @@ class CollectionMission:
         self.owner, self.operator = f'mision-{uuid4()}', operator
         self.deadline = monotonic() + 1.25
         # Navegación y un agarre ~3 min; cada limón más, ida y vuelta a la canasta con su medición (~2 min)
-        self.run_until = monotonic() + 180. + 120. * (lemons - 1)
+        self.run_until = monotonic() + 180. + 120. * (lemons - 1) + (60. if origin['lemon_in_arm'] is None else 0.)
         self.stop_requested = False
         self.zone = None
         self.events = []
@@ -130,8 +133,8 @@ class CollectionMission:
         self.control.tick()
         if self.active or self.control.owner is not None:
             raise HTTPException(409, 'Detené el mando antes de volver al cero')
-        if not origin or origin.get('kind') != 'lemon':
-            raise HTTPException(409, 'No hay un cero guardado: calculalo con el limón a la vista')
+        if not origin:
+            raise HTTPException(409, 'No hay un cero guardado: calculalo primero')
         start = self.control.snapshot()
         if not self.control.arm_ready(start.get('arm_state')):
             raise HTTPException(409, 'El brazo no tiene referencia: hacé el homing antes de mover el Móvil')
@@ -363,12 +366,23 @@ class CollectionMission:
             if not still():
                 raise ValueError('Mantené quieto el Móvil y soltá los mandos para fijar el cero.')
 
-        groups = group_lemons(await self.collect_frames(ORIGIN_SECONDS, tick), grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
-        lemons = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
-                  if spread <= ORIGIN_SPREAD_MM]
-        if not lemons:
-            raise ValueError('No veo un limón estable: dejá el limonero a la vista de la cámara izquierda (40-95 cm).')
-        return min(lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
+        return nearest_rough(await self.collect_frames(ORIGIN_SECONDS, tick), grasp, tf)
+
+    async def search(self, owner, grasp, tf):
+        """Cero sin limón (21/11): gira sobre el lugar a SEARCH_HEADINGS_DEG y en cada rumbo mide como el cero. Devuelve
+        el limón más cercano (mm, marco del brazo en el rumbo actual); si no ve ninguno, vuelve al rumbo del cero."""
+        heading = 0.
+        for target in SEARCH_HEADINGS_DEG:
+            side = 'izquierda' if target > 0 else 'derecha'
+            self.update('BUSCANDO', f'Sin limón a la vista: girando {abs(target):.0f}° a la {side} del cero para buscarlo.')
+            await self.drive_step(owner, 'giro', target - heading)
+            heading = target
+            lemon, _ = nearest_rough(await self.measure_frames(owner, ORIGIN_SECONDS + 1.), grasp, tf)
+            if lemon is not None:
+                return lemon
+        await self.drive_step(owner, 'giro', -heading)
+        limit = max(abs(h) for h in SEARCH_HEADINGS_DEG)
+        raise RuntimeError(f'No encontré limones girando ±{limit:.0f}°: acercá el Móvil al limonero y calculá el cero de nuevo')
 
     async def measure_lemons(self, owner, original, tf, near=None):
         """Como punta.medir_limones: agrupa los limones de todas las imágenes y da sus puntos de agarre (mm, marco del
@@ -541,12 +555,21 @@ class CollectionMission:
                 await asyncio.sleep(.05)
             navigation, grasp, tf = planners.result()
             lemon = origin['lemon_in_arm']
-            target = (lemon['x_mm'], lemon['y_mm'], lemon['z_mm'])
-            steps, expected = await self.approach(None, navigation, grasp, target, to_basket)
-            if monotonic() >= self.deadline:
-                raise RuntimeError('Se perdió la supervisión de Arturito')
-            recorder = await self.start_recording()
-            await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
+            if lemon is None:   # 21/11: el cero no vio limón -> buscarlo girando (hace falta el mando de la base)
+                recorder = await self.start_recording()
+                await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
+                stage = 'búsqueda del limón'
+                target = await self.search(owner, grasp, tf)
+                stage = 'planificación del acercamiento'
+                self.update('BUSCANDO', 'Limón encontrado: planeando el acercamiento.')
+                steps, expected = await self.approach(owner, navigation, grasp, target, to_basket)
+            else:
+                target = (lemon['x_mm'], lemon['y_mm'], lemon['z_mm'])
+                steps, expected = await self.approach(None, navigation, grasp, target, to_basket)
+                if monotonic() >= self.deadline:
+                    raise RuntimeError('Se perdió la supervisión de Arturito')
+                recorder = await self.start_recording()
+                await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
             done = 0
             while True:
                 stage = 'acercamiento'
@@ -772,11 +795,23 @@ def stopped_near(arrival, odom):
 
 
 def make_lemon_origin(lemon, seen, odom):
-    """Cero del Móvil: el limón más cercano (mm, marco del brazo) y la odometría de ese instante."""
+    """Cero del Móvil: el limón más cercano (mm, marco del brazo) y la odometría de ese instante. lemon None (21/11):
+    solo la pose (kind 'pose'); la recolección busca el limón girando."""
+    pose = {key: odom[key] for key in ('x_m', 'y_m', 'yaw_rad')}
+    if lemon is None:
+        return {'kind': 'pose', 'lemon_in_arm': None, 'lemons_seen': 0, 'distance_m': 0., 'odom_origin': pose}
     x, y, z = (float(v) for v in lemon)
     return {'kind': 'lemon', 'lemon_in_arm': {'x_mm': x, 'y_mm': y, 'z_mm': z}, 'lemons_seen': int(seen),
-            'distance_m': math.hypot(x, y) / 1000,
-            'odom_origin': {key: odom[key] for key in ('x_m', 'y_m', 'yaw_rad')}}
+            'distance_m': math.hypot(x, y) / 1000, 'odom_origin': pose}
+
+
+def nearest_rough(frames, grasp, tf):
+    """(limón más cercano a J1 o None, cuántos se ven) con el criterio flojo del cero (ORIGIN_MIN_VIEWS, ORIGIN_SPREAD_MM)."""
+    groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
+    lemons = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups if spread <= ORIGIN_SPREAD_MM]
+    if not lemons:
+        return None, 0
+    return min(lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
 
 
 def group_lemons(frames, join_mm, min_views, min_fraction=.3):

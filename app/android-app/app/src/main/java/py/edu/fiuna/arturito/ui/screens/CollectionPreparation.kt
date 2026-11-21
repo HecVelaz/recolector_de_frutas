@@ -35,12 +35,15 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
                 Text(if (capturing) "Midiendo el limón…" else "Calcular cero con el limón")
             }
             if (origin?.used == true) StatusLight("Ese limón ya se cosechó: calculá un cero nuevo", Signal.Notice)
+            if (origin?.hasLemon == false) StatusLight("Sin limón a la vista: al iniciar lo busca girando ±25°", Signal.Notice)
             if (origin != null) {
-                DetailRow("Limón más cercano", "a ${cm(origin.distanceM)} cm del brazo")
-                DetailRow("Respecto del brazo",
-                    "${cm(-origin.lemonXmm / 1000)} cm a la izquierda · ${cm(origin.lemonYmm / 1000)} cm adelante")
-                DetailRow("Altura del limón", "~${cm(origin.lemonHeightM)} cm del piso")
-                DetailRow("Limones a la vista", "${origin.lemonsSeen}")
+                if (origin.hasLemon) {
+                    DetailRow("Limón más cercano", "a ${cm(origin.distanceM)} cm del brazo")
+                    DetailRow("Respecto del brazo",
+                        "${cm(-origin.lemonXmm / 1000)} cm a la izquierda · ${cm(origin.lemonYmm / 1000)} cm adelante")
+                    DetailRow("Altura del limón", "~${cm(origin.lemonHeightM)} cm del piso")
+                    DetailRow("Limones a la vista", "${origin.lemonsSeen}")
+                }
                 origin.displacement?.let { delta ->
                     DetailRow("Desplazamiento desde cero", "X ${cm(delta.xM)} · Y ${cm(delta.yM)} cm")
                 }
