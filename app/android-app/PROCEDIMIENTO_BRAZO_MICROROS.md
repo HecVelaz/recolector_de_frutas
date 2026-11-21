@@ -108,3 +108,21 @@ puerto reinicia la WROOM, por lo que los 12 V deben permanecer desconectados dur
 Encender 12 V, homing, servos y cualquier movimiento pertenecen a una prueba física posterior. Exigen
 un plan de poses seguras, límites, persona junto a la seta y una autorización independiente. No forman
 parte de la comprobación de etapa 8 descrita aquí.
+
+## Corrección del 20/11/2026: el candidato era la fuente del 11/11
+
+La copia de `pruebas-esp32` usada para compilar el candidato venía del ZIP de GitHub, que estaba atrasado: su
+`20-brazo-coordinado` coincide con el commit `ecbb798` (11/11) y no con la fuente de ese momento. El binario grabado
+(`1bb3c63c…`) **no tiene** `mvp`/`PASO`, la pose plegada de la canasta (J1 > 118 solo plegado), el asentamiento de
+0,5 s, la velocidad 1 de los `mv`, `HOMING_TOL_SIN_FIRME` ni el homing de J2 a 5 °/s. La misión del puente 0.9 usa
+`mvp` y la canasta, así que con ese firmware la recolección corta en el primer tramo de paso.
+
+Firmware micro-ROS actual (env `ros`, fuente de `pruebas-esp32` en `750ba4c`, compilado en la notebook):
+`~/Documentos/pruebas-esp32/20-brazo-coordinado/.pio/build/ros/firmware.bin`, 419.824 bytes, SHA-256
+`62695d4a5f43a6853a6f32163e61583c642f65f507434f19a238e4d6ff89ff32`. Bootloader y particiones: los mismos de la
+tabla de arriba (`.pio/build/ros/`).
+
+Cambio (lo hace el usuario, con los 12 V desconectados): copiar ese `firmware.bin` a la Pi, comprobar el hash, detener
+el agente del brazo y grabar solo la aplicación con `write-flash 0x10000 firmware.bin` (mismo `esptool` y puerto que
+arriba). Reversión: el respaldo completo `respaldo_wroom_pre_microros_20261119.bin` (firmware serie del 19/11) o el
+candidato `1bb3c63c…`. Comprobar después `/brazo/estado` como en «Comprobación inicial sin potencia».

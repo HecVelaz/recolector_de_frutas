@@ -16,6 +16,16 @@ from fastapi import HTTPException
 from physical_control import OpenManual
 from vision_3d import BASE_CENTER, with_displacement
 
+MAX_LEMONS = 5
+MEASURE_SECONDS = 5.     # como recolectar.py / punta.cosechar
+MV_TIMEOUT = 90.         # TIMEOUT_MV de recolectar.py
+MV_RETRIES = 2           # punta.ejecutar: cortes por atraso con carga
+RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés')
+
+
+class ArmRejected(RuntimeError):
+    """El firmware del brazo cortó o rechazó un movimiento (texto de /brazo/respuesta)."""
+
 
 class CollectionMission:
     def __init__(self, control, stereo, data_dir, tools):
@@ -41,7 +51,9 @@ class CollectionMission:
     def snapshot(self):
         return dict(self.status, active=self.active, events=self.events[-8:])
 
-    def start(self, operator, origin):
+    def start(self, operator, origin, lemons=1, to_basket=True):
+        if not 1 <= lemons <= MAX_LEMONS or (lemons > 1 and not to_basket):
+            raise HTTPException(422, f'Pedí de 1 a {MAX_LEMONS} limones; más de uno solo yendo a la canasta')
         self.control.tick()
         if self.active or self.control.owner is not None:
             raise HTTPException(409, 'Detené el mando antes de iniciar la recolección')
@@ -62,12 +74,13 @@ class CollectionMission:
             raise HTTPException(409, 'Esperá a que la visión estéreo reciba profundidad')
         self.owner, self.operator = f'mision-{uuid4()}', operator
         self.deadline = monotonic() + 1.25
-        self.run_until = monotonic() + 180.
+        # Navegación y un agarre ~3 min; cada limón más, ida y vuelta a la canasta con su medición (~2 min)
+        self.run_until = monotonic() + 180. + 120. * (lemons - 1)
         self.stop_requested = False
         self.zone = None
         self.events = []
         self.update('BUSCANDO', 'Validando la parada del arbolito con la calibración original.')
-        self.task = asyncio.create_task(self.run(self.owner, origin, resume))
+        self.task = asyncio.create_task(self.run(self.owner, origin, resume, lemons, to_basket))
         return self.snapshot()
 
     def heartbeat(self, operator):
@@ -130,18 +143,35 @@ class CollectionMission:
             raise RuntimeError('El Móvil no llegó a la parada en el tiempo permitido')
         await self.settle(owner, 1.)
 
-    async def measure_lemon(self, owner):
-        points, previous = [], monotonic()
-        until = previous + 5.
+    async def in_thread(self, owner, function, *args):
+        """Cálculo largo (planificadores de punta.py) sin dejar de mandar el cero a la base (watchdog de 300 ms)."""
+        work = asyncio.create_task(asyncio.to_thread(function, *args))
+        while not work.done():
+            self.cycle(owner)
+            await asyncio.sleep(.05)
+        return work.result()
+
+    async def measure_frames(self, owner, seconds=MEASURE_SECONDS):
+        """Las imágenes de /limon/todos de `seconds` s: [[(x, y, z) mm, ...], ...], marco `camera`."""
+        frames, previous = [], monotonic()
+        until = previous + seconds
         while monotonic() < until:
             self.cycle(owner)
-            stamp, point = self.stereo.target_sample()
+            stamp, frame_id, points = self.stereo.target_frame()
             if stamp is not None and stamp > previous:
-                if point:
-                    points.append(tuple(point[axis] * 1000 for axis in ('x_m', 'y_m', 'z_m')))
+                if points and frame_id != 'camera':
+                    raise RuntimeError(f'/limon/todos viene en {frame_id}; la calibración es para camera')
+                frames.append([tuple(p[axis] * 1000 for axis in ('x_m', 'y_m', 'z_m')) for p in points])
                 previous = stamp
             await asyncio.sleep(.05)
-        return points
+        return frames
+
+    async def measure_lemons(self, owner, original, tf):
+        """Como punta.medir_limones: agrupa los limones de todas las imágenes y da sus puntos de agarre (mm, marco del
+        brazo) con las correcciones de punta.limon_de_cara (z de la visión, adelante, izquierda, arriba y ajuste fino)."""
+        groups = group_lemons(await self.measure_frames(owner), original.AGRUPAR_MM, original.MIN_POSICIONES)
+        return [original.limon_de_cara(tf, face, n, spread) for face, n, spread in groups
+                if spread <= original.DISPERSION_MAX]
 
     async def arm_instruction(self, owner, command, expected, timeout):
         self.cycle(owner)
@@ -152,13 +182,129 @@ class CollectionMission:
             received, answer = self.control.arm.home_feedback()
             if received is not None and received >= started:
                 if answer == 'park_failed':
-                    raise RuntimeError(self.control.arm.home_detail or 'El brazo rechazó un movimiento')
+                    raise ArmRejected(self.control.arm.home_detail or 'El brazo rechazó un movimiento')
                 if answer == expected:
                     return
             await asyncio.sleep(.05)
-        raise RuntimeError('El brazo no confirmó el movimiento')
+        raise ArmRejected(f'El brazo no confirmó «{command}» en {timeout:.0f} s')
 
-    async def run(self, owner, origin, resume):
+    async def move(self, owner, q, passing=False):
+        """Como punta.ejecutar con un punto: mv (o mvp de paso) y, si corta por atraso con carga, repetir desde donde
+        quedó hasta MV_RETRIES veces. Los cortes de seguridad (franja, caja, plegado) no se repiten."""
+        command = f"{'mvp' if passing else 'mv'} {q[0]:.2f} {q[1]:.2f} {q[2]:.2f}"
+        for attempt in range(MV_RETRIES + 1):
+            try:
+                await self.arm_instruction(owner, command, 'parked', MV_TIMEOUT)
+                return
+            except ArmRejected as error:
+                if attempt == MV_RETRIES or not any(text in str(error) for text in RETRY_ON):
+                    raise
+            await self.settle(owner, .5)
+
+    async def run_task(self, owner, original, steps):
+        """Como punta.correr_tarea: comandos sueltos, servos esperando SERVO_LLEGO y tramos de mv; los tramos de
+        punta.DE_PASO van con mvp y los de punta.CON_CARGA a la velocidad de carga."""
+        for name, part in steps:
+            self.cycle(owner)
+            if name == 'cmd':
+                self.control.arm.send(part)
+                await self.settle(owner, .2)
+                continue
+            if name == 'servo':
+                self.update('INTERVINIENDO', 'Ajustando la pinza' if part.startswith('pz') else 'Girando la muñeca')
+                await self.arm_instruction(owner, part, 'servo_ready', 8.)
+                await self.settle(owner, .4)
+                continue
+            self.update('INTERVINIENDO', name[:1].upper() + name[1:])
+            loaded = name in original.CON_CARGA
+            if loaded:
+                self.control.arm.send(original.VEL_CARGA)
+                await self.settle(owner, .2)
+            try:
+                passing, last_passing = original.DE_PASO.get(name, (False, False))
+                for index, q in enumerate(part):
+                    await self.move(owner, q, passing and (index < len(part) - 1 or last_passing))
+            finally:
+                if loaded:
+                    self.control.arm.send(original.VEL_NORMAL)
+
+    async def recover_to_basket(self, owner, original):
+        """Como punta.recuperar_a_canasta: lo que tenga la pinza a la canasta, si el camino entra en el modelo."""
+        s = arm_angles(self.control.snapshot().get('arm_state'))
+        if s[0] > original.k.Q1_LIM[1]:
+            path = [original.CANASTA]
+        else:
+            up = (s[0],) + tuple(original.CAMINO_CANASTA[0][1:])
+            path = [up] + list(original.CAMINO_CANASTA)
+            if (original.con_zona(original.revisar_camino, s, up) + original.con_zona(original.revisar_camino, up, path[1])
+                    + original.con_zona(original.revisar_camino, path[1], path[2])):
+                return False
+        self.update('RECUPERACION', 'Llevando lo que tiene la pinza a la canasta.')
+        for index, q in enumerate(path):
+            await self.move(owner, q, passing=True)
+        await self.arm_instruction(owner, 'pz a', 'servo_ready', 8.)
+        await self.arm_instruction(owner, 'mn 0', 'servo_ready', 8.)
+        return True
+
+    async def harvest(self, owner, original, tf, count, to_basket):
+        """Como punta.cosechar: mide todos los limones, agarra el más cercano con plan, lo deja en la canasta y vuelve a
+        medir desde ahí (confirma que ya no está en el árbol; hasta punta.MAX_INTENTOS por limón). Al final, al reposo.
+        Sin canasta: uno solo y queda en la pinza. Devuelve cuántos dejó."""
+        done, pending, attempts, discarded = 0, None, 0, []
+        while True:
+            self.update('BUSCANDO', f'Midiendo los limones con estéreo ({done} de {count} en la canasta).')
+            lemons = await self.measure_lemons(owner, original, tf)
+            if pending is not None:
+                still = [lemon for lemon in lemons if math.dist(lemon, pending) < original.VERIFICAR_MM]
+                if still:
+                    attempts += 1
+                    if attempts >= original.MAX_INTENTOS:
+                        discarded.append(still[0])
+                        attempts = 0
+                else:
+                    done += 1
+                    attempts = 0
+                pending = None
+            if done >= count:
+                break
+            candidates = sorted((lemon for lemon in lemons
+                                 if not any(math.dist(lemon, d) < original.VERIFICAR_MM for d in discarded)),
+                                key=lambda lemon: math.hypot(lemon[0], lemon[1]))
+            if not candidates:
+                if done == 0 and not lemons:
+                    raise RuntimeError('No hay suficientes posiciones 3D estables de un limón')
+                break
+            s = arm_angles(self.control.snapshot().get('arm_state'))
+            before = []
+            if s[0] > original.k.Q1_LIM[1]:   # en la canasta: primero de paso a DESPLEGAR
+                before, s = [('desplegar', [original.DESPLEGAR])], original.DESPLEGAR
+            plan = reasons = None
+            for lemon in candidates:
+                plan, reasons = await self.in_thread(owner, original.planear_agarre_tol, s, lemon, to_basket)
+                if plan is not None:
+                    break
+                discarded.append(lemon)
+            if plan is None:
+                if done == 0:
+                    raise RuntimeError('Ningún limón tiene plan de agarre: ' + '; '.join(reasons or []))
+                break
+            try:
+                await self.run_task(owner, original, before + plan)
+            except ArmRejected:
+                if not to_basket or not await self.recover_to_basket(owner, original):
+                    raise
+            if not to_basket:
+                return 1
+            pending = lemon
+        s = arm_angles(self.control.snapshot().get('arm_state'))
+        folded = s[1] >= original.SOLTAR_Q2_MIN_PY and s[2] >= 78.
+        path = ([original.DESPLEGAR, (100., 46.7, 50.)] if folded else []) + [original.REPOSO]
+        self.update('INTERVINIENDO', 'Brazo al reposo')
+        for index, q in enumerate(path):
+            await self.move(owner, q, passing=index < len(path) - 1)
+        return done
+
+    async def run(self, owner, origin, resume, lemons=1, to_basket=True):
         stage = 'validación del recorrido'
         recorder = None
         try:
@@ -168,6 +314,7 @@ class CollectionMission:
                     raise RuntimeError('Se perdió la supervisión de Arturito')
                 await asyncio.sleep(.05)
             navigation, grasp = planners.result()
+            tf = await asyncio.to_thread(grasp.cargar_tf_agarre)
             mark = origin['marker_in_arm']
             pos = [mark[axis] * 1000 for axis in ('x_m', 'y_m', 'z_m')]
             trunk = navigation.tronco_desde(pos, mark['normal_deg'], 165.)
@@ -190,25 +337,15 @@ class CollectionMission:
             await self.settle(owner, 1.)
             self.zone = (origin, trunk)
             self.cycle(owner)
-            stage = 'localización del limón'
-            self.update('BUSCANDO', 'Midiendo la posición estable del limón con estéreo.')
-            samples = await self.measure_lemon(owner)
-            angles = arm_angles(self.control.snapshot().get('arm_state'))
-            planning = asyncio.create_task(asyncio.to_thread(grasp_plan, grasp, samples, angles))
-            while not planning.done():
-                self.cycle(owner)
-                await asyncio.sleep(.05)
-            plan = planning.result()
-            for stage, step in plan:
-                self.update('INTERVINIENDO', stage if stage != 'servo' else 'Ajustando la pinza')
-                if stage == 'servo':
-                    await self.arm_instruction(owner, step, 'servo_ready', 8.)
-                    await self.settle(owner, .4)
-                else:
-                    for q in step:
-                        command = 'mv ' + ' '.join(f'{joint:.2f}' for joint in q)
-                        await self.arm_instruction(owner, command, 'parked', 30.)
-            self.update('FINALIZADO', 'Recolección terminada. El limón quedó en la pinza.')
+            stage = 'cosecha'
+            done = await self.harvest(owner, grasp, tf, lemons, to_basket)
+            if not to_basket:
+                self.update('FINALIZADO', 'Recolección terminada. El limón quedó en la pinza.')
+            elif done == lemons:
+                self.update('FINALIZADO', f'Recolección terminada: {done} de {lemons} en la canasta.')
+            else:
+                self.update('FINALIZADO', f'Recolección terminada: {done} de {lemons} en la canasta; '
+                            'no quedan más limones con plan de agarre a la vista.')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Recolección detenida por el operador.')
         except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
@@ -235,6 +372,7 @@ class CollectionMission:
                 sys.path.append(str(path))
         import ir_a_parada
         import punta
+        punta.cargar_ajuste()   # como "agarrar" / "cosechar" en punta.py: el ajuste fino de resultados/ajuste_agarre.json
         return ir_a_parada, punta
 
     def save_log(self):
@@ -297,17 +435,29 @@ def stopped_in_zone(origin, trunk_mm, odom):
     return math.hypot(tree_x + .70, tree_y - .15) <= .13
 
 
-def grasp_plan(original, samples, angles):
+def group_lemons(frames, join_mm, min_views):
+    """Igual que punta.Vision.medir_todos: cada posición va al grupo más cercano a menos de join_mm (si no, abre otro);
+    quedan los grupos vistos en al menos max(min_views, 30 % de las imágenes). [(mediana mm, n, dispersión mm), ...]
+    de más a menos visto."""
     import numpy as np
-    if len(samples) < original.MIN_POSICIONES:
-        raise RuntimeError('No hay suficientes posiciones 3D del limón')
-    points = np.asarray(samples, dtype=float)
-    face = np.median(points, axis=0)
-    if np.median(np.linalg.norm(points - face, axis=1)) > original.DISPERSION_MAX:
-        raise RuntimeError('La posición del limón es inestable')
-    rotation, translation = original.cargar_tf_agarre()
-    x, y, z = original.ajc.camara_a_cinematica(rotation, translation, face, original.RADIO_LIMON)
-    plan, details = original.planear_agarre(angles, (round(x), round(y), round(z + original.AGARRAR_DZ)))
-    if plan is None:
-        raise RuntimeError('; '.join(details))
-    return plan
+    groups = []   # [suma, puntos]
+    for frame in frames:
+        for point in frame:
+            v = np.asarray(point, dtype=float)
+            distances = [np.linalg.norm(v - total / len(points)) for total, points in groups]
+            if distances and min(distances) < join_mm:
+                group = groups[int(np.argmin(distances))]
+                group[0] = group[0] + v
+                group[1].append(v)
+            else:
+                groups.append([v.copy(), [v]])
+    minimum = max(min_views, .3 * len(frames))
+    result = []
+    for _, points in groups:
+        if len(points) < minimum:
+            continue
+        p = np.asarray(points)
+        median = np.median(p, axis=0)
+        result.append((median, len(p), float(np.median(np.linalg.norm(p - median, axis=1)))))
+    result.sort(key=lambda r: -r[1])
+    return result

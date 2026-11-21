@@ -35,9 +35,11 @@ class PhysicalControlClient {
     suspend fun captureOrigin(address: String, token: String): NavigationOrigin =
         request(address, token, "", "navigation/origin", "POST", JsonObject(), handshake).decodeNavigationOrigin()
 
-    suspend fun startCollection(address: String, token: String, id: String): CollectionStatus =
+    suspend fun startCollection(address: String, token: String, id: String, lemons: Int): CollectionStatus =
         request(address, token, id, "mission/session", "POST", JsonObject().apply {
             addProperty("operator_present", true)
+            addProperty("lemons", lemons)
+            addProperty("to_basket", true)
         }, handshake).decodeCollectionStatus()
 
     suspend fun collectionHeartbeat(address: String, token: String, id: String): CollectionStatus =

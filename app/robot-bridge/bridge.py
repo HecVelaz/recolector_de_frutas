@@ -57,6 +57,8 @@ class BenchPulseRequest(BaseModel):
 
 class CollectionRequest(BaseModel):
     operator_present: bool
+    lemons: int = Field(1, ge=1, le=5, strict=True)   # limones por parada (recolectar.py --limones)
+    to_basket: bool = True                           # False: uno solo y queda en la pinza (--sin-soltar)
 
 
 def create_app(source=None, data_dir=None, token=None, estado_url=None, control_dry_run=None,
@@ -269,7 +271,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             operator = mission_operator(request)
             if not body.operator_present or origin_capture.locked():
                 raise HTTPException(409, 'Confirmá la supervisión local y esperá a que termine la medición')
-            return collection.start(operator, navigation_origin)
+            return collection.start(operator, navigation_origin, body.lemons, body.to_basket)
 
         @app.post('/api/v1/mission/heartbeat')
         async def mission_heartbeat(request: Request):

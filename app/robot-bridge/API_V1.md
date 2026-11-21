@@ -21,7 +21,14 @@ Con el cero medido y el brazo en reposo, `POST /api/v1/mission/session`
 con `operator_present: true` abre una recolección supervisada. Usa la
 calibración y los planificadores de las carpetas originales
 `~/scripts/27-aruco-arbol/tools` y `~/scripts/20-brazo-coordinado/tools`.
-Se aproxima a una parada, mide un limón, lo recoge y lo deja en la pinza.
+Se aproxima a una parada y cosecha como `punta.cosechar`: mide todos los limones de
+`/limon/todos` durante 5 s, los agrupa y corrige con `punta.limon_de_cara` (z de la visión,
+adelante, izquierda, arriba y ajuste fino), planea con `punta.planear_agarre_tol` el más
+cercano, ejecuta el plan como `punta.correr_tarea` (comandos sueltos, servos, `mvp` en los
+tramos de paso, velocidad de carga, hasta dos reintentos por atraso), lo deja en la canasta
+y vuelve a medir para confirmarlo. Al final, al reposo. Cuerpo opcional: `lemons` (1–5,
+por defecto 1) y `to_basket` (por defecto `true`; `false`: uno solo y queda en la pinza).
+Si el brazo corta con un limón, intenta llevarlo a la canasta (`punta.recuperar_a_canasta`).
 El brazo solo actúa con el Móvil detenido dentro de la zona local de la
 parada, referida a la marca de la maceta.
 El cliente mantiene `POST /api/v1/mission/heartbeat` y puede cancelar con

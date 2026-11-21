@@ -45,6 +45,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     val scope = rememberCoroutineScope()
     var collection by remember(collectionOnly) { mutableStateOf(collectionOnly) }
     var missionId by remember { mutableStateOf<String?>(null) }
+    var lemonCount by remember { mutableIntStateOf(1) }
     var captureBusy by remember { mutableStateOf(false) }
     var parking by remember { mutableStateOf(false) }
     var showBase by remember { mutableStateOf(false) }
@@ -148,7 +149,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     LaunchedEffect(missionId, address, token) {
         val id = missionId ?: return@LaunchedEffect
         try {
-            client.startCollection(address, token, id)
+            client.startCollection(address, token, id, lemonCount)
             while (client.collectionHeartbeat(address, token, id).active) delay(250)
         } catch (error: CancellationException) {
             throw error
@@ -248,7 +249,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
             text = {
                 Text(when {
                     home -> "Con la potencia encendida y el brazo abajo y recogido, despejá su recorrido. Quedate junto al corte físico."
-                    mission -> "El Móvil irá a la parada del arbolito y el brazo intentará recoger un limón. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
+                    mission -> "El Móvil irá a la parada del arbolito y el brazo intentará llevar " +
+                        (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
                     showBase -> "Confirmá que el recorrido está despejado y que podés cortar la potencia."
                     else -> "Confirmá que el recorrido del brazo está despejado y que podés cortar la potencia."
                 })
@@ -305,7 +307,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     canStart = baseAvailable && idle && !captureBusy && referenced &&
                         telemetry?.navigationOrigin != null && telemetry.stereo?.status in listOf("located", "searching") &&
                         telemetry.collection != null, onStart = { confirmRun = "mission" },
-                    onStop = { missionId = null }) {
+                    onStop = { missionId = null }, lemons = lemonCount,
+                    onLemons = { if (missionId == null) lemonCount = it }) {
                     HeldControl(if (homingPrepared) "Mantener para hacer homing" else "Preparar homing del brazo",
                         foreground && arm != null && ((baseAvailable && idle && !captureBusy) || homing && !closing), ::holdHome)
                 }

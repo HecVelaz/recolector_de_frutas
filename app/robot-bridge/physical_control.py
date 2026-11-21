@@ -119,12 +119,13 @@ class RosArmLink:
             elif text.startswith(('HOMING_ERROR,', '>> Homing CORTADO:', 'Homing:')):
                 result = 'failed'
                 detail = text.removeprefix('HOMING_ERROR,')
-            elif text.startswith('LLEGO,'):
+            elif text.startswith(('LLEGO,', 'PASO,')):   # PASO: fin de un mvp (de paso), como en punta.ejecutar
                 result, detail = 'parked', text
             elif text.startswith('SERVO_LLEGO,'):
                 result, detail = 'servo_ready', text
             elif text.startswith(('MV_ERROR,', 'Fuera de', 'J2 y J3 fuera', '>> El camino recto sale',
-                                  'J1 sin cero', 'J2 sin cero', 'J3 sin cero', 'Hardware sin')):
+                                  'J1 sin cero', 'J2 sin cero', 'J3 sin cero', 'Hardware sin',
+                                  'J1 pasada', 'Sobre la caja', '>> PLEGADO', 'Uso:')):
                 result, detail = 'park_failed', text.removeprefix('MV_ERROR,')
             elif result == 'failed' and re.match(r'^>> J[123] CORTADA:', text) and 'cancelado' not in text:
                 detail = text.removeprefix('>> ')

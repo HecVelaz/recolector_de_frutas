@@ -3,8 +3,10 @@ package py.edu.fiuna.arturito.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.util.Locale
@@ -20,7 +22,8 @@ import py.edu.fiuna.arturito.ui.components.StatusLight
 fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, armReady: Boolean,
     canCapture: Boolean, capturing: Boolean, onCapture: () -> Unit, onMap: () -> Unit,
     homingStatus: String?, mission: CollectionStatus?, missionRequested: Boolean, canStart: Boolean,
-    onStart: () -> Unit, onStop: () -> Unit, homeControl: @Composable () -> Unit) {
+    onStart: () -> Unit, onStop: () -> Unit, lemons: Int = 1, onLemons: (Int) -> Unit = {},
+    homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("Cero del robot", Modifier.weight(1f)) {
             Text("Dejá el Móvil quieto y mostrá el ArUco de 15 cm a la cámara izquierda.")
@@ -60,6 +63,12 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
             })
             Text(status.message)
         }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Limones a la canasta")
+            OutlinedButton(onClick = { onLemons(lemons - 1) }, enabled = !missionRequested && lemons > 1) { Text("−") }
+            Text("$lemons", style = MaterialTheme.typography.titleMedium)
+            OutlinedButton(onClick = { onLemons(lemons + 1) }, enabled = !missionRequested && lemons < MAX_LEMONS) { Text("+") }
+        }
         if (missionRequested) Button(onClick = onStop) { Text("Detener recolección") }
         else Button(onClick = onStart, enabled = canStart) { Text("Iniciar recolección") }
     }
@@ -81,5 +90,8 @@ fun StereoTargets(stereo: StereoReading?) {
         }
     }
 }
+
+/** Igual que MAX_LEMONS del puente (collection_mission.py). */
+private const val MAX_LEMONS = 5
 
 private fun cm(meters: Double) = String.format(Locale.getDefault(), "%.1f", meters * 100)

@@ -32,10 +32,10 @@ class StereoReadings:
             return {'status': 'located' if points else 'searching' if depth else 'waiting',
                     'frame_id': self.frame_id if fresh else None, 'lemons': list(points)}
 
-    def target_sample(self):
+    def target_frame(self):
+        """La última imagen de /limon/todos: (instante de recepción, marco, todos sus limones)."""
         with self.lock:
-            point = self.points[0] if self.points and self.frame_id == 'camera' else None
-            return self.points_at, point
+            return self.points_at, self.frame_id, list(self.points)
 
 
 # Centro de giro medido respecto de J1 en ir_a_parada.py [m].

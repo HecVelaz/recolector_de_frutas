@@ -8,7 +8,7 @@ Actualización 0.4.1: [telemetría real, vigencia de datos y alarmas](PRIORIDAD_
 
 Preparación de etapa 9: [condiciones obligatorias para permitir control](CONDICIONES_CONTROL.md).
 
-## Operación con Arturito 0.8.0
+## Operación con Arturito 0.9.0
 
 1. En **Conexión**, comprobá el enlace con la Raspberry Pi.
 2. En **Control → Modo manual**, seleccioná Móvil, brazo o ambos. El puente
@@ -25,10 +25,14 @@ Preparación de etapa 9: [condiciones obligatorias para permitir control](CONDIC
    en la cámara izquierda, pulsá **Calcular cero del robot**. Para la demo,
    usá la marca original fijada en la maceta. Calculá el cero de nuevo si
    reposicionás el robot antes de iniciar la recolección.
-6. **Iniciar recolección** aproxima el Móvil a la parada del arbolito. El
-   brazo recoge un limón con el Móvil detenido en esa zona y lo conserva
-   en la pinza. **Detener recolección** interrumpe el ensayo. Los eventos y
-   el rosbag se guardan en la Pi.
+6. Elegí cuántos **limones a la canasta** (1 a 5). **Iniciar recolección**
+   aproxima el Móvil a la parada del arbolito. Con el Móvil detenido en esa
+   zona, el brazo mide todos los limones, agarra el más cercano que tenga
+   plan, lo deja en la canasta y vuelve a medir desde ahí (como `cosechar` de
+   `punta.py`). Al final vuelve al reposo. **Detener recolección** interrumpe
+   el ensayo. Los eventos y el rosbag se guardan en la Pi.
+   Requiere en la WROOM el firmware micro-ROS de `20-brazo-coordinado` actual
+   (con `mvp`): el grabado el 19/11 es del 11/11 y no lo tiene.
 
 El control y la misión usan el túnel local y los nodos ROS 2 de la Pi.
 [Contrato del puente y registro](../robot-bridge/API_V1.md).
