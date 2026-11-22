@@ -35,6 +35,11 @@ class PhysicalControlClient {
     suspend fun captureOrigin(address: String, token: String): NavigationOrigin =
         request(address, token, "", "navigation/origin", "POST", JsonObject(), handshake).decodeNavigationOrigin()
 
+    /** Visión a pedido (21/11): sin este aviso cada ~2 s (y sin misión), el puente pausa el procesamiento. */
+    suspend fun demandVision(address: String, token: String) {
+        request(address, token, "", "vision/demand", "POST", JsonObject(), client)
+    }
+
     /** recolector (21/11): sin mover la base: escanea, guarda la lista, pausa la visión y cosecha esa lista. */
     suspend fun startCollection(address: String, token: String, id: String, lemons: Int,
         recolector: Boolean = false): CollectionStatus =

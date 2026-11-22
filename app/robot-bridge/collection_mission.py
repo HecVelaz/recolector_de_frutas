@@ -69,6 +69,7 @@ RETURN_SECONDS = 90.
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
 # ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
 SCAN_SECONDS = 3.
+VISION_DEMAND_S = 5.   # sin un pedido de la app en este tiempo (y sin misión), la visión se pausa
 VISION_PROCESSES = ('/lib/image_proc/rectify_node', '/lib/stereo_image_proc/disparity_node',
                     '/lib/yolo_ros/detector_node', '/lib/yolo_ros/localizador_node')   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
 HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
@@ -90,6 +91,11 @@ class CollectionMission:
         self.events = []
         self.status = {'state': 'INACTIVO', 'message': 'Sin recolección en curso.'}
         self._planners = None
+        # Visión a pedido (21/11): la app la pide mientras está en Recolector, Recolección o en la pestaña Visión;
+        # sin pedido (ni misión activa) se pausa. vision_hold: pausada a propósito (cosecha del modo Recolector).
+        self.vision_demand_until = 0.
+        self.vision_hold = False
+        self.vision_paused = None
         self._pool = None
 
     @property
@@ -213,8 +219,8 @@ class CollectionMission:
                 self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha en esta parada.')
                 return
             self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es). Visión pausada; cosechando de a uno.')
-            self.set_vision_paused(True)
-            paused = True
+            self.vision_hold = paused = True
+            self.sync_vision()
             stage = 'cosecha'
             for lemon in targets:
                 if sum(1 for r in results if r[1] == 'hecho') >= count:
@@ -236,8 +242,8 @@ class CollectionMission:
                         raise
             stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
-            self.set_vision_paused(False)
-            paused = False
+            self.vision_hold = paused = False
+            self.sync_vision()
             stage = 'verificación'
             self.update('BUSCANDO', 'Visión reanudada: comprobando qué limones quedaron en el árbol.')
             await self.settle(owner, 2.)   # que la estéreo vuelva a entregar pares
@@ -258,7 +264,8 @@ class CollectionMission:
             self.update('RECUPERACION', 'Falló el modo Recolector. Consultá el registro de la Raspberry Pi.')
         finally:
             if paused:
-                self.set_vision_paused(False)
+                self.vision_hold = False
+                self.sync_vision()
             try:
                 if self.control.owner == owner:
                     self.control.stop()
@@ -266,6 +273,19 @@ class CollectionMission:
                 if recorder is not None:
                     await self.stop_recording(recorder)
                 self.save_log()
+
+    def demand_vision(self):
+        """La app necesita la visión (la pide cada ~2 s): vale VISION_DEMAND_S."""
+        self.vision_demand_until = monotonic() + VISION_DEMAND_S
+        self.sync_vision()
+        return {'vision_paused': bool(self.vision_paused)}
+
+    def sync_vision(self):
+        """Pausa o reanuda la visión según el pedido de la app, la misión activa y vision_hold (solo si cambia)."""
+        paused = self.vision_hold or not (self.active or monotonic() < self.vision_demand_until)
+        if paused != self.vision_paused:
+            self.set_vision_paused(paused)
+            self.vision_paused = paused
 
     def set_vision_paused(self, paused):
         """SIGSTOP / SIGCONT a los procesos de VISION_PROCESSES (los del mismo usuario). Sin procesos, no hace nada."""

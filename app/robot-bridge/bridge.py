@@ -211,7 +211,15 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                                                       home_marker=data_dir / 'arm-homing-pending')
                 marker_tools = os.environ.get('ARTURITO_MARKER_TOOLS') or Path.home() / 'scripts/27-aruco-arbol/tools'
                 collection = CollectionMission(physical_controller, stereo, data_dir, marker_tools)
-                collection.set_vision_paused(False)   # por si el puente se cortó con la visión pausada (modo Recolector)
+
+                async def vision_on_demand():   # 21/11: visión pausada si la app no la pide (y no hay misión)
+                    while True:
+                        try:
+                            collection.sync_vision()
+                        except OSError:
+                            logging.exception('No se pudo pausar o reanudar la visión')
+                        await asyncio.sleep(.5)
+                vision_task = asyncio.create_task(vision_on_demand())
 
                 async def preload():   # punta.py, numpy y la calibración ya cargados antes del primer cero o misión
                     try:
@@ -228,7 +236,9 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             yield
         finally:
             if collection is not None:
+                vision_task.cancel()
                 await collection.stop()
+                collection.set_vision_paused(False)   # la visión no queda congelada al cerrar el puente
                 collection.close()
             if physical_monitor:
                 physical_monitor.cancel()
@@ -309,6 +319,13 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                 raise HTTPException(409, 'Esperá a que termine la medición')
             return collection.start_return(operator, navigation_origin)
 
+        @app.post('/api/v1/vision/demand')
+        async def vision_demand(request: Request):
+            authorize(request.headers)
+            if collection is None:
+                raise HTTPException(503, 'La visión a pedido no está disponible')
+            return collection.demand_vision()
+
         @app.post('/api/v1/mission/heartbeat')
         async def mission_heartbeat(request: Request):
             return collection.heartbeat(mission_operator(request))
@@ -381,6 +398,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                 result['manual_arm_ready'] = physical_controller.arm_ready(result['arm_state'])
             if collection is not None:
                 result['collection'] = collection.snapshot()
+                result['vision_paused'] = bool(collection.vision_paused)
             result['upstream_available'] = reader is not None and reader.available
             if not result['upstream_available']:
                 message = 'El lector ROS no está disponible; no se puede confirmar el estado del robot'

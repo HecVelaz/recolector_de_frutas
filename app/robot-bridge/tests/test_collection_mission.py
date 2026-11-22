@@ -237,6 +237,16 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([e for e, _ in events], ['mide'])
         self.assertIn('no se cosecha', self.mission.status['message'])
 
+    def test_vision_runs_only_on_demand_or_during_a_mission(self):
+        calls = []
+        with patch.object(self.mission, 'set_vision_paused', side_effect=calls.append), \
+                patch('collection_mission.monotonic', side_effect=[0., 0., 1., 6., 6.]):
+            self.mission.sync_vision()      # sin pedido: pausa
+            self.mission.demand_vision()    # t=0: la app la pide -> reanuda
+            self.mission.sync_vision()      # t=1: sigue pedida, no cambia
+            self.mission.sync_vision()      # t=6: venció el pedido -> pausa
+        self.assertEqual(calls, [True, False, True])
+
     async def test_a_lemon_too_high_says_so_instead_of_asking_to_move(self):
         # Limón a ~68 cm del piso (z 300): ninguna parada tiene plan; acercarse no sirve
         self.navigation.planear.return_value = [('recto', 80.)]

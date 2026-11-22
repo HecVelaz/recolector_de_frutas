@@ -26,10 +26,10 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     onStart: () -> Unit, onStop: () -> Unit, lemons: Int = 1, onLemons: (Int) -> Unit = {},
     address: String = "", token: String = "", video: Boolean = false,
     canReturn: Boolean = false, onReturn: () -> Unit = {},
-    canScan: Boolean = false, onScan: () -> Unit = {},
+    canScan: Boolean = false, onScan: () -> Unit = {}, recolector: Boolean = false,
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionCard("Cero del robot", Modifier.weight(1f)) {
+        if (!recolector) SectionCard("Cero del robot", Modifier.weight(1f)) {
             Text("Dejá el Móvil quieto con el limonero a la vista de la cámara izquierda (a 40–95 cm). " +
                 "El cero es la posición actual respecto del limón más cercano.")
             Button(onClick = onCapture, enabled = canCapture) {
@@ -69,7 +69,9 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
             }
         }
     }
-    SectionCard("Recolección del arbolito", Modifier.fillMaxWidth(), compact = true) {
+    SectionCard(if (recolector) "Modo Recolector" else "Recolección del arbolito", Modifier.fillMaxWidth(), compact = true) {
+        if (recolector) Text("El Móvil no se mueve: escanea 3 s, guarda los limones que ve, pausa la visión y cosecha " +
+            "esa lista. Dejá los limones a 50–55 cm de J1.", style = MaterialTheme.typography.bodySmall)
         mission?.let { status ->
             DetailRow("Estado", when (status.state) {
                 "BUSCANDO" -> "Buscando"
@@ -90,9 +92,11 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (missionRequested) Button(onClick = onStop) { Text("Detener") }
             else {
-                Button(onClick = onStart, enabled = canStart) { Text("Iniciar recolección") }
-                OutlinedButton(onClick = onReturn, enabled = canReturn) { Text("Volver al cero") }
-                OutlinedButton(onClick = onScan, enabled = canScan) { Text("Modo Recolector") }
+                if (recolector) Button(onClick = onScan, enabled = canScan) { Text("Iniciar Modo Recolector") }
+                else {
+                    Button(onClick = onStart, enabled = canStart) { Text("Iniciar recolección") }
+                    OutlinedButton(onClick = onReturn, enabled = canReturn) { Text("Volver al cero") }
+                }
             }
         }
     }

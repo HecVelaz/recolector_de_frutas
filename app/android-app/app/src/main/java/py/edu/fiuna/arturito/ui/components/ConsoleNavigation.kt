@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
-private val destinations = listOf("Control" to Figure.Drive, "Visión" to Figure.Camera, "Misión" to Figure.Mission,
+private val destinations = listOf("Control" to Figure.Drive, "Visión" to Figure.Camera,
     "Mapa" to Figure.Map, "Estado" to Figure.Status, "Conexión" to Figure.Link)
 
 @Composable

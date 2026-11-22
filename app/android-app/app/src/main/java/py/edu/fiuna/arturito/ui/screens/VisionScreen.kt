@@ -69,6 +69,13 @@ fun VisionScreen(address: String, token: String, active: Boolean, stereo: Stereo
     val streaming = active && enabled
     val (frame, error) = rememberCameraFrame(address, token, camera, streaming)
     LaunchedEffect(active) { if (!active) enabled = false }
+    val demand = remember { py.edu.fiuna.arturito.data.PhysicalControlClient() }
+    LaunchedEffect(active, address, token) {   // 21/11: la visión corre mientras esta pestaña está abierta
+        while (active) {
+            runCatching { demand.demandVision(address, token) }
+            kotlinx.coroutines.delay(2000)
+        }
+    }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             RobotCamera.entries.forEach { choice ->

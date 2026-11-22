@@ -216,14 +216,12 @@ fun RobotApp(initialTab: String = "Control", dark: Boolean = false, onToggleThem
                                 bridgeEnabled && tab == "Estado" -> RobotDashboard(bridge, alertSound) {
                                     alertSound = it; preferences.edit().putBoolean("alertSound", it).apply()
                                 }
-                                bridgeEnabled && tab in listOf("Control", "Misión") && localTunnel && telemetry?.controlDryRun != true ->
+                                bridgeEnabled && tab == "Control" && localTunnel && telemetry?.controlDryRun != true ->
                                     PhysicalControlScreen(address, token, telemetry?.armState,
                                         telemetry?.manualArmReady == true,
                                         foreground && bridge.connected && telemetry?.manualAnalog == true && telemetry.baseState != null, foreground,
                                         telemetry?.manualLimitMps ?: DEFAULT_MANUAL_LIMIT_MPS,
-                                        telemetry?.measuredLinearMps, telemetry?.servoPositions, telemetry,
-                                        collectionOnly = tab == "Misión") { navigate("Mapa") }
-                                bridgeEnabled && tab == "Misión" -> LiveMissionScreen { navigate("Mapa") }
+                                        telemetry?.measuredLinearMps, telemetry?.servoPositions, telemetry) { navigate("Mapa") }
                                 bridgeEnabled && tab == "Control" && physical -> {
                                     IllustratedPlaceholder(Figure.Link, "Mando físico no disponible",
                                         if (bridge.telemetry?.manualAnalog == false) "El puente necesita la actualización de los joysticks."

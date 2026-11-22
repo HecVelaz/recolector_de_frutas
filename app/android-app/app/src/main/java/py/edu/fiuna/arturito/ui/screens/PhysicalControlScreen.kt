@@ -44,6 +44,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     val client = remember { PhysicalControlClient() }
     val scope = rememberCoroutineScope()
     var collection by remember(collectionOnly) { mutableStateOf(collectionOnly) }
+    var scanMode by remember { mutableStateOf(false) }   // dentro de collection: Recolector (true) o Recolección
     var missionId by remember { mutableStateOf<String?>(null) }
     var lemonCount by remember { mutableIntStateOf(1) }
     var returning by remember { mutableStateOf(false) }   // la "misión" en curso es volver al cero
@@ -150,6 +151,14 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         if (!foreground) missionId = null
         if (!foreground && session != null) {
             closeSession()
+        }
+    }
+
+    // Visión a pedido (21/11): solo en los modos Recolector y Recolección; en manual el puente la pausa
+    LaunchedEffect(collection, foreground, address, token) {
+        while (collection && foreground) {
+            runCatching { client.demandVision(address, token) }
+            delay(2000)
         }
     }
 
@@ -332,9 +341,13 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     missionId = null
                     collection = false
                 }, { Text("Modo manual") })
-                ConsoleOption(collection, {
+                ConsoleOption(collection && scanMode, {
                     if (!collection) closeSession()
-                    collection = true
+                    if (missionId == null) { collection = true; scanMode = true }
+                }, { Text("Modo Recolector") })
+                ConsoleOption(collection && !scanMode, {
+                    if (!collection) closeSession()
+                    if (missionId == null) { collection = true; scanMode = false }
                 }, { Text("Modo Recolección") })
             }
             Spacer(Modifier.weight(1f))
@@ -361,7 +374,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     onReturn = { confirmRun = "return" },
                     canScan = baseAvailable && idle && !captureBusy && referenced &&
                         telemetry?.stereo?.status in listOf("located", "searching") && telemetry?.collection != null,
-                    onScan = { confirmRun = "recolector" },
+                    onScan = { confirmRun = "recolector" }, recolector = scanMode,
                     onLemons = { if (missionId == null) lemonCount = it },
                     address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,
