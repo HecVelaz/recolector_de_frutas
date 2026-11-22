@@ -2,30 +2,26 @@
 
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
 
-0000. **Recolección desde la app Arturito (20–21/11; detalle en `pruebas-esp32/notas/PENDIENTES.md`), en orden:**
-   0. **Primero (21/11, al cerrar):** la Pi quedó offline y la tablet fuera del USB; revisar, `arrancar_pi.sh` si se
-      reinició, túnel + `adb reverse`. Después: homing desde la app (ya tolera 1 s), cero y **cosecha con el ajuste
-      fino nuevo** (5 puntos); probar la **seta suelta sin `r`** (debe volver a `sin comandos` sola) y las alertas 0.12.0.
-      Si falla abajo: 2–3 puntos más de `ajustar` a 30–35 cm del piso (limón a 50–53 cm de J1) y del otro lado de la imagen.
-      Adaptar `base_sim` y el teleop 25 (todavía esperan `r`).
-   1. **El limón bajo (~30 cm del piso) no se agarra** (2 intentos; el alto, a ~46 cm, al primero con
-      `GRASP_RAISE_MM` = +2 cm). Preguntar qué hizo la pinza (por debajo / arriba / corta / lo empujó) y, según eso,
-      corregir la altura según la del limón (`punta.AGARRAR_ARRIBA_H/MM` hoy cubre 35–50 cm del piso) o entrar más
-      hondo. Después repetir con 2–3 limones y 1–2 intentos.
-   2. **Varios limones sin perder de vista a los demás:** hoy se acerca al más cercano y mide el siguiente desde ahí;
-      falta elegir la parada para que los otros sigan en la imagen (y recalcular al acercarse).
-   3. **Rumbo al volver al cero (~4°):** el último giro con la odometría en vez del giróscopo, o corregir con el yaw de
-      `/odom`. Probar la vuelta tras un acercamiento con giros grandes (87°).
-   4. **Firmware del brazo para la demo:** la WROOM quedó en micro-ROS (`62695d4a`, la app funciona), pero
-      `recolectar.py`, `punta.py` sesión y `joystick.py` necesitan el serie (`brazo20_serie_20261119.bin`). Decidir
-      cuál queda (la app ya hace el cero con el limón; el banderín y RODEAR siguen en `recolectar.py`).
-   5. **Carga de la Pi** (load 7–9 con 4 núcleos): bajar los fps de las cámaras o pausar el video de Misión durante la
-      recolección; medir la disparidad (~1,5 Hz).
-   6. Afuera: power bank que dé 5 V / 5 A para la Pi (con el PB2020MI se reiniciaba por bajo voltaje).
-   7. Push de `recolector_de_frutas`, `vision_estereo` y `pruebas-esp32` cuando el usuario lo pida.
-   8. **App 0.12.0 (alertas con sonido, ya instalada):** probar con el robot: tapar cada ultrasonido
-      a < 20 cm, apretar cada bumper y la seta, inclinar la base > 25°; ver que se ilumine el elemento correcto y
-      suene su pitido (los ultrasonidos cada 1,5 s), que la seta tape a los demás y que el interruptor silencie.
+0000. **Recolección desde la app Arturito (actualizado 22/11; detalle en la bitácora 21–22/11), en orden:**
+   0. **Alimentación de la Pi:** se apagó de golpe ~6 veces el 21/11 (sin apagado en el journal; a veces 4,90 V y
+      `throttled=0x50000`). Revisar fuente, cable USB-C y enchufe (que no tire al girar la base); para afuera, 5 V / 5 A.
+   1. **Sujetar los cables USB de la WROOM y la S3** (se cayeron con la base en movimiento: error -71, `cortes=4`).
+   2. **Altura del limonero:** con el objeto de 19 cm los limones quedan a ~63 cm del piso y el agarre pasa ~3 cm abajo.
+      Bajarlo (~10 cm) para limones a 45–55 cm. Opcional: no intentar agarres por encima de ~56 cm, o bajar el limón
+      antes de ir a la canasta (cambio en `punta.py`, probar con cuidado).
+   3. **Homing de J3 desde el reposo** ("J3 CORTADA … no avanza"): hoy, mover J3 con el joystick y repetir. Arreglo:
+      `homingDutyMax` de J3 ~65 % o `homingTrabadaMs` 3 s en `pruebas-esp32/20` (reflashear la WROOM, probar con tiempo).
+   4. **Visión, criterio de confiabilidad** (autorizar): en `vision_estereo/localizar.py`, rechazar con < 15 % de píxeles
+      válidos y calcular la MAD (eliminó 24 coordenadas falsas detrás de ramas sin perder mediciones buenas). Antes
+      de decidir el tamaño conocido: grabar 2–3 casos con hoja delante y limón visible (`grabar.sh`) y correr
+      `herramientas/comparar_profundidad.py`.
+   5. **Tiempos:** saltear el intento con +2 cm en limones altos (> 58 cm) para ahorrar ~20–30 s de plan.
+   6. Probar en el robot: seta suelta sin `r`, alertas 0.12.0 (cada ultrasonido, bumper, seta, IMU > 25°) y el modo
+      Recolector con 2–3 limones a la altura buena. Adaptar `base_sim` y el teleop 25 (esperan `r`).
+   7. **Varios limones en Recolección** (elegir la parada sin perder de vista a los demás) y **rumbo al volver al cero**
+      (~4°).
+   8. **Firmware del brazo para la demo:** micro-ROS (app) o serie (`recolectar.py`, banderín, RODEAR): decidir.
+   9. Push de `recolector_de_frutas`, `vision_estereo` y `pruebas-esp32` cuando el usuario lo pida (`/verificar-robot` antes).
 000. **Plan hasta la demo del 27/11** (17/11; robot = usuario, software = Claude en paralelo, probado en Gazebo):
    | Días | Robot | Software |
    |---|---|---|

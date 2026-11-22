@@ -928,3 +928,38 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   (respaldo `physical_control.py.antes_home_lease_20261121`); carga el ajuste de 5 puntos. Un `pkill -f` sin anclar
   cortó la propia sesión ssh (el patrón estaba en el comando).
 - **Al final la Pi quedó offline** (Tailscale "last seen 1m") y la tablet desconectada del USB: sin diagnosticar.
+
+## 2026-11-21 (tarde) / 22 (madrugada) — Recolección, modo Recolector, visión a pedido y validación de profundidad
+- **Puente (`app/robot-bridge`), en la Pi `~/arturito-bridge-0.9.0`:** el cero mide 3,8 s (la app corta «Calcular
+  cero» a los 4,5 s; `97f99bd`) y acepta 2 lecturas / 30 mm (`c934bdd`): al llegar se mide estricto. Sin limón a la
+  vista guarda solo la pose y la recolección gira 15° y 25° a cada lado (`86450db`, app 0.12.1). Si al llegar el
+  limón no está donde se esperaba, cosecha según la medición de ahí (`2753558`). Estado del brazo válido 600 ms
+  (`ec3d001`). Limones altos: con +2 cm el camino a la canasta salía de la franja de J2/J3; ahora prueba a la altura
+  medida (`603e241`); el cero prefiere limones a 33–64 cm del piso y el error lo dice (`c5b1cd8`, `03168bd`). 360 s
+  para el primer limón y 90 s propios para volver al cero (`8e7b523`). Rechazos del mando en `bridge.log` (sin commit
+  hasta este cierre). Reiniciar el puente conservando el cero: `ARTURITO_RESTORE_ORIGIN_JSON` con el
+  `navigation_origin` de `/api/v1/telemetry` (sin `displacement`).
+- **Cosechas:** 1 limón con acercamiento (girar 71°, avanzar 23 cm) y **2 de 3 sin mover la base** (el 1.º al segundo
+  intento). Limonero subido 19 cm: limones a ~63 cm del piso; con el agarre a la altura medida la pinza pasa ~3 cm
+  abajo (a ~66 cm no hay camino seguro a la canasta; 3 cm más arriba hay agarre pero no canasta).
+- **Modo Recolector** (`5f6224f`, app 0.13.0; pedido del usuario): base quieta, escaneo de 3 s, lista guardada,
+  visión apagada, un agarre por vez, brazo al reposo; sin verificación final (pedido del usuario, `4290b2a`); saltea
+  limones a < 8° adelante de J1 (`1bd1020`: uno a 6° pedía J1 < 3° y el firmware cortó).
+- **App 0.14.0** (`47ad2a6`): en Control, Modo manual | Recolector | Recolección; sin la pestaña Misión.
+- **Visión a pedido** (`4290b2a`): sin pedido de la app 30 s (y sin misión) el puente apaga el grupo de
+  `start_limon.sh`; con un pedido la relanza (estéreo lista en ~21 s, probado). **El SIGSTOP (`95d0131`) dejó a la
+  cámara izquierda sin publicar**: descartado. Ojo: `ros2 topic hz` desde otra terminal no ve los tópicos tras un
+  rearranque (Fast DDS); verificar con lo que ve el puente o con el log del detector.
+- **Hardware:** encoder de la rueda izquierda flojo (`LEFT_WHEEL_FAULT` "atasco": giraba a fondo); arreglado y
+  probado con `w 15 0 0.5` (izq y der simétricas, 12 cm / 37°). IMU `SIN_DATOS` tras tocar cables, volvió sola.
+  **WROOM se cayó del USB** al moverse la base (error -71; pulso EN por RTS con 12 V apagados); la S3 tuvo cortes
+  (`pings_fallidos`, `cortes=4`). **La Pi se apagó de golpe ~6 veces** (sin apagado en el journal; a veces
+  `throttled=0x50000`, 4,90 V): alimentación sin resolver. **Homing con "J3 CORTADA … no avanza"** desde el reposo:
+  `homingDutyMax` 50 % y 1,5 s no despegan J3 quieta; moverla con el joystick y repetir el homing funciona.
+- **Validación de profundidad (repo `vision_estereo`, `43edacc`, `0b6e3fb`):** grabaciones en
+  `datos/validacion_profundidad_20261122/` (Pi y notebook, fuera de git; `grabar.sh`, `casos.csv`): d60, d75, d90,
+  hoja_delante y tapado_mitad (estos dos son la **misma escena**); inclinado y punta omitidos. Fx 672,1 px.
+  `herramientas/comparar_profundidad.py`: con el limón a la vista, actual = nuevo (desvío 0,6–1,4 mm, error −0,8 /
+  −2,9 / −2,2 cm, igual en los dos); oclusión por ramas: el actual aceptó 24 coordenadas con error > 3 cm (midió la
+  rama), el nuevo rechazó todas por **< 15 % de píxeles válidos** (había 1–9 %). La banda de tamaño no separó rama y
+  limón. Los saltos 64 ↔ 88 cm de la tarde no aparecieron en las grabaciones.

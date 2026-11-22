@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import re
+import time
 from threading import Lock
 from time import monotonic
 from typing import Literal
@@ -549,7 +550,11 @@ def mount_physical_control(app, runtime, authorize):
     @app.post('/api/v1/physical/input')
     async def control_input(body: ManualInput, request: Request):
         controller, owner = session(request)
-        status, servo_sent = controller.input(owner, body)
+        try:
+            status, servo_sent = controller.input(owner, body)
+        except HTTPException as error:   # 21/11: el motivo en bridge.log (la app solo muestra el último)
+            print(f'{time.strftime("%H:%M:%S")} mando rechazado ({controller.mode}): {error.detail}', flush=True)
+            raise
         return {'active': status == 'active', 'paused': status == 'paused',
                 'homing_completed': status == 'completed', 'servo_sent': servo_sent,
                 'homing_parking': controller.park_started is not None}

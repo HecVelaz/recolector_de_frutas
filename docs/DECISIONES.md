@@ -63,3 +63,13 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 - **Homing desde la app con 1 s de tolerancia (21/11):** el puente corta el homing si pasa más de 1 s sin aviso de
   la app (los demás mandos siguen con 0,22 s); el homing lo hace el firmware a 1,5–5 °/s.
 - **Ajuste fino del agarre solo con los puntos del 21/11** (detector v4); los 9 del 18/11 (v3) en `resultados/ajuste_viejo/`.
+- **Cero de la recolección aproximado (21/11):** solo orienta el acercamiento (3,8 s, ≥ 2 lecturas, ≤ 30 mm); la
+  medición que decide el agarre es la de al llegar (8 s, estricta). Si al llegar el limón no está donde se esperaba,
+  se cosecha según esa medición siempre que el planificador dé agarre (pedido del usuario).
+- **Modo Recolector (21/11, usuario):** cosecha desde donde está, sin mover la base ni necesitar cero; la lista del
+  escaneo de 3 s vale solo para esa pose. Sin verificación final con la visión (pedido del usuario).
+- **Visión a pedido apagando el grupo entero (22/11):** congelar los procesos con SIGSTOP dejó a la cámara izquierda
+  sin publicar (Fast DDS por memoria compartida); se apaga y se relanza `start_limon.sh` (~21 s) con 30 s de margen
+  sin pedido. A elección del usuario entre eso y "siempre encendida".
+- **Profundidad (22/11):** el tamaño conocido del limón no se adopta por ahora (no cambió ninguna elección en las
+  grabaciones); el candidato es el rechazo por pocos píxeles válidos. Esperando autorización del usuario.
