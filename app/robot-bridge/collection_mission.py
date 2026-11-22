@@ -63,6 +63,7 @@ REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atr�
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
 # de punta, 1 mm de z son ~1,43 mm reales)
 GRASP_RAISE_MM = 20.
+RETURN_SECONDS = 90.   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
 HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
 
 
@@ -121,7 +122,8 @@ class CollectionMission:
         self.owner, self.operator = f'mision-{uuid4()}', operator
         self.deadline = monotonic() + 1.25
         # Navegación y un agarre ~3 min; cada limón más, ida y vuelta a la canasta con su medición (~2 min)
-        self.run_until = monotonic() + 180. + 120. * (lemons - 1) + (60. if origin['lemon_in_arm'] is None else 0.)
+        # 21/11: 180 -> 360 s: con un limón alto cada plan de punta.py tarda ~30 s en la Pi (y a veces dos por parada)
+        self.run_until = monotonic() + 360. + 120. * (lemons - 1) + (60. if origin['lemon_in_arm'] is None else 0.)
         self.stop_requested = False
         self.zone = None
         self.events = []
@@ -233,6 +235,8 @@ class CollectionMission:
 
     async def return_home(self, owner, navigation, original, origin):
         """Brazo al reposo y Móvil al cero desandando por la odometría (girar, retroceder recto, girar)."""
+        # 21/11: volver es lo seguro: siempre con tiempo propio, aunque la recolección haya agotado el suyo
+        self.run_until = max(self.run_until, monotonic() + RETURN_SECONDS)
         if not await self.arm_to_rest(owner, original):
             raise RuntimeError('No hay un camino seguro del brazo al reposo: hacé el homing antes de mover el Móvil.')
         odom = source_value(self.control.snapshot(), 'odom')
