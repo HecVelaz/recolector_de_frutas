@@ -63,7 +63,7 @@ REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atr�
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
 # de punta, 1 mm de z son ~1,43 mm reales)
 GRASP_RAISE_MM = 20.
-HEIGHT_CM = (33, 54)   # alcance en altura medido con punta.py cosechar (21/11): solo para explicar un acercamiento sin plan
+HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
 
 
 class ArmRejected(RuntimeError):
@@ -182,7 +182,7 @@ class CollectionMission:
         angles = arm_angles(self.control.snapshot().get('arm_state'))
         r = math.hypot(target[0], target[1])
         if REACH_MM[0] <= r <= REACH_MM[1]:
-            plan, _ = await self.plan(owner, original, 'planear_agarre_tol', angles, target, to_basket)
+            plan, _ = await self.grasp_plan(owner, original, angles, target, to_basket)
             if plan is not None:
                 return [], target
         # 21/11: con el limón justo a la izquierda de J1 (y ≈ -2 cm) la parada en su dirección pedía J1 = 1,4° (mín. 3°)
@@ -194,7 +194,7 @@ class CollectionMission:
             if any(kind == 'recto' and not 0 < value <= navigation.MAX_RECTO for kind, value in steps):
                 continue
             expected = (stop[0], stop[1], target[2]) if steps else target
-            plan, _ = await self.plan(owner, original, 'planear_agarre_tol', original.REPOSO, expected, to_basket)
+            plan, _ = await self.grasp_plan(owner, original, original.REPOSO, expected, to_basket)
             if plan is not None:
                 return steps, expected
         height = (256 + 1.43 * target[2]) / 10   # cm del piso (z del modelo de punta)
@@ -203,6 +203,16 @@ class CollectionMission:
                                f'{HEIGHT_CM[1]} cm: acercarse no lo arregla. Bajá o subí ese limón, o sacalo de la vista.')
         raise RuntimeError('Reubicá el Móvil: no hay un acercamiento sin retroceder que deje el limón a 50-55 cm '
                            'con plan de agarre')
+
+    async def grasp_plan(self, owner, original, s, lemon, to_basket):
+        """punta.planear_agarre_tol con el agarre GRASP_RAISE_MM más arriba (como lo da raised); si no hay plan, a la
+        altura medida (21/11: un limón a ~64 cm del piso tenía plan, pero 2 cm más arriba el camino a la canasta
+        sacaba a J2/J3 de la franja). Los motivos que devuelve son los del primer intento."""
+        plan, reasons = await self.plan(owner, original, 'planear_agarre_tol', s, lemon, to_basket)
+        if plan is None:
+            lower = (lemon[0], lemon[1], lemon[2] - GRASP_RAISE_MM / 1.43)
+            plan, _ = await self.plan(owner, original, 'planear_agarre_tol', s, lower, to_basket)
+        return plan, reasons
 
     async def arm_to_rest(self, owner, original):
         """El brazo al reposo desde donde quedó. Plegado (canasta), como el final de punta.cosechar pero sin volver a
@@ -528,7 +538,7 @@ class CollectionMission:
                 before, s = [('desplegar', [original.DESPLEGAR])], original.DESPLEGAR
             plan = reasons = None
             for lemon in candidates:
-                plan, reasons = await self.plan(owner, original, 'planear_agarre_tol', s, lemon, to_basket)
+                plan, reasons = await self.grasp_plan(owner, original, s, lemon, to_basket)
                 if plan is not None:
                     break
                 discarded.append(lemon)

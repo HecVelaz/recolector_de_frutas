@@ -158,19 +158,31 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         from collection_mission import nearest_rough
         grasp = Mock(AGRUPAR_MM=35.)
         grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
-        high, low_far = (-575., 342., 250.), (-600., 300., 120.)   # ~64 cm (más cerca) y ~43 cm del piso
+        high, low_far = (-575., 342., 300.), (-600., 300., 120.)   # ~69 cm (más cerca) y ~43 cm del piso
         lemon, seen = nearest_rough([[high, low_far]] * 3, grasp, None)
         self.assertEqual(seen, 2)
         self.assertEqual([round(v) for v in lemon[:2]], [-600, 300])
 
+    async def test_a_high_lemon_is_planned_without_the_extra_raise(self):
+        # 21/11: a ~64 cm del piso hay plan a la altura medida, no 2 cm más arriba
+        self.navigation.planear.return_value = [('recto', 130.)]
+        self.origin = make_lemon_origin((-575., 342., 272.), 1, self.odom)   # z ya con los +2 cm: 272 + 14
+        with (self.planners(feasible=lambda target: target[2] < 280), patch.object(self.mission, 'drive_step', new=AsyncMock()),
+              patch.object(self.mission, 'harvest', new=AsyncMock(return_value=1)),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start('operator', self.origin)
+            await self.mission.task
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+
     async def test_a_lemon_too_high_says_so_instead_of_asking_to_move(self):
-        # 21/11: limón a ~63 cm del piso (z 272): ninguna parada tiene plan; acercarse no sirve
+        # Limón a ~68 cm del piso (z 300): ninguna parada tiene plan; acercarse no sirve
         self.navigation.planear.return_value = [('recto', 80.)]
-        self.origin = make_lemon_origin((-575., 342., 272.), 1, self.odom)
+        self.origin = make_lemon_origin((-575., 342., 300.), 1, self.odom)
         with self.planners(feasible=lambda target: False):
             self.mission.start('operator', self.origin)
             await self.mission.task
-        self.assertIn('~64 cm del piso', self.mission.status['message'])
+        self.assertIn('~68 cm del piso', self.mission.status['message'])
 
     async def test_a_lemon_already_in_reach_is_picked_without_moving_and_its_zero_is_used(self):
         driven, expectations = [], []
