@@ -154,6 +154,15 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'RECUPERACION')
         self.assertIn('No encontré limones girando ±25°', self.mission.status['message'])
 
+    async def test_a_lemon_too_high_says_so_instead_of_asking_to_move(self):
+        # 21/11: limón a ~63 cm del piso (z 272): ninguna parada tiene plan; acercarse no sirve
+        self.navigation.planear.return_value = [('recto', 80.)]
+        self.origin = make_lemon_origin((-575., 342., 272.), 1, self.odom)
+        with self.planners(feasible=lambda target: False):
+            self.mission.start('operator', self.origin)
+            await self.mission.task
+        self.assertIn('~64 cm del piso', self.mission.status['message'])
+
     async def test_a_lemon_already_in_reach_is_picked_without_moving_and_its_zero_is_used(self):
         driven, expectations = [], []
 

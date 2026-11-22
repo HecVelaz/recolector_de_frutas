@@ -63,6 +63,7 @@ REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atr�
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
 # de punta, 1 mm de z son ~1,43 mm reales)
 GRASP_RAISE_MM = 20.
+HEIGHT_CM = (33, 54)   # alcance en altura medido con punta.py cosechar (21/11): solo para explicar un acercamiento sin plan
 
 
 class ArmRejected(RuntimeError):
@@ -196,6 +197,10 @@ class CollectionMission:
             plan, _ = await self.plan(owner, original, 'planear_agarre_tol', original.REPOSO, expected, to_basket)
             if plan is not None:
                 return steps, expected
+        height = (256 + 1.43 * target[2]) / 10   # cm del piso (z del modelo de punta)
+        if not HEIGHT_CM[0] <= height <= HEIGHT_CM[1]:
+            raise RuntimeError(f'El limón está a ~{height:.0f} cm del piso y el brazo agarra de {HEIGHT_CM[0]} a '
+                               f'{HEIGHT_CM[1]} cm: acercarse no lo arregla. Bajá o subí ese limón, o sacalo de la vista.')
         raise RuntimeError('Reubicá el Móvil: no hay un acercamiento sin retroceder que deje el limón a 50-55 cm '
                            'con plan de agarre')
 
