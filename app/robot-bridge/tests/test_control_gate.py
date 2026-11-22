@@ -37,7 +37,7 @@ class EvaluateTest(unittest.TestCase):
         self.assertTrue({'BASE_TOO_OLD','BATTERY_TOO_LOW_OR_UNKNOWN','ARM_NOT_HOMED'} <= set(decision.reasons))
 
     def test_each_source_expires_at_its_own_limit(self):
-        for key, limit in (('base', 1100), ('battery', 1250), ('arm', 500), ('imu', 500), ('range_front', 500)):
+        for key, limit in (('base', 1100), ('battery', 1250), ('arm', 600), ('imu', 500), ('range_front', 500)):
             with self.subTest(source=key):
                 data = real_snapshot()
                 reading = next(item for item in data['sources'] if item['key'] == key)

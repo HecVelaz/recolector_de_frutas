@@ -29,7 +29,9 @@ class GateDecision:
 REQUIRED = ('base', 'arm', 'battery', 'odom', 'bumpers', 'imu', 'range_front')
 DEFAULT_MAX_AGE_MS = 500
 # base: /base/estado llega a 2 Hz por micro-ROS best effort; 1100 ms tolera una muestra perdida (antes 650: cortaba)
-MAX_AGE_BY_SOURCE_MS = {'base': 1100, 'battery': 1250}
+# arm: /brazo/estado a 10 Hz; con la Pi cargada (planificador arrancando) hubo un hueco > 350 ms al abrir el mando
+# de la recolección (21/11): 600 ms = 6 muestras
+MAX_AGE_BY_SOURCE_MS = {'base': 1100, 'battery': 1250, 'arm': 600}
 
 
 def watchdog_standby(state, *, armed=False, allow_released=False):

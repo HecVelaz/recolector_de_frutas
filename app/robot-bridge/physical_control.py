@@ -212,7 +212,7 @@ class PhysicalControl:
             arm = sources.get('arm', {})
             age = arm.get('age_ms')
             text = evidence.get('arm_state') or ''
-            if arm.get('status') != 'fresh' or not isinstance(age, int) or age > 350:
+            if arm.get('status') != 'fresh' or not isinstance(age, int) or age > MAX_AGE_BY_SOURCE_MS['arm']:
                 reasons.append('Estado del brazo vencido')
             if self.arm_motion and not self.arm_ready(text):
                 reasons.append('El brazo perdió su referencia')
