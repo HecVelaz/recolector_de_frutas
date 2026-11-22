@@ -198,6 +198,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         def pause(value):
             paused[0] = value
             events.append(('pausa' if value else 'reanuda', value))
+            return True
 
         original_plan = self.mission.grasp_plan
 
@@ -218,19 +219,19 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         return events, planned
 
-    @patch('collection_mission.VISION_PAUSE_ENABLED', True)
+    @patch('collection_mission.VISION_ON_DEMAND', True)
     async def test_recolector_harvests_only_the_saved_list_with_vision_paused_and_the_base_still(self):
         near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
         scan = [[near, far_ok, unreachable]] * 3
-        events, planned = await self.recolector_run(scan, after=[[far_ok]] * 3)   # el segundo no salió
+        events, planned = await self.recolector_run(scan, after=[])
         self.assertEqual(planned, [(-500, 150), (-560, 200)])   # de la lista, del más cercano al más lejano
-        self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'agarra', 'reanuda', 'mide'])
+        self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'agarra', 'reanuda'])   # sin verificar
         self.assertTrue(all(value for e, value in events if e == 'agarra'))   # visión pausada en cada agarre
         self.assertFalse(any(value for e, value in events if e == 'mide'))     # nunca mide con la visión pausada
         for call in self.control.mission_velocity.call_args_list:              # la base no se mueve nunca
             self.assertEqual(call.args[1:], (0., 0.))
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
-        self.assertIn('1 de 2 agarres sacaron el limón', self.mission.status['message'])
+        self.assertIn('2 agarre(s) completo(s) de 3', self.mission.status['message'])
 
     async def test_recolector_without_lemons_skips_the_harvest(self):
         events, planned = await self.recolector_run([[]] * 3, after=[])
@@ -238,15 +239,16 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([e for e, _ in events], ['mide'])
         self.assertIn('no se cosecha', self.mission.status['message'])
 
-    @patch('collection_mission.VISION_PAUSE_ENABLED', True)
+    @patch('collection_mission.VISION_ON_DEMAND', True)
     def test_vision_runs_only_on_demand_or_during_a_mission(self):
         calls = []
-        with patch.object(self.mission, 'set_vision_paused', side_effect=calls.append), \
-                patch('collection_mission.monotonic', side_effect=[0., 0., 1., 6., 6.]):
+        self.mission.vision_demand_until = 0.
+        with patch.object(self.mission, 'set_vision_paused', side_effect=lambda v: calls.append(v) or True), \
+                patch('collection_mission.monotonic', side_effect=[0., 0., 1., 31., 31.]):
             self.mission.sync_vision()      # sin pedido: pausa
             self.mission.demand_vision()    # t=0: la app la pide -> reanuda
             self.mission.sync_vision()      # t=1: sigue pedida, no cambia
-            self.mission.sync_vision()      # t=6: venció el pedido -> pausa
+            self.mission.sync_vision()      # t=31: venció el pedido (30 s) -> se apaga
         self.assertEqual(calls, [True, False, True])
 
     async def test_a_lemon_too_high_says_so_instead_of_asking_to_move(self):

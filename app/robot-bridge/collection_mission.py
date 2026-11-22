@@ -69,12 +69,15 @@ RETURN_SECONDS = 90.
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
 # ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
 SCAN_SECONDS = 3.
-VISION_DEMAND_S = 5.   # sin un pedido de la app en este tiempo (y sin misión), la visión se pausa
-# 21/11: DESACTIVADO. El SIGSTOP a la rectificación dejó a la cámara izquierda sin publicar (Fast DDS por memoria
-# compartida no se recupera): hasta tener una pausa segura, la visión corre siempre y nada se congela.
-VISION_PAUSE_ENABLED = False
-VISION_PROCESSES = ('/lib/image_proc/rectify_node', '/lib/stereo_image_proc/disparity_node',
-                    '/lib/yolo_ros/detector_node', '/lib/yolo_ros/localizador_node')   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
+# Visión a pedido (21/11): se apaga y se prende entera (cámaras, estéreo y YOLO, el grupo de start_limon.sh). Un
+# SIGSTOP a la rectificación dejaba a la cámara izquierda sin publicar (Fast DDS por memoria compartida), por eso no
+# se congela: se apaga. Arrancar tarda ~15 s: margen de VISION_DEMAND_S sin pedido antes de apagarla.
+VISION_DEMAND_S = 30.
+VISION_ON_DEMAND = True    # interruptor general de la visión a pedido
+VISION_STOP = ['pkill', '-TERM', '-f', 'start_limon.sh']
+VISION_START = ['bash', str(Path.home() / 'scripts/vision.sh')]
+VISION_ALIVE = 'camera_ros/lib/camera_ros/camera_node'   # mientras quede alguno, no se puede volver a arrancar
+VISION_READY_S = 40.   # espera de un par estéreo nuevo (la visión recién prendida tarda ~15 s)   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
 HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
 
 
@@ -96,7 +99,7 @@ class CollectionMission:
         self._planners = None
         # Visión a pedido (21/11): la app la pide mientras está en Recolector, Recolección o en la pestaña Visión;
         # sin pedido (ni misión activa) se pausa. vision_hold: pausada a propósito (cosecha del modo Recolector).
-        self.vision_demand_until = 0.
+        self.vision_demand_until = monotonic() + VISION_DEMAND_S   # al arrancar, la dejada por arrancar_pi.sh
         self.vision_hold = False
         self.vision_paused = None
         self._pool = None
@@ -192,8 +195,9 @@ class CollectionMission:
 
     async def scan_frames(self, owner, seconds):
         """Las imágenes de /limon/todos durante `seconds` s contados desde la primera nueva (el primer par estéreo
-        procesado después de empezar; hasta 5 s de espera)."""
-        first, waited = None, monotonic() + 5.
+        procesado después de empezar; hasta VISION_READY_S de espera: la visión puede estar arrancando)."""
+        self.demand_vision()
+        first, waited = None, monotonic() + VISION_READY_S
         start_stamp = self.stereo.target_frame()[0]
         while first is None:
             if monotonic() >= waited:
@@ -206,8 +210,8 @@ class CollectionMission:
         return await self.measure_frames(owner, seconds)
 
     async def run_scan(self, owner, count, seconds):
-        """Modo Recolector: detener la base -> escanear -> guardar las coordenadas -> pausar la visión -> cosechar la
-        lista de a uno -> brazo al reposo -> reanudar la visión y comprobar cuáles quedaron."""
+        """Modo Recolector: detener la base -> escanear -> guardar las coordenadas -> apagar la visión -> cosechar la
+        lista de a uno -> brazo al reposo (sin verificar con la visión: pedido del usuario, 21/11)."""
         stage, recorder, paused, results = 'preparación', None, False, []
         try:
             navigation, grasp, tf = await asyncio.to_thread(self.planners)
@@ -245,18 +249,11 @@ class CollectionMission:
                         raise
             stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
-            self.vision_hold = paused = False
-            self.sync_vision()
-            stage = 'verificación'
-            self.update('BUSCANDO', 'Visión reanudada: comprobando qué limones quedaron en el árbol.')
-            await self.settle(owner, 2.)   # que la estéreo vuelva a entregar pares
-            seen = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in
-                    group_lemons(await self.measure_frames(owner, seconds + 1.), grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)]
-            done = [lemon for lemon, result in results if result == 'hecho']
-            picked = sum(1 for lemon in done if not any(math.dist(lemon, v) < grasp.VERIFICAR_MM for v in seen))
+            # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
+            done = sum(1 for _, result in results if result == 'hecho')
             detail = '; '.join(f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results)
-            self.update('FINALIZADO', f'Modo Recolector: {picked} de {len(done)} agarres sacaron el limón '
-                        f'({len(targets)} en la lista). {detail}')
+            self.update('FINALIZADO', f'Modo Recolector: {done} agarre(s) completo(s) de {len(targets)} limón(es) en la '
+                        f'lista. {detail}')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Modo Recolector detenido por el operador.')
         except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
@@ -285,23 +282,23 @@ class CollectionMission:
 
     def sync_vision(self):
         """Pausa o reanuda la visión según el pedido de la app, la misión activa y vision_hold (solo si cambia)."""
-        if not VISION_PAUSE_ENABLED:
+        if not VISION_ON_DEMAND:
             return
         paused = self.vision_hold or not (self.active or monotonic() < self.vision_demand_until)
-        if paused != self.vision_paused:
-            self.set_vision_paused(paused)
+        if paused != self.vision_paused and self.set_vision_paused(paused):
             self.vision_paused = paused
 
     def set_vision_paused(self, paused):
-        """SIGSTOP / SIGCONT a los procesos de VISION_PROCESSES (los del mismo usuario). Sin procesos, no hace nada."""
+        """Apaga (TERM al grupo de start_limon.sh) o prende (scripts/vision.sh) la visión entera, sin esperar. False si
+        todavía no se puede prender (quedan procesos del apagado anterior): sync_vision lo reintenta."""
         import subprocess
-        for pattern in VISION_PROCESSES:
-            found = subprocess.run(['pgrep', '-f', pattern], capture_output=True, text=True).stdout.split()
-            for pid in found:
-                try:
-                    os.kill(int(pid), signal.SIGSTOP if paused else signal.SIGCONT)
-                except (ProcessLookupError, PermissionError, ValueError):
-                    pass
+        if paused:
+            subprocess.run(VISION_STOP, capture_output=True, timeout=5)
+            return True
+        if subprocess.run(['pgrep', '-f', VISION_ALIVE], capture_output=True).returncode == 0 and self.vision_paused:
+            return False   # se está apagando: esperar a que termine antes de lanzarla de nuevo
+        subprocess.run(VISION_START, capture_output=True, timeout=10)
+        return True
 
     async def run_return(self, owner, origin):
         try:
