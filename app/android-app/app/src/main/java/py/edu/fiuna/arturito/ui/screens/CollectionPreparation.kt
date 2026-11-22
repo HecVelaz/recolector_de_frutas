@@ -26,6 +26,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     onStart: () -> Unit, onStop: () -> Unit, lemons: Int = 1, onLemons: (Int) -> Unit = {},
     address: String = "", token: String = "", video: Boolean = false,
     canReturn: Boolean = false, onReturn: () -> Unit = {},
+    canScan: Boolean = false, onScan: () -> Unit = {},
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("Cero del robot", Modifier.weight(1f)) {
@@ -91,6 +92,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
             else {
                 Button(onClick = onStart, enabled = canStart) { Text("Iniciar recolección") }
                 OutlinedButton(onClick = onReturn, enabled = canReturn) { Text("Volver al cero") }
+                OutlinedButton(onClick = onScan, enabled = canScan) { Text("Modo Recolector") }
             }
         }
     }

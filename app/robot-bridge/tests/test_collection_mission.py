@@ -175,6 +175,68 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
 
+    async def recolector_run(self, scan, after, count=2):
+        """Modo Recolector (21/11): scan = lo que ve en el escaneo; after = lo que ve al reanudar la visión."""
+        events, planned = [], []
+        grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.))
+        grasp.k.Q1_LIM = (0., 180.)
+        grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
+        grasp.planear_agarre_tol.side_effect = lambda s, target, basket: (
+            ([('servo', 'pz a')], []) if target[0] > -700 else (None, ['lejos']))
+        frames = iter([scan, after])
+
+        async def measure(owner, seconds=8.):
+            events.append(('mide', paused[0]))
+            return next(frames)
+
+        async def task(owner, original, steps):
+            events.append(('agarra', paused[0]))
+            planned.append(self.grasp_target)
+
+        paused = [False]
+
+        def pause(value):
+            paused[0] = value
+            events.append(('pausa' if value else 'reanuda', value))
+
+        original_plan = self.mission.grasp_plan
+
+        async def grasp_plan(owner, original, s, lemon, basket):
+            self.grasp_target = tuple(round(v) for v in lemon[:2])
+            return await original_plan(owner, original, s, lemon, basket)
+
+        with (patch.object(self.mission, 'planners', return_value=(self.navigation, grasp, None)),
+              patch.object(self.mission, 'scan_frames', side_effect=measure),
+              patch.object(self.mission, 'measure_frames', side_effect=measure),
+              patch.object(self.mission, 'run_task', side_effect=task),
+              patch.object(self.mission, 'grasp_plan', side_effect=grasp_plan),
+              patch.object(self.mission, 'arm_to_rest', new=AsyncMock(return_value=True)),
+              patch.object(self.mission, 'set_vision_paused', side_effect=pause),
+              patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
+            self.mission.start_scan('operator', count, 3.)
+            await self.mission.task
+        return events, planned
+
+    async def test_recolector_harvests_only_the_saved_list_with_vision_paused_and_the_base_still(self):
+        near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
+        scan = [[near, far_ok, unreachable]] * 3
+        events, planned = await self.recolector_run(scan, after=[[far_ok]] * 3)   # el segundo no salió
+        self.assertEqual(planned, [(-500, 150), (-560, 200)])   # de la lista, del más cercano al más lejano
+        self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'agarra', 'reanuda', 'mide'])
+        self.assertTrue(all(value for e, value in events if e == 'agarra'))   # visión pausada en cada agarre
+        self.assertFalse(any(value for e, value in events if e == 'mide'))     # nunca mide con la visión pausada
+        for call in self.control.mission_velocity.call_args_list:              # la base no se mueve nunca
+            self.assertEqual(call.args[1:], (0., 0.))
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+        self.assertIn('1 de 2 agarres sacaron el limón', self.mission.status['message'])
+
+    async def test_recolector_without_lemons_skips_the_harvest(self):
+        events, planned = await self.recolector_run([[]] * 3, after=[])
+        self.assertEqual(planned, [])
+        self.assertEqual([e for e, _ in events], ['mide'])
+        self.assertIn('no se cosecha', self.mission.status['message'])
+
     async def test_a_lemon_too_high_says_so_instead_of_asking_to_move(self):
         # Limón a ~68 cm del piso (z 300): ninguna parada tiene plan; acercarse no sirve
         self.navigation.planear.return_value = [('recto', 80.)]

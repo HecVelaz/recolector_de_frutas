@@ -59,6 +59,9 @@ class CollectionRequest(BaseModel):
     operator_present: bool
     lemons: int = Field(1, ge=1, le=5, strict=True)   # limones por parada (recolectar.py --limones)
     to_basket: bool = True                           # False: uno solo y queda en la pinza (--sin-soltar)
+    # 21/11: 'recolector' = sin mover la base: escaneo, lista guardada, visión pausada y cosecha de la lista
+    mode: str = Field('acercamiento', pattern='^(acercamiento|recolector)$')
+    scan_seconds: float = Field(3., ge=1., le=10.)
 
 
 def create_app(source=None, data_dir=None, token=None, estado_url=None, control_dry_run=None,
@@ -208,6 +211,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
                                                       home_marker=data_dir / 'arm-homing-pending')
                 marker_tools = os.environ.get('ARTURITO_MARKER_TOOLS') or Path.home() / 'scripts/27-aruco-arbol/tools'
                 collection = CollectionMission(physical_controller, stereo, data_dir, marker_tools)
+                collection.set_vision_paused(False)   # por si el puente se cortó con la visión pausada (modo Recolector)
 
                 async def preload():   # punta.py, numpy y la calibración ya cargados antes del primer cero o misión
                     try:
@@ -293,6 +297,8 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             operator = mission_operator(request)
             if not body.operator_present or origin_capture.locked():
                 raise HTTPException(409, 'Confirmá la supervisión local y esperá a que termine la medición')
+            if body.mode == 'recolector':
+                return collection.start_scan(operator, body.lemons, body.scan_seconds)
             return collection.start(operator, navigation_origin, body.lemons, body.to_basket)
 
         @app.post('/api/v1/mission/return')

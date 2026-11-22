@@ -47,6 +47,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var missionId by remember { mutableStateOf<String?>(null) }
     var lemonCount by remember { mutableIntStateOf(1) }
     var returning by remember { mutableStateOf(false) }   // la "misión" en curso es volver al cero
+    var recolector by remember { mutableStateOf(false) }  // modo Recolector: cosecha sin mover la base
     var captureBusy by remember { mutableStateOf(false) }
     var parking by remember { mutableStateOf(false) }
     var showBase by remember { mutableStateOf(false) }
@@ -156,7 +157,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         val id = missionId ?: return@LaunchedEffect
         var started = false
         try {
-            if (returning) client.startReturn(address, token, id) else client.startCollection(address, token, id, lemonCount)
+            if (returning) client.startReturn(address, token, id)
+            else client.startCollection(address, token, id, lemonCount, recolector)
             started = true
             // 21/11: un latido que tarda más de 450 ms no corta la misión; se reintenta mientras el último correcto
             // tenga menos de 1 s (el puente espera 1,25 s antes de detenerla por falta de supervisión)
@@ -280,8 +282,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         val home = purpose == "homing"
         val mission = purpose == "mission"
         val goHome = purpose == "return"
+        val scan = purpose == "recolector"
         AlertDialog(onDismissRequest = { confirmRun = null },
-            title = { Text(if (home) "Hacer el homing del brazo" else if (mission) "Preparar la recolección"
+            title = { Text(if (home) "Hacer el homing del brazo" else if (scan) "Modo Recolector" else if (mission) "Preparar la recolección"
                 else if (goHome) "Volver al cero" else "Preparar el mando") },
             text = {
                 Text(when {
@@ -291,6 +294,10 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     mission -> "El Móvil se acercará al limón más cercano, el brazo intentará llevar " +
                         (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta y el Móvil " +
                         "volverá al cero desandando el camino. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
+                    scan -> "El Móvil no se mueve: escanea 3 s, guarda los limones que ve, pausa la visión y el brazo " +
+                        "intenta llevar " + (if (lemonCount == 1) "un limón" else "hasta $lemonCount limones") +
+                        " de esa lista a la canasta. Al final reanuda la visión y comprueba cuáles salieron. " +
+                        "Despejá el recorrido del brazo y quedate junto al corte físico."
                     goHome -> "El brazo vuelve al reposo y el Móvil al cero: gira y retrocede en línea recta por donde " +
                         "vino. Despejá detrás del robot y quedate junto al corte físico."
                     showBase -> "Confirmá que el recorrido está despejado y que podés cortar la potencia."
@@ -302,10 +309,11 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     confirmRun = null
                     when {
                         home -> startSession(home = true)
-                        mission || goHome -> {
+                        mission || goHome || scan -> {
                             failed = false
                             message = ""
                             returning = goHome
+                            recolector = scan
                             missionId = UUID.randomUUID().toString()
                         }
                         else -> startSession(home = false)
@@ -351,6 +359,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     onStop = { missionId = null }, lemons = lemonCount,
                     canReturn = baseAvailable && idle && !captureBusy && referenced && telemetry?.navigationOrigin != null,
                     onReturn = { confirmRun = "return" },
+                    canScan = baseAvailable && idle && !captureBusy && referenced &&
+                        telemetry?.stereo?.status in listOf("located", "searching") && telemetry?.collection != null,
+                    onScan = { confirmRun = "recolector" },
                     onLemons = { if (missionId == null) lemonCount = it },
                     address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,

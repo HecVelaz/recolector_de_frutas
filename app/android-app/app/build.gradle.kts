@@ -11,8 +11,8 @@ android {
         applicationId = "py.edu.fiuna.arturito"
         minSdk = 26
         targetSdk = 36
-        versionCode = 31
-        versionName = "0.12.1"
+        versionCode = 32
+        versionName = "0.13.0"
     }
     buildFeatures { compose = true }
     compileOptions {

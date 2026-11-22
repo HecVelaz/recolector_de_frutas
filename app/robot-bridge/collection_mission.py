@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import json
 import logging
 import math
+import os
 from pathlib import Path
 import multiprocessing
 import signal
@@ -63,7 +64,13 @@ REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atr�
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
 # de punta, 1 mm de z son ~1,43 mm reales)
 GRASP_RAISE_MM = 20.
-RETURN_SECONDS = 90.   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
+RETURN_SECONDS = 90.
+# Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
+# el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
+# ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
+SCAN_SECONDS = 3.
+VISION_PROCESSES = ('/lib/image_proc/rectify_node', '/lib/stereo_image_proc/disparity_node',
+                    '/lib/yolo_ros/detector_node', '/lib/yolo_ros/localizador_node')   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
 HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
 
 
@@ -152,6 +159,124 @@ class CollectionMission:
         self.update('NAVEGANDO', 'Volviendo al reposo y al cero.')
         self.task = asyncio.create_task(self.run_return(self.owner, origin))
         return self.snapshot()
+
+    def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS):
+        """Modo Recolector: cosechar desde donde está el Móvil, sin moverlo (no hace falta cero)."""
+        self.control.tick()
+        if self.active or self.control.owner is not None:
+            raise HTTPException(409, 'Detené el mando antes de iniciar el modo Recolector')
+        start = self.control.snapshot()
+        arm = start.get('arm_state')
+        if not self.control.arm_ready(arm) or max(abs(a - b) for a, b in zip(arm_angles(arm), (3, 17, 4))) > 3:
+            raise HTTPException(409, 'Hacé el homing y dejá el brazo en reposo')
+        if self.stereo.snapshot()['status'] == 'waiting':
+            raise HTTPException(409, 'Esperá a que la visión estéreo reciba profundidad')
+        self.owner, self.operator = f'recolector-{uuid4()}', operator
+        self.deadline = monotonic() + 1.25
+        self.run_until = monotonic() + 120. + 120. * lemons
+        self.stop_requested = False
+        self.zone = None
+        self.events = []
+        self.update('BUSCANDO', f'Modo Recolector: escaneo de {seconds:.0f} s con el Móvil quieto.')
+        self.task = asyncio.create_task(self.run_scan(self.owner, lemons, seconds))
+        return self.snapshot()
+
+    async def scan_frames(self, owner, seconds):
+        """Las imágenes de /limon/todos durante `seconds` s contados desde la primera nueva (el primer par estéreo
+        procesado después de empezar; hasta 5 s de espera)."""
+        first, waited = None, monotonic() + 5.
+        start_stamp = self.stereo.target_frame()[0]
+        while first is None:
+            if monotonic() >= waited:
+                raise RuntimeError('La visión estéreo no entrega pares nuevos: revisá las cámaras')
+            self.cycle(owner)
+            stamp = self.stereo.target_frame()[0]
+            if stamp is not None and (start_stamp is None or stamp > start_stamp):
+                first = stamp
+            await asyncio.sleep(.05)
+        return await self.measure_frames(owner, seconds)
+
+    async def run_scan(self, owner, count, seconds):
+        """Modo Recolector: detener la base -> escanear -> guardar las coordenadas -> pausar la visión -> cosechar la
+        lista de a uno -> brazo al reposo -> reanudar la visión y comprobar cuáles quedaron."""
+        stage, recorder, paused, results = 'preparación', None, False, []
+        try:
+            navigation, grasp, tf = await asyncio.to_thread(self.planners)
+            recorder = await self.start_recording()
+            await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
+            stage = 'escaneo'
+            frames = await self.scan_frames(owner, seconds)
+            groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
+            targets = sorted((raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
+                              if spread <= grasp.DISPERSION_MAX), key=lambda l: math.hypot(l[0], l[1]))
+            if not targets:
+                self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha en esta parada.')
+                return
+            self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es). Visión pausada; cosechando de a uno.')
+            self.set_vision_paused(True)
+            paused = True
+            stage = 'cosecha'
+            for lemon in targets:
+                if sum(1 for r in results if r[1] == 'hecho') >= count:
+                    break
+                s = arm_angles(self.control.snapshot().get('arm_state'))
+                before = []
+                if s[0] > grasp.k.Q1_LIM[1]:   # en la canasta: primero de paso a DESPLEGAR
+                    before, s = [('desplegar', [grasp.DESPLEGAR])], grasp.DESPLEGAR
+                plan, reasons = await self.grasp_plan(owner, grasp, s, lemon, True)
+                if plan is None:
+                    results.append((lemon, 'sin plan: ' + '; '.join(reasons or [])[:80]))
+                    continue
+                try:
+                    await self.run_task(owner, grasp, before + plan)
+                    results.append((lemon, 'hecho'))
+                except ArmRejected as error:
+                    results.append((lemon, f'falló: {error}'))
+                    if not await self.recover_to_basket(owner, grasp) and not await self.arm_to_rest(owner, grasp):
+                        raise
+            stage = 'regreso del brazo al reposo'
+            await self.arm_to_rest(owner, grasp)
+            self.set_vision_paused(False)
+            paused = False
+            stage = 'verificación'
+            self.update('BUSCANDO', 'Visión reanudada: comprobando qué limones quedaron en el árbol.')
+            await self.settle(owner, 2.)   # que la estéreo vuelva a entregar pares
+            seen = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in
+                    group_lemons(await self.measure_frames(owner, seconds + 1.), grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)]
+            done = [lemon for lemon, result in results if result == 'hecho']
+            picked = sum(1 for lemon in done if not any(math.dist(lemon, v) < grasp.VERIFICAR_MM for v in seen))
+            detail = '; '.join(f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results)
+            self.update('FINALIZADO', f'Modo Recolector: {picked} de {len(done)} agarres sacaron el limón '
+                        f'({len(targets)} en la lista). {detail}')
+        except asyncio.CancelledError:
+            self.update('INACTIVO', 'Modo Recolector detenido por el operador.')
+        except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
+            detail = error.detail if isinstance(error, HTTPException) else str(error)
+            self.update('RECUPERACION', f'El modo Recolector se detuvo durante {stage}. {detail}')
+        except Exception:
+            logging.exception('Falló el modo Recolector')
+            self.update('RECUPERACION', 'Falló el modo Recolector. Consultá el registro de la Raspberry Pi.')
+        finally:
+            if paused:
+                self.set_vision_paused(False)
+            try:
+                if self.control.owner == owner:
+                    self.control.stop()
+            finally:
+                if recorder is not None:
+                    await self.stop_recording(recorder)
+                self.save_log()
+
+    def set_vision_paused(self, paused):
+        """SIGSTOP / SIGCONT a los procesos de VISION_PROCESSES (los del mismo usuario). Sin procesos, no hace nada."""
+        import subprocess
+        for pattern in VISION_PROCESSES:
+            found = subprocess.run(['pgrep', '-f', pattern], capture_output=True, text=True).stdout.split()
+            for pid in found:
+                try:
+                    os.kill(int(pid), signal.SIGSTOP if paused else signal.SIGCONT)
+                except (ProcessLookupError, PermissionError, ValueError):
+                    pass
 
     async def run_return(self, owner, origin):
         try:
