@@ -222,7 +222,8 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
     @patch('collection_mission.VISION_ON_DEMAND', True)
     async def test_recolector_harvests_only_the_saved_list_with_vision_paused_and_the_base_still(self):
         near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
-        scan = [[near, far_ok, unreachable]] * 3
+        beside = (-480., 40., 130.)   # a ~5° de J1: el firmware pediría J1 < 3°
+        scan = [[near, far_ok, unreachable, beside]] * 3
         events, planned = await self.recolector_run(scan, after=[])
         self.assertEqual(planned, [(-500, 150), (-560, 200)])   # de la lista, del más cercano al más lejano
         self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'agarra', 'reanuda'])   # sin verificar
@@ -231,7 +232,8 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         for call in self.control.mission_velocity.call_args_list:              # la base no se mueve nunca
             self.assertEqual(call.args[1:], (0., 0.))
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
-        self.assertIn('2 agarre(s) completo(s) de 3', self.mission.status['message'])
+        self.assertIn('2 agarre(s) completo(s) de 4', self.mission.status['message'])
+        self.assertIn('salteado', self.mission.status['message'])
 
     async def test_recolector_without_lemons_skips_the_harvest(self):
         events, planned = await self.recolector_run([[]] * 3, after=[])

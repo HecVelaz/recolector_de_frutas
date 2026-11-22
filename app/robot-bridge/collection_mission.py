@@ -236,6 +236,11 @@ class CollectionMission:
                 before = []
                 if s[0] > grasp.k.Q1_LIM[1]:   # en la canasta: primero de paso a DESPLEGAR
                     before, s = [('desplegar', [grasp.DESPLEGAR])], grasp.DESPLEGAR
+                # 21/11: un limón casi justo a la izquierda de J1 pedía J1 < 3° y el firmware cortó la cosecha; sin
+                # mover la base no hay otra parada: se saltea (el mismo MIN_BEARING_DEG del acercamiento)
+                if math.degrees(math.atan2(lemon[1], -lemon[0])) < MIN_BEARING_DEG:
+                    results.append((lemon, f'salteado: a menos de {MIN_BEARING_DEG:.0f}° adelante de J1'))
+                    continue
                 plan, reasons = await self.grasp_plan(owner, grasp, s, lemon, True)
                 if plan is None:
                     results.append((lemon, 'sin plan: ' + '; '.join(reasons or [])[:80]))
