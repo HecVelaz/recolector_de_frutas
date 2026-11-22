@@ -819,7 +819,9 @@ def nearest_rough(frames, grasp, tf):
     lemons = [raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups if spread <= ORIGIN_SPREAD_MM]
     if not lemons:
         return None, 0
-    return min(lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
+    # 21/11: primero los que están a la altura que agarra el brazo (un limón a 63 cm del piso, el más cercano, no tenía plan)
+    reachable = [lemon for lemon in lemons if HEIGHT_CM[0] <= (256 + 1.43 * lemon[2]) / 10 <= HEIGHT_CM[1]]
+    return min(reachable or lemons, key=lambda lemon: math.hypot(lemon[0], lemon[1])), len(lemons)
 
 
 def group_lemons(frames, join_mm, min_views, min_fraction=.3):

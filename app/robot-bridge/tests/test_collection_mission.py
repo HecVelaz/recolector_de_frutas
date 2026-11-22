@@ -154,6 +154,15 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'RECUPERACION')
         self.assertIn('No encontré limones girando ±25°', self.mission.status['message'])
 
+    def test_the_zero_prefers_a_lemon_at_a_reachable_height(self):
+        from collection_mission import nearest_rough
+        grasp = Mock(AGRUPAR_MM=35.)
+        grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
+        high, low_far = (-575., 342., 250.), (-600., 300., 120.)   # ~64 cm (más cerca) y ~43 cm del piso
+        lemon, seen = nearest_rough([[high, low_far]] * 3, grasp, None)
+        self.assertEqual(seen, 2)
+        self.assertEqual([round(v) for v in lemon[:2]], [-600, 300])
+
     async def test_a_lemon_too_high_says_so_instead_of_asking_to_move(self):
         # 21/11: limón a ~63 cm del piso (z 272): ninguna parada tiene plan; acercarse no sirve
         self.navigation.planear.return_value = [('recto', 80.)]
