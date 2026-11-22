@@ -218,6 +218,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         return events, planned
 
+    @patch('collection_mission.VISION_PAUSE_ENABLED', True)
     async def test_recolector_harvests_only_the_saved_list_with_vision_paused_and_the_base_still(self):
         near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
         scan = [[near, far_ok, unreachable]] * 3
@@ -237,6 +238,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([e for e, _ in events], ['mide'])
         self.assertIn('no se cosecha', self.mission.status['message'])
 
+    @patch('collection_mission.VISION_PAUSE_ENABLED', True)
     def test_vision_runs_only_on_demand_or_during_a_mission(self):
         calls = []
         with patch.object(self.mission, 'set_vision_paused', side_effect=calls.append), \

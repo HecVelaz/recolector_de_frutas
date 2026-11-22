@@ -70,6 +70,9 @@ RETURN_SECONDS = 90.
 # ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
 SCAN_SECONDS = 3.
 VISION_DEMAND_S = 5.   # sin un pedido de la app en este tiempo (y sin misión), la visión se pausa
+# 21/11: DESACTIVADO. El SIGSTOP a la rectificación dejó a la cámara izquierda sin publicar (Fast DDS por memoria
+# compartida no se recupera): hasta tener una pausa segura, la visión corre siempre y nada se congela.
+VISION_PAUSE_ENABLED = False
 VISION_PROCESSES = ('/lib/image_proc/rectify_node', '/lib/stereo_image_proc/disparity_node',
                     '/lib/yolo_ros/detector_node', '/lib/yolo_ros/localizador_node')   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
 HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
@@ -282,6 +285,8 @@ class CollectionMission:
 
     def sync_vision(self):
         """Pausa o reanuda la visión según el pedido de la app, la misión activa y vision_hold (solo si cambia)."""
+        if not VISION_PAUSE_ENABLED:
+            return
         paused = self.vision_hold or not (self.active or monotonic() < self.vision_demand_until)
         if paused != self.vision_paused:
             self.set_vision_paused(paused)
