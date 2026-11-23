@@ -126,6 +126,17 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(HTTPException):
             ManualInput(gripper_speed_dps=90, wrist_degrees=10).servo_command()
 
+    async def test_hold_correction_at_rest_is_valid_for_two_seconds(self):
+        await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
+        self.evidence['arm_state'] = 'q=3,17,9;e=1,4,4;c=111;fc=000;pz=-1;mn=-1'   # la base sacudió J1
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+        self.now += 1.5
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+        self.now += 1.
+        self.assertIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+        self.evidence['arm_state'] = 'q=3,17,9;e=4,4,4;c=111;fc=000;pz=-1;mn=-1'
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+
     async def test_arm_braking_state_is_valid_only_while_settling(self):
         await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
         self.control.input('owner', ManualInput(motion='j2-'))
@@ -134,7 +145,9 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput())
         self.now += .6
         self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
-        self.now += .5
+        self.now += .5   # pasó el asentamiento: sigue valiendo como corrección del sostén hasta 2 s más
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+        self.now += 2.1
         self.assertIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
 
     async def test_brief_input_gap_stops_both_axes_and_keeps_the_session(self):

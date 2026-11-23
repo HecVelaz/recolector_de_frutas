@@ -64,6 +64,7 @@ def home_recovery(detail, state):
         return 10.
     return None
 JOINT_STATES = re.compile(r'(?:^|;)e=([0-6]),([0-6]),([0-6])(?:;|$)')
+ARM_HOLD_CORRECTION_S = 2.0   # quieto: cuánto puede durar el estado 1 (corrección del sostén)
 ARM_SETTLE_S = 1.0   # margen tras 'jv 0 0 0' para que las articulaciones queden quietas
 REFERENCED = re.compile(r'(?:^|;)c=111(?:;|$)')
 
@@ -194,6 +195,7 @@ class PhysicalControl:
         self.last_sequence = None
         self.last_stop = (None, None)
         self.arm_settling_until = 0
+        self.arm_correcting_since = None
         self.home_started = self.home_completed = self.park_started = None
         self.home_recovery = None      # (inicio, destino de J2) mientras J2 vuelve a la franja
         self.home_retried = False
@@ -243,6 +245,15 @@ class PhysicalControl:
                 allowed = '012345' if self.park_started is not None else '012346'
             if self.autonomous:
                 allowed = '012345'
+            # Quieto, "1 yendo" es la corrección del sostén cuando algo corre la articulación (al manejar la base en
+            # combinado, 23/11): vale hasta ARM_HOLD_CORRECTION_S; más tiempo es una articulación que no vuelve.
+            correcting = bool(states) and '1' in states.groups() and '1' not in allowed
+            if not correcting:
+                self.arm_correcting_since = None
+            elif self.arm_correcting_since is None:
+                self.arm_correcting_since = self.clock()
+            if correcting and self.clock() - self.arm_correcting_since <= ARM_HOLD_CORRECTION_S:
+                allowed += '1'
             if not states or any(state not in allowed for state in states.groups()):
                 reasons.append('Brazo ocupado o en estado inválido')
         return reasons
@@ -298,6 +309,7 @@ class PhysicalControl:
         self.awaiting_neutral = False
         self.last_sequence = None
         self.arm_settling_until = 0
+        self.arm_correcting_since = None
         self.home_started = self.home_completed = self.park_started = None
         self.home_recovery = None
         self.home_retried = False
