@@ -457,10 +457,10 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(HTTPException, 'homing'):
             self.mission.start_return('operator', self.origin)
 
-    def test_grasp_point_is_raised_two_real_centimetres(self):
+    def test_grasp_point_is_raised_three_quarters_of_a_real_centimetre(self):
         from collection_mission import raised
-        self.assertEqual(GRASP_RAISE_MM, 20.)
-        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + 20. / 1.43)
+        self.assertEqual(GRASP_RAISE_MM, 7.5)   # 23/11: con 20 cerraba 1-1,5 cm alto
+        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + 7.5 / 1.43)
 
     def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
         arrival = dict(self.odom, x_m=.2)
