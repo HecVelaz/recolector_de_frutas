@@ -31,7 +31,7 @@ fun ConnectionScreen(bridge: BridgeConnection, enabled: Boolean, address: String
                 InstrumentArt(Figure.Link, Modifier.size(48.dp), ink = accessInk)
                 Column(Modifier.weight(1f)) {
                     Text(if (enabled) bridge.status else "Conexión pausada", style = MaterialTheme.typography.titleMedium)
-                    Text("Tablet → notebook por USB → Raspberry Pi",
+                    Text(if (enabled) "Para cambiar la dirección: Desconectar" else "Tablet → Raspberry Pi por Tailscale (o túnel USB)",
                         color = if (connected) accessInk.copy(alpha = .84f) else colors.onSurfaceVariant)
                 }
                 if (enabled) {
@@ -44,7 +44,7 @@ fun ConnectionScreen(bridge: BridgeConnection, enabled: Boolean, address: String
             }
             if (!enabled) {
                 OutlinedTextField(address, onAddress, label = { Text("Dirección del puente") },
-                    placeholder = { Text("http://127.0.0.1:18006") }, singleLine = true,
+                    placeholder = { Text("http://100.116.96.71:18006") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(token, onToken, label = { Text("Clave de conexión") }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())

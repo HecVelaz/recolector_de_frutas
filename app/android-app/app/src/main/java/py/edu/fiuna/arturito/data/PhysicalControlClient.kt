@@ -90,7 +90,7 @@ class PhysicalControlClient {
     private suspend fun request(address: String, token: String, id: String, path: String,
         method: String, body: JsonObject?, transport: OkHttpClient): JsonObject {
         val endpoint = BridgeProtocol.endpoint(address)
-        require(endpoint.host == "127.0.0.1") { "El mando requiere conexión por el túnel local." }
+        require(BridgeProtocol.controlHostAllowed(endpoint.host)) { "El mando requiere el túnel USB o Tailscale." }
         val request = Request.Builder().url(endpoint.newBuilder().addPathSegments("api/v1/$path").build())
             .header("Authorization", "Bearer ${token.trim()}")
             .header("X-Arturito-Client", id)

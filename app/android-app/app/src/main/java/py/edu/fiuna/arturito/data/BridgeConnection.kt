@@ -80,6 +80,12 @@ object BridgeProtocol {
             url.username.isEmpty() && url.password.isEmpty()) { "Usá solamente http(s)://dirección:puerto" }
         return url
     }
+    /** El mando solo va por el túnel USB (127.0.0.1) o por Tailscale (100.64.0.0/10: cifrado, solo dispositivos propios). */
+    fun controlHostAllowed(host: String): Boolean {
+        if (host == "127.0.0.1") return true
+        val octets = host.split(".").mapNotNull { it.toIntOrNull() }
+        return octets.size == 4 && octets[0] == 100 && octets[1] in 64..127
+    }
     fun decode(json: String): BridgeTelemetry {
         require(json.length <= 64000) { "Mensaje demasiado grande" }
         val root = JsonParser.parseString(json).asJsonObject

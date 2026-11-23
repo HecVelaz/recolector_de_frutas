@@ -115,7 +115,7 @@ fun RobotApp(initialTab: String = "Control", dark: Boolean = false, onToggleThem
     val sessionEnabled = bridge.controlStatus?.state in listOf("enabled", "active")
     val telemetry = bridge.telemetry
     val physical = telemetry?.physicalManual == true
-    val localTunnel = runCatching { py.edu.fiuna.arturito.data.BridgeProtocol.endpoint(address).host == "127.0.0.1" }
+    val localTunnel = runCatching { py.edu.fiuna.arturito.data.BridgeProtocol.run { controlHostAllowed(endpoint(address).host) } }
         .getOrDefault(false)
     LaunchedEffect(sessionEnabled, bridgeEnabled, bridge.connected, foreground, tab) {
         if (!sessionEnabled || !bridgeEnabled || !bridge.connected || !foreground || tab != "Control") {

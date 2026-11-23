@@ -57,4 +57,11 @@ class BridgeProtocolTest {
         assertEquals("Vencido", accepted.sources.single().statusLabel)
         assertNull(accepted.sources.single().value)
     }
+
+    @Test fun controlOnlyByLoopbackOrTailscale() {
+        assertTrue(BridgeProtocol.controlHostAllowed("127.0.0.1"))
+        assertTrue(BridgeProtocol.controlHostAllowed("100.116.96.71"))
+        assertFalse(BridgeProtocol.controlHostAllowed("192.168.1.159"))
+        assertFalse(BridgeProtocol.controlHostAllowed("100.200.1.1"))
+    }
 }
