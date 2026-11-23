@@ -65,9 +65,11 @@ ZONE_M, ZONE_DEG = .04, 5.
 EXPECTED_RADIUS_MM = 120.   # mientras actúa el brazo, el Móvil quieto a menos de esto de donde llegó
 REVERSE_M_S = .06            # al volver al cero desandando el camino y al reubicarse en el Recolector (atrás no hay sensores)
 # Modo Recolector (23/11, pedido del usuario): si un limón no está en la zona buena, el Móvil se reubica para dejarlo a
-# STOP_RADIUS_MM y entre estos ángulos adelante de J1, con marcha atrás de hasta MAX_REVERSE_MM (atrás no hay sensores)
+# STOP_RADIUS_MM y entre estos ángulos adelante de J1, con la orientación final libre y marcha atrás de hasta
+# MAX_REVERSE_MM (atrás no hay sensores)
 REPOSITION_BEARINGS_DEG = (15., 35.)
 MAX_REVERSE_MM = 200.
+REPOSITION_PLANS = 4   # paradas a probar con el planificador del brazo (cada plan puede tardar ~6-30 s)
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
 # de punta, 1 mm de z son ~1,43 mm reales)
 GRASP_RAISE_MM = 20.
@@ -408,21 +410,34 @@ class CollectionMission:
         return 1
 
     async def reposition(self, owner, navigation, original, target, to_basket):
-        """Modo Recolector (23/11): (pasos, dónde va a quedar el limón) para dejarlo a STOP_RADIUS_MM (o REACH_MM[0])
-        y entre REPOSITION_BEARINGS_DEG adelante de J1, lo más parecido a como está, con plan de agarre desde el reposo.
-        Marcha atrás hasta MAX_REVERSE_MM. None si no hay."""
-        bearing = math.degrees(math.atan2(target[1], -target[0]))
+        """Modo Recolector (23/11): (pasos, dónde va a quedar el limón) para dejarlo a STOP_RADIUS_MM (±20 mm) y entre
+        REPOSITION_BEARINGS_DEG adelante de J1, con plan de agarre desde el reposo. La orientación final del Móvil es
+        libre (J1 no está en el centro de giro: a veces alcanza con girar): de todas las combinaciones, la que menos
+        mueve el robot (giros en grados + 2 por cm recto; la marcha atrás, hasta MAX_REVERSE_MM, cuesta 60 más;
+        fuera de STOP_RADIUS_MM exacto, 25 más).
+        None si no hay."""
         low, high = REPOSITION_BEARINGS_DEG
-        for radius in (STOP_RADIUS_MM, REACH_MM[0]):
-            for b in dict.fromkeys((min(max(bearing, low), high), (low + high) / 2)):
-                stop = (-radius * math.cos(math.radians(b)), radius * math.sin(math.radians(b)))
-                steps = navigation.planear(target[:2], 0., stop, orientar=False)
-                if any(kind == 'recto' and not -MAX_REVERSE_MM <= value <= navigation.MAX_RECTO for kind, value in steps):
-                    continue
-                expected = (stop[0], stop[1], target[2])
-                plan, _ = await self.grasp_plan(owner, original, original.REPOSO, expected, to_basket)
-                if plan is not None:
-                    return steps, expected
+        options = []
+        for radius in (STOP_RADIUS_MM, STOP_RADIUS_MM - 20., STOP_RADIUS_MM + 20.):
+            for bearing in range(int(low), int(high) + 1, 5):
+                stop = (-radius * math.cos(math.radians(bearing)), radius * math.sin(math.radians(bearing)))
+                best = None
+                for heading in range(-120, 121, 5):
+                    steps = navigation.planear(target[:2], float(heading), stop, orientar=True)
+                    if any(kind == 'recto' and not -MAX_REVERSE_MM <= value <= navigation.MAX_RECTO
+                           for kind, value in steps):
+                        continue
+                    cost = (sum(abs(v) for k, v in steps if k == 'giro') + sum(abs(v) for k, v in steps if k == 'recto')
+                            / 5 + (60. if any(k == 'recto' and v < 0 for k, v in steps) else 0.))
+                    if best is None or cost < best[0]:
+                        best = (cost, steps)
+                if best is not None:   # a STOP_RADIUS_MM exacto la entrada horizontal es más larga: se prefiere
+                    extra = 0. if radius == STOP_RADIUS_MM else 25.
+                    options.append((best[0] + extra, len(options), best[1], (stop[0], stop[1], target[2])))
+        for _, _, steps, expected in sorted(options)[:REPOSITION_PLANS]:
+            plan, _ = await self.grasp_plan(owner, original, original.REPOSO, expected, to_basket)
+            if plan is not None:
+                return steps, expected
         return None
 
     async def grasp_plan(self, owner, original, s, lemon, to_basket):
