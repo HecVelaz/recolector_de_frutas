@@ -15,7 +15,8 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
 ## App Arturito y puente (`app/`)
 - **App 0.14.0** en la Xiaomi Pad 5. Control: **Modo manual | Modo Recolector | Modo Recolección** (sin pestaña Misión).
   Alertas de sensores (0.12.0) sin la prueba completa.
-- **Puente** `app/robot-bridge` (Pi `~/arturito-bridge-0.9.0`, `127.0.0.1:18006`). Tablet por USB:
+- **Puente** `app/robot-bridge` (Pi `~/arturito-bridge-0.9.0`, `127.0.0.1:18006`). **Todo junto y con reconexión:**
+  `bash app/robot-bridge/conectar_tablet.sh` en la notebook. A mano, tablet por USB:
   `~/Android/Sdk/platform-tools/adb reverse tcp:18006 tcp:18006` y
   `ssh -N -L 127.0.0.1:18006:127.0.0.1:18006 r2d2@100.116.96.71`. En la Pi: `bash ~/arturito-bridge-0.9.0/arrancar_pi.sh`
   (datos en `~/arturito-bridge-0.4.0/data`; rechazos del mando y mediciones en `bridge.log`). Para reiniciar el puente
