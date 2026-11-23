@@ -13,7 +13,7 @@ con fecha: `BITACORA.md`; lo que falta: `PENDIENTES.md`. Fecha límite: **27/11/
   XT60 y divisor 100 k / 30 k. **Manual v1.1** en `docs/manual/` (falta subir el PDF a Drive).
 
 ## App Arturito y puente (`app/`)
-- **App 0.14.1** en la Xiaomi Pad 5 (mando por túnel USB o Tailscale). Control: **Modo manual | Modo Recolector | Modo Recolección** (sin pestaña Misión).
+- **App 0.15.0** (compilada; en la tablet 0.14.1 hasta instalarla): mando por USB o Tailscale, velocidad del brazo 10-100 % de 1 rad/s (60 % por defecto, como teleop.html), alertas más fuertes. Giro de la base hasta 1 rad/s. Control: **Modo manual | Modo Recolector | Modo Recolección** (sin pestaña Misión).
   Alertas de sensores (0.12.0) sin la prueba completa.
 - **Puente** `app/robot-bridge` (Pi `~/arturito-bridge-0.9.0`, **IP de Tailscale `100.116.96.71:18006`**; sin Tailscale,
   `127.0.0.1`). Tablet con Tailscale (`100.112.35.79`): en la app `http://100.116.96.71:18006`, sin USB. Arranque al

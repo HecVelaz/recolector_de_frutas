@@ -62,7 +62,7 @@ class PhysicalControlClient {
     }
 
     suspend fun input(address: String, token: String, id: String, sequence: Long, homing: Boolean, drive: Offset,
-        reach: Offset, swivel: Int, servo: ServoTarget?, speedPercent: Int): PhysicalInputResult {
+        reach: Offset, swivel: Int, servo: ServoTarget?, speedPercent: Int, armSpeedPercent: Int = 60): PhysicalInputResult {
         val result = request(address, token, id, "physical/input", "POST", JsonObject().apply {
             addProperty("sequence", sequence)
             if (homing) addProperty("motion", "home")
@@ -77,6 +77,7 @@ class PhysicalControlClient {
             })
             if (servo != null) addProperty(if (servo.wrist) "wrist_degrees" else "gripper_open_percent", servo.position)
             addProperty("speed_percent", speedPercent)
+            addProperty("arm_speed_percent", armSpeedPercent)
         }, client)
         return PhysicalInputResult(result.get("homing_completed")?.asBoolean == true,
             result.get("servo_sent")?.asBoolean == true, result.get("paused")?.asBoolean == true,

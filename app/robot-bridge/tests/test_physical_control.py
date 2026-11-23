@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from fastapi import HTTPException
 
 from base_session import BaseSession, BaseSessionState
-from physical_control import ArmAxes, DriveAxes, HOME_LEASE, LEASE, LINEAR_LIMIT, PARK_COMMAND, SESSION_LEASE, ManualInput, OpenManual, PhysicalControl
+from physical_control import ArmAxes, DriveAxes, HOME_LEASE, LEASE, LINEAR_LIMIT, PARK_COMMAND, SESSION_LEASE, TURN_LIMIT, ManualInput, OpenManual, PhysicalControl
 
 
 class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
@@ -93,7 +93,7 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
     async def test_arm_release_and_timeout(self):
         await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
         self.control.input('owner', ManualInput(motion='j2-'))
-        self.arm.send.assert_called_with('jv 0 -0.6 0')
+        self.arm.send.assert_called_with('jv 0.0000 -0.6000 0.0000')
         self.control.input('owner', ManualInput())
         self.arm.send.assert_called_with('jv 0 0 0')
         self.control.input('owner', ManualInput(servo='gripper_open'))
@@ -105,6 +105,13 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.now += SESSION_LEASE
         with self.assertRaisesRegex(HTTPException, 'Se perdió el enlace de mando'):
             self.control.input('owner', ManualInput())
+
+    async def test_arm_speed_percent_scales_joints_and_buttons(self):
+        await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
+        self.control.input('owner', ManualInput(motion='j1+', arm_speed_percent=100))
+        self.arm.send.assert_called_with('jv 1.0000 0.0000 0.0000')
+        self.control.input('owner', ManualInput(joints=ArmAxes(swivel=0, shoulder=-1, elbow=.5), arm_speed_percent=20))
+        self.arm.send.assert_called_with('jv 0.0000 -0.2000 0.1000')
 
     async def test_arm_braking_state_is_valid_only_while_settling(self):
         await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
@@ -270,7 +277,7 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput(motion='backward', speed_percent=50))
         self.assertEqual(trial.velocity.call_args.args, (-LINEAR_LIMIT / 2, 0.))
         self.control.input('owner', ManualInput(motion='left', speed_percent=100))
-        self.assertEqual(trial.velocity.call_args.args, (0., .15))
+        self.assertEqual(trial.velocity.call_args.args, (0., TURN_LIMIT))
         self.control.input('owner', ManualInput())
         trial.send_zero.assert_called_once()
         self.base.exclusive.return_value = False
@@ -313,7 +320,7 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.base.feedback.return_value = (self.evidence['base_state'], self.now)
         self.control.input('owner', ManualInput(motion='forward', arm_motion='j1+'))
         self.assertEqual(trial.velocity.call_args.args, (LINEAR_LIMIT, 0.))
-        self.arm.send.assert_called_with('jv 0.6 0 0')
+        self.arm.send.assert_called_with('jv 0.6000 0.0000 0.0000')
         self.control.input('owner', ManualInput(motion='forward'))
         self.arm.send.assert_called_with('jv 0 0 0')
         trial.send_zero.assert_not_called()
@@ -329,7 +336,7 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         axes = DriveAxes(forward=1, turn=-1)
         reach = ArmAxes(swivel=0, elbow=.8, shoulder=-.5)
         self.control.input('owner', ManualInput(drive=axes, joints=reach))
-        self.assertEqual(trial.velocity.call_args.args, (LINEAR_LIMIT / 2, -.075))
+        self.assertEqual(trial.velocity.call_args.args, (LINEAR_LIMIT / 2, -TURN_LIMIT / 2))
         self.arm.send.assert_called_with('jv 0.0000 -0.3000 0.4800')
         self.control.input('owner', ManualInput(joints=reach))
         trial.send_zero.assert_called_once()

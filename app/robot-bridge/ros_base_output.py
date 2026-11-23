@@ -4,7 +4,7 @@ from math import isfinite
 
 MAX_LINEAR_M_S = 0.15
 MAX_PHYSICAL_LINEAR_M_S = 0.25  # CFG_DIF.vMax del firmware de tracción.
-MAX_ANGULAR_RAD_S = 0.5
+MAX_ANGULAR_RAD_S = 1.0  # CFG_DIF.wMax del firmware de tracción (igual que teleop.html)
 MAX_BENCH_PULSE_M_S = 0.05
 MAX_MANUAL_DUTY_PERCENT = 25  # JOG_DUTY_MAX del firmware de tracción.
 MIN_MANUAL_START_DUTY_PERCENT = 20  # Arranque observado con ruedas elevadas.

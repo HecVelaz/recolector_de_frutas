@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -68,6 +69,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var message by remember { mutableStateOf("") }
     var failed by remember { mutableStateOf(false) }
     var speed by remember { mutableIntStateOf(4) }
+    var armSpeed by rememberSaveable { mutableIntStateOf(60) }   // % de 1 rad/s, como teleop.html
+    val liveArmSpeed by rememberUpdatedState(armSpeed)
     var pendingSpeed by remember { mutableStateOf<Int?>(null) }
     var highSpeedAccepted by remember { mutableStateOf(false) }
     val arm = ArmReadings.decode(armState)
@@ -224,7 +227,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                 val result = try {
                     client.input(address, token, id, ++sequence, homing,
                         if (allowInput) drive else Offset.Zero, if (allowInput) reach else Offset.Zero,
-                        if (allowInput) swivel else 0, nextServo, liveSpeedPercent)
+                        if (allowInput) swivel else 0, nextServo, liveSpeedPercent, liveArmSpeed)
                 } catch (e: IOException) {
                     if (homing) throw IllegalStateException("Se interrumpió la conexión durante el homing.", e)
                     pauseInputs()
@@ -466,6 +469,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                                     }
                                 }
                             }
+                            Text("Velocidad del brazo: $armSpeed %", style = MaterialTheme.typography.titleSmall)
+                            Slider(armSpeed.toFloat(), { armSpeed = (it / 10).roundToInt() * 10 }, valueRange = 10f..100f,
+                                steps = 8, modifier = Modifier.semantics { contentDescription = "Velocidad del brazo" })
                             val available = moving && servoPositions == true && servo == null
                             ServoPositions(arm, available) { if (generation == inputGeneration) servo = it }
                             if (servoPositions == false) Text("Actualizá el puente para ajustar la pinza y su giro.",

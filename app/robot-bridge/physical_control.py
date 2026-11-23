@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from base_session import BaseSession, BaseSessionState
 from control_gate import MAX_AGE_BY_SOURCE_MS, evaluate, trusted_client
-from ros_base_output import MAX_MANUAL_DUTY_PERCENT, MAX_PHYSICAL_LINEAR_M_S
+from ros_base_output import MAX_ANGULAR_RAD_S, MAX_MANUAL_DUTY_PERCENT, MAX_PHYSICAL_LINEAR_M_S
 
 
 Mode = Literal['base', 'arm', 'combined', 'homing']
@@ -21,14 +21,17 @@ ArmMotion = Literal['j1+', 'j1-', 'j2+', 'j2-', 'j3+', 'j3-']
 BaseMotion = Literal['forward', 'backward', 'left', 'right']
 ServoMotion = Literal['gripper_open', 'gripper_close', 'wrist_left', 'wrist_center', 'wrist_right']
 
-LINEAR_LIMIT, TURN_LIMIT = MAX_PHYSICAL_LINEAR_M_S, .15
+LINEAR_LIMIT, TURN_LIMIT = MAX_PHYSICAL_LINEAR_M_S, MAX_ANGULAR_RAD_S   # giro como teleop.html (antes 0,15)
 BASE_MOTIONS = {'forward': (LINEAR_LIMIT, 0.), 'backward': (-LINEAR_LIMIT, 0.),
                 'left': (0., TURN_LIMIT), 'right': (0., -TURN_LIMIT)}
 DRIVE_LIMITS = {'linear_m_s': LINEAR_LIMIT, 'angular_rad_s': TURN_LIMIT}
-ARM_AXIS_LIMIT = .6   # rad/s a fondo: igual que teleop.html con su 60 % por defecto (antes 0,15, lento)
-ARM_MOTIONS = {'j1+': 'jv 0.6 0 0', 'j1-': 'jv -0.6 0 0',
-               'j2+': 'jv 0 0.6 0', 'j2-': 'jv 0 -0.6 0',
-               'j3+': 'jv 0 0 0.6', 'j3-': 'jv 0 0 -0.6'}
+ARM_AXIS_LIMIT = 1.0   # rad/s a fondo y al 100 %: igual que teleop.html (que arranca al 60 %)
+ARM_MOTIONS = {'j1+': (1, 0, 0), 'j1-': (-1, 0, 0), 'j2+': (0, 1, 0), 'j2-': (0, -1, 0),
+               'j3+': (0, 0, 1), 'j3-': (0, 0, -1)}
+
+
+def joint_velocity(values, scale):
+    return 'jv ' + ' '.join(f'{axis * scale:.4f}' for axis in values) if any(values) else None
 SERVOS = {'gripper_open': 'pz a', 'gripper_close': 'pz c', 'wrist_left': 'mn a',
           'wrist_center': 'mn 0', 'wrist_right': 'mn b'}
 LEASE = .22
@@ -86,11 +89,8 @@ class ArmAxes(BaseModel):
     shoulder: float = Field(ge=-1, le=1)
     elbow: float = Field(ge=-1, le=1)
 
-    def command(self):
-        values = (self.swivel, self.shoulder, self.elbow)
-        if any(values):
-            return 'jv ' + ' '.join(f'{axis * ARM_AXIS_LIMIT:.4f}' for axis in values)
-        return None
+    def command(self, scale=ARM_AXIS_LIMIT * .6):
+        return joint_velocity((self.swivel, self.shoulder, self.elbow), scale)
 
 
 class ManualInput(BaseModel):
@@ -104,6 +104,13 @@ class ManualInput(BaseModel):
     wrist_degrees: int | None = Field(default=None, ge=-90, le=90, strict=True)
     speed_percent: int = Field(default=100, ge=0, le=100, strict=True)
     duty_percent: int | None = Field(default=None, ge=5, le=MAX_MANUAL_DUTY_PERCENT, strict=True)
+    arm_speed_percent: int = Field(default=60, ge=10, le=100, strict=True)   # velocidad del brazo, como teleop.html
+
+    def arm_command(self, name):
+        scale = ARM_AXIS_LIMIT * self.arm_speed_percent / 100
+        if self.joints:
+            return self.joints.command(scale)
+        return joint_velocity(ARM_MOTIONS[name], scale) if name in ARM_MOTIONS else None
 
     def is_neutral(self):
         return not (self.motion or self.arm_motion or self.servo or self.gripper_open_percent is not None
@@ -451,7 +458,7 @@ class PhysicalControl:
                 if (body.motion and body.motion not in BASE_MOTIONS) or (
                         self.mode == 'base' and (servo or body.arm_motion or body.joints)):
                     raise HTTPException(409, 'Mando incompatible con la sesión de base')
-                arm_command = body.joints.command() if body.joints else ARM_MOTIONS.get(body.arm_motion)
+                arm_command = body.arm_command(body.arm_motion)
                 if arm_command and not self.arm_ready(self.snapshot().get('arm_state')):
                     raise HTTPException(409, 'Las articulaciones requieren completar el homing')
                 linear, angular = body.drive.velocity() if body.drive else BASE_MOTIONS.get(body.motion, (0., 0.))
@@ -520,7 +527,7 @@ class PhysicalControl:
             else:
                 if body.drive or (body.motion and (body.joints or body.motion not in ARM_MOTIONS)):
                     raise HTTPException(409, 'Mando incompatible con la sesión de brazo')
-                command = body.joints.command() if body.joints else ARM_MOTIONS.get(body.arm_motion or body.motion)
+                command = body.arm_command(body.arm_motion or body.motion)
                 servo_sent = self.drive_arm(command, servo)
             self.deadline = input_started_at + SESSION_LEASE
             self.input_deadline = input_started_at + self.lease()

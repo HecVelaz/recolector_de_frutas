@@ -41,7 +41,7 @@ def main():
         message = received.pop()
         assert (message.linear.x, message.angular.z) == (0.1, -0.2)
         assert (message.linear.y, message.linear.z, message.angular.x, message.angular.y) == (0.0,) * 4
-        for linear, angular in ((float('nan'), 0), (0, float('inf')), (0.151, 0), (0, -0.501)):
+        for linear, angular in ((float('nan'), 0), (0, float('inf')), (0.151, 0), (0, -1.001)):
             try:
                 output.send(linear, angular)
             except ValueError:
