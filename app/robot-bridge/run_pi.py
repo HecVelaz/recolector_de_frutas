@@ -1,5 +1,6 @@
 """Inicio explícito en la Pi, con clave local y sin modificar servicios existentes."""
 import argparse
+import ipaddress
 import os
 from pathlib import Path
 import secrets
@@ -20,11 +21,13 @@ def main():
     if args.simulate_base_output and (args.source != 'simulation' or args.host != '127.0.0.1'):
         parser.error('El simulador de mando requiere --source simulation --host 127.0.0.1')
     bench_test = args.bench_base_zero or args.bench_base_pulse
-    if (bench_test or args.physical_manual) and (args.source != 'ros2' or args.host != '127.0.0.1'
+    # El mando escucha solo en loopback o en la IP de Tailscale (100.64.0.0/10: cifrada y solo dispositivos propios)
+    tailnet = args.host.startswith('100.') and ipaddress.ip_address(args.host) in ipaddress.ip_network('100.64.0.0/10')
+    if (bench_test or args.physical_manual) and (args.source != 'ros2' or (args.host != '127.0.0.1' and not tailnet)
                                 or args.port == 8001 or not args.data_dir
                                 or os.getenv('ROS_AUTOMATIC_DISCOVERY_RANGE') != 'LOCALHOST'
                                 or os.getenv('ROS_STATIC_PEERS')):
-        parser.error('La prueba de banco requiere ROS 2 local, loopback, otro puerto y directorio de datos explícito')
+        parser.error('La prueba de banco requiere ROS 2 local, loopback o Tailscale, otro puerto y directorio de datos explícito')
     os.chdir(Path(__file__).resolve().parent)
     data = Path(args.data_dir).expanduser().resolve() if args.data_dir else Path('data').resolve()
     data.mkdir(parents=True, exist_ok=True)

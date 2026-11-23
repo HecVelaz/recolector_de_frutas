@@ -1,0 +1,16 @@
+# Servicio de usuario en la Pi: corre arrancar_pi.sh al prender (agentes, visión y puente en la IP de Tailscale).
+# Instalar: cp arturito.service ~/.config/systemd/user/ && systemctl --user daemon-reload
+#           && systemctl --user enable --now arturito     Apagar todo: systemctl --user stop arturito
+[Unit]
+Description=Arturito: agentes micro-ROS, vision y puente de la app
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# espera a que enumeren los ESP32 y las cámaras
+ExecStartPre=/bin/sleep 15
+ExecStart=/bin/bash %h/arturito-bridge-0.9.0/arrancar_pi.sh
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

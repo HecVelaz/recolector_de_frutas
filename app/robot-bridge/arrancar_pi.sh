@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Arranca en la Pi todo lo que usa la app Arturito, en segundo plano: agentes micro-ROS de la base (S3) y del brazo
-# (WROOM), la visión (start_limon.sh con el v4, vía ~/scripts/vision.sh) y el puente en 127.0.0.1:18006 (mando
-# supervisado). Lo que ya está corriendo no se vuelve a lanzar. No resetea placas ni mueve motores.
+# (WROOM), la visión (start_limon.sh con el v4, vía ~/scripts/vision.sh) y el puente en la IP de Tailscale :18006
+# (mando supervisado; la tablet entra directo por Tailscale; sin Tailscale, 127.0.0.1). Lo que ya está corriendo no se vuelve a lanzar. No resetea placas ni mueve motores.
 # Uso: bash ~/arturito-bridge-0.9.0/arrancar_pi.sh        Logs en ~/logs/ y bridge.log al lado de este script.
 DIR="$(dirname "$(readlink -f "$0")")"
 BRAZO=/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
@@ -26,11 +26,13 @@ bash ~/scripts/vision.sh
 if pgrep -f "run_pi.py --source ros2 --physical-manual" > /dev/null; then
   echo "puente: ya corre"
 else
+  HOST=127.0.0.1   # al prender, Tailscale puede tardar: espero hasta 60 s su IP
+  for _ in $(seq 1 30); do IP=$(tailscale ip -4 2>/dev/null) && [ -n "$IP" ] && HOST=$IP && break; sleep 2; done
   cd "$DIR" || exit 1
   unset ROS_STATIC_PEERS
   ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST nohup setsid "$VENV/bin/python" run_pi.py --source ros2 --physical-manual \
-    --host 127.0.0.1 --port 18006 --data-dir "$DATOS" > bridge.log 2>&1 < /dev/null &
-  echo "puente lanzado (log $DIR/bridge.log)"
+    --host "$HOST" --port 18006 --data-dir "$DATOS" > bridge.log 2>&1 < /dev/null &
+  echo "puente lanzado en $HOST:18006 (log $DIR/bridge.log)"
 fi
 
 # Espera corta y resumen: placas y visión
