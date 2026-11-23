@@ -71,8 +71,8 @@ REPOSITION_BEARINGS_DEG = (15., 35.)
 MAX_REVERSE_MM = 200.
 REPOSITION_PLANS = 4   # paradas a probar con el planificador del brazo (cada plan puede tardar ~6-30 s)
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube GRASP_RAISE_MM reales (en el
-# modelo de punta, 1 mm de z son ~1,43 mm reales). 23/11: de 2 cm a 0,75 (cerraba 1-1,5 cm alto)
-GRASP_RAISE_MM = 7.5   # 23/11, usuario: con 20 cerraba 1-1,5 cm alto
+# modelo de punta, 1 mm de z son ~1,43 mm reales). 23/11: de 2 cm a 0,75 y a -0,25 (cerraba alto)
+GRASP_RAISE_MM = -2.5   # 23/11, usuario: con 20 cerraba 1-1,5 cm alto; con 7,5, 1 cm más abajo todavía
 RETURN_SECONDS = 90.
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
