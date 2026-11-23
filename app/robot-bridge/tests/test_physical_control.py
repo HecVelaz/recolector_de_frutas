@@ -113,6 +113,12 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput(joints=ArmAxes(swivel=0, shoulder=-1, elbow=.5), arm_speed_percent=20))
         self.arm.send.assert_called_with('jv 0.0000 -0.2000 0.1000')
 
+    async def test_base_reconnect_does_not_stop_arm_only_session(self):
+        await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
+        self.base.exclusive.return_value = False
+        self.assertNotIn('Hay otro mando ROS activo o falta un controlador', self.control.blockers('arm'))
+        self.assertIn('Hay otro mando ROS activo o falta un controlador', self.control.blockers('combined'))
+
     async def test_arm_braking_state_is_valid_only_while_settling(self):
         await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
         self.control.input('owner', ManualInput(motion='j2-'))

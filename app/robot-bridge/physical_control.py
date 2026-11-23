@@ -208,7 +208,8 @@ class PhysicalControl:
                             physical_ready=True, base_only=True, allow_standby=starting or not drive,
                             allow_armed_standby=starting, allow_released_standby=starting)
         reasons = list(decision.reasons)
-        if not self.base.exclusive() or not self.arm.exclusive():
+        # Solo brazo: una reconexión de la S3 (su suscripción a /cmd_vel desaparece un instante) no corta el brazo (23/11)
+        if (drive and not self.base.exclusive()) or not self.arm.exclusive():
             reasons.append('Hay otro mando ROS activo o falta un controlador')
         if starting and fields[:1] not in (['ARMADA'], ['DESARMADA']):
             reasons.append('Estado del Móvil desconocido')
@@ -283,6 +284,8 @@ class PhysicalControl:
         if self.owner is not None and reason is not None:
             self.last_stop = (self.owner, reason)
             logging.getLogger(__name__).info('Mando detenido: %s', reason)
+            arm_state = (self.snapshot() or {}).get('arm_state')   # 23/11: para diagnosticar cortes del brazo
+            print(f'{time.strftime("%H:%M:%S")} mando detenido ({mode}): {reason} | brazo: {arm_state}', flush=True)
         self.owner = self.mode = self.deadline = self.input_deadline = self.trial = self.motion = None
         self.awaiting_neutral = False
         self.last_sequence = None
