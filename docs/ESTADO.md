@@ -45,9 +45,8 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 ## Base (`firmware/base`, S3)
 - **En la S3: `~/firmware/base_ros_20261121_sin_r`** (env `ros`, `ff9172d`). Flasheo con `--after watchdog-reset`.
   Seta y vuelco sin enclavar: desarman la base (hace falta `armar`); `s` borra fallas de rueda. Watchdog 300 ms.
-- Si no conecta tras reiniciar la Pi (12 V apagados): matar solo su agente, `~/venvs/esptool/bin/esptool --port
-  /dev/serial/by-id/usb-Espressif* --after watchdog-reset chip-id` y relanzar el agente (`agente_base.sh` no arranca
-  si ya corre el del brazo: lanzarlo a mano). Pasa casi siempre al reiniciar la Pi: "Móvil sin mensajes" en la app.
+- **Al prender la Pi la S3 arranca en bootloader** (se alimenta del USB de la Pi): `arrancar_pi.sh` lo detecta
+  (esptool sin reset) y la reinicia solo en ese caso; registro en `~/logs/s3_bootloader.log` (probado 23/11 18:35).
 - **Enlace micro-ROS:** ping cada 500 ms, espera 100 ms, 3 fallidos = corte (se reconecta solo; en combinado o base
   corta el mando). ~2,5 pings fallidos/min sin relación con la carga (23/11); medir con `medir_enlace_base.py`.
 

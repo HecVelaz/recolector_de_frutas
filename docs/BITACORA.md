@@ -994,3 +994,11 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   tampoco corta. Causa sin encontrar; si molesta: espera del ping 250 ms o 5 pings (reflashear la S3).
 - Antigravity (IDE de Google) como revisor: no antes de la demo; Codex ya revisa. Si se quiere un segundo revisor,
   Gemini CLI en solo lectura.
+- **S3 "sin mensajes" al prender la Pi: era el bootloader.** La S3 se alimenta del USB de la Pi y arranca con ella;
+  `esptool --before no-reset chip-id` conectó sin resetearla ("Staying in bootloader"): no corría el firmware. No
+  es el agente: la revisión corre antes de abrir el puerto y ya estaba ahí. Descartado antes: que la S3 no transmita
+  hasta recibir algo (`despertar_s3.py`: 0 bytes antes y después). `arrancar_pi.sh` la reinicia **solo si está en
+  bootloader** (en bootloader no controla los IBT-2; OK del usuario sobre la regla de los 12 V) (`f256312`,
+  `84ec6c6`); probado con un reinicio de la Pi: rescatada a las 18:35:01 y la base en línea sola.
+- `ros2 topic echo` se colgó en la Pi y no respondía a `timeout` tras matar procesos de ROS: 100 archivos
+  `fastrtps_*` trabados en `/dev/shm`; borrados y reiniciado `arturito.service`. Al reiniciar la Pi se limpian.
