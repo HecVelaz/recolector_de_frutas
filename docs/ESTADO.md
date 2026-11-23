@@ -30,8 +30,8 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - **Recolección:** homing → Calcular cero (3,8 s, criterio flojo; sin limón guarda la pose y al iniciar gira ±15/25°)
   → Iniciar (se acerca a **60 cm** de J1 desde el 23/11, sin probar; más cerca no retrocede, mide estricto 8 s y cosecha lo medido ahí si el brazo tiene plan; limón alto:
   prueba sin los +2 cm) → Volver al cero (90 s propios). 360 s para el primer limón.
-- **Modo Recolector:** base quieta, escaneo 3 s, lista guardada, visión apagada, un agarre por vez, sin verificación
-  final; saltea limones a < 8° adelante de J1. Planear un limón alto tarda ~30 s por intento.
+- **Modo Recolector** (23/11, sin probar): escaneo 3 s; cosecha sin mover la base los que están a 58–63 cm y ≥ 8°;
+  para otro, **reubica el Móvil** (limón a 60 cm y 15–35° adelante de J1; marcha atrás ≤ 20 cm), vuelve a medir y cosecha.
 - **Visión a pedido:** la app la pide en Recolector, Recolección y Visión; sin pedido 30 s (y sin misión) el puente
   apaga el grupo de `start_limon.sh`; prenderla tarda ~21 s. Interruptor `VISION_ON_DEMAND` en `collection_mission.py`.
 - Homing fallido → `arm-homing-pending` bloquea el joystick del brazo hasta un homing completo. `recolectar.py`

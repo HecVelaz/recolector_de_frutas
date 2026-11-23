@@ -63,7 +63,11 @@ ZONE_M, ZONE_DEG = .04, 5.
 # estéreo a veces mide el follaje delante del limón (21/11: el mismo limón a 42 y a 77 cm, alternando); ese punto
 # fantasma queda descartado y el brazo no va a buscarlo al aire
 EXPECTED_RADIUS_MM = 120.   # mientras actúa el brazo, el Móvil quieto a menos de esto de donde llegó
-REVERSE_M_S = .06            # solo al volver al cero desandando el camino (atrás no hay sensores)
+REVERSE_M_S = .06            # al volver al cero desandando el camino y al reubicarse en el Recolector (atrás no hay sensores)
+# Modo Recolector (23/11, pedido del usuario): si un limón no está en la zona buena, el Móvil se reubica para dejarlo a
+# STOP_RADIUS_MM y entre estos ángulos adelante de J1, con marcha atrás de hasta MAX_REVERSE_MM (atrás no hay sensores)
+REPOSITION_BEARINGS_DEG = (15., 35.)
+MAX_REVERSE_MM = 200.
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube 2 cm reales (en el modelo
 # de punta, 1 mm de z son ~1,43 mm reales)
 GRASP_RAISE_MM = 20.
@@ -176,7 +180,7 @@ class CollectionMission:
         return self.snapshot()
 
     def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS):
-        """Modo Recolector: cosechar desde donde está el Móvil, sin moverlo (no hace falta cero)."""
+        """Modo Recolector: cosechar la lista del escaneo; si hace falta, reubicando el Móvil (no hace falta cero)."""
         self.control.tick()
         if self.active or self.control.owner is not None:
             raise HTTPException(409, 'Detené el mando antes de iniciar el modo Recolector')
@@ -188,7 +192,7 @@ class CollectionMission:
             raise HTTPException(409, 'Esperá a que la visión estéreo reciba profundidad')
         self.owner, self.operator = f'recolector-{uuid4()}', operator
         self.deadline = monotonic() + 1.25
-        self.run_until = monotonic() + 120. + 120. * lemons
+        self.run_until = monotonic() + 180. + 150. * lemons   # 23/11: + reubicarse y volver a prender la visión
         self.stop_requested = False
         self.zone = None
         self.events = []
@@ -232,33 +236,51 @@ class CollectionMission:
             self.vision_hold = paused = True
             self.sync_vision()
             stage = 'cosecha'
-            for lemon in targets:
-                if sum(1 for r in results if r[1] == 'hecho') >= count:
+            done = 0
+            # 1) Los que ya están en la zona buena, sin mover la base (entrada horizontal larga)
+            pending = [lemon for lemon in targets if not in_zone(lemon)]
+            for lemon in (lemon for lemon in targets if in_zone(lemon)):
+                if done >= count:
                     break
-                s = arm_angles(self.control.snapshot().get('arm_state'))
-                before = []
-                if s[0] > grasp.k.Q1_LIM[1]:   # en la canasta: primero de paso a DESPLEGAR
-                    before, s = [('desplegar', [grasp.DESPLEGAR])], grasp.DESPLEGAR
-                # 21/11: un limón casi justo a la izquierda de J1 pedía J1 < 3° y el firmware cortó la cosecha; sin
-                # mover la base no hay otra parada: se saltea (el mismo MIN_BEARING_DEG del acercamiento)
-                if math.degrees(math.atan2(lemon[1], -lemon[0])) < MIN_BEARING_DEG:
-                    results.append((lemon, f'salteado: a menos de {MIN_BEARING_DEG:.0f}° adelante de J1'))
+                done += await self.pick_here(owner, grasp, lemon, results)
+            # 2) El resto, del más cercano: reubicar el Móvil para dejarlo en la zona buena, medir de nuevo y cosechar
+            #    desde ahí (23/11, pedido del usuario). Si no se puede, desde acá como antes (entrada corta) o se saltea
+            for lemon in pending:
+                if done >= count:
+                    break
+                stage = 'planificación de la reubicación'
+                found = await self.reposition(owner, navigation, grasp, lemon, True)
+                if found is None:
+                    stage = 'cosecha'
+                    done += await self.pick_here(owner, grasp, lemon, results)
                     continue
-                plan, reasons = await self.grasp_plan(owner, grasp, s, lemon, True)
-                if plan is None:
-                    results.append((lemon, 'sin plan: ' + '; '.join(reasons or [])[:80]))
-                    continue
+                steps, expected = found
+                stage = 'reubicación del Móvil'
+                await self.arm_to_rest(owner, grasp)
+                self.vision_hold = paused = False   # al llegar se vuelve a medir
+                self.sync_vision()
+                self.update('NAVEGANDO', 'Reubicando el Móvil para el limón: ' + navigation.texto(steps))
+                for kind, value in steps:
+                    await self.drive_step(owner, kind, value)
+                await self.settle(owner, 1.)
+                self.zone = source_value(self.control.snapshot(), 'odom')
+                if self.zone is None:
+                    raise RuntimeError('Falta odometría reciente al llegar')
+                stage = 'cosecha tras reubicarse'
+                await self.scan_frames(owner, 0.)   # espera a que la visión entregue pares nuevos
                 try:
-                    await self.run_task(owner, grasp, before + plan)
-                    results.append((lemon, 'hecho'))
-                except ArmRejected as error:
-                    results.append((lemon, f'falló: {error}'))
-                    if not await self.recover_to_basket(owner, grasp) and not await self.arm_to_rest(owner, grasp):
-                        raise
+                    got = await self.harvest(owner, grasp, tf, count - done, True, expected)
+                    results.append((lemon, f'reubicado: {got} en la canasta'))
+                    done += got
+                except ArmRejected:
+                    raise
+                except RuntimeError as error:
+                    results.append((lemon, f'reubicado, sin cosecha: {error}'[:120]))
+                self.zone = None
+                break   # el resto de la lista quedó en el marco de antes de moverse
             stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
             # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
-            done = sum(1 for _, result in results if result == 'hecho')
             detail = '; '.join(f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results)
             self.update('FINALIZADO', f'Modo Recolector: {done} agarre(s) completo(s) de {len(targets)} limón(es) en la '
                         f'lista. {detail}')
@@ -360,6 +382,48 @@ class CollectionMission:
                                f'{HEIGHT_CM[1]} cm: acercarse no lo arregla. Bajá o subí ese limón, o sacalo de la vista.')
         raise RuntimeError('Reubicá el Móvil: no hay un acercamiento sin retroceder que deje el limón a ~60 cm '
                            'con plan de agarre')
+
+    async def pick_here(self, owner, grasp, lemon, results):
+        """Modo Recolector: cosechar `lemon` sin mover la base (brazo desde donde está). 1 si quedó en la canasta."""
+        s = arm_angles(self.control.snapshot().get('arm_state'))
+        before = []
+        if s[0] > grasp.k.Q1_LIM[1]:   # en la canasta: primero de paso a DESPLEGAR
+            before, s = [('desplegar', [grasp.DESPLEGAR])], grasp.DESPLEGAR
+        # 21/11: un limón casi justo a la izquierda de J1 pedía J1 < 3° y el firmware cortó la cosecha
+        if math.degrees(math.atan2(lemon[1], -lemon[0])) < MIN_BEARING_DEG:
+            results.append((lemon, f'salteado: a menos de {MIN_BEARING_DEG:.0f}° adelante de J1 y sin reubicación'))
+            return 0
+        plan, reasons = await self.grasp_plan(owner, grasp, s, lemon, True)
+        if plan is None:
+            results.append((lemon, 'sin plan: ' + '; '.join(reasons or [])[:80]))
+            return 0
+        try:
+            await self.run_task(owner, grasp, before + plan)
+        except ArmRejected as error:
+            results.append((lemon, f'falló: {error}'))
+            if not await self.recover_to_basket(owner, grasp) and not await self.arm_to_rest(owner, grasp):
+                raise
+            return 0
+        results.append((lemon, 'hecho'))
+        return 1
+
+    async def reposition(self, owner, navigation, original, target, to_basket):
+        """Modo Recolector (23/11): (pasos, dónde va a quedar el limón) para dejarlo a STOP_RADIUS_MM (o REACH_MM[0])
+        y entre REPOSITION_BEARINGS_DEG adelante de J1, lo más parecido a como está, con plan de agarre desde el reposo.
+        Marcha atrás hasta MAX_REVERSE_MM. None si no hay."""
+        bearing = math.degrees(math.atan2(target[1], -target[0]))
+        low, high = REPOSITION_BEARINGS_DEG
+        for radius in (STOP_RADIUS_MM, REACH_MM[0]):
+            for b in dict.fromkeys((min(max(bearing, low), high), (low + high) / 2)):
+                stop = (-radius * math.cos(math.radians(b)), radius * math.sin(math.radians(b)))
+                steps = navigation.planear(target[:2], 0., stop, orientar=False)
+                if any(kind == 'recto' and not -MAX_REVERSE_MM <= value <= navigation.MAX_RECTO for kind, value in steps):
+                    continue
+                expected = (stop[0], stop[1], target[2])
+                plan, _ = await self.grasp_plan(owner, original, original.REPOSO, expected, to_basket)
+                if plan is not None:
+                    return steps, expected
+        return None
 
     async def grasp_plan(self, owner, original, s, lemon, to_basket):
         """punta.planear_agarre_tol con el agarre GRASP_RAISE_MM más arriba (como lo da raised); si no hay plan, a la
@@ -925,6 +989,12 @@ def _planner_call(name, *args):
         if name == 'rest_plan':
             return punta.con_margen(punta.MARGEN_SALIDA_CARGA, punta.planear_q, args[0], punta.REPOSO)
         return getattr(punta, name)(*args)
+
+
+def in_zone(lemon):
+    """El limón (mm, marco del brazo) ya está donde se cosecha sin mover la base: REACH_MM y MIN_BEARING_DEG."""
+    return (REACH_MM[0] <= math.hypot(lemon[0], lemon[1]) <= REACH_MM[1]
+            and math.degrees(math.atan2(lemon[1], -lemon[0])) >= MIN_BEARING_DEG)
 
 
 def raised(lemon):

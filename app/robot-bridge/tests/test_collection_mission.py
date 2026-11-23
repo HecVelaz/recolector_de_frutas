@@ -175,7 +175,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
 
-    async def recolector_run(self, scan, after, count=2):
+    async def recolector_run(self, scan, after, count=2, extra=()):
         """Modo Recolector (21/11): scan = lo que ve en el escaneo; after = lo que ve al reanudar la visión."""
         events, planned = [], []
         grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.))
@@ -200,6 +200,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             events.append(('pausa' if value else 'reanuda', value))
             return True
 
+        for extra_patch in extra:   # patches propios de cada prueba (drive_step, harvest, ...)
+            extra_patch.start()
+            self.addCleanup(extra_patch.stop)
         original_plan = self.mission.grasp_plan
 
         async def grasp_plan(owner, original, s, lemon, basket):
@@ -224,8 +227,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
         beside = (-480., 40., 130.)   # a ~5° de J1: el firmware pediría J1 < 3°
         scan = [[near, far_ok, unreachable, beside]] * 3
+        self.navigation.planear.return_value = [('giro', 20.), ('recto', -500.)]   # reubicarse: marcha atrás de más
         events, planned = await self.recolector_run(scan, after=[])
-        self.assertEqual(planned, [(-500, 150), (-560, 200)])   # de la lista, del más cercano al más lejano
+        self.assertEqual(planned, [(-560, 200), (-500, 150)])   # primero el de la zona buena; sin reubicación, desde acá
         self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'agarra', 'reanuda'])   # sin verificar
         self.assertTrue(all(value for e, value in events if e == 'agarra'))   # visión pausada en cada agarre
         self.assertFalse(any(value for e, value in events if e == 'mide'))     # nunca mide con la visión pausada
@@ -234,6 +238,21 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('2 agarre(s) completo(s) de 4', self.mission.status['message'])
         self.assertIn('salteado', self.mission.status['message'])
+
+    async def test_recolector_repositions_the_base_for_a_lemon_beside_j1_and_harvests_measuring_again(self):
+        beside = (-480., 40., 130.)   # 23/11: a ~5° de J1 y 48 cm: antes se salteaba
+        steps = [('giro', 12.), ('recto', -120.), ('giro', -12.)]
+        self.navigation.planear.return_value = steps
+        drive, harvest = AsyncMock(), AsyncMock(return_value=1)
+        events, planned = await self.recolector_run([[beside]] * 3, after=[], count=1, extra=(
+            patch.object(self.mission, 'drive_step', new=drive), patch.object(self.mission, 'harvest', new=harvest)))
+        self.assertEqual([c.args[1:] for c in drive.call_args_list], steps)
+        expected = harvest.call_args.args[5]
+        self.assertAlmostEqual(math.hypot(expected[0], expected[1]), STOP_RADIUS_MM)   # queda a 60 cm de J1
+        self.assertAlmostEqual(math.degrees(math.atan2(expected[1], -expected[0])), 15.)   # y al menos 15° adelante
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
+        self.assertIn('1 agarre(s) completo(s)', self.mission.status['message'])
+        self.assertIn('reubicado', self.mission.status['message'])
 
     async def test_recolector_without_lemons_skips_the_harvest(self):
         events, planned = await self.recolector_run([[]] * 3, after=[])
