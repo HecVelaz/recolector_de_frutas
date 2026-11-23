@@ -223,16 +223,16 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         return events, planned
 
     @patch('collection_mission.VISION_ON_DEMAND', True)
-    async def test_recolector_harvests_only_the_saved_list_with_vision_paused_and_the_base_still(self):
+    async def test_recolector_harvests_the_saved_list_without_moving_when_it_cannot_reposition(self):
         near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
         beside = (-480., 40., 130.)   # a ~5° de J1: el firmware pediría J1 < 3°
         scan = [[near, far_ok, unreachable, beside]] * 3
         self.navigation.planear.return_value = [('giro', 20.), ('recto', -500.)]   # reubicarse: marcha atrás de más
         events, planned = await self.recolector_run(scan, after=[])
         self.assertEqual(planned, [(-560, 200), (-500, 150)])   # primero el de la zona buena; sin reubicación, desde acá
-        self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'agarra', 'reanuda'])   # sin verificar
-        self.assertTrue(all(value for e, value in events if e == 'agarra'))   # visión pausada en cada agarre
-        self.assertFalse(any(value for e, value in events if e == 'mide'))     # nunca mide con la visión pausada
+        # 23/11: hay limones fuera de la zona buena (podría reubicarse): la visión queda prendida toda la misión
+        self.assertEqual([e for e, _ in events], ['mide', 'agarra', 'agarra'])   # sin verificar
+        self.assertFalse(any(value for _, value in events))
         for call in self.control.mission_velocity.call_args_list:              # la base no se mueve nunca
             self.assertEqual(call.args[1:], (0., 0.))
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
@@ -253,6 +253,14 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('1 agarre(s) completo(s)', self.mission.status['message'])
         self.assertIn('reubicado', self.mission.status['message'])
+
+    @patch('collection_mission.VISION_ON_DEMAND', True)
+    async def test_recolector_pauses_vision_when_every_lemon_is_already_in_the_good_zone(self):
+        in_zone = (-560., 200., 140.)   # a 59 cm y 20° de J1: sin mover la base
+        events, planned = await self.recolector_run([[in_zone]] * 3, after=[], count=1)
+        self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'reanuda'])
+        self.assertTrue(all(value for e, value in events if e == 'agarra'))   # visión pausada en el agarre
+        self.assertEqual(planned, [(-560, 200)])
 
     async def test_recolector_without_lemons_skips_the_harvest(self):
         events, planned = await self.recolector_run([[]] * 3, after=[])

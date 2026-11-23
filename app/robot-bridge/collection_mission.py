@@ -234,13 +234,18 @@ class CollectionMission:
             if not targets:
                 self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha en esta parada.')
                 return
-            self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es). Visión pausada; cosechando de a uno.')
-            self.vision_hold = paused = True
-            self.sync_vision()
+            pending = [lemon for lemon in targets if not in_zone(lemon)]
+            # La visión se apaga para que el brazo planee más rápido, salvo que haga falta reubicarse: prenderla en
+            # medio de la misión cargó la Pi y venció el mando (23/11); queda prendida, como en la Recolección
+            if pending:
+                self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es); cosechando de a uno.')
+            else:
+                self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es). Visión pausada; cosechando de a uno.')
+                self.vision_hold = paused = True
+                self.sync_vision()
             stage = 'cosecha'
             done = 0
             # 1) Los que ya están en la zona buena, sin mover la base (entrada horizontal larga)
-            pending = [lemon for lemon in targets if not in_zone(lemon)]
             for lemon in (lemon for lemon in targets if in_zone(lemon)):
                 if done >= count:
                     break
@@ -259,8 +264,6 @@ class CollectionMission:
                 steps, expected = found
                 stage = 'reubicación del Móvil'
                 await self.arm_to_rest(owner, grasp)
-                self.vision_hold = paused = False   # al llegar se vuelve a medir
-                self.sync_vision()
                 self.update('NAVEGANDO', 'Reubicando el Móvil para el limón: ' + navigation.texto(steps))
                 for kind, value in steps:
                     await self.drive_step(owner, kind, value)
