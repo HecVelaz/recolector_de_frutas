@@ -73,3 +73,10 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
   sin pedido. A elección del usuario entre eso y "siempre encendida".
 - **Profundidad (22/11):** el tamaño conocido del limón no se adopta por ahora (no cambió ninguna elección en las
   grabaciones); el candidato es el rechazo por pocos píxeles válidos. Esperando autorización del usuario.
+- **Tablet por Tailscale (23/11):** el mando y la misión aceptan `127.0.0.1` (túnel USB) o `100.64.0.0/10`
+  (Tailscale: cifrado, solo dispositivos de la cuenta); cualquier otra red, como la del lab, sigue rechazada.
+- **Reset automático de la S3 solo si está en bootloader (23/11, OK del usuario):** excepción a "apagar los 12 V
+  antes de resetear": en bootloader la S3 no controla los IBT-2, así que reiniciarla no agrega riesgo; si corre su
+  firmware, `arrancar_pi.sh` no la toca. La costumbre sigue siendo prender la Pi con los 12 V apagados.
+- **Mando manual como `teleop.html` (23/11, pedido del usuario):** brazo hasta 1 rad/s (60 % por defecto) y giro de
+  la base hasta 1 rad/s (antes 0,15 y 0,15).

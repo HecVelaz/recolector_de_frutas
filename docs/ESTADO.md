@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-23, ~18:15)
+# Estado actual (al 2026-11-23, ~18:45)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
 del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
