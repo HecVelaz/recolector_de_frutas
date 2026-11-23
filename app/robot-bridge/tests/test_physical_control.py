@@ -119,6 +119,13 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('Hay otro mando ROS activo o falta un controlador', self.control.blockers('arm'))
         self.assertIn('Hay otro mando ROS activo o falta un controlador', self.control.blockers('combined'))
 
+    def test_servo_speed_commands(self):
+        self.assertEqual(ManualInput(gripper_speed_dps=90).servo_command(), 'pz w 90')
+        self.assertEqual(ManualInput(wrist_speed_dps=30).servo_command(), 'mn w 30')
+        self.assertFalse(ManualInput(wrist_speed_dps=30).is_neutral())
+        with self.assertRaises(HTTPException):
+            ManualInput(gripper_speed_dps=90, wrist_degrees=10).servo_command()
+
     async def test_arm_braking_state_is_valid_only_while_settling(self):
         await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
         self.control.input('owner', ManualInput(motion='j2-'))

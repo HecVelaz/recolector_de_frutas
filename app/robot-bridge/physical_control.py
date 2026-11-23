@@ -102,6 +102,8 @@ class ManualInput(BaseModel):
     joints: ArmAxes | None = None
     gripper_open_percent: int | None = Field(default=None, ge=0, le=100, strict=True)
     wrist_degrees: int | None = Field(default=None, ge=-90, le=90, strict=True)
+    gripper_speed_dps: int | None = Field(default=None, ge=5, le=360, strict=True)   # rampa de la pinza (pz w)
+    wrist_speed_dps: int | None = Field(default=None, ge=5, le=360, strict=True)     # rampa del giro (mn w)
     speed_percent: int = Field(default=100, ge=0, le=100, strict=True)
     duty_percent: int | None = Field(default=None, ge=5, le=MAX_MANUAL_DUTY_PERCENT, strict=True)
     arm_speed_percent: int = Field(default=60, ge=10, le=100, strict=True)   # velocidad del brazo, como teleop.html
@@ -114,13 +116,19 @@ class ManualInput(BaseModel):
 
     def is_neutral(self):
         return not (self.motion or self.arm_motion or self.servo or self.gripper_open_percent is not None
-                    or self.wrist_degrees is not None or (self.drive and any(self.drive.velocity()))
+                    or self.wrist_degrees is not None or self.gripper_speed_dps is not None
+                    or self.wrist_speed_dps is not None or (self.drive and any(self.drive.velocity()))
                     or (self.joints and self.joints.command()))
 
     def servo_command(self):
-        targets = (self.servo, self.gripper_open_percent, self.wrist_degrees)
+        targets = (self.servo, self.gripper_open_percent, self.wrist_degrees, self.gripper_speed_dps,
+                   self.wrist_speed_dps)
         if sum(target is not None for target in targets) > 1:
             raise HTTPException(409, 'Ajustá un servo a la vez')
+        if self.gripper_speed_dps is not None:
+            return f'pz w {self.gripper_speed_dps}'
+        if self.wrist_speed_dps is not None:
+            return f'mn w {self.wrist_speed_dps}'
         if self.gripper_open_percent is not None:
             return f'pz {round(1250 - 7.5 * self.gripper_open_percent)}'
         if self.wrist_degrees is not None:

@@ -17,7 +17,8 @@ import py.edu.fiuna.arturito.model.mobileWording
 
 data class PhysicalInputResult(val homingCompleted: Boolean, val servoSent: Boolean, val paused: Boolean,
     val parking: Boolean)
-data class ServoTarget(val position: Int, val wrist: Boolean)
+/** Posición (apertura % o giro °) o, con [speed], velocidad de la rampa en °/s (pz w / mn w del firmware). */
+data class ServoTarget(val position: Int, val wrist: Boolean, val speed: Boolean = false)
 
 class PhysicalControlClient {
     private val client = OkHttpClient.Builder()
@@ -75,7 +76,12 @@ class PhysicalControlClient {
                 addProperty("shoulder", -reach.y)
                 addProperty("elbow", reach.x)
             })
-            if (servo != null) addProperty(if (servo.wrist) "wrist_degrees" else "gripper_open_percent", servo.position)
+            if (servo != null) addProperty(when {
+                servo.speed && servo.wrist -> "wrist_speed_dps"
+                servo.speed -> "gripper_speed_dps"
+                servo.wrist -> "wrist_degrees"
+                else -> "gripper_open_percent"
+            }, servo.position)
             addProperty("speed_percent", speedPercent)
             addProperty("arm_speed_percent", armSpeedPercent)
         }, client)

@@ -543,6 +543,8 @@ private fun ServoPositions(arm: ArmReadings?, enabled: Boolean, onTarget: (Servo
         Text("0°", Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
         Text("+90° horario", Modifier.weight(1f), textAlign = TextAlign.End, style = MaterialTheme.typography.labelSmall)
     }
+    ServoSpeed("Velocidad de apertura", enabled) { onTarget(ServoTarget(it, wrist = false, speed = true)) }
+    ServoSpeed("Velocidad de giro", enabled) { onTarget(ServoTarget(it, wrist = true, speed = true)) }
 }
 
 @Composable
@@ -561,4 +563,14 @@ private fun HeldControl(label: String, enabled: Boolean, change: (Boolean) -> Un
     LaunchedEffect(pressed, enabled) { dispatch(pressed && enabled) }
     DisposableEffect(Unit) { onDispose { dispatch(false) } }
     FilledTonalButton({}, enabled = enabled, interactionSource = interactions) { Text(label) }
+}
+
+/** Rampa de un servo en °/s; el firmware arranca en 45 °/s. Se envía al soltar el control. */
+@Composable
+private fun ServoSpeed(label: String, enabled: Boolean, onSpeed: (Int) -> Unit) {
+    var speed by rememberSaveable(label) { mutableFloatStateOf(45f) }
+    Text("$label: ${speed.roundToInt()} °/s", style = MaterialTheme.typography.titleSmall)
+    Slider(speed, { speed = (it / 15).roundToInt() * 15f }, valueRange = 15f..180f, steps = 10, enabled = enabled,
+        modifier = Modifier.semantics { contentDescription = label },
+        onValueChangeFinished = { if (enabled) onSpeed(speed.roundToInt()) })
 }
