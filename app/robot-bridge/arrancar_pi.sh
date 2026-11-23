@@ -22,13 +22,14 @@ s3_bootloader() {
     echo "S3: estaba en bootloader, reiniciada $(date +%T)" | tee -a ~/logs/s3_bootloader.log; sleep 3
   fi
 }
-base_habla() { timeout 4 ros2 topic echo /base/estado --once > /dev/null 2>&1; }
+# ros2 topic echo a veces se cuelga en la Pi (23/11): mejor el registro del agente (la S3 abrió sesión)
+base_habla() { grep -q "session established" ~/logs/agente_base.log 2>/dev/null; }
 agente_base_corre() { pgrep -f "[m]icro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif" > /dev/null; }
 
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 agente_base_corre || s3_bootloader
 bash ~/scripts/agente_base.sh   # no arranca si ya hay algún agente: por eso va antes que el del brazo
-for _ in $(seq 1 10); do base_habla && break; sleep 1; done
+for _ in $(seq 1 15); do base_habla && break; sleep 1; done
 if ! base_habla && agente_base_corre; then   # segundo intento: quizás la mandó al bootloader el propio agente
   echo "base sin mensajes: reviso la S3 y relanzo su agente"
   pkill -f "[m]icro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif"; sleep 2
