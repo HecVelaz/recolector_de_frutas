@@ -420,6 +420,10 @@ class CollectionMission:
         options = []
         for radius in (STOP_RADIUS_MM, STOP_RADIUS_MM - 20., STOP_RADIUS_MM + 20.):
             for bearing in range(int(low), int(high) + 1, 5):
+                # 23/11: el mando de la misión vence a los 0,22 s; la búsqueda entera lo hizo vencer en la Pi
+                if owner is not None:
+                    self.cycle(owner)
+                await asyncio.sleep(0)
                 stop = (-radius * math.cos(math.radians(bearing)), radius * math.sin(math.radians(bearing)))
                 best = None
                 for heading in range(-120, 121, 5):
