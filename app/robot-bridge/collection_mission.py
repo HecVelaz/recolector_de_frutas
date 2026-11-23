@@ -49,11 +49,14 @@ ORIGIN_MIN_VIEWS, ORIGIN_SPREAD_MM = 2, 30.
 SEARCH_HEADINGS_DEG = (15., 25., -15., -25.)
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
-LEMON_STOP_MM = (-500., 150.)   # parada fija de respaldo (21/11: antes -550; a 57 cm la pinza quedó 3 cm corta)
-# Pedido del usuario (21/11): cosechar con el limón a 50-55 cm de J1. Si ya está en REACH_MM y tiene plan, la base no
-# se mueve; si no, se acerca en la dirección del limón hasta dejarlo a STOP_RADIUS_MM
-STOP_RADIUS_MM, REACH_MM = 535., (500., 550.)   # 21/11: con 520 un limón bajo quedó en 499 mm y punta.py necesita
-                                                # r > ~500 para entrar de frente desde 10 cm
+LEMON_STOP_MM = (-575., 170.)   # parada fija de respaldo, a 60 cm (23/11; 21/11: -500, 150; a 57 cm sin el ajuste fino
+                                # la pinza quedó 3 cm corta)
+# Pedido del usuario (23/11; antes 50-55 cm): cosechar con el limón a ~60 cm de J1, para que la pinza baje a su altura
+# lejos de las ramas y entre horizontal ~15 cm (la punta no se recoge a menos de ~44 cm: entrada = r - 44 cm). Si ya
+# está en REACH_MM y tiene plan, la base no se mueve; si no, se acerca en su dirección hasta dejarlo a STOP_RADIUS_MM.
+# Más cerca que REACH_MM (nunca retrocede): se cosecha sin moverse si hay plan, con entrada corta (lo de antes)
+STOP_RADIUS_MM, REACH_MM = 600., (580., 630.)
+CLOSE_MM = 500.   # 21/11: punta.py necesita r > ~500 para entrar de frente
 MIN_BEARING_DEG = 8.   # J1 no baja de 3°: con el limón a 3° o más adelante de J1 hay agarre a 13-21 cm de z (21/11)
 ZONE_M, ZONE_DEG = .04, 5.
 # Al llegar a la parada se sabe dónde tiene que estar el limón del cero: solo vale uno a menos de esto de ahí. El
@@ -331,11 +334,11 @@ class CollectionMission:
 
     async def approach(self, owner, navigation, original, target, to_basket):
         """(pasos de la base, dónde va a quedar el limón respecto de J1) para cosechar `target` (mm, marco del brazo)
-        con el limón a 50-55 cm: sin moverse si ya está en REACH_MM y tiene plan; si no, acercándose en su dirección
+        con el limón a ~60 cm: sin moverse si ya está en REACH_MM (o más cerca) y tiene plan; si no, acercándose en su dirección
         hasta STOP_RADIUS_MM, o a la parada fija. Nunca retrocede. owner None: todavía sin el mando de la base."""
         angles = arm_angles(self.control.snapshot().get('arm_state'))
         r = math.hypot(target[0], target[1])
-        if REACH_MM[0] <= r <= REACH_MM[1]:
+        if CLOSE_MM <= r <= REACH_MM[1]:   # en REACH_MM, o más cerca (no se retrocede): sin moverse si hay plan
             plan, _ = await self.grasp_plan(owner, original, angles, target, to_basket)
             if plan is not None:
                 return [], target
@@ -355,7 +358,7 @@ class CollectionMission:
         if not HEIGHT_CM[0] <= height <= HEIGHT_CM[1]:
             raise RuntimeError(f'El limón está a ~{height:.0f} cm del piso y el brazo agarra de {HEIGHT_CM[0]} a '
                                f'{HEIGHT_CM[1]} cm: acercarse no lo arregla. Bajá o subí ese limón, o sacalo de la vista.')
-        raise RuntimeError('Reubicá el Móvil: no hay un acercamiento sin retroceder que deje el limón a 50-55 cm '
+        raise RuntimeError('Reubicá el Móvil: no hay un acercamiento sin retroceder que deje el limón a ~60 cm '
                            'con plan de agarre')
 
     async def grasp_plan(self, owner, original, s, lemon, to_basket):

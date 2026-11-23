@@ -28,7 +28,7 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - **Estados del brazo** (firmware 20): 0 suelta, 1 yendo, 2 llegó, 3 firme, 4 frenada, 5 mov, 6 homing. El puente
   acepta 1 moviendo, 1 s después de soltar y hasta 2 s con el brazo quieto (corrección del sostén).
 - **Recolección:** homing → Calcular cero (3,8 s, criterio flojo; sin limón guarda la pose y al iniciar gira ±15/25°)
-  → Iniciar (se acerca a 53,5 cm de J1, mide estricto 8 s y cosecha lo medido ahí si el brazo tiene plan; limón alto:
+  → Iniciar (se acerca a **60 cm** de J1 desde el 23/11, sin probar; más cerca no retrocede, mide estricto 8 s y cosecha lo medido ahí si el brazo tiene plan; limón alto:
   prueba sin los +2 cm) → Volver al cero (90 s propios). 360 s para el primer limón.
 - **Modo Recolector:** base quieta, escaneo 3 s, lista guardada, visión apagada, un agarre por vez, sin verificación
   final; saltea limones a < 8° adelante de J1. Planear un limón alto tarda ~30 s por intento.
@@ -56,7 +56,8 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - Si no abre sesión: pulso en EN por RTS (pyserial, DTR bajo) **con los 12 V apagados**.
 - **Homing:** `homingDutyMax` 50 % / 1,5 s no despega J3 quieta en el reposo ("J3 CORTADA … no avanza"): moverla un
   poco con el joystick y repetir. Arreglo de fondo (firmware) pendiente.
-- `punta.py`: alcance ~48–65 cm de J1; ajuste fino 21/11 (+2,7 cm adelante, ~+2,4 izq). A ~66 cm del piso el camino a
+- `punta.py` (23/11, sin probar en el robot): entra horizontal desde 20/15/10/7/5 cm, la más larga que entre
+  (= distancia del limón a J1 − ~44 cm); tras cerrar **baja** 5 cm (antes subía) y sigue igual. Alcance ~48–65 cm de J1; ajuste fino 21/11 (+2,7 cm adelante, ~+2,4 izq). A ~66 cm del piso el camino a
   la canasta sale de la franja de J2/J3. Pinza RDS3218 500/1200 µs (rampa 45 °/s al arrancar); "entrar de frente" a vel 0,5.
 
 ## ROS 2

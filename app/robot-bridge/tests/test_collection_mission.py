@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi import HTTPException
-from collection_mission import (GRASP_RAISE_MM, LEMON_STOP_MM, REVERSE_M_S, CollectionMission, home_steps,
+from collection_mission import (GRASP_RAISE_MM, LEMON_STOP_MM, STOP_RADIUS_MM, REVERSE_M_S, CollectionMission, home_steps,
                                 make_lemon_origin, stopped_near)
 
 
@@ -108,9 +108,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
         async def harvest(owner, original, tf, count, to_basket, expected):
             self.assertIsNotNone(self.mission.zone)   # el brazo solo actúa con la zona de agarre fijada
-            r = math.hypot(-575., 290.)   # a 64 cm: se acerca en su dirección hasta dejarlo a 53,5 cm de J1
-            self.assertAlmostEqual(expected[0], -575. * 535. / r)
-            self.assertAlmostEqual(expected[1], 290. * 535. / r)
+            r = math.hypot(-575., 290.)   # a 64 cm: se acerca en su dirección hasta dejarlo a STOP_RADIUS_MM de J1
+            self.assertAlmostEqual(expected[0], -575. * STOP_RADIUS_MM / r)
+            self.assertAlmostEqual(expected[1], 290. * STOP_RADIUS_MM / r)
             self.assertEqual(expected[2], 128.)
             return 1
 
@@ -312,7 +312,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('2 de 2 en la canasta', self.mission.status['message'])
         self.assertEqual(targets[0], (-500., 150., 128.))   # el primero sin moverse
         r = math.hypot(*second[:2])
-        self.assertAlmostEqual(targets[1][0], second[0] * 535. / r)   # el segundo, acercándose a 53,5 cm
+        self.assertAlmostEqual(targets[1][0], second[0] * STOP_RADIUS_MM / r)   # el segundo, acercándose a STOP_RADIUS_MM
         self.assertEqual(driven, [('recto', 80.)])
 
     async def test_a_next_lemon_without_plan_ends_normally_and_goes_home(self):
