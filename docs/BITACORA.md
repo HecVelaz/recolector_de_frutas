@@ -963,3 +963,34 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   −2,9 / −2,2 cm, igual en los dos); oclusión por ramas: el actual aceptó 24 coordenadas con error > 3 cm (midió la
   rama), el nuevo rechazó todas por **< 15 % de píxeles válidos** (había 1–9 %). La banda de tamaño no separó rama y
   limón. Los saltos 64 ↔ 88 cm de la tarde no aparecieron en las grabaciones.
+
+## 2026-11-23 — App sin USB (Tailscale), arranque automático en la Pi y mando manual como el teleop
+- **Conexión de la tablet sin USB:** la tablet entra por **Tailscale** con la misma cuenta que la Pi (al principio
+  estaba en otra cuenta; también se puede compartir solo `r2d2-desktop` desde `login.tailscale.com/admin/machines` →
+  Share). El puente escucha en la IP de Tailscale `100.116.96.71:18006` (`61eae8d`); el mando y la misión aceptan
+  clientes de `100.64.0.0/10` además de `127.0.0.1` (puente `7533eea`, app 0.14.1 `4a74d19`); la red del lab sigue
+  bloqueada. Servicio de usuario **`arturito.service`** (habilitado, linger sí): corre `arrancar_pi.sh` al prender.
+  `conectar_tablet.sh` (`fab2a49`) queda para el túnel USB con reconexión. Latencia tablet–Pi por Tailscale: directa,
+  3–10 ms. La app no deja escribir la dirección con el **teclado físico Xiaomi** enganchado (no sale el de pantalla):
+  se cargó por `adb shell run-as py.edu.fiuna.arturito` en `shared_prefs/bridge.xml`.
+- **Base sin mensajes tras reiniciar:** el procedimiento de siempre (12 V apagados, `esptool --after watchdog-reset
+  chip-id`, relanzar su agente) la recuperó.
+- **"Brazo ocupado o en estado inválido":** estados del firmware 20 (`main.cpp`): 0 suelta, 1 yendo, 2 llegó, 3 firme,
+  4 frenada, 5 mov, 6 homing. Al soltar el joystick las articulaciones pasan por 1 y 2 hasta 0,6 s (grabado); el
+  puente solo esperaba 0,3 s y no aceptaba 1 (`9b5b8e9`: 1 válido moviendo y 1 s después). En **combinado**, al
+  manejar la base el brazo se sacude y pasa a 1 sin tocarlo (corrección del sostén): vale hasta 2 s (`d613974`).
+- **"Hay otro mando ROS activo o falta un controlador":** coincidió con una reconexión de la S3 (17:28:35). En modo
+  solo brazo ya no corta (`c28bd0b`). `bridge.log` ahora anota el estado del brazo en cada corte y se acumula entre
+  arranques (`b501a47`; antes se pisaba y se perdió el corte de las 17:52).
+- **Velocidades como `teleop.html` (25):** brazo hasta 1 rad/s con control 10–100 % (60 % por defecto; antes fijo
+  0,15 rad/s), giro de la base hasta 1 rad/s (antes 0,15; también `MAX_ANGULAR_RAD_S` 0,5 → 1,0 = `wMax` del firmware)
+  (`6f1f1c5`, `ad605ac`). Pinza: velocidad de apertura y de giro 15–180 °/s con la rampa del firmware (`pz w` / `mn w`;
+  arranca en 45 °/s) (`449a7c9`). Alertas: los 8 `.ogg` normalizados a −1 dB de pico (+11 a +15 dB). **App 0.15.1**
+  instalada.
+- **Cortes de la S3 (6 hoy: 16:57, 17:05, 17:06, 17:23, 17:28 y uno antes):** sin desconexión USB en el kernel ni
+  baja tensión (`throttled=0x0`). El firmware declara corte con 3 pings seguidos sin respuesta (cada 500 ms, espera
+  100 ms). Medición de 15 min (`medir_enlace_base.py`, `~/logs/enlace_base_*.csv`): ~2,5 pings fallidos/min parejos
+  con visión prendida o apagada, CPU 8 % u 78 %, brazo quieto o moviéndose; **ningún corte**. Reiniciar el puente
+  tampoco corta. Causa sin encontrar; si molesta: espera del ping 250 ms o 5 pings (reflashear la S3).
+- Antigravity (IDE de Google) como revisor: no antes de la demo; Codex ya revisa. Si se quiere un segundo revisor,
+  Gemini CLI en solo lectura.

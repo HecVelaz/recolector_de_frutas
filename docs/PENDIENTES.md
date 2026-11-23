@@ -6,6 +6,13 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    0. **Alimentación de la Pi:** se apagó de golpe ~6 veces el 21/11 (sin apagado en el journal; a veces 4,90 V y
       `throttled=0x50000`). Revisar fuente, cable USB-C y enchufe (que no tire al girar la base); para afuera, 5 V / 5 A.
    1. **Sujetar los cables USB de la WROOM y la S3** (se cayeron con la base en movimiento: error -71, `cortes=4`).
+      **Cortes del enlace de la S3 (23/11):** 6 sin desconexión USB; la carga de la Pi no los explica (medición de
+      15 min sin cortes). Si vuelven: medir en ese momento con `~/scripts/medir_enlace_base.py`; arreglo posible en
+      `firmware/lib/EnlaceMicroRos` (espera del ping 100 → 250 ms o 5 pings para corte; reflashear con 12 V apagados).
+   1b. **Probar el mando manual nuevo (app 0.15.1, 23/11):** combinado (base + brazo) sin cortes de "Brazo ocupado";
+      giro a 1 rad/s con cuidado; velocidades de la pinza. Si corta, la hora y `bridge.log` (anota el estado del brazo).
+   1c. **Reset de la S3 tras reiniciar la Pi:** hoy a mano ("reseteá la base", 12 V apagados). Automatizarlo en
+      `arrancar_pi.sh` solo si se resuelve cómo saber que los 12 V están apagados.
    2. **Altura del limonero:** con el objeto de 19 cm los limones quedan a ~63 cm del piso y el agarre pasa ~3 cm abajo.
       Bajarlo (~10 cm) para limones a 45–55 cm. Opcional: no intentar agarres por encima de ~56 cm, o bajar el limón
       antes de ir a la canasta (cambio en `punta.py`, probar con cuidado).
@@ -22,6 +29,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
       (~4°).
    8. **Firmware del brazo para la demo:** micro-ROS (app) o serie (`recolectar.py`, banderín, RODEAR): decidir.
    9. Push de `recolector_de_frutas`, `vision_estereo` y `pruebas-esp32` cuando el usuario lo pida (`/verificar-robot` antes).
+   10. Después de la demo: segundo revisor de código (Gemini CLI en solo lectura, no Antigravity) si hace falta.
 000. **Plan hasta la demo del 27/11** (17/11; robot = usuario, software = Claude en paralelo, probado en Gazebo):
    | Días | Robot | Software |
    |---|---|---|
