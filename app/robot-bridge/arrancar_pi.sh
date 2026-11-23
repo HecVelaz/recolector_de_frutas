@@ -11,7 +11,31 @@ mkdir -p ~/logs
 source /opt/ros/jazzy/setup.bash
 source ~/microros_ws/install/local_setup.bash
 
+# La S3 a veces arranca en BOOTLOADER al prender la Pi (23/11: aparece en el USB pero no corre el firmware; algo
+# que abre el puerto al arrancar la manda ahí). Solo si está en bootloader (esptool sin reset solo conecta en ese
+# caso) se la reinicia: en bootloader no controla los IBT-2, así que reiniciarla no agrega riesgo (OK del usuario).
+s3_bootloader() {
+  local S3; S3=$(ls /dev/serial/by-id/usb-Espressif_USB_JTAG* 2>/dev/null | head -1)
+  [ -n "$S3" ] || return 1
+  if timeout 25 ~/venvs/esptool/bin/esptool --port "$S3" --before no-reset --after watchdog-reset chip-id \
+      >> ~/logs/s3_bootloader.log 2>&1; then
+    echo "S3: estaba en bootloader, reiniciada $(date +%T)" | tee -a ~/logs/s3_bootloader.log; sleep 3
+  fi
+}
+base_habla() { timeout 4 ros2 topic echo /base/estado --once > /dev/null 2>&1; }
+agente_base_corre() { pgrep -f "[m]icro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif" > /dev/null; }
+
+export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+agente_base_corre || s3_bootloader
 bash ~/scripts/agente_base.sh   # no arranca si ya hay algún agente: por eso va antes que el del brazo
+for _ in $(seq 1 10); do base_habla && break; sleep 1; done
+if ! base_habla && agente_base_corre; then   # segundo intento: quizás la mandó al bootloader el propio agente
+  echo "base sin mensajes: reviso la S3 y relanzo su agente"
+  pkill -f "[m]icro_ros_agent serial --dev /dev/serial/by-id/usb-Espressif"; sleep 2
+  s3_bootloader
+  S3=$(ls /dev/serial/by-id/usb-Espressif_USB_JTAG* 2>/dev/null | head -1)
+  nohup setsid ros2 run micro_ros_agent micro_ros_agent serial --dev "$S3" > ~/logs/agente_base.log 2>&1 < /dev/null &
+fi
 if pgrep -f "micro_ros_agent serial --dev $BRAZO" > /dev/null; then
   echo "agente del brazo: ya corre"
 elif [ -e "$BRAZO" ]; then
