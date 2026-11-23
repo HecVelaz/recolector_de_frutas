@@ -25,10 +25,10 @@ LINEAR_LIMIT, TURN_LIMIT = MAX_PHYSICAL_LINEAR_M_S, .15
 BASE_MOTIONS = {'forward': (LINEAR_LIMIT, 0.), 'backward': (-LINEAR_LIMIT, 0.),
                 'left': (0., TURN_LIMIT), 'right': (0., -TURN_LIMIT)}
 DRIVE_LIMITS = {'linear_m_s': LINEAR_LIMIT, 'angular_rad_s': TURN_LIMIT}
-ARM_AXIS_LIMIT = .15
-ARM_MOTIONS = {'j1+': 'jv 0.15 0 0', 'j1-': 'jv -0.15 0 0',
-               'j2+': 'jv 0 0.15 0', 'j2-': 'jv 0 -0.15 0',
-               'j3+': 'jv 0 0 0.15', 'j3-': 'jv 0 0 -0.15'}
+ARM_AXIS_LIMIT = .6   # rad/s a fondo: igual que teleop.html con su 60 % por defecto (antes 0,15, lento)
+ARM_MOTIONS = {'j1+': 'jv 0.6 0 0', 'j1-': 'jv -0.6 0 0',
+               'j2+': 'jv 0 0.6 0', 'j2-': 'jv 0 -0.6 0',
+               'j3+': 'jv 0 0 0.6', 'j3-': 'jv 0 0 -0.6'}
 SERVOS = {'gripper_open': 'pz a', 'gripper_close': 'pz c', 'wrist_left': 'mn a',
           'wrist_center': 'mn 0', 'wrist_right': 'mn b'}
 LEASE = .22
