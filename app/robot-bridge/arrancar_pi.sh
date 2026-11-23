@@ -30,8 +30,9 @@ else
   for _ in $(seq 1 30); do IP=$(tailscale ip -4 2>/dev/null) && [ -n "$IP" ] && HOST=$IP && break; sleep 2; done
   cd "$DIR" || exit 1
   unset ROS_STATIC_PEERS
+  echo "=== puente arrancado $(date "+%F %T") ===" >> bridge.log   # se acumula: no pisar el registro de cortes
   ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST nohup setsid "$VENV/bin/python" run_pi.py --source ros2 --physical-manual \
-    --host "$HOST" --port 18006 --data-dir "$DATOS" > bridge.log 2>&1 < /dev/null &
+    --host "$HOST" --port 18006 --data-dir "$DATOS" >> bridge.log 2>&1 < /dev/null &
   echo "puente lanzado en $HOST:18006 (log $DIR/bridge.log)"
 fi
 
