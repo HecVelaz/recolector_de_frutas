@@ -274,7 +274,7 @@ class CollectionMission:
                 stage = 'cosecha tras reubicarse'
                 await self.scan_frames(owner, 0.)   # espera a que la visión entregue pares nuevos
                 try:
-                    got = await self.harvest(owner, grasp, tf, count - done, True, expected)
+                    got = await self.harvest(owner, grasp, tf, count - done, True, expected, verify=False)
                     results.append((lemon, f'reubicado: {got} en la canasta'))
                     done += got
                 except ArmRejected:
@@ -746,11 +746,12 @@ class CollectionMission:
         await self.arm_instruction(owner, 'mn 0', 'servo_ready', 8.)
         return True
 
-    async def harvest(self, owner, original, tf, count, to_basket, expected=None):
+    async def harvest(self, owner, original, tf, count, to_basket, expected=None, verify=True):
         """Como punta.cosechar: mide todos los limones, agarra el más cercano con plan, lo deja en la canasta y vuelve a
         medir desde ahí (confirma que ya no está en el árbol; hasta punta.MAX_INTENTOS por limón). Al final, al reposo.
         Sin canasta: uno solo y queda en la pinza. expected: dónde tiene que estar el primer limón (al llegar a la
-        parada); la primera medición solo acepta ese. Devuelve cuántos dejó."""
+        parada); la primera medición solo acepta ese. verify False (modo Recolector, 23/11): no vuelve a medir para
+        confirmar que el limón ya no está (~8 s). Devuelve cuántos dejó."""
         done, pending, attempts, discarded = 0, None, 0, []
         near = expected
         while True:
@@ -798,6 +799,11 @@ class CollectionMission:
                     raise
             if not to_basket:
                 return 1
+            if not verify:   # pedido del usuario (21/11): el Recolector no verifica con la visión
+                done += 1
+                if done >= count:
+                    break
+                continue
             pending = lemon
         s = arm_angles(self.control.snapshot().get('arm_state'))
         folded = s[1] >= original.SOLTAR_Q2_MIN_PY and s[2] >= 78.

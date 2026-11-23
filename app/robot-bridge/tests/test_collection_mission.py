@@ -250,6 +250,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         expected = harvest.call_args.args[5]
         self.assertAlmostEqual(math.hypot(expected[0], expected[1]), STOP_RADIUS_MM)   # queda a 60 cm de J1
         self.assertAlmostEqual(math.degrees(math.atan2(expected[1], -expected[0])), 15.)   # y al menos 15° adelante
+        self.assertIs(harvest.call_args.kwargs.get('verify'), False)   # el Recolector no vuelve a medir para verificar
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('1 agarre(s) completo(s)', self.mission.status['message'])
         self.assertIn('reubicado', self.mission.status['message'])
@@ -636,6 +637,36 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
 
         arm.send = send
         done = await self.mission.harvest('mision', original, None, 1, True)
+        self.assertEqual(done, 1)
+        self.assertEqual(sent[-3:], ['mvp 100.00 46.70 80.00', 'mvp 100.00 46.70 50.00', 'mv 3.00 17.00 4.00'])
+
+    @unittest.skipUnless(HAS_NUMPY, 'numpy')
+    async def test_harvest_without_verifying_in_the_recolector_measures_once_and_returns_to_rest(self):
+        lemon = (-550., 100., 100.)
+        original = SimpleNamespace(
+            **vars(self.original), VERIFICAR_MM=60., MAX_INTENTOS=2, k=SimpleNamespace(Q1_LIM=(0, 115)),
+            DESPLEGAR=(100., 46.7, 80.), REPOSO=(3., 17., 4.), SOLTAR_Q2_MIN_PY=42.)
+        measures = [[lemon]]   # 23/11, Recolector: no vuelve a medir después de la canasta (una 2.ª medición fallaría)
+
+        async def measure(*args):
+            return measures.pop(0)
+
+        def plan(s, target, to_basket):
+            self.assertTrue(to_basket)
+            return [('a la canasta', [(130., 46.7, 80.)]), ('servo', 'pz a')], []
+
+        original.planear_agarre_tol = plan
+        self.mission.measure_lemons = measure
+        sent = self.control.arm.sent
+        arm = self.control.arm
+
+        def send(command):   # al llegar a la canasta, la telemetría muestra el brazo plegado
+            FakeArm.send(arm, command)
+            if command.startswith('mv 130.00'):
+                self.angles[:] = [130., 46.7, 80.]
+
+        arm.send = send
+        done = await self.mission.harvest('mision', original, None, 1, True, verify=False)
         self.assertEqual(done, 1)
         self.assertEqual(sent[-3:], ['mvp 100.00 46.70 80.00', 'mvp 100.00 46.70 50.00', 'mv 3.00 17.00 4.00'])
 
