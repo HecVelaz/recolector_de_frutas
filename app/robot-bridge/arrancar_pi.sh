@@ -56,7 +56,8 @@ else
   cd "$DIR" || exit 1
   unset ROS_STATIC_PEERS
   echo "=== puente arrancado $(date "+%F %T") ===" >> bridge.log   # se acumula: no pisar el registro de cortes
-  ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST nohup setsid "$VENV/bin/python" run_pi.py --source ros2 --physical-manual \
+  # 23/11: el puente se trabó en un candado de la memoria compartida de Fast DDS que dejó un proceso cortado: solo UDP
+  FASTDDS_BUILTIN_TRANSPORTS=UDPv4 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST nohup setsid "$VENV/bin/python" run_pi.py --source ros2 --physical-manual \
     --host "$HOST" --port 18006 --data-dir "$DATOS" >> bridge.log 2>&1 < /dev/null &
   echo "puente lanzado en $HOST:18006 (log $DIR/bridge.log)"
 fi
