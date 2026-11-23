@@ -12,7 +12,7 @@ from fastapi import HTTPException, Request
 from pydantic import BaseModel, Field
 
 from base_session import BaseSession, BaseSessionState
-from control_gate import MAX_AGE_BY_SOURCE_MS, evaluate
+from control_gate import MAX_AGE_BY_SOURCE_MS, evaluate, trusted_client
 from ros_base_output import MAX_MANUAL_DUTY_PERCENT, MAX_PHYSICAL_LINEAR_M_S
 
 
@@ -530,8 +530,8 @@ class PhysicalControl:
 
 def mount_physical_control(app, runtime, authorize):
     def session(request):
-        if request.client is None or request.client.host != '127.0.0.1':
-            raise HTTPException(403, 'El mando físico requiere el túnel local')
+        if not trusted_client(request):
+            raise HTTPException(403, 'El mando físico requiere el túnel local o Tailscale')
         authorize(request.headers)
         owner = request.headers.get('x-arturito-client', '')
         if not re.fullmatch('[a-f0-9-]{36}', owner):

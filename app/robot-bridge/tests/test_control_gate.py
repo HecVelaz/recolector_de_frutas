@@ -1,5 +1,6 @@
 import unittest
-from control_gate import ControlGate, ControlMode, GateState, evaluate
+from types import SimpleNamespace
+from control_gate import ControlGate, ControlMode, GateState, evaluate, trusted_client
 
 
 def real_snapshot():
@@ -92,5 +93,14 @@ class LeaseTest(unittest.TestCase):
     def _ok(self):
         return evaluate(real_snapshot(),feature_enabled=True,authenticated=True,app_foreground=True,physical_ready=True)
 
+
+
+class TrustedClientTest(unittest.TestCase):
+    def test_solo_loopback_o_tailscale(self):
+        req = lambda host: SimpleNamespace(client=SimpleNamespace(host=host) if host else None)
+        self.assertTrue(trusted_client(req('127.0.0.1')))
+        self.assertTrue(trusted_client(req('100.112.35.79')))
+        for host in ('192.168.1.103', '100.200.1.1', 'testclient', None):
+            self.assertFalse(trusted_client(req(host)))
 
 if __name__=='__main__': unittest.main()

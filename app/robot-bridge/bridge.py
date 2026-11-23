@@ -15,7 +15,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 from base_session import BaseSessionState
-from control_gate import (DEFAULT_MAX_AGE_MS, MAX_AGE_BY_SOURCE_MS, REQUIRED, ControlGate, ControlMode,
+from control_gate import (trusted_client, DEFAULT_MAX_AGE_MS, MAX_AGE_BY_SOURCE_MS, REQUIRED, ControlGate, ControlMode,
                           GateDecision, GateState, evaluate as evaluate_control)
 from geometry import validate
 from ros_base_output import MAX_ANGULAR_RAD_S, MAX_BENCH_PULSE_M_S, MAX_LINEAR_M_S
@@ -296,8 +296,8 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
         def mission_operator(request):
             authorize(request.headers)
             operator = request.headers.get('x-arturito-client', '')
-            if request.client is None or request.client.host != '127.0.0.1' or not re.fullmatch('[a-f0-9-]{36}', operator):
-                raise HTTPException(403, 'La recolección requiere el túnel local y una sesión válida')
+            if not trusted_client(request) or not re.fullmatch('[a-f0-9-]{36}', operator):
+                raise HTTPException(403, 'La recolección requiere el túnel local o Tailscale y una sesión válida')
             if collection is None:
                 raise HTTPException(503, 'La recolección no está disponible')
             return operator

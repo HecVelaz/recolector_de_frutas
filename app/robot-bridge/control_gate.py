@@ -1,9 +1,19 @@
 """Puerta de control pura: no importa ROS, no publica y empieza bloqueada."""
 from dataclasses import dataclass
 from enum import Enum
+import ipaddress
 from math import isfinite
 import re
 import time
+
+
+def trusted_client(request):
+    """Mando y misión: solo desde la Pi (túnel USB) o por Tailscale (100.64.0.0/10, cifrado y solo dispositivos propios)."""
+    host = request.client.host if request.client else ''
+    try:
+        return host == '127.0.0.1' or ipaddress.ip_address(host) in ipaddress.ip_network('100.64.0.0/10')
+    except ValueError:
+        return False
 
 
 class GateState(str, Enum):
