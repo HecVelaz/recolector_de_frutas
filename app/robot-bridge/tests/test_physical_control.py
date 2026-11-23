@@ -106,6 +106,17 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(HTTPException, 'Se perdió el enlace de mando'):
             self.control.input('owner', ManualInput())
 
+    async def test_arm_braking_state_is_valid_only_while_settling(self):
+        await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
+        self.control.input('owner', ManualInput(motion='j2-'))
+        self.evidence['arm_state'] = 'q=3,17,9;e=4,1,4;c=111;fc=000;pz=-1;mn=-1'   # frenando, medido 23/11
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+        self.control.input('owner', ManualInput())
+        self.now += .6
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+        self.now += .5
+        self.assertIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+
     async def test_brief_input_gap_stops_both_axes_and_keeps_the_session(self):
         trial = self.base.new_session.return_value
         trial.state = BaseSessionState.ARMED

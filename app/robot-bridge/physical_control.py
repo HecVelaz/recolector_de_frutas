@@ -61,6 +61,7 @@ def home_recovery(detail, state):
         return 10.
     return None
 JOINT_STATES = re.compile(r'(?:^|;)e=([0-6]),([0-6]),([0-6])(?:;|$)')
+ARM_SETTLE_S = 1.0   # margen tras 'jv 0 0 0' para que las articulaciones queden quietas
 REFERENCED = re.compile(r'(?:^|;)c=111(?:;|$)')
 
 
@@ -220,7 +221,8 @@ class PhysicalControl:
             if self.autonomous and not self.arm_ready(text):
                 reasons.append('El brazo perdió su referencia durante la recolección')
             states = JOINT_STATES.search(text)
-            allowed = '02345' if self.arm_motion or self.clock() < self.arm_settling_until else '0234'
+            # Al soltar, el firmware frena pasando por 1 (y 2) hasta 0,6 s antes de quedar en 4 (medido 23/11)
+            allowed = '012345' if self.arm_motion or self.clock() < self.arm_settling_until else '0234'
             if mode == 'homing' and self.home_started is not None:
                 allowed = '012345' if self.park_started is not None else '012346'
             if self.autonomous:
@@ -409,7 +411,7 @@ class PhysicalControl:
             raise HTTPException(409, 'La pinza está disponible. Las articulaciones requieren completar el homing')
         if self.arm_motion and not command:
             self.arm.send('jv 0 0 0')
-            self.arm_settling_until = self.clock() + .3
+            self.arm_settling_until = self.clock() + ARM_SETTLE_S
             self.arm_motion = None
             if servo:
                 # Priorizar la parada. El mando puede reenviar el servo en la próxima entrada.
