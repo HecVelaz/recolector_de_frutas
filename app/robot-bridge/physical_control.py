@@ -46,22 +46,25 @@ PARK_COMMAND = 'mv 3 17 4'
 # Homing rechazado por el firmware con el cero ya conocido (20/11): el brazo frenado se asienta abajo (J2 2,2°, J3 2,9°),
 # fuera de la franja del cuatro barras (con J2 < 3,4° J3 puede llegar a ~1°), o J2 quedó más arriba de 25°. Como pide el
 # firmware, primero "j 2 <grados>" (también valida la franja) y otra vez "h". Un solo intento por homing
-HOME_RECOVERY_TIMEOUT = 10
+HOME_RECOVERY_TIMEOUT = 20   # 23/11: 10 -> 20 (el reposo coordinado tarda más que un j 2)
 HOME_RECOVERY_TOLERANCE = .7
 ANGLES = re.compile(r'(?:^|;)q=(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:;|$)')
 
 
 def home_recovery(detail, state):
-    """Destino de J2 para volver a intentar el homing tras el rechazo `detail` del firmware, o None."""
+    """(orden, destino de J2) para volver a intentar el homing tras el rechazo `detail` del firmware, o None."""
     angles = ANGLES.search(state or '')
     if not isinstance(detail, str) or angles is None:
         return None
     q3 = float(angles.group(3))
     if 'fuera de la franja' in detail:
         # Borde de arriba de la franja: J3 <= ~J2 desde J2 5,8° (config.h FRANJA_ARRIBA), con 1° de margen
-        return round(min(20., max(6., q3 + 2.)), 1)
+        target = round(min(20., max(6., q3 + 2.)), 1)
+        return f'j 2 {target:.1f}', target
     if 'Bajarla antes' in detail:
-        return 10.
+        # 23/11: con J3 en 24,7° J2 no podía bajar sola a 10° (la franja la deja >= ~J3): el reposo coordinado del
+        # firmware baja las dos sin salir de la franja (J2 17°, J3 4°)
+        return PARK_COMMAND, 17.
     return None
 JOINT_STATES = re.compile(r'(?:^|;)e=([0-6]),([0-6]),([0-6])(?:;|$)')
 ARM_HOLD_CORRECTION_S = 2.0   # quieto: cuánto puede durar el estado 1 (corrección del sostén)
@@ -505,7 +508,7 @@ class PhysicalControl:
                         raise HTTPException(409, self.arm.home_detail or 'El brazo rechazó volver a la franja')
                     angles = ANGLES.search(self.snapshot().get('arm_state') or '')
                     joints = JOINT_STATES.search(self.snapshot().get('arm_state') or '')
-                    if (angles and joints and joints.group(2) in '23'
+                    if (angles and joints and joints.group(2) in '234'
                             and abs(float(angles.group(2)) - target) <= HOME_RECOVERY_TOLERANCE):
                         self.home_recovery = None
                         self.home_started = self.clock()
@@ -529,12 +532,13 @@ class PhysicalControl:
                     elif received_at is not None and received_at >= self.home_started:
                         if reply == 'failed':
                             detail = self.arm.home_error
-                            target = None if self.home_retried else home_recovery(
+                            recovery = None if self.home_retried else home_recovery(
                                 detail, self.snapshot().get('arm_state'))
-                            if target is not None:
+                            if recovery is not None:
+                                command, target = recovery
                                 self.home_retried = True
                                 self.home_recovery = (self.clock(), target)
-                                self.arm.send(f'j 2 {target:.1f}')
+                                self.arm.send(command)
                                 self.deadline = input_started_at + SESSION_LEASE
                                 self.input_deadline = input_started_at + self.lease()
                                 return 'active', False

@@ -276,6 +276,22 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('completed', False))
         self.assertEqual([c.args[0] for c in self.arm.send.call_args_list], ['h', 'j 2 6.0', 'h', PARK_COMMAND])
 
+    async def test_homing_with_j2_above_25_and_j3_high_goes_to_the_coordinated_rest_and_retries(self):
+        # 23/11: J2 25,08° y J3 24,68°: "Bajarla antes (j 2 10)", pero j 2 10 sale de la franja (J2 >= 25,2°)
+        self.evidence['arm_state'] = 'q=3.04,25.08,24.68;e=4,4,4;c=111;fc=000;pz=882;mn=1500'
+        self.arm.home_error = self.arm.home_detail = ('Homing: J2 en +25.1°; más arriba de 25° el codo no llega a su '
+                                                      'final de carrera sin salir de la franja. Bajarla antes (j 2 10).')
+        await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.home_feedback.return_value = (self.now + .01, 'failed')
+        self.now += .05
+        self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('active', False))
+        self.arm.send.assert_called_with(PARK_COMMAND)   # las dos juntas, dentro de la franja
+        self.now += .05
+        self.evidence['arm_state'] = 'q=3,17.1,4.2;e=4,4,4;c=111;fc=000;pz=882;mn=1500'   # llegó (frenadas)
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('h')
+
     async def test_homing_retry_stops_if_the_firmware_rejects_it_again(self):
         self.evidence['arm_state'] = 'q=1.13,2.23,2.91;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
         self.arm.home_error = self.arm.home_detail = 'Homing: J2 y J3 fuera de la franja (2.05° afuera)'
