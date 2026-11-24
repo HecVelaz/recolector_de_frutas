@@ -70,8 +70,9 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
         }
     }
     SectionCard(if (recolector) "Modo Recolector" else "Recolección del arbolito", Modifier.fillMaxWidth(), compact = true) {
-        if (recolector) Text("El Móvil no se mueve: escanea 3 s, guarda los limones que ve, pausa la visión y cosecha " +
-            "esa lista. Dejá los limones a 50–55 cm de J1.", style = MaterialTheme.typography.bodySmall)
+        if (recolector) Text("Escanea 3 s, guarda dónde está cada limón y los cosecha todos, de a uno; si hace falta, " +
+            "reubica el Móvil (un limón que deja de ver lo agarra con la posición guardada).",
+            style = MaterialTheme.typography.bodySmall)
         mission?.let { status ->
             DetailRow("Estado", when (status.state) {
                 "BUSCANDO" -> "Buscando"
@@ -83,7 +84,8 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
             })
             Text(status.message)
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // 23/11: el Recolector cosecha todos los del escaneo; la cantidad es solo de la Recolección
+        if (!recolector) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Limones a la canasta")
             OutlinedButton(onClick = { onLemons(lemons - 1) }, enabled = !missionRequested && lemons > 1) { Text("−") }
             Text("$lemons", style = MaterialTheme.typography.titleMedium)

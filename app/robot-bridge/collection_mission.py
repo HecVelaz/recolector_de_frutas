@@ -182,7 +182,8 @@ class CollectionMission:
         return self.snapshot()
 
     def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS):
-        """Modo Recolector: cosechar la lista del escaneo; si hace falta, reubicando el Móvil (no hace falta cero)."""
+        """Modo Recolector: cosechar TODOS los limones del escaneo (lemons se ignora, 23/11); si hace falta, reubicando el
+        Móvil (no hace falta cero)."""
         self.control.tick()
         if self.active or self.control.owner is not None:
             raise HTTPException(409, 'Detené el mando antes de iniciar el modo Recolector')
@@ -194,7 +195,7 @@ class CollectionMission:
             raise HTTPException(409, 'Esperá a que la visión estéreo reciba profundidad')
         self.owner, self.operator = f'recolector-{uuid4()}', operator
         self.deadline = monotonic() + 1.25
-        self.run_until = monotonic() + 180. + 150. * lemons   # 23/11: + reubicarse y volver a prender la visión
+        self.run_until = monotonic() + 180.   # hasta el escaneo; después, según cuántos limones vio (23/11)
         self.stop_requested = False
         self.zone = None
         self.events = []
@@ -219,8 +220,10 @@ class CollectionMission:
         return await self.measure_frames(owner, seconds)
 
     async def run_scan(self, owner, count, seconds):
-        """Modo Recolector: detener la base -> escanear -> guardar las coordenadas -> apagar la visión -> cosechar la
-        lista de a uno -> brazo al reposo (sin verificar con la visión: pedido del usuario, 21/11)."""
+        """Modo Recolector: detener la base -> escanear -> guardar las posiciones en el marco de la odometría ->
+        de a uno (primero los de la zona buena): reubicarse si hace falta, medir (corrige las posiciones guardadas de
+        los que ve) y cosechar; uno que no se ve se agarra con la posición guardada -> brazo al reposo. Sin verificar
+        con la visión después (pedido del usuario, 21/11). La visión queda prendida (23/11)."""
         stage, recorder, paused, results = 'preparación', None, False, []
         try:
             navigation, grasp, tf = await asyncio.to_thread(self.planners)
@@ -234,61 +237,59 @@ class CollectionMission:
             if not targets:
                 self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha en esta parada.')
                 return
-            pending = [lemon for lemon in targets if not in_zone(lemon)]
-            # La visión se apaga para que el brazo planee más rápido, salvo que haga falta reubicarse: prenderla en
-            # medio de la misión cargó la Pi y venció el mando (23/11); queda prendida, como en la Recolección
-            if pending:
-                self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es); cosechando de a uno.')
-            else:
-                self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es). Visión pausada; cosechando de a uno.')
-                self.vision_hold = paused = True
-                self.sync_vision()
-            stage = 'cosecha'
+            # 23/11, pedido del usuario: cosechar TODOS los del escaneo. Se guardan en el marco de la odometría (no
+            # cambia al mover la base) y antes de cada uno se pasan al marco del brazo desde la pose de ese momento
+            start = source_value(self.control.snapshot(), 'odom')
+            if start is None:
+                raise RuntimeError('Falta odometría para recordar dónde están los limones')
+            remaining = [arm_to_world(lemon, start) for lemon in targets]
+            self.run_until = monotonic() + 120. + 150. * len(targets)
+            self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es); se cosechan todos, de a uno.')
             done = 0
-            # 1) Los que ya están en la zona buena, sin mover la base (entrada horizontal larga)
-            for lemon in (lemon for lemon in targets if in_zone(lemon)):
-                if done >= count:
-                    break
-                done += await self.pick_here(owner, grasp, lemon, results)
-            # 2) El resto, del más cercano: reubicar el Móvil para dejarlo en la zona buena, medir de nuevo y cosechar
-            #    desde ahí (23/11, pedido del usuario). Si no se puede, desde acá como antes (entrada corta) o se saltea
-            for lemon in pending:
-                if done >= count:
-                    break
-                stage = 'planificación de la reubicación'
-                found = await self.reposition(owner, navigation, grasp, lemon, True)
-                if found is None:
-                    stage = 'cosecha'
-                    done += await self.pick_here(owner, grasp, lemon, results)
-                    continue
-                steps, expected = found
-                stage = 'reubicación del Móvil'
-                await self.arm_to_rest(owner, grasp)
-                self.update('NAVEGANDO', 'Reubicando el Móvil para el limón: ' + navigation.texto(steps))
-                for kind, value in steps:
-                    await self.drive_step(owner, kind, value)
-                await self.settle(owner, 1.)
+            while remaining:
+                odom = source_value(self.control.snapshot(), 'odom')
+                if odom is None:
+                    raise RuntimeError('Falta odometría reciente')
+                here = [world_to_arm(point, odom) for point in remaining]
+                # primero los que ya están en la zona buena (sin mover la base); si no, el más cercano
+                ready = [i for i, lemon in enumerate(here) if in_zone(lemon)] or range(len(here))
+                index = min(ready, key=lambda i: math.hypot(here[i][0], here[i][1]))
+                number = len(targets) - len(remaining) + 1
+                if not in_zone(here[index]):
+                    stage = 'planificación de la reubicación'
+                    found = await self.reposition(owner, navigation, grasp, here[index], True)
+                    if found is not None:
+                        steps = found[0]
+                        stage = 'reubicación del Móvil'
+                        await self.arm_to_rest(owner, grasp)
+                        self.update('NAVEGANDO', f'Reubicando el Móvil para el limón {number} de {len(targets)}: '
+                                    + navigation.texto(steps))
+                        for kind, value in steps:
+                            await self.drive_step(owner, kind, value)
+                        await self.settle(owner, 1.)
+                stage = 'medición'
                 self.zone = source_value(self.control.snapshot(), 'odom')
                 if self.zone is None:
                     raise RuntimeError('Falta odometría reciente al llegar')
-                stage = 'cosecha tras reubicarse'
-                await self.scan_frames(owner, 0.)   # espera a que la visión entregue pares nuevos
-                try:
-                    got = await self.harvest(owner, grasp, tf, count - done, True, expected, verify=False)
-                    results.append((lemon, f'reubicado: {got} en la canasta'))
-                    done += got
-                except ArmRejected:
-                    raise
-                except RuntimeError as error:
-                    results.append((lemon, f'reubicado, sin cosecha: {error}'[:120]))
+                self.update('BUSCANDO', f'Midiendo el limón {number} de {len(targets)} con estéreo.')
+                await self.scan_frames(owner, 0.)   # pares nuevos, desde acá
+                measured = await self.measure_lemons(owner, grasp, tf)
+                here = refresh_positions(remaining, measured, self.zone)
+                lemon = here[index]
+                seen = remaining[index][3]
+                stage = 'cosecha'
+                before = len(results)
+                done += await self.pick_here(owner, grasp, lemon[:3], results)
+                if not seen:   # pedido del usuario: perdido de vista, se agarra igual con la posición guardada
+                    results[before:] = [(l, r + ' (sin verlo: posición guardada)') for l, r in results[before:]]
+                remaining.pop(index)
                 self.zone = None
-                break   # el resto de la lista quedó en el marco de antes de moverse
             stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
             # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
             detail = '; '.join(f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results)
-            self.update('FINALIZADO', f'Modo Recolector: {done} agarre(s) completo(s) de {len(targets)} limón(es) en la '
-                        f'lista. {detail}')
+            self.update('FINALIZADO', f'Modo Recolector: {done} de {len(targets)} limón(es) del escaneo en la canasta. '
+                        f'{detail}')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Modo Recolector detenido por el operador.')
         except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
@@ -1017,6 +1018,43 @@ def _planner_call(name, *args):
         if name == 'rest_plan':
             return punta.con_margen(punta.MARGEN_SALIDA_CARGA, punta.planear_q, args[0], punta.REPOSO)
         return getattr(punta, name)(*args)
+
+
+ROTATION_CENTER_MM = (80., -5.)   # = ir_a_parada.CENTRO_GIRO: centro del eje de las ruedas en el marco de J1
+
+
+def arm_to_world(lemon, odom):
+    """Limón (mm, marco del brazo: x derecha, y adelante) -> (x, y en m del marco odom, z mm del modelo, visto). La
+    odometría es la del centro de giro, con x adelante e y a la izquierda (base_link)."""
+    forward = (lemon[1] - ROTATION_CENTER_MM[1]) / 1000
+    left = -(lemon[0] - ROTATION_CENTER_MM[0]) / 1000
+    c, s = math.cos(odom['yaw_rad']), math.sin(odom['yaw_rad'])
+    return (odom['x_m'] + c * forward - s * left, odom['y_m'] + s * forward + c * left, lemon[2], True)
+
+
+def world_to_arm(point, odom):
+    """La inversa de arm_to_world: dónde queda en el marco del brazo desde la pose `odom` (x, y, z mm)."""
+    dx, dy = point[0] - odom['x_m'], point[1] - odom['y_m']
+    c, s = math.cos(odom['yaw_rad']), math.sin(odom['yaw_rad'])
+    forward, left = c * dx + s * dy, -s * dx + c * dy
+    return (-left * 1000 + ROTATION_CENTER_MM[0], forward * 1000 + ROTATION_CENTER_MM[1], point[2])
+
+
+def refresh_positions(remaining, measured, odom):
+    """Corrige en el lugar las posiciones guardadas (marco odom) con lo medido desde `odom` (mm, marco del brazo): a
+    cada una, el limón medido más cercano a menos de EXPECTED_RADIUS_MM de donde se esperaba (el 4.º campo dice si se
+    vio esta vez). Devuelve las posiciones en el marco del brazo."""
+    here = []
+    for i, point in enumerate(remaining):
+        predicted = world_to_arm(point, odom)
+        near = min(measured, key=lambda lemon: math.dist(lemon[:2], predicted[:2]), default=None)
+        if near is not None and math.dist(near[:2], predicted[:2]) <= EXPECTED_RADIUS_MM:
+            remaining[i] = arm_to_world(near, odom)
+            here.append(tuple(near[:3]))
+        else:
+            remaining[i] = point[:3] + (False,)
+            here.append(predicted)
+    return here
 
 
 def in_zone(lemon):

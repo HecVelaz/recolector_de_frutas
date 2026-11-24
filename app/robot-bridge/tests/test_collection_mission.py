@@ -175,19 +175,22 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
 
-    async def recolector_run(self, scan, after, count=2, extra=()):
-        """Modo Recolector (21/11): scan = lo que ve en el escaneo; after = lo que ve al reanudar la visión."""
+    async def recolector_run(self, views, count=2, extra=()):
+        """Modo Recolector: views = lo que ve la visión en cada medición, en orden (el escaneo primero; la última se
+        repite). scan_frames(owner, 0.) solo espera pares nuevos: no consume una vista."""
         events, planned = [], []
-        grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.))
+        grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.), MIN_POSICIONES=2)
         grasp.k.Q1_LIM = (0., 180.)
         grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
         grasp.planear_agarre_tol.side_effect = lambda s, target, basket: (
             ([('servo', 'pz a')], []) if target[0] > -700 else (None, ['lejos']))
-        frames = iter([scan, after])
+        views = list(views)
 
         async def measure(owner, seconds=8.):
+            if seconds == 0.:
+                return []
             events.append(('mide', paused[0]))
-            return next(frames)
+            return views.pop(0) if len(views) > 1 else views[0]
 
         async def task(owner, original, steps):
             events.append(('agarra', paused[0]))
@@ -200,7 +203,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             events.append(('pausa' if value else 'reanuda', value))
             return True
 
-        for extra_patch in extra:   # patches propios de cada prueba (drive_step, harvest, ...)
+        for extra_patch in extra:   # patches propios de cada prueba (drive_step, ...)
             extra_patch.start()
             self.addCleanup(extra_patch.stop)
         original_plan = self.mission.grasp_plan
@@ -223,48 +226,56 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         return events, planned
 
     @patch('collection_mission.VISION_ON_DEMAND', True)
-    async def test_recolector_harvests_the_saved_list_without_moving_when_it_cannot_reposition(self):
+    async def test_recolector_tries_every_scanned_lemon_without_moving_when_it_cannot_reposition(self):
         near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
         beside = (-480., 40., 130.)   # a ~5° de J1: el firmware pediría J1 < 3°
-        scan = [[near, far_ok, unreachable, beside]] * 3
         self.navigation.planear.return_value = [('giro', 20.), ('recto', -500.)]   # reubicarse: marcha atrás de más
-        events, planned = await self.recolector_run(scan, after=[])
+        events, planned = await self.recolector_run([[[near, far_ok, unreachable, beside]] * 3], count=1)
         self.assertEqual(planned, [(-560, 200), (-500, 150)])   # primero el de la zona buena; sin reubicación, desde acá
-        # 23/11: hay limones fuera de la zona buena (podría reubicarse): la visión queda prendida toda la misión
-        self.assertEqual([e for e, _ in events], ['mide', 'agarra', 'agarra'])   # sin verificar
-        self.assertFalse(any(value for _, value in events))
-        for call in self.control.mission_velocity.call_args_list:              # la base no se mueve nunca
+        self.assertFalse(any(e == 'pausa' for e, _ in events))   # 23/11: la visión queda prendida
+        for call in self.control.mission_velocity.call_args_list:   # la base no se mueve
             self.assertEqual(call.args[1:], (0., 0.))
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
-        self.assertIn('2 agarre(s) completo(s) de 4', self.mission.status['message'])
+        self.assertIn('2 de 4 limón(es) del escaneo', self.mission.status['message'])   # count=1 no limita: todos
         self.assertIn('salteado', self.mission.status['message'])
+        self.assertIn('sin plan', self.mission.status['message'])
 
-    async def test_recolector_repositions_the_base_for_a_lemon_beside_j1_and_harvests_measuring_again(self):
-        beside = (-480., 40., 130.)   # 23/11: a ~5° de J1 y 48 cm: antes se salteaba
-        steps = [('giro', 12.), ('recto', -120.), ('giro', -12.)]
-        self.navigation.planear.return_value = steps
-        drive, harvest = AsyncMock(), AsyncMock(return_value=1)
-        events, planned = await self.recolector_run([[beside]] * 3, after=[], count=1, extra=(
-            patch.object(self.mission, 'drive_step', new=drive), patch.object(self.mission, 'harvest', new=harvest)))
-        self.assertEqual([c.args[1:] for c in drive.call_args_list], steps)
-        expected = harvest.call_args.args[5]
-        self.assertAlmostEqual(math.hypot(expected[0], expected[1]), STOP_RADIUS_MM)   # queda a 60 cm de J1
-        self.assertAlmostEqual(math.degrees(math.atan2(expected[1], -expected[0])), 15.)   # y al menos 15° adelante
-        self.assertIs(harvest.call_args.kwargs.get('verify'), False)   # el Recolector no vuelve a medir para verificar
+    async def test_recolector_harvests_all_scanned_lemons_repositioning_and_even_one_lost_from_view(self):
+        a, b, c = (-560., 200., 140.), (-480., 40., 130.), (-450., 300., 130.)   # a en la zona buena; b y c no
+        self.navigation.planear.return_value = [('giro', 12.)]
+
+        async def turn(owner, kind, value):   # la odometría acompaña el giro (en el centro de giro: x, y no cambian)
+            self.odom['yaw_rad'] += math.radians(value)
+
+        drive = AsyncMock(side_effect=turn)
+        views = [[[a, b, c]] * 3,   # escaneo
+                 [[a]] * 3,         # al medir para a (b y c tapados)
+                 [[]] * 3]          # después de girar no se ven: con la posición guardada (y girada)
+        events, planned = await self.recolector_run(views, count=1, extra=(
+            patch.object(self.mission, 'drive_step', new=drive),))
+        self.assertEqual(len(planned), 3, self.mission.status['message'])   # los tres del escaneo
+        self.assertEqual(planned[0], (-560, 200))   # primero el de la zona buena, sin moverse
+        self.assertEqual(drive.call_count, 2)       # se reubicó para b y para c
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
-        self.assertIn('1 agarre(s) completo(s)', self.mission.status['message'])
-        self.assertIn('reubicado', self.mission.status['message'])
+        self.assertIn('3 de 3 limón(es) del escaneo en la canasta', self.mission.status['message'])
+        self.assertIn('sin verlo', self.mission.status['message'])
 
-    @patch('collection_mission.VISION_ON_DEMAND', True)
-    async def test_recolector_pauses_vision_when_every_lemon_is_already_in_the_good_zone(self):
-        in_zone = (-560., 200., 140.)   # a 59 cm y 20° de J1: sin mover la base
-        events, planned = await self.recolector_run([[in_zone]] * 3, after=[], count=1)
-        self.assertEqual([e for e, _ in events], ['mide', 'pausa', 'agarra', 'reanuda'])
-        self.assertTrue(all(value for e, value in events if e == 'agarra'))   # visión pausada en el agarre
-        self.assertEqual(planned, [(-560, 200)])
+    def test_lemon_positions_survive_moving_the_base(self):
+        from collection_mission import arm_to_world, refresh_positions, world_to_arm
+        start, moved = dict(self.odom), dict(self.odom, x_m=.1, yaw_rad=math.radians(20))
+        lemon = (-540., 180., 120.)
+        point = arm_to_world(lemon, start)
+        self.assertEqual([round(v, 6) for v in world_to_arm(point, start)], list(lemon))
+        seen_now = world_to_arm(point, moved)
+        remaining = [point]
+        nudged = (seen_now[0] + 30., seen_now[1], seen_now[2])   # medido 3 cm al costado: se corrige la guardada
+        self.assertEqual(refresh_positions(remaining, [nudged], moved), [nudged])
+        self.assertTrue(remaining[0][3])
+        self.assertEqual(len(refresh_positions(remaining, [], moved)), 1)   # no se ve: queda la guardada
+        self.assertFalse(remaining[0][3])
 
     async def test_recolector_without_lemons_skips_the_harvest(self):
-        events, planned = await self.recolector_run([[]] * 3, after=[])
+        events, planned = await self.recolector_run([[[]] * 3])
         self.assertEqual(planned, [])
         self.assertEqual([e for e, _ in events], ['mide'])
         self.assertIn('no se cosecha', self.mission.status['message'])
