@@ -288,6 +288,10 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('active', False))
         self.arm.send.assert_called_with(PARK_COMMAND)   # las dos juntas, dentro de la franja
         self.now += .05
+        self.evidence['arm_state'] = 'q=3,22,15;e=5,5,5;c=111;fc=000;pz=882;mn=1500'   # yendo al reposo (mv)
+        self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('homing'))
+        self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('active', False))
+        self.now += .05
         self.evidence['arm_state'] = 'q=3,17.1,4.2;e=4,4,4;c=111;fc=000;pz=882;mn=1500'   # llegó (frenadas)
         self.control.input('owner', ManualInput(motion='home'))
         self.arm.send.assert_called_with('h')

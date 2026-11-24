@@ -246,7 +246,9 @@ class PhysicalControl:
             # Al soltar, el firmware frena pasando por 1 (y 2) hasta 0,6 s antes de quedar en 4 (medido 23/11)
             allowed = '012345' if self.arm_motion or self.clock() < self.arm_settling_until else '0234'
             if mode == 'homing' and self.home_started is not None:
-                allowed = '012345' if self.park_started is not None else '012346'
+                # 23/11: la recuperación puede ir al reposo coordinado (mv: estado 5), como el reposo final
+                allowed = ('012345' if self.park_started is not None or self.home_recovery is not None
+                           else '012346')
             if self.autonomous:
                 allowed = '012345'
             # Quieto, "1 yendo" es la corrección del sostén cuando algo corre la articulación (al manejar la base en
