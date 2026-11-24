@@ -59,7 +59,6 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - `punta.py` (probado 23/11): entrada horizontal la más larga (20…5 cm; = distancia a J1 − ~44 cm); tras cerrar
   **baja** 5 cm. Agarre: **+3,25 cm arriba** (`GRASP_RAISE_MM` 32,5, puente), **2,7 cm antes del centro**
   (`AGARRAR_ADELANTE` −27) y **0,75 cm a la derecha** (`AGARRAR_IZQUIERDA` −7,5); ajuste fino 21/11 encima.
-  Pinza RDS3218 500/1200 µs.
 
 ## ROS 2
 - `brazo_ik` 9 pruebas; `mision` 55; `simulacion` 17. `largo_herramienta` = 0 (MEDIR). Sin nodo de seguridad (S2).
