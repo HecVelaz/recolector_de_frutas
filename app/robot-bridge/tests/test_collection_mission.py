@@ -471,8 +471,8 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
     def test_grasp_point_is_raised_grasp_raise_real_millimetres(self):
         from collection_mission import raised
-        self.assertEqual(GRASP_RAISE_MM, 12.5)   # 23/11, ajustado en el robot
-        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + 12.5 / 1.43)
+        self.assertEqual(GRASP_RAISE_MM, 32.5)   # 23/11, ajustado en el robot
+        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + 32.5 / 1.43)
 
     def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
         arrival = dict(self.odom, x_m=.2)
