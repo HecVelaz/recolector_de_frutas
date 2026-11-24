@@ -122,7 +122,9 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
     def test_servo_speed_commands(self):
         self.assertEqual(ManualInput(gripper_speed_dps=90).servo_command(), 'pz w 90')
         self.assertEqual(ManualInput(wrist_speed_dps=30).servo_command(), 'mn w 30')
-        self.assertFalse(ManualInput(wrist_speed_dps=30).is_neutral())
+        self.assertTrue(ManualInput(wrist_speed_dps=30).is_neutral())          # servos: no son movimiento continuo
+        self.assertTrue(ManualInput(gripper_open_percent=0).is_neutral())
+        self.assertFalse(ManualInput(motion='j1+').is_neutral())
         with self.assertRaises(HTTPException):
             ManualInput(gripper_speed_dps=90, wrist_degrees=10).servo_command()
 
@@ -149,6 +151,15 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
         self.now += 2.1
         self.assertIn('Brazo ocupado o en estado inválido', self.control.blockers('arm'))
+
+    async def test_gripper_still_answers_after_a_brief_input_gap(self):
+        await self.control.open('owner', OpenManual(mode='arm', operator_present=True))
+        self.control.input('owner', ManualInput(sequence=1, motion='j2-'))
+        self.now += LEASE + .01
+        self.control.tick()   # se cortó el mando un instante: espera una entrada neutra
+        status, sent = self.control.input('owner', ManualInput(sequence=2, gripper_open_percent=0))
+        self.assertEqual((status, sent), ('active', True))   # la pinza no queda esperando para siempre
+        self.arm.send.assert_called_with('pz 1250')
 
     async def test_brief_input_gap_stops_both_axes_and_keeps_the_session(self):
         trial = self.base.new_session.return_value

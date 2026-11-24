@@ -116,9 +116,10 @@ class ManualInput(BaseModel):
         return joint_velocity(ARM_MOTIONS[name], scale) if name in ARM_MOTIONS else None
 
     def is_neutral(self):
-        return not (self.motion or self.arm_motion or self.servo or self.gripper_open_percent is not None
-                    or self.wrist_degrees is not None or self.gripper_speed_dps is not None
-                    or self.wrist_speed_dps is not None or (self.drive and any(self.drive.velocity()))
+        """Sin movimiento continuo (ruedas ni articulaciones). Los servos van a posiciones o velocidades fijas: no cuentan
+        (23/11: tras un corte de 0,22 s se espera una entrada neutra, y la app reenvía la pinza hasta que salga: con la
+        pinza contada como movimiento quedaban esperándose y la pinza no respondía más)."""
+        return not (self.motion or self.arm_motion or (self.drive and any(self.drive.velocity()))
                     or (self.joints and self.joints.command()))
 
     def servo_command(self):
