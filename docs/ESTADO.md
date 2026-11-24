@@ -13,7 +13,7 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   XT60 y divisor 100 k / 30 k. **Manual v1.1** en `docs/manual/` (falta subir el PDF a Drive).
 
 ## App Arturito y puente (`app/`)
-- **App 0.15.1** en la Xiaomi Pad 5. Control: **Modo manual | Recolector | Recolección**. Brazo y pinza: velocidad del
+- **App 0.15.2** en la Xiaomi Pad 5 (Recolector sin cantidad). Control: **Modo manual | Recolector | Recolección**. Brazo y pinza: velocidad del
   brazo 10–100 % de 1 rad/s (60 %), apertura y giro de la pinza 15–180 °/s (`pz w`/`mn w`; el firmware arranca en 45).
   Giro de la base hasta 1 rad/s (como `teleop.html`). Alertas de sensores (0.12.0) sin la prueba completa.
 - **Conexión: tablet por Tailscale** (misma cuenta que la Pi), en la app `http://100.116.96.71:18006` y la clave de
