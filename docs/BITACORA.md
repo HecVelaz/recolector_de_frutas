@@ -1002,3 +1002,37 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   `84ec6c6`); probado con un reinicio de la Pi: rescatada a las 18:35:01 y la base en línea sola.
 - `ros2 topic echo` se colgó en la Pi y no respondía a `timeout` tras matar procesos de ROS: 100 archivos
   `fastrtps_*` trabados en `/dev/shm`; borrados y reiniciado `arturito.service`. Al reiniciar la Pi se limpian.
+
+## 2026-11-23 (noche) — Agarre horizontal, Recolector que se reubica y cosecha todos, planificador 3× más rápido
+- **Aproximación (`punta.py`, pruebas-esp32):** J1 ya giraba primero. La punta no se recoge a menos de ~43–44 cm de
+  J1 a ninguna altura (franja): entrada horizontal máx. = distancia del limón − 44 cm (a 53 cm, 7 cm). Entrada de
+  20/15/10/7/5 cm, la más larga (`c1de0f1`); tras cerrar **baja** 5 cm en vez de subir (`tiron <atrás> <abajo>`).
+  Comparado en 30 posiciones: mismo alcance (28/30). Recolección: parada a **60 cm** de J1 (entra ~15 cm; `021cb92`);
+  la cámara ve el limón a 75–91 cm (límite 95).
+- **Puente trabado (19:35):** el hilo principal en un `futex` de la memoria compartida de Fast DDS que dejaron los
+  procesos cortados con mis reinicios (116 `fastrtps_*` en `/dev/shm`). El puente ahora usa solo UDP
+  (`FASTDDS_BUILTIN_TRANSPORTS=UDPv4`, `546e021`).
+- **Modo Recolector que se reubica** (`d11feb4`, `0116f7a`): deja el limón a 60 cm y 15–35° con la orientación final
+  libre (la de menos movimiento; atrás ≤ 20 cm). Simulado con los planificadores reales: 48/48 posiciones (40–85 cm,
+  −40° a 40°, 35–55 cm del piso) con agarre entrando 15 cm. Dos cortes por vencimiento del mando (0,22 s): la
+  búsqueda no lo renovaba (`9f45c23`) y prender la visión en medio de la misión cargó la Pi (`d3f010c`: queda prendida).
+  **Probado:** reubicado (girar 18°, avanzar 21 cm) y 1 limón a la canasta.
+- **Cosechar todos los del escaneo** (`b950154`, app 0.15.2 sin cantidad): posiciones guardadas en el marco odom
+  (centro de giro = `CENTRO_GIRO` de la navegación, verificado contra `planear`); antes de cada uno se reubica si hace
+  falta, mide y corrige las guardadas; uno perdido de vista se agarra con la guardada. Probado: 3 de 3 (el operador
+  cortó en la canasta del 3.º).
+- **Velocidad de cálculo:** `planear_salida_max` probaba retrocesos imposibles desde 40 cm (9,9 de 11,5 s del plan);
+  arranca en radio − 420 mm: planes idénticos en 24 casos, 133 → 42 s; en la Pi 2–3,5 s con la visión prendida
+  (`a68328b`). El Recolector ya no verifica después de la canasta (−8 s, `cb89fc1`). Misión de 1 limón: ~1:50 → ~1:15
+  (estimado).
+- **Punto de agarre** (pedidos del usuario en el robot): `GRASP_RAISE_MM` 20 → 7,5 → −2,5 → 12,5 → **32,5**;
+  `AGARRAR_ADELANTE` 28 → 13 → −7 → **−27**; `AGARRAR_IZQUIERDA` 12,5 → **−7,5** (2 cm a la derecha con el limón a
+  ~86 cm de la cámara). Varía ~2 cm entre mediciones: ajustar con 2–3 agarres seguidos.
+- **Pinza en manual sin responder:** tras un corte de 0,22 s el puente esperaba una entrada neutra y la pinza no
+  contaba como neutra mientras la app la reenviaba: se esperaban mutuamente (`8e90d0a`). Después **el servo no se
+  movía** aunque el firmware le mandaba 545 → 1115 → 500 µs: hardware (servo, cable o buck 3), sin revisar.
+- **Homing "fuera de rango":** J2 25,08° y J3 24,7°; el firmware pide J2 ≤ 25 y `j 2 10` sale de la franja: la
+  recuperación va al reposo coordinado `mv 3 17 4` (`387b48a`) y acepta el estado 5 mientras tanto (`7832adb`).
+- **S3 muda a las 20:34** (sesión nueva y sin publicar, no en bootloader): reset. Distinta del bootloader al prender.
+- Error de proceso: un encadenado cargó y commiteó con un test fallando (el exit era del `grep`); desde ahí se carga
+  solo si la suite dice OK.

@@ -1,14 +1,13 @@
-# Estado actual (al 2026-11-23, ~18:45)
+# Estado actual (al 2026-11-23, ~22:00)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
 del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
 
 ## Avance
-- **Recolección desde la app (21/11):** 1 limón con acercamiento y vuelta al cero; **2 de 3 sin mover la base**.
-  Limonero subido 19 cm → limones a ~63 cm del piso: el agarre pasa ~3 cm abajo (sin camino seguro a la canasta más
-  arriba). Mejor zona: limón a 50–55 cm de J1 y **40–55 cm del piso**, a la izquierda y ≥ 8° adelante de J1.
-- **Riesgos abiertos:** la Pi se apaga de golpe (~6 veces el 21/11; alimentación sin resolver); cortes del enlace de
-  la S3 (6 el 23/11, sin desconexión USB; causa sin encontrar, ver Base); homing con "J3 CORTADA" desde el reposo.
+- **Modo Recolector (23/11):** se reubica y cosecha todos los del escaneo: 3 de 3 probado. Agarre a ~60 cm de J1,
+  limones a **40–55 cm del piso**. Punto de agarre ajustado en el robot (ver Brazo), todavía variable (~2 cm).
+- **Riesgos abiertos:** **servo de la pinza sin moverse** (23/11, el firmware le manda el pulso: hardware); la Pi se
+  apaga de golpe (21/11); la S3 a veces queda muda (cortes del enlace; 20:34 del 23/11 hizo falta reset).
 - Misión ROS (`ros2_ws/src/mision`): navegación con el banderín solo en Gazebo. Potencia v0.6: falta portafusible,
   XT60 y divisor 100 k / 30 k. **Manual v1.1** en `docs/manual/` (falta subir el PDF a Drive).
 
@@ -25,13 +24,14 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   servicio entero: relanza los agentes y la S3 puede colgarse). `bridge.log` se acumula: rechazos, cortes con el
   estado del brazo y mediciones. Datos en `~/arturito-bridge-0.4.0/data`. Reiniciar sin perder el cero:
   `ARTURITO_RESTORE_ORIGIN_JSON` con el `navigation_origin` de `/api/v1/telemetry`.
-- **Estados del brazo** (firmware 20): 0 suelta, 1 yendo, 2 llegó, 3 firme, 4 frenada, 5 mov, 6 homing. El puente
-  acepta 1 moviendo, 1 s después de soltar y hasta 2 s con el brazo quieto (corrección del sostén).
+- **Estados del brazo** (firmware 20): 0 suelta, 1 yendo, 2 llegó, 3 firme, 4 frenada, 5 mov, 6 homing. Puente: Fast
+  DDS solo por UDP; tras un corte breve la pinza/muñeca no bloquean; homing con J2 > 25° pasa por `mv 3 17 4`.
 - **Recolección:** homing → Calcular cero (3,8 s, criterio flojo; sin limón guarda la pose y al iniciar gira ±15/25°)
-  → Iniciar (se acerca a **60 cm** de J1 desde el 23/11, sin probar; más cerca no retrocede, mide estricto 8 s y cosecha lo medido ahí si el brazo tiene plan; limón alto:
-  prueba sin los +2 cm) → Volver al cero (90 s propios). 360 s para el primer limón.
-- **Modo Recolector** (23/11): escanea y **cosecha todos los limones vistos** (sin cantidad), guardados en el marco
-  odom; reubica el Móvil (60 cm, 15–35°, lo que menos mueva; atrás ≤ 20 cm), mide y corrige; uno perdido, con la guardada.
+  → Iniciar (se acerca a **60 cm** de J1, sin probar; más cerca no retrocede; mide 8 s y cosecha lo medido) → Volver
+  al cero (90 s propios).
+- **Modo Recolector:** escanea y **cosecha todos los vistos** (sin cantidad), guardados en el marco odom; reubica el
+  Móvil (60 cm, 15–35°, lo que menos mueva; atrás ≤ 20 cm), mide (corrige) y agarra; uno perdido, con la guardada.
+  Visión prendida toda la misión; sin verificación final. Plan del brazo: 2–3,5 s en la Pi.
 - **Visión a pedido:** la app la pide en Recolector, Recolección y Visión; sin pedido 30 s (y sin misión) el puente
   apaga el grupo de `start_limon.sh`; prenderla tarda ~21 s. Interruptor `VISION_ON_DEMAND` en `collection_mission.py`.
 - Homing fallido → `arm-homing-pending` bloquea el joystick del brazo hasta un homing completo. `recolectar.py`
@@ -56,9 +56,10 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - Si no abre sesión: pulso en EN por RTS (pyserial, DTR bajo) **con los 12 V apagados**.
 - **Homing:** `homingDutyMax` 50 % / 1,5 s no despega J3 quieta en el reposo ("J3 CORTADA … no avanza"): moverla un
   poco con el joystick y repetir. Arreglo de fondo (firmware) pendiente.
-- `punta.py` (23/11, sin probar en el robot): entra horizontal desde 20/15/10/7/5 cm, la más larga que entre
-  (= distancia del limón a J1 − ~44 cm); tras cerrar **baja** 5 cm (antes subía) y sigue igual. Alcance ~48–65 cm de J1; ajuste fino 21/11 (+2,7 cm adelante, ~+2,4 izq). A ~66 cm del piso el camino a
-  la canasta sale de la franja de J2/J3. Pinza RDS3218 500/1200 µs (rampa 45 °/s al arrancar); "entrar de frente" a vel 0,5.
+- `punta.py` (probado 23/11): entrada horizontal la más larga (20…5 cm; = distancia a J1 − ~44 cm); tras cerrar
+  **baja** 5 cm. Agarre: **+3,25 cm arriba** (`GRASP_RAISE_MM` 32,5, puente), **2,7 cm antes del centro**
+  (`AGARRAR_ADELANTE` −27) y **0,75 cm a la derecha** (`AGARRAR_IZQUIERDA` −7,5); ajuste fino 21/11 encima.
+  Pinza RDS3218 500/1200 µs.
 
 ## ROS 2
 - `brazo_ik` 9 pruebas; `mision` 55; `simulacion` 17. `largo_herramienta` = 0 (MEDIR). Sin nodo de seguridad (S2).

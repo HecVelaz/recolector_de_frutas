@@ -2,6 +2,12 @@
 
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
 
+000a. **Para la demo (23/11 noche), en orden:**
+   1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
+      conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.
+   2. **Afinar el punto de agarre** con 2–3 agarres seguidos (hoy varía ~2 cm entre mediciones; valores en ESTADO).
+   3. **Probar la Recolección** con la parada a 60 cm (no se probó) y el Recolector con limones a ambos lados del árbol.
+   4. S3 muda en medio del uso (20:34): si se repite, revisar `EnlaceMicroRos` (reconexión) antes de reflashear.
 0000. **Recolección desde la app Arturito (actualizado 22/11; detalle en la bitácora 21–22/11), en orden:**
    0. **Alimentación de la Pi:** se apagó de golpe ~6 veces el 21/11 (sin apagado en el journal; a veces 4,90 V y
       `throttled=0x50000`). Revisar fuente, cable USB-C y enchufe (que no tire al girar la base); para afuera, 5 V / 5 A.
