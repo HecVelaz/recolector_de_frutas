@@ -654,20 +654,25 @@ COMMAND = re.compile(r'^(mvp?) (-?\d+\.\d\d) (-?\d+\.\d\d) (-?\d+\.\d\d)$')
 
 class FakeArm:
     """Responde como el firmware 20 por /brazo/respuesta: LLEGO/PASO a mv/mvp, SERVO_LLEGO a pz/mn.
-    failures: lista de textos de MV_ERROR para los próximos mv (uno por mv)."""
+    failures: lista de textos de MV_ERROR para los próximos mv (uno por mv). angles: si se pasa, la lista de ángulos
+    del estado simulado sigue a los mv que llegan y al joystick de J1."""
 
-    def __init__(self, failures=()):
-        self.sent, self.failures = [], list(failures)
+    def __init__(self, failures=(), angles=None):
+        self.sent, self.failures, self.angles = [], list(failures), angles
         self.feedback, self.home_detail = (None, None), None
 
     def send(self, command):
         self.sent.append(command)
         now = monotonic()
+        if self.angles is not None and command.startswith('jv -'):
+            self.angles[0] -= 10.
         if command.startswith(('mv ', 'mvp ')):
             if self.failures:
                 self.feedback, self.home_detail = (now, 'park_failed'), self.failures.pop(0)
             else:
                 self.feedback, self.home_detail = (now, 'parked'), None
+                if self.angles is not None:
+                    self.angles[:] = [float(x) for x in command.split()[1:]]
         elif re.match(r'^(pz|mn) (?!w )', command):
             self.feedback = (now, 'servo_ready')
 
@@ -680,8 +685,8 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.control = Mock()
-        self.control.arm = FakeArm()
         self.angles = [3., 17., 4.]
+        self.control.arm = FakeArm(angles=self.angles)   # 25/11: el estado sigue a los mv (salida de la canasta)
         self.control.snapshot.side_effect = lambda: {'arm_state': 'q={},{},{};e=3,3,3;c=111'.format(*self.angles),
                                                      'sources': []}
         self.mission = CollectionMission(self.control, Mock(), self.temp.name, self.temp.name)
@@ -730,6 +735,29 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
         self.control.arm = FakeArm(['sin cuentas del encoder'] * 3)
         with self.assertRaises(ArmRejected):
             await self.mission.move('mision', (100., 46.7, 80.), passing=True)
+
+    async def test_leaving_the_basket_j1_goes_with_the_joystick_first(self):
+        # 25/11: desde la canasta el mv cortaba "sin cuentas"; J1 sale con jv hasta el destino y el mv termina
+        self.angles[:] = [130., 46.7, 80.]
+        arm = FakeArm()
+        sent = arm.send
+
+        def send(command):
+            sent(command)
+            if command.startswith('jv -'):
+                self.angles[0] -= 10.   # el joystick la mueve
+        arm.send = send
+        self.control.arm = arm
+        await self.mission.move('mision', (100., 46.7, 80.), passing=True)
+        jogs = [c for c in arm.sent if c.startswith('jv')]
+        self.assertEqual(jogs[:3], ['jv -0.90 0 0'] * 3)
+        self.assertEqual(jogs[-1], 'jv 0 0 0')
+        self.assertEqual(arm.sent[-1], 'mvp 100.00 46.70 80.00')
+        # sin canasta, como antes: solo el mv
+        self.angles[:] = [60., 46.7, 80.]
+        self.control.arm = FakeArm()
+        await self.mission.move('mision', (30., 46.7, 80.))
+        self.assertEqual(self.control.arm.sent, ['mv 30.00 46.70 80.00'])
 
     def test_arm_link_reads_pass_points_and_safety_rejections(self):
         from physical_control import RosArmLink

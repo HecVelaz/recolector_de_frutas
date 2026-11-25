@@ -41,6 +41,10 @@ STUCK_NEAR_DEG = 2.
 # destino 80 intentaba corregir 0,04° en la zona dura). Con J1 pasada J1_MAX_NORMAL el brazo tiene que estar plegado
 # (config.h SOLTAR_*): si J2 y J3 ya están dentro de esa zona, se quedan donde están y solo gira J1
 J1_MAX_NORMAL, FOLDED_Q2, FOLDED_Q3_MIN = 118., (42.3, 50.7), 78.3
+# 25/11: desde la canasta (J1 130°) J1 no despega con "mv": corta "sin cuentas" a los 150 ms (firmware 20, CFG_J1) aun
+# con 45 % de despegue (9 cortes seguidos); con el joystick (sin ese corte) sale bien. Para salir de la canasta, J1 va
+# con "jv" (J1_JOG_AXIS, ~11 °/s) hasta su destino y el "mv" termina J2/J3; si no avanza en J1_JOG_STALL_S, sigue el mv
+J1_JOG_AXIS, J1_JOG_STALL_S, J1_JOG_MAX_S = .9, 2., 8.
 ORIGIN_SECONDS = 3.8      # medición del limón para el cero (21/11: 3 s juntaba a veces 2 lecturas con la estéreo a ~1 Hz; la app corta «Calcular cero» a los 4,5 s: con 4,5 el pedido tardaba 4,53 s)
 # 21/11: el cero solo sirve para planear el acercamiento; al llegar, la cosecha vuelve a medir con el criterio estricto
 # de punta (MIN_POSICIONES, DISPERSION_MAX) y a menos de EXPECTED_RADIUS_MM. Por eso acá alcanza con menos (un limón a
@@ -909,10 +913,34 @@ class CollectionMission:
             await asyncio.sleep(.05)
         raise ArmRejected(f'El brazo no confirmó «{command}» en {timeout:.0f} s')
 
+    async def jog_j1_out(self, owner, target):
+        """Sacar J1 de la canasta con el joystick ("jv", reenviado antes de los 300 ms del hombre muerto) hasta `target`
+        (°); se corta si no avanza en J1_JOG_STALL_S. Siempre termina con "jv 0 0 0" (sostiene donde quedó)."""
+        started = progress = monotonic()
+        best = arm_angles(self.control.snapshot().get('arm_state'))[0]
+        self.update('INTERVINIEND', 'Sacando J1 de la canasta')
+        try:
+            while monotonic() - started < J1_JOG_MAX_S and monotonic() - progress < J1_JOG_STALL_S:
+                self.cycle(owner)
+                q1 = arm_angles(self.control.snapshot().get('arm_state'))[0]
+                if q1 <= target + 1.:
+                    break
+                if q1 < best - .3:
+                    best, progress = q1, monotonic()
+                self.control.arm.send(f'jv {-J1_JOG_AXIS:.2f} 0 0')
+                await asyncio.sleep(.1)
+        finally:
+            self.control.arm.send('jv 0 0 0')
+        await self.settle(owner, .6)
+
     async def move(self, owner, q, passing=False):
         """Como punta.ejecutar con un punto: mv (o mvp de paso) y, si corta por atraso con carga, repetir desde donde
-        quedó hasta MV_RETRIES veces. Los cortes de seguridad (franja, caja, plegado) no se repiten."""
+        quedó hasta MV_RETRIES veces. Los cortes de seguridad (franja, caja, plegado) no se repiten. Saliendo de la
+        canasta, J1 primero con el joystick (jog_j1_out)."""
         now = arm_angles(self.control.snapshot().get('arm_state'))
+        if now[0] > J1_MAX_NORMAL and q[0] < now[0] - 2.:
+            await self.jog_j1_out(owner, q[0])
+            now = arm_angles(self.control.snapshot().get('arm_state'))
         if q[0] > J1_MAX_NORMAL and FOLDED_Q2[0] <= now[1] <= FOLDED_Q2[1] and now[2] >= FOLDED_Q3_MIN:
             q = (q[0], now[1], now[2])
         nudged = False
