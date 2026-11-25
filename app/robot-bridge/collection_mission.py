@@ -1203,6 +1203,9 @@ def _planner_init(paths):
     """En el proceso de los planificadores: punta.py e ir_a_parada.py de las herramientas originales."""
     import contextlib
     import io
+    # 25/11: debajo del puente (que manda la velocidad a la S3 cada 50 ms; con la Pi saturada se atrasaba y la S3
+    # cortaba por "sin comandos") y encima de la visión (nice 10, scripts/vision.sh)
+    os.nice(5)
     for path in paths:
         if path not in sys.path:
             sys.path.append(path)
