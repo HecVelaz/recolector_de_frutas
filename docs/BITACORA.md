@@ -1036,3 +1036,33 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
 - **S3 muda a las 20:34** (sesión nueva y sin publicar, no en bootloader): reset. Distinta del bootloader al prender.
 - Error de proceso: un encadenado cargó y commiteó con un test fallando (el exit era del `grep`); desde ahí se carga
   solo si la suite dice OK.
+
+## 2026-11-25 — Recolector más rápido y robusto, Rodear árbol, CPU, batería, homing plegado, app en el teléfono
+- **Tiempos** (registros de misiones): medir+planear 12–13 → 4–8 s (la medición corta con 3 lecturas firmes del
+  limón buscado, hasta 8 s si se hamaca); reubicarse desde la canasta sin pasar por el reposo (16 s). En DESPLEGAR el
+  brazo tapaba la cámara izquierda al medir: se reubica con el brazo en la canasta (`f341379`).
+- **Robustez del Recolector:** limón que no se ve al medir se saltea; cada medición a un solo limón guardado;
+  "sin cuentas" se repite hasta 3 veces; agarre fallido -> pinza vacía al reposo / con algo a la canasta y ese limón
+  se reintenta una vez (`6cafc72`, `202a5a4`, `259717f`).
+- **J1 trabada en la canasta** ("sin cuentas" a los 150 ms de `CFG_J1`, aun con `ff 1 17 17 45 17` no despegó; con
+  el joystick sí): para salir de la canasta J1 va con `jv -0.90 0 0` hasta su destino y el mv termina (`39609a4`).
+  **Sin probar en el robot.** Arreglo de fondo: `sinCuentasMs` de J1 en el firmware 20 (reflashear).
+- **Homing:** fuera de la franja sube J2 hasta 24° (`43f8afd`); desde el brazo plegado pasa por (J2 46,7°, J3 50°)
+  antes del reposo coordinado, hasta 2 recuperaciones (`f175401`, **sin probar**).
+- **CPU:** con limones a la vista la visión usa ~2,4 núcleos; el puente se atrasaba > 300 ms y la S3 cortaba por
+  "sin comandos" (`BASE_SAFETY_NOT_OK`). Visión con nice 10 (`pruebas-esp32` `f629723`), planificador nice 5
+  (`4a04097`). Volvió a cortar una vez (18:15, `/cmd_vel` sin huecos hasta que el puente se trabó ~1 s): quedó
+  `faulthandler` en `run_pi.py` que escribe en `bridge.log` la traza de los hilos si el lazo se atrasa > 0,3 s
+  (`1e7f701`; buscar `Timeout (0:00:00`). Sospecha: `exclusive()` (count_publishers) en cada `tick`.
+- **Batería:** la S3 lee ~4 % alto (12,31 V con 11,8 en el tester): `BATTERY_SCALE` en `ros_source.py` (`857a376`);
+  el `BATERIA_BAJA` de la S3 salta a ~10,06 V reales (pasar al firmware: `BATERIA_DIVISOR`). BASE_CRITICAL_FLAG = SETA,
+  VUELCO o BATERIA_BAJA.
+- **Rodear árbol** (tarea aparte en Control, app 0.15.5): tronco del primer escaneo, 1–4 paradas antihorario cada 90°
+  en saltos de 45°, en cada una como el Recolector, vuelve siempre al primer escaneo (con < 4 por donde vino, sin
+  marcha atrás). Objetos: espera 5 s, después círculo 50/80 cm más afuera. Simulado (scratchpad, `drive_step` real):
+  vuelve a 0–3 mm, tronco >= 73 cm. Espacio: 3 × 3 m (4 × 4 con objetos). **Sin probar en el robot.**
+- **App:** 0.15.4 escala el panel en un teléfono acostado; Poco X6 Pro con 0.15.5 y la clave cargada por `run-as`.
+  El teléfono tenía ~1 s de demora (ahorro de energía del Wi-Fi, otra subred): el puente corta el mando (0,22 s).
+- **Manual v1.2** (`a744dcd`): demo desde la app, tiempos, estado, diagnóstico, CPU.
+- La Pi se reinició sola una vez (~14:47, `throttled=0x50000`).
+

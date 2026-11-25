@@ -2,6 +2,14 @@
 
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
 
+0000z. **Para la demo (25/11 noche), en orden** (detalle en la bitácora del 25/11):
+   1. **Probar en el robot:** salida de la canasta con el joystick (`jog_j1_out`) y el homing desde el brazo plegado.
+   2. **Corte por "sin comandos" (BASE_SAFETY_NOT_OK):** si vuelve, leer `Timeout (0:00:00` en `bridge.log` (traza
+      de faulthandler) y arreglar ahí; sacar `watch_stalls` de `run_pi.py` cuando se sepa.
+   3. Recolector en una estación: 3 limones seguidos con la batería cargada; después Rodear árbol con 2 paradas.
+   4. Teléfono: sin ahorro de batería y en la red de la Pi (o hotspot); medir `tailscale ping` < 50 ms. Si no, tablet.
+   5. `SENSOR_AHEAD_MM` (MEDIR) en `collection_mission.py`; segundo punto de la batería para `BATTERY_SCALE`.
+   6. Después de la demo: `sinCuentasMs` de J1 y `BATERIA_DIVISOR` en el firmware.
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
       conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.
