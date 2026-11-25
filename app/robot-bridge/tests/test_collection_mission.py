@@ -290,6 +290,23 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(rest.await_count, 2)
         self.assertIn('falló', results[0][1])
 
+    async def test_recolector_tries_a_lemon_once_more_after_an_arm_cut(self):
+        a = (-560., 200., 140.)
+        cuts = ['sin cuentas']
+        original = self.mission.pick_here
+
+        async def pick(owner, grasp, lemon, results):
+            if cuts:
+                results.append((lemon, 'falló: ' + cuts.pop()))
+                return 0
+            return await original(owner, grasp, lemon, results)
+
+        events, planned = await self.recolector_run([[[a]] * 3], count=1, extra=(
+            patch.object(self.mission, 'pick_here', side_effect=pick),))
+        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])   # el segundo intento lo agarra
+        self.assertIn('1 de 1', self.mission.status['message'])
+        self.assertIn('se reintentó', self.mission.status['message'])
+
     def test_lemon_positions_survive_moving_the_base(self):
         from collection_mission import arm_to_world, refresh_positions, world_to_arm
         start, moved = dict(self.odom), dict(self.odom, x_m=.1, yaw_rad=math.radians(20))

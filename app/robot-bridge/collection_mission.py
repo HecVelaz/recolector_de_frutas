@@ -245,6 +245,7 @@ class CollectionMission:
             if start is None:
                 raise RuntimeError('Falta odometría para recordar dónde están los limones')
             remaining = [arm_to_world(lemon, start) for lemon in targets]
+            retried = [False] * len(remaining)
             self.run_until = monotonic() + 120. + 150. * len(targets)
             self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es); se cosechan todos, de a uno.')
             done = 0
@@ -296,12 +297,22 @@ class CollectionMission:
                 if not remaining[index][3]:   # 25/11, usuario: si no se ve (se movió o cayó), no se agarra
                     results.append((lemon, 'salteado: no se vio al medir (se movió, se cayó o quedó tapado)'))
                     remaining.pop(index)
+                    retried.pop(index)
                     self.zone = None
                     continue
                 stage = 'cosecha'
-                done += await self.pick_here(owner, grasp, lemon[:3], results)
-                remaining.pop(index)
+                picked = await self.pick_here(owner, grasp, lemon[:3], results)
+                done += picked
                 self.zone = None
+                # 25/11: J1 no despegó de la canasta (6 cortes "sin cuentas", batería a 10,8 V) y se perdió un limón
+                # a 59 cm; el brazo se recuperó solo. Un corte del brazo es pasajero: ese limón, una vez más
+                if not picked and results[-1][1].startswith('falló') and not retried[index]:
+                    retried[index] = True
+                    results[-1] = (results[-1][0], results[-1][1] + ' (se reintentó)')
+                    self.run_until += 150.
+                    continue
+                remaining.pop(index)
+                retried.pop(index)
             stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
             # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
