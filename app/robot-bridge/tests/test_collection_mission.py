@@ -317,13 +317,29 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         events, planned = await self.recolector_run([[[a]] * 3, [[a]] * 3, [[]] * 3], count=1, around=True, extra=(
             patch.object(self.mission, 'drive_step', new=drive),))
         self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
-        self.assertEqual(drive.await_count, 4 * 3)   # 3 cambios de parada + volver al primer escaneo
-        turns = [c.args[1] for c in self.navigation.planear.call_args_list]
-        self.assertEqual([round(x) for x in turns], [90, 180, -90, 0])   # rumbos 90°, 180°, 270° y el inicial
+        # en saltos de 45° alrededor del árbol (la odometría simulada no cambia: cada salto se mide desde el inicio)
+        turns = [round(c.args[1]) for c in self.navigation.planear.call_args_list]
+        self.assertEqual(turns, [45, 90, 45, 90, 135, 180, -45, -90, 0])   # paradas a 90°, 180°, 270° y el inicio
+        self.assertEqual(drive.await_count, 9 * 3)
         message = self.mission.status['message']
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', message)
         self.assertIn('1 de 1 limón(es) en 4 paradas', message)
         self.assertIn('parada 2: sin limones', message)
+
+    async def test_going_around_it_waits_for_an_object_ahead_and_never_pushes_against_it(self):
+        from collection_mission import SENSOR_AHEAD_MM, OBSTACLE_RADIUS_MM, Blocked
+        self.mission.avoid = True
+        self.mission.deadline = self.mission.run_until = float('inf')
+        snapshot = self.control.snapshot.return_value
+        snapshot['base_state'] = 'ARMADA modo=v/w seguridad=ok'
+        snapshot['sources'].append({'key': 'range_front', 'status': 'fresh', 'age_ms': 10,
+                                    'value': {'kind': 'distance', 'meters': .2}})
+        with (patch('collection_mission.OBSTACLE_WAIT_S', .1), patch.object(self.mission, 'settle', new=AsyncMock())):
+            with self.assertRaises(Blocked) as caught:
+                await self.mission.drive_step('o', 'recto', 500.)
+        self.assertTrue(all(c.args[1] == 0. for c in self.control.mission_velocity.call_args_list))   # quieto
+        self.assertAlmostEqual(caught.exception.point[0], .2 + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000)
+        self.assertIn('esperando que se despeje', self.mission.events[0]['message'])
 
     def test_the_trunk_is_estimated_behind_the_lemons(self):
         from collection_mission import CANOPY_MM, estimate_trunk
