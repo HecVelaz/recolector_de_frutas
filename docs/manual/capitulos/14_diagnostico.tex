@@ -30,13 +30,13 @@ No se puede flashear & El agente tiene el puerto & Detener el agente antes de \c
 \midrule
 \multicolumn{3}{@{}l}{\textbf{Base}} \\
 \topic{/cmd\_vel} no mueve nada & Base desarmada & \cod{armar} por \topic{/base/comando} \\
-Armada pero no se mueve & Seta, vuelco, IMU sin datos, sin eco al frente, obstáculo cerca & Leer \topic{/base/estado}; despejar la causa y \cod{r} \\
+Armada pero no se mueve & Seta, vuelco, IMU sin datos, sin eco al frente, obstáculo cerca & Leer \topic{/base/estado}; despejar la causa y \cod{armar} (sin \cod{r} desde el 21/11) \\
 Avanza a los tirones y frena & \cod{/cmd\_vel} publicado con \cod{--once} o teleop sin \cod{repeat\_rate} & Publicar a 10~Hz (\cod{-r 10}; \cod{repeat\_rate:=10.0}) \\
 Una rueda gira al revés & Signo del motor & \cod{MOTOR\_INVERTIDO} \\
 rpm negativas yendo adelante & Signo del encoder & \cod{ENC\_INVERTIDO} \\
 Avanza menos o más que lo pedido & Radio de rueda o cuentas por vuelta & Medir con cinta y corregir \cod{CFG\_DIF} \\
 Gira de más o de menos & Trocha & Medir y corregir \cod{trocha} \\
-Falla de rueda / atasco & Rueda trabada o encoder desconectado & Revisar; \cod{r} \\
+Falla de rueda / atasco & Rueda trabada o encoder flojo & Revisar; \cod{s} borra la falla \\
 Encoder cuenta solo, quieto & Entrada al aire (falta pull-up) o ruido & Revisar cableado y pull-ups \\
 \cod{BATERIA\_BAJA} con la batería llena & Seta apretada (divisor en 0~V) o divisor mal & Normal con la seta; si no, medir el divisor \\
 Bumper o seta disparan solos & Ruido (no hay capacitores) & 100~nF de ese pin a GND \\
@@ -57,11 +57,20 @@ Servo da un salto al encender & GPIO~14 pulsa al arrancar & Conectar los 6~V des
 Sin \topic{/limon/posicion} con el limón a la vista & Limón en la zona ciega ($u < 280$~px), fuera de 0,40--0,95~m o robot en movimiento & Correr el robot; frenar \\
 Posiciones que saltan & Exposición sin sincronizar, robot moviéndose & Localizar quieto \\
 Cámara no arranca & Cinta CSI (dañada o puesta al revés) & \cod{rpicam-hello --list-cameras} tiene que mostrar dos; revisar las cintas con la Pi apagada \\
-Detecta con el modelo genérico & \cod{start\_limon.sh} sin \cod{MODELO} usa el COCO & Lanzar con \cod{bash \textasciitilde/scripts/vision.sh} (v3) \\
+Detecta con el modelo genérico & \cod{start\_limon.sh} sin \cod{MODELO} usa el COCO & Lanzar con \cod{bash \textasciitilde/scripts/vision.sh} (v4) \\
 Colores rosados al sol & Cámaras NoIR & Pendiente: probar o sombrear \\
 Misión en FALLA & Ver el motivo en \topic{/mision/estado} & Corregir y reiniciar el nodo \\
 Misión se queda en ESPERAR & Limón inestable, brazo no quieto o fuera de alcance & Ver \topic{/mision/estado}; acercar la base \\
 La simulación mueve el robot real & Falta aislar & \cod{ROS\_AUTOMATIC\_DISCOVERY\_RANGE=}\allowbreak\cod{LOCALHOST} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{App y misión (puente)}} \\
+Misión cortada: \cod{BASE\_CRITICAL\_FLAG} & La base avisa \cod{BATERIA\_BAJA} ($<$ 10,5~V), \cod{SETA} o \cod{VUELCO} & Cargar la LiPo; soltar la seta o enderezar el robot \\
+\cod{BUMPERS\_TOO\_OLD}, \cod{ODOM\_TOO\_OLD} & La S3 dejó de publicar (corte del enlace) & Esperar la reconexión; si no vuelve, 12~V apagados y reset de la S3 \\
+Brazo: ``sin cuentas del encoder'' & Articulación trabada: poca potencia (batería) o J1 en la canasta & El puente repite 3 veces; si sigue, cargar la batería \\
+Homing: ``fuera de la franja'' o ``Fuera de rango'' & J2 y J3 quedaron fuera del cuatro barras tras un corte & El puente sube J2 y repite; si no, mover J2 con el joystick y repetir \\
+Homing: ``J3 CORTADA \ldots\ no avanza'' & J3 quieta no despega desde el reposo & Moverla un poco con el joystick y repetir \\
+``La visión estéreo no entrega pares nuevos'' & Cámara tapada (el brazo) o la visión apagándose & Brazo en la canasta o en reposo al medir; esperar $\sim$21~s a que prenda \\
+Limón ``salteado: no se vio al medir'' & Se movió más de 12~cm, se cayó o quedó tapado & Normal: sigue con los demás \\
 \midrule
 \multicolumn{3}{@{}l}{\textbf{Energía}} \\
 La Pi se reinicia o \cod{get\_throttled} $\neq$ \cod{0x0} & Power bank descargado o cable largo & Cargarlo al 100~\%; una sola salida, cable corto \\

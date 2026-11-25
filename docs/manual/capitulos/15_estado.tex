@@ -1,34 +1,42 @@
 \chapter{Estado del proyecto y lo que falta}\label{cap:estado}
 
-\section{Qué está hecho y qué no (19/11/2026)}
+\section{Qué está hecho y qué no (25/11/2026)}
 
 \begin{longtable}{@{}p{3.6cm} p{2.0cm} p{9.5cm}@{}}
 \toprule
 \textbf{Parte} & \textbf{Estado} & \textbf{Detalle} \\
 \midrule
 \endhead
-Recolección autónoma & \ok\ robot & Con los scripts de \cod{pruebas-esp32} (capítulo~\ref{cap:demo}): primera completa el
-  13/11 (95~s); el 18/11 \cod{cosechar 3} dejó 2 limones en la canasta ($\sim$34~s cada uno). Base y cosecha juntas
-  todavía no se probaron. \\
-Firmware de la base & \ok\ robot & En la S3: \cod{base\_ros\_20261117\_imu}. Odometría en el piso: recto $<$ 1~\%; giros
-  con el giróscopo ($\pm$1°). Seguridad con los motores probada el 18/11. La IMU se recupera sola. \\
-Firmware del brazo & parcial & La WROOM usa el de pruebas 20 (homing, canasta, pinza RDS3218). \archivo{firmware/brazo}
-  quedó atrás: falta pasarle lo de 20. $K$ y $\tau$ de J2/J3 sin medir. \\
-\cod{brazo\_ik} & \ok & 9 pruebas OK. \cod{largo\_herramienta} = 0 (\textbf{MEDIR}). \\
-\cod{mision} y \cod{recorrido} & \ok\ sim & 35 pruebas OK; 12 de 12 limones en la simulación (hilera). No mueve el
-  brazo real (el firmware 20 no entiende \topic{/brazo/joint\_cmd}). TF cámara → brazo medida el 12/11. \\
-Simulación & \ok & Gazebo Harmonic con base, brazo, sensores y hilera (13 pruebas). Sin el arbolito con marcas. \\
-Visión & \ok\ robot & Cámaras en el mástil, \cod{calibracion\_mastil} (RMS 0,22~px, baseline 100,3~mm). Arbusto: $Z$
-  +7 a +11~mm. Ubica limones a 0,40--0,95~m. \\
-YOLO & \ok & v3 (amarillos) en la Pi: P 0,929, R 0,922 en fotos propias. Una sola clase (B3 pide tres). \\
-Marcas ArUco & \ok\ robot & IDs 0--3 pegadas; se ven de 0,9 a 4~m (\cod{tf\_navegacion.json}, $\sim$3~cm). RODEAR y
-  BUSCAR programados, sin probar en el robot. \\
-Potencia & armando & LiPo, fusible y seta funcionando; falta el portafusible, el XT60 en la LiPo y el divisor
-  100~k / 30~k. Power bank probado 1~h. \\
-GPS & \ok\ afuera & UP501 en la Pi; $\sigma \approx 21$~m. Solo para la rúbrica (adentro no hay fix). \\
-App, luz, buzzer & después & \cod{teleop\_web.py} maneja base y brazo desde el celular. Luz y buzzer solo si sobra tiempo. \\
+Cosecha autónoma (una parada) & \ok\ robot & Modo Recolector desde la app (capítulo~\ref{cap:demo}): escanea, se
+  reubica y cosecha todos los que ve; 3 de 3 el 23/11, 2 de 3 el 25/11 (batería baja). $\sim$47--49~s hasta dejar
+  un limón en la canasta. \\
+Rodear el árbol (4 paradas) & falta & Simulado el alcance (100~\% con 4 paradas cada 90°); falta programarlo en el
+  Recolector y probarlo. \\
+App Arturito y puente & \ok\ robot & App 0.15.2 en la tablet por Tailscale; puente en la Pi con arranque
+  automático (\cod{arturito.service}). Modos Manual, Recolector y Recolección; alertas de sensores. \\
+Firmware de la base & \ok\ robot & En la S3: \cod{base\_ros\_20261121\_sin\_r} (seta y vuelco sin enclavar).
+  Odometría: recto $<$ 1~\%, giros con el giróscopo ($\pm$1°). A veces corta el enlace (se reconecta sola). \\
+Firmware del brazo & \ok\ robot & La WROOM usa el de pruebas 20 en micro-ROS (homing, franja, canasta, pinza y
+  muñeca). \archivo{firmware/brazo} quedó atrás: \textbf{no flashearlo}. J1 se traba con poca potencia. \\
+\cod{brazo\_ik} & \ok & 9 pruebas OK. En el robot se usa el planificador de \cod{punta.py}. \\
+\cod{mision} y simulación & \ok\ sim & Navegación con el banderín y la hilera en Gazebo (15 de 18 paradas); 55 + 17
+  pruebas. No mueve el brazo real. \\
+Visión & \ok\ robot & Detector \textbf{v4}, $\sim$2--3 imágenes/s, estéreo 1--2~Hz, 0,40--0,95~m. Validada el 22/11:
+  error $-1$ a $-3$~cm con el limón a la vista. Detrás de ramas da coordenadas falsas (filtro propuesto, sin aplicar). \\
+Seguridad & \ok\ robot & Seta, bumpers, HC-SR04 del frente, vuelco y batería baja cortan la base; el puente corta la
+  misión con datos viejos o banderas críticas. \\
+Potencia & armando & LiPo 3S, fusible y seta funcionando; falta el portafusible, el XT60 y el divisor 100~k / 30~k.
+  La Pi con la fuente oficial de 27~W (con el power bank se reiniciaba). \\
+GPS & \ok\ afuera & UP501 en la Pi; $\sigma \approx 21$~m. Solo para la rúbrica. \\
 \bottomrule
 \end{longtable}
+
+\section{Uso de la CPU de la Pi}
+
+Medido el 25/11 con la visión prendida y el robot quieto (\archivo{\textasciitilde/scripts/grabar\_cpu.sh}, una
+muestra cada 2~s): \textbf{36~\% de media y 83~\% de pico} sobre los 4 núcleos, 47--58~°C y sin throttling. Por
+proceso (100~\% = un núcleo): YOLO 43~\%, puente 30~\%, disparidad 27~\%, rectificación 13~\%, cámaras 9~\%, agentes
+micro-ROS 5~\%, localizador 5~\%. El planificador del brazo corre en un proceso aparte (un núcleo, 2--3,5~s por plan).
 
 \section{Valores marcados MEDIR}
 
@@ -40,7 +48,7 @@ App, luz, buzzer & después & \cod{teleop\_web.py} maneja base y brazo desde el 
 J2/J3: $K$, $\tau$, zona muerta, PI & \cod{CFG\_ART} & pasos 0--3 de \archivo{pruebas-esp32/10} \\
 \cod{HOME\_Q}, \cod{POSE\_CERO} & \archivo{brazo\_config.h} & medidos en el firmware 20; pasarlos a \archivo{firmware/brazo} \\
 \cod{largo\_herramienta} & \cod{brazo\_ik} y \cod{mision} & muñeca → centro del agarre \\
-\cod{cierre} & \cod{mision} & con un limón, sin aplastar (en el firmware 20: 1200~µs) \\
+\cod{hilera\_arboles.json} & \cod{mision} & cinta, con la hilera afuera \\
 \cod{banderin.json} & \archivo{27-aruco-arbol} & cinta, con el banderín en el aula \\
 Parada real por watchdog & — & cinta, a 0,25~m/s \\
 Peso del robot y autonomía real & — & balanza; pinza amperométrica \\
@@ -56,20 +64,19 @@ cámara real ($f = 672{,}1$~px, $u_\text{mín} = 280$~px).
 \begin{center}
 \begin{tabular}{@{}lp{6cm}p{6cm}@{}}
 \toprule
-\textbf{Días} & \textbf{Robot} & \textbf{Software} \\
+\textbf{Día} & \textbf{Robot} & \textbf{Software} \\
 \midrule
-18--19/11 & Seguridad con los motores \ok; \cod{cosechar N} y canasta \ok & BUSCAR y RODEAR programados \\
-20--21/11 & Medir \cod{banderin.json}; probar BUSCAR, RODEAR y base + cosecha juntas & Misión ROS en Gazebo \\
-22--23/11 & Recolección en las 4 paradas & Misión ROS con los estados de la guía; nodo de seguridad aparte \\
-24--25/11 & WROOM al env \cod{ros}; probar la misión ROS & Rosbag por misión, GPS en el registro, alarmas en \cod{teleop\_web.py} \\
-26/11 & Ensayo general y video de respaldo & Ajustes \\
+25/11 & Batería cargada; Recolector con 3 limones & Rodear el árbol (4 paradas) en el Recolector, probado con los
+  planificadores reales \\
+26/11 & Rodear el árbol en el robot; ensayo general afuera; video de $\ge$ 5 cosechas & Ajustes \\
+27/11 & Demo & — \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\begin{nota}[Plan B y riesgo]
-Si la misión de ROS~2 no llega, la demo se hace con \cod{recolectar.py} y la misión se presenta como en curso. El
-riesgo principal son los cortes del USB de la S3: la base se desarma (3 el 18/11).
+\begin{nota}[Riesgos]
+La batería (con menos de $\sim$11~V el brazo se traba y a 10,5~V se corta la misión), los cortes del enlace de la S3,
+la Pi que se apagó de golpe el 21/11 (alimentación) y el servo de la pinza. Plan~B: \cod{recolectar.py}.
 \end{nota}
 
 \section{Mantener la Pi al día}

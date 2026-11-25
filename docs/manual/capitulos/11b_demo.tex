@@ -1,99 +1,175 @@
-\chapter{La demo: el arbolito con marcas ArUco}\label{cap:demo}
+\chapter{La demo: cosecha desde la app Arturito}\label{cap:demo}
 
-La demo del \textbf{27/11/2026} es \textbf{en el aula}, con \textbf{un solo arbolito} rodeado de marcas ArUco (el
-profesor lo aceptó el 13/11). No hay hilera ni pasillo: el GPS (UP501, $\sigma \approx 21$~m) queda solo para la
-rúbrica, no para navegar. La hilera del capítulo~\ref{cap:mision} sigue en la simulación.
+La demo del \textbf{27/11/2026} es \textbf{afuera}: un banderín ArUco (ID~0) y una hilera de 2 o 3 arbolitos (desde el
+19/11; antes era un arbolito en el aula con 4 marcas). El GPS (UP501, $\sigma \approx 21$~m) queda solo para la
+rúbrica. La navegación con el banderín y la hilera está hecha en la simulación (capítulo~\ref{cap:mision}); en el
+robot real la cosecha se maneja desde la \textbf{tablet}, con la app Arturito.
 
 \begin{idea}
-Hoy la recolección autónoma corre con \textbf{scripts de Python en la Pi}, del repositorio de pruebas
-\cod{pruebas-esp32} (carpetas \archivo{20-brazo-coordinado}, \archivo{25-teleop-pi}, \archivo{26-sim-alcance-arbolito}
-y \archivo{27-aruco-arbol}), no con el paquete \cod{mision}. Pasarla a la misión de ROS~2 es lo que falta
-(sección~\ref{sec:demo-falta}). Si no llega, la demo se hace con estos scripts (plan~B).
+Hoy la cosecha autónoma corre en el \textbf{puente de la Pi} (\archivo{app/robot-bridge}, FastAPI en el puerto
+18006), que habla con los ESP32 por ROS~2 (micro-ROS) y usa los planificadores del brazo de \cod{pruebas-esp32}
+(\archivo{20-brazo-coordinado/tools/punta.py} y \archivo{27-aruco-arbol/tools/ir\_a\_parada.py}). La app es solo la
+interfaz: elige el modo, muestra el estado y mantiene el mando vivo. \cod{recolectar.py} (marcas ArUco, firmware
+serie del brazo) queda como plan~B.
 \end{idea}
 
-\section{Cómo encuentra el árbol: las marcas}
+\section{Cómo se conecta}
 
 \begin{itemize}
-  \item Cuatro marcas \textbf{DICT\_4X4\_50} de \textbf{15~cm} (IDs 0--3), pegadas sobre cartón alrededor de la
-        maceta, en sentido antihorario visto de arriba, con la cara a 16,5~cm del tronco. La ID~0 es la parada~1.
-  \item La cámara izquierda las detecta de $\sim$0,9 a $\sim$4~m. Con \cod{cv2.aruco} y \cod{solvePnP} (lado de 150~mm)
-        se obtiene la posición y la orientación de la marca, y de ahí el eje del árbol.
-  \item Para lejos se usa una calibración propia de la cámara, \archivo{27-aruco-arbol/resultados/tf\_navegacion.json}
-        (6 puntos en el piso, $\sim$3~cm de error a 1--2~m). La TF del agarre (capítulo~\ref{cap:vision}) solo vale a
-        menos de 70~cm.
+  \item Al prender la Pi arranca solo \cod{arturito.service} (servicio de usuario): agentes micro-ROS de la base y
+        del brazo, la visión y el puente (\archivo{arrancar\_pi.sh}). Si la S3 arrancó en el bootloader (se alimenta
+        del USB de la Pi), la reinicia sola.
+  \item La tablet (Xiaomi Pad~5) entra por \textbf{Tailscale}, con la misma cuenta que la Pi: en la app,
+        \cod{http://100.116.96.71:18006} y la clave. Sin Tailscale, túnel USB con
+        \archivo{app/robot-bridge/conectar\_tablet.sh} y la dirección \cod{127.0.0.1:18006}.
+  \item La visión se prende \textbf{a pedido}: la app la pide en Recolector, Recolección y Visión; sin pedido 30~s (y
+        sin misión) el puente la apaga. Prenderla tarda $\sim$21~s.
+  \item Apagar todo: \cod{systemctl --user stop arturito}. Para cargar un cambio del puente se copia el archivo y se
+        reinicia \textbf{solo el puente} (\cod{pkill -f "[r]un\_pi.py --source ros2"} y \archivo{arrancar\_pi.sh}).
 \end{itemize}
 
-\section{La parada}
-
-El arbolito de la demo mide $\sim$60~cm y tiene los limones entre 32 y 54~cm del piso. La parada se calculó en la
-simulación de alcance (\archivo{26-sim-alcance-arbolito}) y se validó agarrando:
+\section{Los modos de la app}
 
 \begin{center}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}lp{11.5cm}@{}}
 \toprule
-\textbf{Dato} & \textbf{Valor} \\
+\textbf{Modo} & \textbf{Qué hace} \\
 \midrule
-Tronco respecto de J1 & 70~cm a la izquierda y 15~cm adelante \\
-Paradas & 4, cada 90° alrededor del árbol (el árbol siempre a la izquierda) \\
-Cobertura & 100~\% del arbolito con las 4 paradas \\
-Alcance del brazo & centro del limón a 48--65~cm de J1 y 33--54~cm del piso \\
+Manual & Base, brazo y pinza con joysticks (combinado). Brazo hasta 1~rad/s (control 10--100~\%), giro de la base
+  hasta 1~rad/s, pinza y muñeca de 15 a 180~°/s. Homing del brazo manteniendo el botón. \\
+Recolector & Con el Móvil cerca del árbol: escanea, guarda todos los limones que ve y los cosecha de a uno,
+  reubicando el Móvil cuando hace falta (sección~\ref{sec:recolector}). \\
+Recolección & Con un cero (el limón más cercano o la pose): se acerca, cosecha lo medido y vuelve al cero
+  desandando el camino por la odometría. \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\section{La secuencia: \cod{recolectar.py}}
+Antes de cualquier misión: \textbf{homing} del brazo y brazo en reposo (J1 3°, J2 17°, J3 4°), base armada y la
+visión con profundidad. La app ilumina en un dibujo del robot cada sensor activo y avisa con pitidos (ultrasonidos a
+$\le$ 20~cm, bumpers, IMU $>$ 25°, seta).
+
+\section{El modo Recolector, paso a paso}\label{sec:recolector}
 
 \begin{enumerate}
-  \item \textbf{Homing} del brazo (finales de carrera; J1 3°, J2 6°, J3 3°) y pose de reposo.
-  \item \textbf{Mirar la marca}: el robot tiene que arrancar viéndola, a $\sim$0,9--4~m y a su izquierda.
-  \item \textbf{Ir a la parada} (\cod{ir\_a\_parada.py}): girar con el \textbf{giróscopo} ($\sim\pm$1°), avanzar
-        con las \textbf{ruedas} ($<$ 1~\% de error en recto) y girar otra vez. Las ruedas patinan en los giros (se
-        pasan $\sim$2° cada 90°): por eso los giros van con la IMU.
-  \item \textbf{Cosechar} (\cod{punta.py cosechar N}): mide un limón con la visión, entra de frente 2,8~cm más allá
-        del centro, cierra la pinza, tira 2~cm, gira la muñeca 90° y arrastra con J1 5° para desprenderlo, sale y lo
-        deja en la \textbf{canasta} sobre la tapa. Confirma con la visión y reintenta si falló.
+  \item \textbf{Escaneo} de 3~s con el Móvil quieto: agrupa las posiciones del estéreo y se queda con los limones
+        estables (dispersión $\le$ 10~mm). Las posiciones se guardan en el marco de la \textbf{odometría}: siguen
+        valiendo después de mover la base.
+  \item Para cada limón, primero los que ya están en la zona buena (sin mover la base) y después el más cercano:
+  \begin{enumerate}
+    \item \textbf{Reubicarse} si hace falta: dejar el limón a \textbf{60~cm de J1} y entre 15° y 35° adelante, con la
+          orientación final libre (la que menos mueva; marcha atrás $\le$ 20~cm, a 6~cm/s, porque atrás no hay
+          sensores). Solo se eligen paradas con plan de agarre. Desde la canasta, el Móvil anda con el brazo ahí.
+    \item \textbf{Medir} otra vez desde ahí: termina apenas ese limón tiene 3 lecturas firmes ($\sim$2--3~s; hasta
+          8~s si se hamaca) y corrige las posiciones guardadas de los que ve. Cada medición se asigna a un solo
+          limón guardado.
+    \item Si \textbf{no se ve} (se movió más de 12~cm, se cayó o quedó tapado), se saltea y sigue con otro.
+    \item \textbf{Agarrar} (\cod{punta.py}): J1 gira primero, la pinza baja a la altura del limón lejos de las ramas,
+          entra \textbf{horizontal} hasta 15~cm (la punta no se recoge a menos de $\sim$44~cm de J1), cierra
+          (1200~µs), tira, gira la muñeca, arrastra con J1, sale \textbf{bajando} 5~cm y lo lleva a la
+          \textbf{canasta}.
+  \end{enumerate}
+  \item Al terminar, brazo al reposo. No vuelve a mirar el árbol para verificar (pedido del grupo: ahorra tiempo).
 \end{enumerate}
 
-\begin{lstlisting}[language=consola]
-# En la Pi, con la visión y el agente de la base corriendo y la WROOM con el env brazo:
-cd ~/scripts/27-aruco-arbol
-python3 tools/recolectar.py            # 3 Enter: 12 V apagados, 12 V encendidos (homing), ir
-python3 tools/ver_marcas.py --tf nav --radio-maceta 165   # solo mirar las marcas
-\end{lstlisting}
-
-\begin{nota}[La altura que da la visión]
-La cinemática real del brazo sube más que el modelo en $z$. La cosecha corrige la altura de la visión con
-$z = 23{,}1 + 0{,}718 \cdot z_\text{visión}$ [cm] (medido con 3 limones y cinta) y un ajuste fino de 9 puntos
-según el lado de la imagen (\archivo{20-brazo-coordinado/resultados/ajuste\_agarre.json}).
+\begin{nota}[El punto de agarre]
+Sobre lo que da la visión se suma: altura corregida con la recta de la cinta, el ajuste fino de 5 puntos
+(\archivo{20-brazo-coordinado/resultados/ajuste\_20261121.csv}: +2,7~cm adelante, +2,1 a +3,3~cm a la izquierda) y
+los ajustes de la mano del 23/11: \textbf{+3,25~cm arriba} (\cod{GRASP\_RAISE\_MM} 32,5, en el puente), \textbf{2,7~cm
+antes del centro} y \textbf{0,75~cm a la derecha}. Entre mediciones varía $\sim$2~cm.
 \end{nota}
+
+\section{Para que la cosecha no se corte}
+
+En la demo la misión no debería parar por un limón. Desde el 25/11:
+
+\begin{itemize}
+  \item Un movimiento cortado por \textbf{``sin cuentas''} (articulación trabada) se repite desde donde quedó, hasta 3
+        veces. J1 avanza a saltos con poca potencia, sobre todo con la batería baja.
+  \item Si falla un agarre, el brazo vuelve solo: a la canasta si la pinza tiene algo y si no al reposo (si un intento
+        corta, espera 1~s y prueba otra vez). \textbf{Ese limón se reintenta una vez} y después la misión sigue con
+        el próximo. Solo se detiene si el brazo no puede volver al reposo.
+  \item Si el homing encuentra a J2 y J3 fuera de la franja del cuatro barras, el puente sube J2 (hasta 24°) para
+        volver a la franja y repite el homing.
+\end{itemize}
+
+\begin{peligro}[La batería]
+Con la LiPo por debajo de $\sim$11~V los motores no tienen fuerza: J1 no despega de la canasta, J2 no sube y J3 cede
+(25/11, a 10,8--10,9~V). A \textbf{10,5~V} (3,5~V por celda) la base avisa \cod{BATERIA\_BAJA} y el puente corta la
+misión (\cod{BASE\_CRITICAL\_FLAG}). Es la protección de una LiPo \textbf{sin BMS}: no se baja. \textbf{Antes de la
+demo, la batería cargada} ($\sim$12,6~V).
+\end{peligro}
+
+\section{Tiempos}
+
+Medidos de los registros de las misiones (\archivo{\textasciitilde/arturito-bridge-0.4.0/data/missions/}: eventos con
+hora y un rosbag por misión).
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Etapa} & \textbf{23/11} & \textbf{25/11} \\
+\midrule
+Escaneo & 4--5~s & 4--6~s \\
+Medir y planear el agarre & 12--13~s & 4--8~s \\
+Ir frente al limón & 9--10~s & 9--10~s \\
+Entrar, tirar, arrastrar y salir & $\sim$10~s & $\sim$10~s \\
+A la canasta & 10--11~s & 10~s \\
+Reposo (final o antes de reubicarse) & 16~s & 16~s (solo al final) \\
+\midrule
+Hasta dejar el 1.\textsuperscript{er} limón en la canasta & 47~s & 49~s (reubicándose 5°) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El brazo ya va a la velocidad máxima del firmware (\cod{vel 1}: J1 30~°/s, J2 y J3 20~°/s; los tramos con el limón a
+la mitad). Lo que se ganó fue en las esperas: $\sim$5~s por medición y 13--16~s en cada reubicación desde la
+canasta (ya no pasa por el reposo).
 
 \section{Resultados}
 
 \begin{center}
-\begin{tabular}{@{}lp{11cm}@{}}
+\begin{tabular}{@{}lp{12cm}@{}}
 \toprule
 \textbf{Fecha} & \textbf{Resultado} \\
 \midrule
-13/11 & Primera recolección autónoma completa en 95~s: marca a 1,4~m, girar 85°, avanzar 88~cm, girar 87°, medir y
-  agarrar. Agarró el limón. \\
-18/11 & \cod{cosechar 3}: \textbf{2 de 3} limones en la canasta, $\sim$34~s cada uno. \\
-18/11 & Seguridad de la base con los motores: el HC-SR04 del medio frena a 20~cm a 0,10 y 0,20~m/s; bumpers, seta y
-  vuelco (25°) cortan y quedan enclavados. \\
+13/11 & Primera recolección autónoma completa con \cod{recolectar.py} (marca a 1,4~m, girar, avanzar, girar, agarrar):
+  95~s. \\
+18/11 & \cod{cosechar 3}: 2 de 3 en la canasta, $\sim$34~s cada uno. Seguridad de la base con los motores probada. \\
+20--21/11 & App: 1 limón a la canasta y vuelta al cero (0,9~cm / 4°, $\sim$2~min); 2 de 3 sin mover la base. \\
+23/11 & Recolector que se reubica: \textbf{3 de 3}; 4 misiones de 1 limón seguidas, todas en la canasta. \\
+25/11 & Recolector con 3 limones: \textbf{2 de 3} (el 3.º: J1 trabada en la canasta con la batería a 10,8~V). Medir
+  y planear: de 12--13~s a 5--8~s. \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \section{Lo que falta para la demo}\label{sec:demo-falta}
 
-\begin{pendiente}[Sin probar en el robot]
-\begin{itemize}[leftmargin=*]
-  \item \textbf{RODEAR} (\cod{recolectar.py --paradas N}): ir a la cara siguiente con la odometría y corregir con su
-        marca.
-  \item \textbf{Banderín único + BUSCAR} (\cod{ir\_a\_parada.py --banderin --buscar}): una sola marca en un palo; gira
-        de a 30° hasta verla. Falta medir \archivo{banderin.json} y que \cod{recolectar.py} lo use.
-  \item \textbf{Base y cosecha juntas} en una misma corrida, y las 4 paradas seguidas.
-  \item Pasar todo a la misión de ROS~2 (\cod{mision}): mandar texto por \topic{/brazo/comando} al firmware 20, que
-        no entiende \topic{/brazo/joint\_cmd}.
-\end{itemize}
-Espacio necesario: al menos 4 × 4~m (mejor 5 × 5).
+\begin{pendiente}[Rodear el árbol: 4 paradas]
+La cosecha funciona \textbf{en una parada}. Desde un solo lado se alcanza $\sim$31~\% del arbolito; con
+\textbf{4 paradas cada 90°} alrededor del árbol, el 100~\% (simulación de alcance \archivo{26-sim-alcance-arbolito},
+13/11: eje del árbol a \textbf{70~cm a la izquierda de J1 y 15~cm adelante}; $\ge$ 86~\% con $\pm$5~cm de error).
+Falta: en el modo Recolector, después de cosechar en una parada, ir a la siguiente girando 90° alrededor del árbol
+con la odometría y el giróscopo, y volver a escanear. Los errores de la odometría los corrige la reubicación de cada
+limón, que mide desde donde quedó.
 \end{pendiente}
+
+\begin{pendiente}[Además]
+\begin{itemize}[leftmargin=*]
+  \item Banderín y hilera en el robot real (BUSCAR, ir a la primera parada): hecho en Gazebo, sin probar afuera.
+  \item Video de $\ge$ 5 cosechas seguidas (criterio M4 de la arquitectura) y ensayo general afuera (sol y NoIR).
+  \item Servo de la pinza: el 23/11 dejó de moverse (hardware, sin revisar del todo).
+\end{itemize}
+\end{pendiente}
+
+\section{Plan B: \cod{recolectar.py}}
+
+Con la WROOM en el firmware \textbf{serie} (\archivo{\textasciitilde/firmware/brazo20\_serie\_20261119.bin}, imagen
+completa en 0x0) y las marcas ArUco: mirar la marca, ir a la parada con el giróscopo y las ruedas, y
+\cod{punta.py cosechar N}. RODEAR (\cod{--paradas N}) y el banderín único están programados, sin probar en el robot.
+
+\begin{lstlisting}[language=consola]
+cd ~/scripts/27-aruco-arbol
+python3 tools/recolectar.py            # 3 Enter: 12 V apagados, 12 V encendidos (homing), ir
+\end{lstlisting}
