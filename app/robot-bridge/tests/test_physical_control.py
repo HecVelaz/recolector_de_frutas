@@ -428,3 +428,12 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput(drive=drive, speed_percent=0))
         trial.velocity.assert_called_once()
         trial.send_zero.assert_called_once()
+
+
+class HomeRecoveryTargetTest(unittest.TestCase):
+    def test_after_a_cut_harvest_j2_goes_above_the_franja_floor(self):
+        from physical_control import home_recovery
+        # 25/11: q=17.74,18.06,21.42 -> el firmware dejaba J2 de 22,6° a 45,4°; antes pedía j 2 20
+        command, target = home_recovery('Homing: J2 y J3 fuera de la franja (0.52° afuera)', 'q=17.74,18.06,21.42;e=4,4,4')
+        self.assertEqual(command, 'j 2 23.4')
+        self.assertTrue(22.6 <= target <= 25.)

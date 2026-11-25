@@ -58,8 +58,10 @@ def home_recovery(detail, state):
         return None
     q3 = float(angles.group(3))
     if 'fuera de la franja' in detail:
-        # Borde de arriba de la franja: J3 <= ~J2 desde J2 5,8° (config.h FRANJA_ARRIBA), con 1° de margen
-        target = round(min(20., max(6., q3 + 2.)), 1)
+        # Borde de arriba de la franja: J3 <= ~J2 desde J2 5,8° (config.h FRANJA_ARRIBA), con 1° de margen. 25/11: tope
+        # 20 -> 24 (debajo de HOMING_Q2_MAX_ARRANQUE 25): tras un agarre cortado quedó J3 21,4° y "j 2 20" salía de la
+        # franja (J2 >= 22,6°). ponytail: con J3 > ~22° sigue sin alcanzar; ahí haría falta bajar J3 ("j 3")
+        target = round(min(24., max(6., q3 + 2.)), 1)
         return f'j 2 {target:.1f}', target
     if 'Bajarla antes' in detail:
         # 23/11: con J3 en 24,7° J2 no podía bajar sola a 10° (la franja la deja >= ~J3): el reposo coordinado del
