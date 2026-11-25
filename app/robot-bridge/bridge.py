@@ -62,6 +62,7 @@ class CollectionRequest(BaseModel):
     # 21/11: 'recolector' = sin mover la base: escaneo, lista guardada, visión pausada y cosecha de la lista
     mode: str = Field('acercamiento', pattern='^(acercamiento|recolector)$')
     scan_seconds: float = Field(3., ge=1., le=10.)
+    around: bool = False   # 25/11: Recolector alrededor del árbol (4 paradas) y vuelta al primer escaneo
 
 
 def create_app(source=None, data_dir=None, token=None, estado_url=None, control_dry_run=None,
@@ -308,7 +309,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             if not body.operator_present or origin_capture.locked():
                 raise HTTPException(409, 'Confirmá la supervisión local y esperá a que termine la medición')
             if body.mode == 'recolector':
-                return collection.start_scan(operator, body.lemons, body.scan_seconds)
+                return collection.start_scan(operator, body.lemons, body.scan_seconds, body.around)
             return collection.start(operator, navigation_origin, body.lemons, body.to_basket)
 
         @app.post('/api/v1/mission/return')

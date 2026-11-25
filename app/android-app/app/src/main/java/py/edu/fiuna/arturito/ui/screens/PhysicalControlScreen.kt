@@ -50,6 +50,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var lemonCount by remember { mutableIntStateOf(1) }
     var returning by remember { mutableStateOf(false) }   // la "misión" en curso es volver al cero
     var recolector by remember { mutableStateOf(false) }  // modo Recolector: cosecha sin mover la base
+    var aroundTree by remember { mutableStateOf(false) }  // 25/11: Recolector en 4 paradas alrededor del árbol
     var captureBusy by remember { mutableStateOf(false) }
     var parking by remember { mutableStateOf(false) }
     var showBase by remember { mutableStateOf(false) }
@@ -170,7 +171,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         var started = false
         try {
             if (returning) client.startReturn(address, token, id)
-            else client.startCollection(address, token, id, lemonCount, recolector)
+            else client.startCollection(address, token, id, lemonCount, recolector, aroundTree)
             started = true
             // 21/11: un latido que tarda más de 450 ms no corta la misión; se reintenta mientras el último correcto
             // tenga menos de 1 s (el puente espera 1,25 s antes de detenerla por falta de supervisión)
@@ -378,6 +379,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     canScan = baseAvailable && idle && !captureBusy && referenced &&
                         telemetry?.stereo?.status in listOf("located", "searching") && telemetry?.collection != null,
                     onScan = { confirmRun = "recolector" }, recolector = scanMode,
+                    around = aroundTree, onAround = { if (missionId == null) aroundTree = it },
                     onLemons = { if (missionId == null) lemonCount = it },
                     address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,

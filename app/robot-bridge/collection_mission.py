@@ -76,6 +76,13 @@ REPOSITION_PLANS = 4   # paradas a probar con el planificador del brazo (cada pl
 # modelo de punta, 1 mm de z son ~1,43 mm reales). 23/11: ajustado en el robot (ver GRASP_RAISE_MM)
 GRASP_RAISE_MM = 32.5   # 23/11, usuario: 20 -> 7,5 -> -2,5 (cerraba alto) -> 12,5 (con -2,5, 1,5 cm bajo) -> 32,5 (+2 cm)
 RETURN_SECONDS = 90.
+# Rodear el árbol (25/11, pedido del usuario): 26-sim-alcance-arbolito da 4 paradas cada 90° alrededor del tronco para
+# el 100 % del arbolito (~31 % desde una). Antihorario visto de arriba: el árbol siempre a la izquierda (lado del
+# brazo). El tronco sale del primer escaneo; al terminar vuelve a donde hizo ese escaneo.
+TREE_STOPS = 4
+TRUNK_STOP_MM = (-700., 150.)   # parada de 26-sim: tronco 70 cm a la izquierda de J1 y 15 adelante (tolera ±5 cm)
+CANOPY_MM = 120.                # limones a 10-14 cm del tronco (arbolito medido el 13/11)
+WIDE_MM = 200.                  # camino directo con J1 a < SEP_TRONCO del tronco: primero a mitad de giro, más afuera
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
 # ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
@@ -183,7 +190,7 @@ class CollectionMission:
         self.task = asyncio.create_task(self.run_return(self.owner, origin))
         return self.snapshot()
 
-    def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS):
+    def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS, around=False):
         """Modo Recolector: cosechar TODOS los limones del escaneo (lemons se ignora, 23/11); si hace falta, reubicando el
         Móvil (no hace falta cero)."""
         self.control.tick()
@@ -202,7 +209,7 @@ class CollectionMission:
         self.zone = None
         self.events = []
         self.update('BUSCANDO', f'Modo Recolector: escaneo de {seconds:.0f} s con el Móvil quieto.')
-        self.task = asyncio.create_task(self.run_scan(self.owner, lemons, seconds))
+        self.task = asyncio.create_task(self.run_scan(self.owner, lemons, seconds, around))
         return self.snapshot()
 
     async def scan_frames(self, owner, seconds):
@@ -221,109 +228,70 @@ class CollectionMission:
             await asyncio.sleep(.05)
         return await self.measure_frames(owner, seconds)
 
-    async def run_scan(self, owner, count, seconds):
+    async def run_scan(self, owner, count, seconds, around=False):
         """Modo Recolector: detener la base -> escanear -> guardar las posiciones en el marco de la odometría ->
         de a uno (primero los de la zona buena): reubicarse si hace falta, medir (corrige las posiciones guardadas de
-        los que ve) y cosechar; uno que no se ve se agarra con la posición guardada -> brazo al reposo. Sin verificar
-        con la visión después (pedido del usuario, 21/11). La visión queda prendida (23/11)."""
-        stage, recorder, paused, results = 'preparación', None, False, []
+        los que ve) y cosechar (harvest_stop) -> brazo al reposo. Sin verificar con la visión después (pedido del
+        usuario, 21/11). La visión queda prendida (23/11). around (25/11): TREE_STOPS paradas alrededor del árbol, cada
+        una con su escaneo, y al final de vuelta a donde hizo el primero."""
+        self.stage = 'preparación'
+        recorder, paused, results = None, False, []
         try:
             navigation, grasp, tf = await asyncio.to_thread(self.planners)
             recorder = await self.start_recording()
             await self.control.open(owner, OpenManual(mode='combined', operator_present=True), autonomous=True)
-            stage = 'escaneo'
-            frames = await self.scan_frames(owner, seconds)
-            groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
-            targets = sorted((raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
-                              if spread <= grasp.DISPERSION_MAX), key=lambda l: math.hypot(l[0], l[1]))
-            if not targets:
-                self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha en esta parada.')
-                return
-            # 23/11, pedido del usuario: cosechar TODOS los del escaneo. Se guardan en el marco de la odometría (no
-            # cambia al mover la base) y antes de cada uno se pasan al marco del brazo desde la pose de ese momento
-            start = source_value(self.control.snapshot(), 'odom')
-            if start is None:
+            first = source_value(self.control.snapshot(), 'odom')
+            if first is None:
                 raise RuntimeError('Falta odometría para recordar dónde están los limones')
-            remaining = [arm_to_world(lemon, start) for lemon in targets]
-            retried = [False] * len(remaining)
-            self.run_until = monotonic() + 120. + 150. * len(targets)
-            self.update('BUSCANDO', f'Lista guardada: {len(targets)} limón(es); se cosechan todos, de a uno.')
-            done = 0
-            while remaining:
-                odom = source_value(self.control.snapshot(), 'odom')
-                if odom is None:
-                    raise RuntimeError('Falta odometría reciente')
-                here = [world_to_arm(point, odom) for point in remaining]
-                # primero los que ya están en la zona buena (sin mover la base); si no, el más cercano
-                ready = [i for i, lemon in enumerate(here) if in_zone(lemon)] or range(len(here))
-                index = min(ready, key=lambda i: math.hypot(here[i][0], here[i][1]))
-                number = len(targets) - len(remaining) + 1
-                if not in_zone(here[index]):
-                    stage = 'planificación de la reubicación'
-                    # 25/11: desde la canasta el Móvil anda con el brazo ahí (no al reposo: 16 s) y despliega recién
-                    # al agarrar (pick_here). En DESPLEGAR tapaba la cámara izquierda al medir: 40 s sin pares, cortó
-                    folded = arm_angles(self.control.snapshot().get('arm_state'))[0] > grasp.k.Q1_LIM[1]
-                    found = await self.reposition(owner, navigation, grasp, here[index], True,
-                                                  grasp.DESPLEGAR if folded else grasp.REPOSO)
-                    if found is not None:
-                        steps = found[0]
-                        stage = 'reubicación del Móvil'
-                        if not folded:
-                            await self.arm_to_rest(owner, grasp)
-                        self.update('NAVEGANDO', f'Reubicando el Móvil para el limón {number} de {len(targets)}: '
-                                    + navigation.texto(steps))
-                        for kind, value in steps:
-                            await self.drive_step(owner, kind, value)
-                        await self.settle(owner, 1.)
-                stage = 'medición'
-                self.zone = source_value(self.control.snapshot(), 'odom')
-                if self.zone is None:
-                    raise RuntimeError('Falta odometría reciente al llegar')
-                self.update('BUSCANDO', f'Midiendo el limón {number} de {len(targets)} con estéreo.')
-                await self.scan_frames(owner, 0.)   # pares nuevos, desde acá
-                expected = world_to_arm(remaining[index], self.zone)
-
-                def steady(frames):
-                    """25/11: la medición corta apenas el limón buscado tiene lecturas firmes (~2-3 s); si se hamaca
-                    (lo tocó la herramienta) sigue hasta MEASURE_SECONDS.
-                    ponytail: la dispersión es de toda la ventana; si se hamacó al principio puede no bajar."""
-                    return any(spread <= grasp.DISPERSION_MAX and math.dist(
-                        raised(grasp.limon_de_cara(tf, face, n, spread))[:2], expected[:2]) <= EXPECTED_RADIUS_MM
-                        for face, n, spread in group_lemons(frames, grasp.AGRUPAR_MM, grasp.MIN_POSICIONES))
-
-                measured = await self.measure_lemons(owner, grasp, tf, enough=steady)
-                here = refresh_positions(remaining, measured, self.zone)
-                lemon = here[index]
-                if not remaining[index][3]:   # 25/11, usuario: si no se ve (se movió o cayó), no se agarra
-                    results.append((lemon, 'salteado: no se vio al medir (se movió, se cayó o quedó tapado)'))
-                    remaining.pop(index)
-                    retried.pop(index)
-                    self.zone = None
+            trunk_world, trunk_start, done, total, notes = None, None, 0, 0, []
+            for stop in range(TREE_STOPS if around else 1):
+                name = f'Parada {stop + 1} de {TREE_STOPS}: ' if around else ''
+                if stop:
+                    self.stage = f'paso a la parada {stop + 1}'
+                    await self.go_to_stop(owner, navigation, trunk_world, first['yaw_rad'] + stop * math.pi / 2,
+                                          TRUNK_STOP_MM, f'Yendo a la parada {stop + 1} de {TREE_STOPS}')
+                self.stage = 'escaneo'
+                if around:
+                    self.update('BUSCANDO', f'{name}escaneo de {seconds:.0f} s con el Móvil quieto.')
+                frames = await self.scan_frames(owner, seconds)
+                groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
+                targets = sorted((raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
+                                  if spread <= grasp.DISPERSION_MAX), key=lambda l: math.hypot(l[0], l[1]))
+                if around and trunk_world is None:   # pedido del usuario: el tronco, del primer escaneo
+                    trunk_start = estimate_trunk(targets)
+                    if trunk_start is None:
+                        trunk_start = TRUNK_STOP_MM
+                        notes.append('tronco supuesto en la parada (70 cm a la izquierda de J1)')
+                    trunk_world = arm_to_world((*trunk_start, 0.), first)[:2]
+                    self.update('BUSCANDO', f'Tronco a {trunk_start[0] / -10:.0f} cm a la izquierda de J1 y '
+                                f'{trunk_start[1] / 10:.0f} cm adelante.')
+                if not targets:
+                    if not around:
+                        self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha '
+                                    'en esta parada.')
+                        return
+                    notes.append(f'parada {stop + 1}: sin limones')   # pedido del usuario: pasa a la siguiente
                     continue
-                stage = 'cosecha'
-                picked = await self.pick_here(owner, grasp, lemon[:3], results)
-                done += picked
-                self.zone = None
-                # 25/11: J1 no despegó de la canasta (6 cortes "sin cuentas", batería a 10,8 V) y se perdió un limón
-                # a 59 cm; el brazo se recuperó solo. Un corte del brazo es pasajero: ese limón, una vez más
-                if not picked and results[-1][1].startswith('falló') and not retried[index]:
-                    retried[index] = True
-                    results[-1] = (results[-1][0], results[-1][1] + ' (se reintentó)')
-                    self.run_until += 150.
-                    continue
-                remaining.pop(index)
-                retried.pop(index)
-            stage = 'regreso del brazo al reposo'
+                before = len(results)
+                done += await self.harvest_stop(owner, navigation, grasp, tf, targets, results, name)
+                total += len(targets)
+                if around:
+                    results[before:] = [(l, f'P{stop + 1} {r}') for l, r in results[before:]]
+            if around:   # pedido del usuario: termina donde hizo el primer escaneo
+                self.stage = 'regreso al lugar del primer escaneo'
+                await self.go_to_stop(owner, navigation, trunk_world, first['yaw_rad'], trunk_start,
+                                      'Volviendo al lugar del primer escaneo')
+            self.stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
             # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
-            detail = '; '.join(f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results)
-            self.update('FINALIZADO', f'Modo Recolector: {done} de {len(targets)} limón(es) del escaneo en la canasta. '
-                        f'{detail}')
+            detail = '; '.join([f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results] + notes)
+            where = f' en {TREE_STOPS} paradas alrededor del árbol' if around else ' del escaneo'
+            self.update('FINALIZADO', f'Modo Recolector: {done} de {total} limón(es){where} en la canasta. {detail}')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Modo Recolector detenido por el operador.')
         except (RuntimeError, HTTPException, ValueError, OSError, ImportError) as error:
             detail = error.detail if isinstance(error, HTTPException) else str(error)
-            self.update('RECUPERACION', f'El modo Recolector se detuvo durante {stage}. {detail}')
+            self.update('RECUPERACION', f'El modo Recolector se detuvo durante {self.stage}. {detail}')
         except Exception:
             logging.exception('Falló el modo Recolector')
             self.update('RECUPERACION', 'Falló el modo Recolector. Consultá el registro de la Raspberry Pi.')
@@ -338,6 +306,107 @@ class CollectionMission:
                 if recorder is not None:
                     await self.stop_recording(recorder)
                 self.save_log()
+
+    async def harvest_stop(self, owner, navigation, grasp, tf, targets, results, name=''):
+        """Modo Recolector en una parada: cosecha `targets` (mm, marco del brazo, desde la pose de ahora) de a
+        uno, reubicando el Móvil si hace falta. Devuelve cuántos dejó en la canasta."""
+        # 23/11, pedido del usuario: cosechar TODOS los del escaneo. Se guardan en el marco de la odometría (no
+        # cambia al mover la base) y antes de cada uno se pasan al marco del brazo desde la pose de ese momento
+        start = source_value(self.control.snapshot(), 'odom')
+        if start is None:
+            raise RuntimeError('Falta odometría para recordar dónde están los limones')
+        remaining = [arm_to_world(lemon, start) for lemon in targets]
+        retried = [False] * len(remaining)
+        self.run_until = monotonic() + 120. + 150. * len(targets)
+        self.update('BUSCANDO', f'{name}lista guardada: {len(targets)} limón(es); se cosechan todos, de a uno.')
+        done = 0
+        while remaining:
+            odom = source_value(self.control.snapshot(), 'odom')
+            if odom is None:
+                raise RuntimeError('Falta odometría reciente')
+            here = [world_to_arm(point, odom) for point in remaining]
+            # primero los que ya están en la zona buena (sin mover la base); si no, el más cercano
+            ready = [i for i, lemon in enumerate(here) if in_zone(lemon)] or range(len(here))
+            index = min(ready, key=lambda i: math.hypot(here[i][0], here[i][1]))
+            number = len(targets) - len(remaining) + 1
+            if not in_zone(here[index]):
+                self.stage = 'planificación de la reubicación'
+                # 25/11: desde la canasta el Móvil anda con el brazo ahí (no al reposo: 16 s) y despliega recién
+                # al agarrar (pick_here). En DESPLEGAR tapaba la cámara izquierda al medir: 40 s sin pares, cortó
+                folded = arm_angles(self.control.snapshot().get('arm_state'))[0] > grasp.k.Q1_LIM[1]
+                found = await self.reposition(owner, navigation, grasp, here[index], True,
+                                              grasp.DESPLEGAR if folded else grasp.REPOSO)
+                if found is not None:
+                    steps = found[0]
+                    self.stage = 'reubicación del Móvil'
+                    if not folded:
+                        await self.arm_to_rest(owner, grasp)
+                    self.update('NAVEGANDO', f'{name}reubicando el Móvil para el limón {number} de {len(targets)}: '
+                                + navigation.texto(steps))
+                    for kind, value in steps:
+                        await self.drive_step(owner, kind, value)
+                    await self.settle(owner, 1.)
+            self.stage = 'medición'
+            self.zone = source_value(self.control.snapshot(), 'odom')
+            if self.zone is None:
+                raise RuntimeError('Falta odometría reciente al llegar')
+            self.update('BUSCANDO', f'{name}midiendo el limón {number} de {len(targets)} con estéreo.')
+            await self.scan_frames(owner, 0.)   # pares nuevos, desde acá
+            expected = world_to_arm(remaining[index], self.zone)
+
+            def steady(frames):
+                """25/11: la medición corta apenas el limón buscado tiene lecturas firmes (~2-3 s); si se hamaca
+                (lo tocó la herramienta) sigue hasta MEASURE_SECONDS.
+                ponytail: la dispersión es de toda la ventana; si se hamacó al principio puede no bajar."""
+                return any(spread <= grasp.DISPERSION_MAX and math.dist(
+                    raised(grasp.limon_de_cara(tf, face, n, spread))[:2], expected[:2]) <= EXPECTED_RADIUS_MM
+                    for face, n, spread in group_lemons(frames, grasp.AGRUPAR_MM, grasp.MIN_POSICIONES))
+
+            measured = await self.measure_lemons(owner, grasp, tf, enough=steady)
+            here = refresh_positions(remaining, measured, self.zone)
+            lemon = here[index]
+            if not remaining[index][3]:   # 25/11, usuario: si no se ve (se movió o cayó), no se agarra
+                results.append((lemon, 'salteado: no se vio al medir (se movió, se cayó o quedó tapado)'))
+                remaining.pop(index)
+                retried.pop(index)
+                self.zone = None
+                continue
+            self.stage = 'cosecha'
+            picked = await self.pick_here(owner, grasp, lemon[:3], results)
+            done += picked
+            self.zone = None
+            # 25/11: J1 no despegó de la canasta (6 cortes "sin cuentas", batería a 10,8 V) y se perdió un limón
+            # a 59 cm; el brazo se recuperó solo. Un corte del brazo es pasajero: ese limón, una vez más
+            if not picked and results[-1][1].startswith('falló') and not retried[index]:
+                retried[index] = True
+                results[-1] = (results[-1][0], results[-1][1] + ' (se reintentó)')
+                self.run_until += 150.
+                continue
+            remaining.pop(index)
+            retried.pop(index)
+        return done
+
+    async def go_to_stop(self, owner, navigation, trunk_world, heading, stop, label):
+        """Rodear el árbol (25/11): girar -> recto -> girar (ir_a_parada.planear, giros con el giróscopo) hasta quedar
+        con el tronco en `stop` (mm, marco de J1) y rumbo `heading` (rad, odometría). Si J1 pasara a menos de
+        SEP_TRONCO del tronco, primero a mitad del giro y WIDE_MM más afuera, y desde ahí se vuelve a planear."""
+        for _ in range(3):
+            self.run_until = max(self.run_until, monotonic() + 90.)
+            odom = source_value(self.control.snapshot(), 'odom')
+            if odom is None:
+                raise RuntimeError('Falta odometría para ir a la parada')
+            trunk = world_to_arm((*trunk_world, 0.), odom)[:2]
+            turn = math.degrees(math.atan2(math.sin(heading - odom['yaw_rad']), math.cos(heading - odom['yaw_rad'])))
+            steps = navigation.planear(trunk, turn, stop, orientar=True)
+            arrived = navigation.distancia_minima(trunk, steps) >= navigation.SEP_TRONCO
+            if not arrived:
+                steps = navigation.planear(trunk, turn / 2, (stop[0] - WIDE_MM, stop[1]), orientar=True)
+            self.update('NAVEGANDO', f'{label}: {navigation.texto(steps)}')
+            for kind, value in steps:
+                await self.drive_step(owner, kind, value)
+            if arrived:
+                return
+        raise RuntimeError('No encontró un camino a la parada lejos del tronco')
 
     def demand_vision(self):
         """La app necesita la visión (la pide cada ~2 s): vale VISION_DEMAND_S."""
@@ -1112,6 +1181,19 @@ def refresh_positions(remaining, measured, odom):
             remaining[i] = point[:3] + (False,)
             here.append(predicted[i])
     return here
+
+
+def estimate_trunk(lemons):
+    """Rodear el árbol (25/11, pedido del usuario): el tronco (x, y mm, marco del brazo) desde los limones del primer
+    escaneo: el centro de los que ve, CANOPY_MM más lejos en la dirección desde J1. None si no da creíble (a la
+    izquierda de J1 y a 45-120 cm).
+    ponytail: supone que ve la cara de la copa que mira al robot; con limones de los dos lados el centro sale corto."""
+    if not lemons:
+        return None
+    cx, cy = (sum(lemon[k] for lemon in lemons) / len(lemons) for k in (0, 1))
+    r = math.hypot(cx, cy)
+    trunk = (cx + CANOPY_MM * cx / r, cy + CANOPY_MM * cy / r)
+    return trunk if trunk[0] < 0 and 450. <= math.hypot(*trunk) <= 1200. else None
 
 
 def in_zone(lemon):

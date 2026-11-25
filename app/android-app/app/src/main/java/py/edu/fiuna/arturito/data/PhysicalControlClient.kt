@@ -43,12 +43,13 @@ class PhysicalControlClient {
 
     /** recolector (21/11): sin mover la base: escanea, guarda la lista, pausa la visión y cosecha esa lista. */
     suspend fun startCollection(address: String, token: String, id: String, lemons: Int,
-        recolector: Boolean = false): CollectionStatus =
+        recolector: Boolean = false, around: Boolean = false): CollectionStatus =
         request(address, token, id, "mission/session", "POST", JsonObject().apply {
             addProperty("operator_present", true)
             addProperty("lemons", lemons)
             addProperty("to_basket", true)
             if (recolector) addProperty("mode", "recolector")
+            if (recolector && around) addProperty("around", true)   // 25/11: 4 paradas alrededor del árbol
         }, handshake).decodeCollectionStatus()
 
     /** Brazo al reposo y Móvil al cero (21/11); se supervisa con los mismos latidos que la recolección. */

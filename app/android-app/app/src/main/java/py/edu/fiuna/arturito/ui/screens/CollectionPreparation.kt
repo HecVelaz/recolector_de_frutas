@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     address: String = "", token: String = "", video: Boolean = false,
     canReturn: Boolean = false, onReturn: () -> Unit = {},
     canScan: Boolean = false, onScan: () -> Unit = {}, recolector: Boolean = false,
+    around: Boolean = false, onAround: (Boolean) -> Unit = {},
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (!recolector) SectionCard("Cero del robot", Modifier.weight(1f)) {
@@ -70,9 +72,16 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
         }
     }
     SectionCard(if (recolector) "Modo Recolector" else "Recolección del arbolito", Modifier.fillMaxWidth(), compact = true) {
-        if (recolector) Text("Escanea 3 s, guarda dónde está cada limón y los cosecha todos, de a uno; si hace falta, " +
-            "reubica el Móvil (un limón que deja de ver lo agarra con la posición guardada).",
-            style = MaterialTheme.typography.bodySmall)
+        if (recolector) {
+            Text("Escanea 3 s, guarda dónde está cada limón y los cosecha todos, de a uno; si hace falta, " +
+                "reubica el Móvil (un limón que no ve al medir lo saltea).",
+                style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Switch(around, onAround, enabled = !missionRequested)
+                Text("Rodear el árbol: 4 paradas (antihorario, el árbol a la izquierda) y vuelta al inicio",
+                    style = MaterialTheme.typography.bodySmall)
+            }
+        }
         mission?.let { status ->
             DetailRow("Estado", when (status.state) {
                 "BUSCANDO" -> "Buscando"

@@ -175,7 +175,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
 
-    async def recolector_run(self, views, count=2, extra=()):
+    async def recolector_run(self, views, count=2, extra=(), around=False):
         """Modo Recolector: views = lo que ve la visión en cada medición, en orden (el escaneo primero; la última se
         repite). scan_frames(owner, 0.) solo espera pares nuevos: no consume una vista."""
         events, planned = [], []
@@ -233,7 +233,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
               patch.object(self.mission, 'set_vision_paused', side_effect=pause),
               patch.object(self.mission, 'settle', new=AsyncMock()),
               patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
-            self.mission.start_scan('operator', count, 3.)
+            self.mission.start_scan('operator', count, 3., around)
             await self.mission.task
         return events, planned
 
@@ -306,6 +306,33 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])   # el segundo intento lo agarra
         self.assertIn('1 de 1', self.mission.status['message'])
         self.assertIn('se reintentó', self.mission.status['message'])
+
+    async def test_recolector_goes_around_the_tree_and_back_to_the_first_scan(self):
+        # 25/11, usuario: 4 paradas antihorario; una sin limones pasa a la siguiente; al final, al primer escaneo
+        a = (-560., 200., 140.)   # en la zona buena: se cosecha sin reubicarse
+        self.navigation.SEP_TRONCO = 450.
+        self.navigation.distancia_minima.return_value = 480.
+        self.navigation.planear.return_value = [('giro', 34.), ('recto', 1125.), ('giro', 56.)]
+        drive = AsyncMock()
+        events, planned = await self.recolector_run([[[a]] * 3, [[a]] * 3, [[]] * 3], count=1, around=True, extra=(
+            patch.object(self.mission, 'drive_step', new=drive),))
+        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertEqual(drive.await_count, 4 * 3)   # 3 cambios de parada + volver al primer escaneo
+        turns = [c.args[1] for c in self.navigation.planear.call_args_list]
+        self.assertEqual([round(x) for x in turns], [90, 180, -90, 0])   # rumbos 90°, 180°, 270° y el inicial
+        message = self.mission.status['message']
+        self.assertEqual(self.mission.status['state'], 'FINALIZADO', message)
+        self.assertIn('1 de 1 limón(es) en 4 paradas', message)
+        self.assertIn('parada 2: sin limones', message)
+
+    def test_the_trunk_is_estimated_behind_the_lemons(self):
+        from collection_mission import CANOPY_MM, estimate_trunk
+        trunk = estimate_trunk([(-560., 200., 140.), (-600., 120., 150.)])
+        centre = (-580., 160.)
+        self.assertAlmostEqual(math.dist(trunk, centre), CANOPY_MM)
+        self.assertGreater(math.hypot(*trunk), math.hypot(*centre))   # más lejos de J1 que los limones
+        self.assertIsNone(estimate_trunk([(300., 400., 100.)]))       # a la derecha: no es el árbol
+        self.assertIsNone(estimate_trunk([]))
 
     def test_lemon_positions_survive_moving_the_base(self):
         from collection_mission import arm_to_world, refresh_positions, world_to_arm
