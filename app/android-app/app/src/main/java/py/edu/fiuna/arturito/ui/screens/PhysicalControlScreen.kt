@@ -50,7 +50,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var lemonCount by remember { mutableIntStateOf(1) }
     var returning by remember { mutableStateOf(false) }   // la "misión" en curso es volver al cero
     var recolector by remember { mutableStateOf(false) }  // modo Recolector: cosecha sin mover la base
-    var aroundTree by remember { mutableStateOf(false) }  // 25/11: Recolector en 4 paradas alrededor del árbol
+    var aroundTree by remember { mutableStateOf(false) }  // 25/11: tarea Rodear árbol (dentro de collection)
     var captureBusy by remember { mutableStateOf(false) }
     var parking by remember { mutableStateOf(false) }
     var showBase by remember { mutableStateOf(false) }
@@ -297,7 +297,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         val goHome = purpose == "return"
         val scan = purpose == "recolector"
         AlertDialog(onDismissRequest = { confirmRun = null },
-            title = { Text(if (home) "Hacer el homing del brazo" else if (scan) "Modo Recolector" else if (mission) "Preparar la recolección"
+            title = { Text(if (home) "Hacer el homing del brazo" else if (scan && aroundTree) "Rodear árbol"
+                else if (scan) "Modo Recolector" else if (mission) "Preparar la recolección"
                 else if (goHome) "Volver al cero" else "Preparar el mando") },
             text = {
                 Text(when {
@@ -307,6 +308,9 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     mission -> "El Móvil se acercará al limón más cercano, el brazo intentará llevar " +
                         (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta y el Móvil " +
                         "volverá al cero desandando el camino. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
+                    scan && aroundTree -> "El Móvil va a dar una vuelta alrededor del árbol: 4 paradas cada 90° " +
+                        "(antihorario, el árbol a su izquierda), en cada una escanea y cosecha, y al final vuelve a donde " +
+                        "empezó. Necesita ~1,6 m libres alrededor del árbol. Quedate junto al corte físico."
                     scan -> "El Móvil no se mueve: escanea 3 s, guarda los limones que ve, pausa la visión y el brazo " +
                         "intenta llevar " + (if (lemonCount == 1) "un limón" else "hasta $lemonCount limones") +
                         " de esa lista a la canasta. Al final reanuda la visión y comprueba cuáles salieron. " +
@@ -345,14 +349,18 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     missionId = null
                     collection = false
                 }, { Text("Modo manual") })
-                ConsoleOption(collection && scanMode, {
+                ConsoleOption(collection && scanMode && !aroundTree, {
                     if (!collection) closeSession()
-                    if (missionId == null) { collection = true; scanMode = true }
+                    if (missionId == null) { collection = true; scanMode = true; aroundTree = false }
                 }, { Text("Modo Recolector") })
                 ConsoleOption(collection && !scanMode, {
                     if (!collection) closeSession()
-                    if (missionId == null) { collection = true; scanMode = false }
+                    if (missionId == null) { collection = true; scanMode = false; aroundTree = false }
                 }, { Text("Modo Recolección") })
+                ConsoleOption(collection && scanMode && aroundTree, {
+                    if (!collection) closeSession()
+                    if (missionId == null) { collection = true; scanMode = true; aroundTree = true }
+                }, { Text("Rodear árbol") })
             }
             Spacer(Modifier.weight(1f))
             if (session != null) {
@@ -379,7 +387,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     canScan = baseAvailable && idle && !captureBusy && referenced &&
                         telemetry?.stereo?.status in listOf("located", "searching") && telemetry?.collection != null,
                     onScan = { confirmRun = "recolector" }, recolector = scanMode,
-                    around = aroundTree, onAround = { if (missionId == null) aroundTree = it },
+                    around = scanMode && aroundTree,
                     onLemons = { if (missionId == null) lemonCount = it },
                     address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,

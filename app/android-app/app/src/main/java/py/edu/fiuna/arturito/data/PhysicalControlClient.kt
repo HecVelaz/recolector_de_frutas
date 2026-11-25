@@ -48,8 +48,8 @@ class PhysicalControlClient {
             addProperty("operator_present", true)
             addProperty("lemons", lemons)
             addProperty("to_basket", true)
-            if (recolector) addProperty("mode", "recolector")
-            if (recolector && around) addProperty("around", true)   // 25/11: 4 paradas alrededor del árbol
+            // 25/11: Rodear árbol = el Recolector en 4 paradas alrededor del árbol (tarea aparte)
+            if (recolector) addProperty("mode", if (around) "rodear" else "recolector")
         }, handshake).decodeCollectionStatus()
 
     /** Brazo al reposo y Móvil al cero (21/11); se supervisa con los mismos latidos que la recolección. */
