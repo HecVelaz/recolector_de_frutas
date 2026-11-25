@@ -252,7 +252,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('salteado', self.mission.status['message'])
         self.assertIn('sin plan', self.mission.status['message'])
 
-    async def test_recolector_repositions_from_desplegar_and_skips_a_lemon_lost_from_view(self):
+    async def test_recolector_repositions_with_the_arm_in_the_basket_and_skips_a_lemon_lost_from_view(self):
         a, b, c = (-560., 200., 140.), (-480., 40., 130.), (-450., 300., 130.)   # a en la zona buena; b y c no
         self.navigation.planear.return_value = [('giro', 12.)]
 
@@ -266,7 +266,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(planned, [(-560, 200), (-450, 300)], self.mission.status['message'])   # a y c; b no
         self.assertEqual(drive.call_count, 2)       # se reubicó para b y para c
         names = [e for e, _ in events]
-        self.assertEqual(names[names.index('agarra') + 1:].count('despliega'), 1)   # canasta -> DESPLEGAR (no reposo)
+        self.assertNotIn('despliega', names)   # 25/11: anda con el brazo en la canasta (en DESPLEGAR tapaba la cámara)
         self.assertIn(('imagenes', 2), events)      # cortó con 2 de 3 imágenes (MIN_POSICIONES 2 en la prueba)
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('salteado: no se vio', self.mission.status['message'])

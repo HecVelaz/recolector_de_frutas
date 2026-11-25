@@ -259,17 +259,15 @@ class CollectionMission:
                 number = len(targets) - len(remaining) + 1
                 if not in_zone(here[index]):
                     stage = 'planificación de la reubicación'
-                    # 25/11, usuario: el Móvil puede andar con el brazo en DESPLEGAR; desde la canasta se maneja
-                    # desde ahí (3 s) y no desde el reposo (16 s)
+                    # 25/11: desde la canasta el Móvil anda con el brazo ahí (no al reposo: 16 s) y despliega recién
+                    # al agarrar (pick_here). En DESPLEGAR tapaba la cámara izquierda al medir: 40 s sin pares, cortó
                     folded = arm_angles(self.control.snapshot().get('arm_state'))[0] > grasp.k.Q1_LIM[1]
                     found = await self.reposition(owner, navigation, grasp, here[index], True,
                                                   grasp.DESPLEGAR if folded else grasp.REPOSO)
                     if found is not None:
                         steps = found[0]
                         stage = 'reubicación del Móvil'
-                        if folded:
-                            await self.run_task(owner, grasp, [('desplegar', [grasp.DESPLEGAR])])
-                        else:
+                        if not folded:
                             await self.arm_to_rest(owner, grasp)
                         self.update('NAVEGANDO', f'Reubicando el Móvil para el limón {number} de {len(targets)}: '
                                     + navigation.texto(steps))
