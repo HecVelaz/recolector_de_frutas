@@ -437,3 +437,11 @@ class HomeRecoveryTargetTest(unittest.TestCase):
         command, target = home_recovery('Homing: J2 y J3 fuera de la franja (0.52° afuera)', 'q=17.74,18.06,21.42;e=4,4,4')
         self.assertEqual(command, 'j 2 23.4')
         self.assertTrue(22.6 <= target <= 25.)
+
+
+class HomeRecoveryFoldedTest(unittest.TestCase):
+    def test_folded_arm_goes_through_the_missions_intermediate_before_the_coordinated_rest(self):
+        from physical_control import PARK_COMMAND, home_recovery
+        detail = 'Homing: J2 en +49.9°; más arriba de 25° el codo no llega a su final de carrera. Bajarla antes (j 2 10).'
+        self.assertEqual(home_recovery(detail, 'q=3.01,49.90,79.82;e=4,4,4'), ('mv 3.01 46.70 50.00', 46.7))
+        self.assertEqual(home_recovery(detail, 'q=3.01,46.70,50.00;e=4,4,4'), (PARK_COMMAND, 17.))

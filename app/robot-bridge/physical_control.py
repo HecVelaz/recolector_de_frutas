@@ -43,11 +43,13 @@ BASE_STOP_TIMEOUT = 1.5
 HOME_TIMEOUT = 120
 PARK_TIMEOUT = 30
 PARK_COMMAND = 'mv 3 17 4'
+FOLDED_Q3, UNFOLD_Q2, UNFOLD_Q3 = 70., 46.7, 50.   # punta.py: de la canasta pasa por (J2 46,7°, J3 50°) al reposo
 # Homing rechazado por el firmware con el cero ya conocido (20/11): el brazo frenado se asienta abajo (J2 2,2°, J3 2,9°),
 # fuera de la franja del cuatro barras (con J2 < 3,4° J3 puede llegar a ~1°), o J2 quedó más arriba de 25°. Como pide el
 # firmware, primero "j 2 <grados>" (también valida la franja) y otra vez "h". Un solo intento por homing
 HOME_RECOVERY_TIMEOUT = 20   # 23/11: 10 -> 20 (el reposo coordinado tarda más que un j 2)
 HOME_RECOVERY_TOLERANCE = .7
+HOME_RECOVERIES = 2   # 25/11: plegado -> intermedio de las misiones -> reposo coordinado (antes 1)
 ANGLES = re.compile(r'(?:^|;)q=(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:;|$)')
 
 
@@ -64,6 +66,10 @@ def home_recovery(detail, state):
         target = round(min(24., max(6., q3 + 2.)), 1)
         return f'j 2 {target:.1f}', target
     if 'Bajarla antes' in detail:
+        # 25/11: plegado (J2 49,9°, J3 79,8°) la recta al reposo sale de la franja (pasa por J2 40°, J3 30°) y el
+        # firmware la rechaza: primero al intermedio que usan las misiones para salir de la canasta (J2 46,7°, J3 50°)
+        if q3 >= FOLDED_Q3:
+            return f'mv {float(angles.group(1)):.2f} {UNFOLD_Q2:.2f} {UNFOLD_Q3:.2f}', UNFOLD_Q2
         # 23/11: con J3 en 24,7° J2 no podía bajar sola a 10° (la franja la deja >= ~J3): el reposo coordinado del
         # firmware baja las dos sin salir de la franja (J2 17°, J3 4°)
         return PARK_COMMAND, 17.
@@ -204,7 +210,7 @@ class PhysicalControl:
         self.arm_correcting_since = None
         self.home_started = self.home_completed = self.park_started = None
         self.home_recovery = None      # (inicio, destino de J2) mientras J2 vuelve a la franja
-        self.home_retried = False
+        self.home_retries = 0
         self.bench = False
         self.autonomous = False
         self.home_marker = home_marker
@@ -320,7 +326,7 @@ class PhysicalControl:
         self.arm_correcting_since = None
         self.home_started = self.home_completed = self.park_started = None
         self.home_recovery = None
-        self.home_retried = False
+        self.home_retries = 0
         self.bench = False
         self.autonomous = False
         self.arm_motion = None
@@ -536,11 +542,11 @@ class PhysicalControl:
                     elif received_at is not None and received_at >= self.home_started:
                         if reply == 'failed':
                             detail = self.arm.home_error
-                            recovery = None if self.home_retried else home_recovery(
+                            recovery = None if self.home_retries >= HOME_RECOVERIES else home_recovery(
                                 detail, self.snapshot().get('arm_state'))
                             if recovery is not None:
                                 command, target = recovery
-                                self.home_retried = True
+                                self.home_retries += 1
                                 self.home_recovery = (self.clock(), target)
                                 self.arm.send(command)
                                 self.deadline = input_started_at + SESSION_LEASE
