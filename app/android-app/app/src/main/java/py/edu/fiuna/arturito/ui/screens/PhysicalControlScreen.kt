@@ -51,6 +51,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
     var returning by remember { mutableStateOf(false) }   // la "misión" en curso es volver al cero
     var recolector by remember { mutableStateOf(false) }  // modo Recolector: cosecha sin mover la base
     var aroundTree by remember { mutableStateOf(false) }  // 25/11: tarea Rodear árbol (dentro de collection)
+    var treeStops by remember { mutableIntStateOf(2) }     // paradas de Rodear árbol (1-4; poco espacio: 2)
     var captureBusy by remember { mutableStateOf(false) }
     var parking by remember { mutableStateOf(false) }
     var showBase by remember { mutableStateOf(false) }
@@ -171,7 +172,7 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
         var started = false
         try {
             if (returning) client.startReturn(address, token, id)
-            else client.startCollection(address, token, id, lemonCount, recolector, aroundTree)
+            else client.startCollection(address, token, id, lemonCount, recolector, aroundTree, treeStops)
             started = true
             // 21/11: un latido que tarda más de 450 ms no corta la misión; se reintenta mientras el último correcto
             // tenga menos de 1 s (el puente espera 1,25 s antes de detenerla por falta de supervisión)
@@ -308,9 +309,10 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     mission -> "El Móvil se acercará al limón más cercano, el brazo intentará llevar " +
                         (if (lemonCount == 1) "un limón" else "$lemonCount limones") + " a la canasta y el Móvil " +
                         "volverá al cero desandando el camino. Confirmá que todo el recorrido está despejado y quedate junto al corte físico."
-                    scan && aroundTree -> "El Móvil va a dar una vuelta alrededor del árbol: 4 paradas cada 90° " +
-                        "(antihorario, el árbol a su izquierda), en cada una escanea y cosecha, y al final vuelve a donde " +
-                        "empezó. Necesita ~1,6 m libres alrededor del árbol. Quedate junto al corte físico."
+                    scan && aroundTree -> "El Móvil va a recorrer $treeStops parada(s) cada 90° alrededor del árbol " +
+                        "(antihorario, el árbol a su izquierda); en cada una escanea y cosecha, y al final vuelve a donde " +
+                        "empezó" + (if (treeStops < 4) " por el mismo camino" else "") + ". Necesita ~1,6 m libres " +
+                        "alrededor del árbol en ese recorrido. Quedate junto al corte físico."
                     scan -> "El Móvil no se mueve: escanea 3 s, guarda los limones que ve, pausa la visión y el brazo " +
                         "intenta llevar " + (if (lemonCount == 1) "un limón" else "hasta $lemonCount limones") +
                         " de esa lista a la canasta. Al final reanuda la visión y comprueba cuáles salieron. " +
@@ -387,7 +389,8 @@ fun PhysicalControlScreen(address: String, token: String, armState: String?, ref
                     canScan = baseAvailable && idle && !captureBusy && referenced &&
                         telemetry?.stereo?.status in listOf("located", "searching") && telemetry?.collection != null,
                     onScan = { confirmRun = "recolector" }, recolector = scanMode,
-                    around = scanMode && aroundTree,
+                    around = scanMode && aroundTree, stops = treeStops,
+                    onStops = { if (missionId == null) treeStops = it.coerceIn(1, 4) },
                     onLemons = { if (missionId == null) lemonCount = it },
                     address = address, token = token, video = foreground && telemetry != null) {
                     HomeButton(homing && session != null,

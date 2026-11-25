@@ -175,7 +175,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
 
-    async def recolector_run(self, views, count=2, extra=(), around=False):
+    async def recolector_run(self, views, count=2, extra=(), around=False, stops=4):
         """Modo Recolector: views = lo que ve la visión en cada medición, en orden (el escaneo primero; la última se
         repite). scan_frames(owner, 0.) solo espera pares nuevos: no consume una vista."""
         events, planned = [], []
@@ -233,7 +233,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
               patch.object(self.mission, 'set_vision_paused', side_effect=pause),
               patch.object(self.mission, 'settle', new=AsyncMock()),
               patch.object(self.mission, 'start_recording', new=AsyncMock(return_value=None))):
-            self.mission.start_scan('operator', count, 3., around)
+            self.mission.start_scan('operator', count, 3., around, stops)
             await self.mission.task
         return events, planned
 
@@ -312,18 +312,19 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         a = (-560., 200., 140.)   # en la zona buena: se cosecha sin reubicarse
         self.navigation.SEP_TRONCO = 450.
         self.navigation.distancia_minima.return_value = 480.
-        self.navigation.planear.return_value = [('giro', 34.), ('recto', 1125.), ('giro', 56.)]
+        self.navigation.planear.return_value = [('giro', 45.)]
         drive = AsyncMock()
         events, planned = await self.recolector_run([[[a]] * 3, [[a]] * 3, [[]] * 3], count=1, around=True, extra=(
             patch.object(self.mission, 'drive_step', new=drive),))
         self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
-        # en saltos de 45° alrededor del árbol (la odometría simulada no cambia: cada salto se mide desde el inicio)
+        # en saltos de 45° alrededor del árbol, antihorario (la odometría simulada no cambia: cada salto se mide desde
+        # el inicio); con las 4 completa la vuelta
         turns = [round(c.args[1]) for c in self.navigation.planear.call_args_list]
-        self.assertEqual(turns, [45, 90, 45, 90, 135, 180, -45, -90, 0])   # paradas a 90°, 180°, 270° y el inicio
-        self.assertEqual(drive.await_count, 9 * 3)
+        self.assertEqual(turns, [45, 90, 45, 90, 135, 180, 45, 90, 135, 180, -135, -90, 0])
+        self.assertEqual(drive.await_count, 13)
         message = self.mission.status['message']
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', message)
-        self.assertIn('1 de 1 limón(es) en 4 paradas', message)
+        self.assertIn('1 de 1 limón(es) en 4 parada(s) alrededor del árbol', message)
         self.assertIn('parada 2: sin limones', message)
 
     async def test_going_around_it_waits_for_an_object_ahead_and_never_pushes_against_it(self):
@@ -340,6 +341,28 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(c.args[1] == 0. for c in self.control.mission_velocity.call_args_list))   # quieto
         self.assertAlmostEqual(caught.exception.point[0], .2 + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000)
         self.assertIn('esperando que se despeje', self.mission.events[0]['message'])
+
+    async def test_with_two_stops_it_comes_back_the_way_it_went_facing_forward(self):
+        # 25/11, usuario: poco espacio, 2 paradas; vuelve por donde vino (horario), nunca en marcha atrás
+        a = (-560., 200., 140.)
+        self.navigation.planear.return_value = [('giro', 45.)]
+
+        async def turn(owner, kind, value):   # cada salto simulado gira 45° (la odometría acompaña)
+            self.odom['yaw_rad'] += math.radians(value)
+
+        events, planned = await self.recolector_run([[[a]] * 3, [[a]] * 3, [[]] * 3], count=1, around=True, stops=2,
+                                                    extra=(patch.object(self.mission, 'drive_step', side_effect=turn),))
+        calls = self.navigation.planear.call_args_list
+        self.assertEqual([round(c.args[1]) for c in calls], [45, 45, 135, -135])   # ida 90° y vuelta 90° (4 saltos)
+        from collection_mission import ROTATION_CENTER_MM, TRUNK_STOP_MM
+        start = calls[3].args[2]   # el último salto deja el tronco como en el primer escaneo
+        self.assertEqual(calls[0].args[2], TRUNK_STOP_MM)
+        mirrored = calls[2].args[2]   # salto intermedio de la vuelta: la misma parada girado 180° (tronco a la derecha)
+        self.assertAlmostEqual(mirrored[0], 2 * ROTATION_CENTER_MM[0] - start[0])
+        self.assertAlmostEqual(mirrored[1], 2 * ROTATION_CENTER_MM[1] - start[1])
+        self.assertGreater(mirrored[0], 0)
+        self.assertEqual(round(math.degrees(self.odom['yaw_rad'])), 180)   # (con giros simulados fijos de 45°)
+        self.assertIn('en 2 parada(s) alrededor del árbol', self.mission.status['message'])
 
     def test_the_trunk_is_estimated_behind_the_lemons(self):
         from collection_mission import CANOPY_MM, estimate_trunk

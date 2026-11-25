@@ -79,7 +79,7 @@ RETURN_SECONDS = 90.
 # Rodear el árbol (25/11, pedido del usuario): 26-sim-alcance-arbolito da 4 paradas cada 90° alrededor del tronco para
 # el 100 % del arbolito (~31 % desde una). Antihorario visto de arriba: el árbol siempre a la izquierda (lado del
 # brazo). El tronco sale del primer escaneo; al terminar vuelve a donde hizo ese escaneo.
-TREE_STOPS = 4
+TREE_STOPS = 4   # máximo; la app elige 1-4 (25/11, usuario: poco espacio) y siempre vuelve al inicio
 TRUNK_STOP_MM = (-700., 150.)   # parada de 26-sim: tronco 70 cm a la izquierda de J1 y 15 adelante (tolera ±5 cm)
 CANOPY_MM = 120.                # limones a 10-14 cm del tronco (arbolito medido el 13/11)
 # Obstáculos en Rodear árbol (25/11, pedido del usuario; el Recolector y la Recolección no cambian). Avanzando, con
@@ -95,6 +95,7 @@ OBSTACLE_RADIUS_MM = 150.   # supuesto: el sensor ve la cara de adelante, no el 
 DETOUR_RIGHT_MM = (500., 800.)
 HOP_DEG = 45.               # saltos alrededor del árbol (la recta de un salto queda cerca del círculo)
 OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supuesto + 10 cm
+TRUNK_CLEAR_MM = 550.       # centro de giro al tronco (en la parada, 79,5 cm): ~20 cm de medio ancho + copa + margen
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
 # ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
@@ -215,7 +216,7 @@ class CollectionMission:
         self.task = asyncio.create_task(self.run_return(self.owner, origin))
         return self.snapshot()
 
-    def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS, around=False):
+    def start_scan(self, operator, lemons=1, seconds=SCAN_SECONDS, around=False, stops=TREE_STOPS):
         """Modo Recolector: cosechar TODOS los limones del escaneo (lemons se ignora, 23/11); si hace falta, reubicando el
         Móvil (no hace falta cero)."""
         self.control.tick()
@@ -234,7 +235,7 @@ class CollectionMission:
         self.zone = None
         self.events = []
         self.update('BUSCANDO', f'Modo Recolector: escaneo de {seconds:.0f} s con el Móvil quieto.')
-        self.task = asyncio.create_task(self.run_scan(self.owner, lemons, seconds, around))
+        self.task = asyncio.create_task(self.run_scan(self.owner, lemons, seconds, around, stops))
         return self.snapshot()
 
     async def scan_frames(self, owner, seconds):
@@ -253,11 +254,11 @@ class CollectionMission:
             await asyncio.sleep(.05)
         return await self.measure_frames(owner, seconds)
 
-    async def run_scan(self, owner, count, seconds, around=False):
+    async def run_scan(self, owner, count, seconds, around=False, stops=TREE_STOPS):
         """Modo Recolector: detener la base -> escanear -> guardar las posiciones en el marco de la odometría ->
         de a uno (primero los de la zona buena): reubicarse si hace falta, medir (corrige las posiciones guardadas de
         los que ve) y cosechar (harvest_stop) -> brazo al reposo. Sin verificar con la visión después (pedido del
-        usuario, 21/11). La visión queda prendida (23/11). around (25/11): TREE_STOPS paradas alrededor del árbol, cada
+        usuario, 21/11). La visión queda prendida (23/11). around (25/11): `stops` paradas (1-4) alrededor del árbol, cada
         una con su escaneo, y al final de vuelta a donde hizo el primero."""
         self.stage = 'preparación'
         recorder, paused, results = None, False, []
@@ -268,15 +269,17 @@ class CollectionMission:
             first = source_value(self.control.snapshot(), 'odom')
             if first is None:
                 raise RuntimeError('Falta odometría para recordar dónde están los limones')
+            first = dict(first)   # la pose del primer escaneo: una copia (se vuelve ahí al final)
             trunk_world, trunk_start, done, total, notes = None, None, 0, 0, []
             self.avoid, self.obstacles = around, []
-            for stop in range(TREE_STOPS if around else 1):
-                name = f'Parada {stop + 1} de {TREE_STOPS}: ' if around else ''
+            stops = max(1, min(TREE_STOPS, int(stops)))
+            for stop in range(stops if around else 1):
+                name = f'Parada {stop + 1} de {stops}: ' if around else ''
                 if stop:
                     self.stage = f'paso a la parada {stop + 1}'
                     try:
                         await self.go_to_stop(owner, navigation, trunk_world, first['yaw_rad'] + stop * math.pi / 2,
-                                              TRUNK_STOP_MM, f'Yendo a la parada {stop + 1} de {TREE_STOPS}')
+                                              TRUNK_STOP_MM, f'Yendo a la parada {stop + 1} de {stops}')
                     except StopUnreachable as error:   # pedido del usuario: la tarea sigue con la siguiente
                         notes.append(f'parada {stop + 1} salteada: {error}')
                         continue
@@ -309,16 +312,23 @@ class CollectionMission:
                     results[before:] = [(l, f'P{stop + 1} {r}') for l, r in results[before:]]
             if around:   # pedido del usuario: termina donde hizo el primer escaneo
                 self.stage = 'regreso al lugar del primer escaneo'
-                try:
-                    await self.go_to_stop(owner, navigation, trunk_world, first['yaw_rad'], trunk_start,
-                                          'Volviendo al lugar del primer escaneo')
-                except StopUnreachable as error:
-                    notes.append(f'no volvió al lugar del primer escaneo: {error}')
+                # con las 4 paradas completa la vuelta; con menos, vuelve por donde vino (no hay más espacio). Si los
+                # objetos guardados cierran todo (un contacto de frente se guarda pegado al frente y puede quedar mal
+                # ubicado), se olvidan y se intenta otra vez: uno real se vuelve a detectar al acercarse
+                for attempt in range(2):
+                    try:
+                        await self.go_to_stop(owner, navigation, trunk_world, first['yaw_rad'], trunk_start,
+                                              'Volviendo al lugar del primer escaneo', ccw=stops == TREE_STOPS)
+                        break
+                    except StopUnreachable as error:
+                        if attempt:
+                            notes.append(f'no volvió al lugar del primer escaneo: {error}')
+                        self.obstacles = []
             self.stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
             # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
             detail = '; '.join([f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results] + notes)
-            where = f' en {TREE_STOPS} paradas alrededor del árbol' if around else ' del escaneo'
+            where = f' en {stops} parada(s) alrededor del árbol' if around else ' del escaneo'
             self.update('FINALIZADO', f'Modo Recolector: {done} de {total} limón(es){where} en la canasta. {detail}')
         except asyncio.CancelledError:
             self.update('INACTIVO', 'Modo Recolector detenido por el operador.')
@@ -427,42 +437,54 @@ class CollectionMission:
             retried.pop(index)
         return done
 
-    async def go_to_stop(self, owner, navigation, trunk_world, heading, stop, label):
+    async def go_to_stop(self, owner, navigation, trunk_world, heading, stop, label, ccw=True):
         """Rodear el árbol (25/11): ir alrededor del tronco por el círculo de la parada hasta quedar con el tronco en
         `stop` (mm, marco de J1) y rumbo `heading` (rad, odometría), en saltos de HOP_DEG (girar -> recto -> girar con
-        ir_a_parada.planear; giros con el giróscopo). Un salto que pasa cerca de un objeto guardado, del tronco o que
-        queda bloqueado se hace por un círculo DETOUR_RIGHT_MM más afuera (a la derecha: lejos del árbol) si el
-        ultrasonido derecho lo deja; el salto siguiente vuelve al círculo. StopUnreachable si ninguno anda."""
+        ir_a_parada.planear; giros con el giróscopo). ccw: antihorario (el árbol a la izquierda); False: volver por donde
+        vino (horario; los saltos intermedios miran hacia donde va, con el árbol a la derecha). Un salto que pasa cerca
+        de un objeto guardado o del tronco, o que queda bloqueado, se hace por un círculo DETOUR_RIGHT_MM más afuera
+        (con un paso al costado hacia afuera si hace falta) si el ultrasonido de ese lado lo deja; el salto siguiente
+        vuelve al círculo. Nunca en marcha atrás (hop_plan). StopUnreachable si ninguno anda."""
         odom = source_value(self.control.snapshot(), 'odom')
         if odom is None:
             raise RuntimeError('Falta odometría para ir a la parada')
         start = odom['yaw_rad']
         total = math.atan2(math.sin(heading - start), math.cos(heading - start))
+        if ccw and total < -1e-6:
+            total += 2 * math.pi
+        elif not ccw and total > 1e-6:
+            total -= 2 * math.pi
         hops = max(1, math.ceil(abs(math.degrees(total)) / HOP_DEG - 1e-6))
-        for hop in range(1, hops + 1):
+        hop, exact = 1, False
+        while hop <= hops:
+            back = not ccw and hop < hops   # el salto termina mirando en sentido horario: el árbol a la derecha
             # sin desvío; por un círculo más afuera; y lo mismo con un paso al costado antes (frenado frente a un
             # objeto, ir en diagonal al círculo de afuera pasa muy cerca de él)
-            for offset, aside in [(0., False)] + [(o, s) for o in DETOUR_RIGHT_MM for s in (False, True)]:
+            options = [(0., False)] + ([] if exact else [(o, s) for o in DETOUR_RIGHT_MM for s in (False, True)])
+            for offset, aside in options:
                 self.run_until = max(self.run_until, monotonic() + 90.)
                 snapshot = self.control.snapshot()
                 odom = source_value(snapshot, 'odom')
                 if odom is None:
                     raise RuntimeError('Falta odometría para ir a la parada')
-                side = front_distance(snapshot, 'range_right')
+                # hacia afuera del árbol desde donde está ahora: a la derecha si el tronco le queda a la izquierda
+                outward = -1. if world_to_arm((*trunk_world, 0.), odom)[0] < ROTATION_CENTER_MM[0] else 1.
+                side = front_distance(snapshot, 'range_right' if outward < 0 else 'range_left')
                 if offset and side is not None and side * 1000 < offset:
-                    continue   # a la derecha hay algo más cerca: ese círculo no
+                    continue   # hacia afuera hay algo más cerca: ese círculo no
                 legs, pose = [], odom
                 if aside:
-                    legs.append((odom, [('giro', -90.), ('recto', offset)]))
+                    legs.append((odom, [('giro', 90. * outward), ('recto', offset)]))
                     yaw = odom['yaw_rad']
-                    pose = {'x_m': odom['x_m'] + offset / 1000 * math.sin(yaw),
-                            'y_m': odom['y_m'] - offset / 1000 * math.cos(yaw), 'yaw_rad': yaw - math.pi / 2}
-                trunk = world_to_arm((*trunk_world, 0.), pose)[:2]
-                goal = start + total * hop / hops - pose['yaw_rad']
-                legs.append((pose, navigation.planear(trunk, math.degrees(math.atan2(math.sin(goal), math.cos(goal))),
-                                                      (stop[0] - offset, stop[1]), orientar=True)))
-                if any(navigation.distancia_minima(world_to_arm((*trunk_world, 0.), at)[:2], steps)
-                       < navigation.SEP_TRONCO or any(
+                    pose = {'x_m': odom['x_m'] - outward * offset / 1000 * math.sin(yaw),
+                            'y_m': odom['y_m'] + outward * offset / 1000 * math.cos(yaw),
+                            'yaw_rad': yaw + outward * math.pi / 2}
+                spot = (stop[0] - offset, stop[1])
+                if back:   # la misma parada con el Móvil girado 180° sobre su centro de giro
+                    spot = (2 * ROTATION_CENTER_MM[0] - spot[0], 2 * ROTATION_CENTER_MM[1] - spot[1])
+                legs += self.hop_plan(navigation, trunk_world, pose,
+                                      start + total * hop / hops + (math.pi if back else 0.), spot)
+                if any(center_clearance(steps, world_to_arm((*trunk_world, 0.), at)[:2]) < TRUNK_CLEAR_MM or any(
                            center_clearance(steps, world_to_arm((*point, 0.), at)[:2]) < OBSTACLE_CLEAR_MM
                            for point in self.obstacles) for at, steps in legs):
                     continue
@@ -476,7 +498,29 @@ class CollectionMission:
                 except Blocked as blocked:
                     self.obstacles.append(blocked.point)
             else:
+                if exact:
+                    return   # se queda en la parada de más afuera (la reubicación de cada limón lo compensa)
                 raise StopUnreachable('sin camino libre')
+            # el último salto quedó en el círculo de afuera: uno más hasta la parada exacta (25/11, usuario: siempre
+            # vuelve al inicio)
+            if hop == hops and offset and not exact:
+                exact = True
+                continue
+            hop += 1
+
+    @staticmethod
+    def hop_plan(navigation, trunk_world, pose, heading, stop):
+        """[(pose, pasos)] para quedar con el tronco en `stop` (mm, marco de J1) y rumbo `heading` (rad, odom). Si
+        ir_a_parada.planear pide marcha atrás (atrás no hay sensores), primero gira 180° en el lugar."""
+        def plan(at):
+            turn = heading - at['yaw_rad']
+            return navigation.planear(world_to_arm((*trunk_world, 0.), at)[:2],
+                                      math.degrees(math.atan2(math.sin(turn), math.cos(turn))), stop, orientar=True)
+        steps = plan(pose)
+        if not any(kind == 'recto' and value < 0 for kind, value in steps):
+            return [(pose, steps)]
+        turned = dict(pose, yaw_rad=pose['yaw_rad'] + math.pi)
+        return [(pose, [('giro', 180.)]), (turned, plan(turned))]
 
     def demand_vision(self):
         """La app necesita la visión (la pide cada ~2 s): vale VISION_DEMAND_S."""
@@ -1288,7 +1332,10 @@ def front_blocked(snapshot):
 def obstacle_point(odom, front):
     """Dónde está el objeto (x, y m, odom): adelante del centro de giro, a lo que mide el frente + el sensor + el
     radio supuesto."""
-    ahead = (front if front not in (None, math.inf) else OBSTACLE_M) + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000
+    # el ultrasonido solo cuenta si ve algo cerca; si frenó el bumper (no_avanza) con el ultrasonido viendo más lejos
+    # (25/11, simulación: el árbol detrás a 79 cm), el objeto está pegado al frente
+    near = front if front is not None and front < OBSTACLE_M else 0.
+    ahead = near + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000
     return (odom['x_m'] + ahead * math.cos(odom['yaw_rad']), odom['y_m'] + ahead * math.sin(odom['yaw_rad']))
 
 

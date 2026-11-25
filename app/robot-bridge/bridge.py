@@ -63,6 +63,7 @@ class CollectionRequest(BaseModel):
     # 25/11: 'rodear' = la tarea Rodear árbol (4 paradas alrededor del árbol, cada una como el Recolector)
     mode: str = Field('acercamiento', pattern='^(acercamiento|recolector|rodear)$')
     scan_seconds: float = Field(3., ge=1., le=10.)
+    stops: int = Field(4, ge=1, le=4, strict=True)   # 25/11: paradas de Rodear árbol (antihorario, cada 90°)
 
 
 def create_app(source=None, data_dir=None, token=None, estado_url=None, control_dry_run=None,
@@ -309,7 +310,7 @@ def create_app(source=None, data_dir=None, token=None, estado_url=None, control_
             if not body.operator_present or origin_capture.locked():
                 raise HTTPException(409, 'Confirmá la supervisión local y esperá a que termine la medición')
             if body.mode in ('recolector', 'rodear'):
-                return collection.start_scan(operator, body.lemons, body.scan_seconds, body.mode == 'rodear')
+                return collection.start_scan(operator, body.lemons, body.scan_seconds, body.mode == 'rodear', body.stops)
             return collection.start(operator, navigation_origin, body.lemons, body.to_basket)
 
         @app.post('/api/v1/mission/return')

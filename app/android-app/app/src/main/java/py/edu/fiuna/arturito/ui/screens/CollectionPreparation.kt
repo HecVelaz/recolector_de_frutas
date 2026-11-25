@@ -27,7 +27,7 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     address: String = "", token: String = "", video: Boolean = false,
     canReturn: Boolean = false, onReturn: () -> Unit = {},
     canScan: Boolean = false, onScan: () -> Unit = {}, recolector: Boolean = false,
-    around: Boolean = false,
+    around: Boolean = false, stops: Int = 2, onStops: (Int) -> Unit = {},
     homeControl: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (!recolector) SectionCard("Cero del robot", Modifier.weight(1f)) {
@@ -72,9 +72,17 @@ fun CollectionPreparation(origin: NavigationOrigin?, stereo: StereoReading?, arm
     }
     SectionCard(if (around) "Rodear árbol" else if (recolector) "Modo Recolector" else "Recolección del arbolito",
         Modifier.fillMaxWidth(), compact = true) {
-        if (around) Text("Con el árbol a la izquierda: estima el tronco con el primer escaneo y cosecha en 4 paradas " +
-            "cada 90° alrededor del árbol (antihorario), como el Recolector en cada una; al final vuelve a donde empezó.",
-            style = MaterialTheme.typography.bodySmall)
+        if (around) {
+            Text("Con el árbol a la izquierda: estima el tronco con el primer escaneo y cosecha en cada parada (cada 90°, " +
+                "antihorario) como el Recolector; al final vuelve a donde empezó.",
+                style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Paradas")
+                OutlinedButton(onClick = { onStops(stops - 1) }, enabled = !missionRequested && stops > 1) { Text("−") }
+                Text("$stops", style = MaterialTheme.typography.titleMedium)
+                OutlinedButton(onClick = { onStops(stops + 1) }, enabled = !missionRequested && stops < 4) { Text("+") }
+            }
+        }
         else if (recolector) Text("Escanea 3 s, guarda dónde está cada limón y los cosecha todos, de a uno; si hace falta, " +
             "reubica el Móvil (un limón que no ve al medir lo saltea).",
             style = MaterialTheme.typography.bodySmall)
