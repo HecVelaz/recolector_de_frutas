@@ -257,11 +257,18 @@ class CollectionMission:
                 number = len(targets) - len(remaining) + 1
                 if not in_zone(here[index]):
                     stage = 'planificación de la reubicación'
-                    found = await self.reposition(owner, navigation, grasp, here[index], True)
+                    # 25/11, usuario: el Móvil puede andar con el brazo en DESPLEGAR; desde la canasta se maneja
+                    # desde ahí (3 s) y no desde el reposo (16 s)
+                    folded = arm_angles(self.control.snapshot().get('arm_state'))[0] > grasp.k.Q1_LIM[1]
+                    found = await self.reposition(owner, navigation, grasp, here[index], True,
+                                                  grasp.DESPLEGAR if folded else grasp.REPOSO)
                     if found is not None:
                         steps = found[0]
                         stage = 'reubicación del Móvil'
-                        await self.arm_to_rest(owner, grasp)
+                        if folded:
+                            await self.run_task(owner, grasp, [('desplegar', [grasp.DESPLEGAR])])
+                        else:
+                            await self.arm_to_rest(owner, grasp)
                         self.update('NAVEGANDO', f'Reubicando el Móvil para el limón {number} de {len(targets)}: '
                                     + navigation.texto(steps))
                         for kind, value in steps:
@@ -273,15 +280,26 @@ class CollectionMission:
                     raise RuntimeError('Falta odometría reciente al llegar')
                 self.update('BUSCANDO', f'Midiendo el limón {number} de {len(targets)} con estéreo.')
                 await self.scan_frames(owner, 0.)   # pares nuevos, desde acá
-                measured = await self.measure_lemons(owner, grasp, tf)
+                expected = world_to_arm(remaining[index], self.zone)
+
+                def steady(frames):
+                    """25/11: la medición corta apenas el limón buscado tiene lecturas firmes (~2-3 s); si se hamaca
+                    (lo tocó la herramienta) sigue hasta MEASURE_SECONDS.
+                    ponytail: la dispersión es de toda la ventana; si se hamacó al principio puede no bajar."""
+                    return any(spread <= grasp.DISPERSION_MAX and math.dist(
+                        raised(grasp.limon_de_cara(tf, face, n, spread))[:2], expected[:2]) <= EXPECTED_RADIUS_MM
+                        for face, n, spread in group_lemons(frames, grasp.AGRUPAR_MM, grasp.MIN_POSICIONES))
+
+                measured = await self.measure_lemons(owner, grasp, tf, enough=steady)
                 here = refresh_positions(remaining, measured, self.zone)
                 lemon = here[index]
-                seen = remaining[index][3]
+                if not remaining[index][3]:   # 25/11, usuario: si no se ve (se movió o cayó), no se agarra
+                    results.append((lemon, 'salteado: no se vio al medir (se movió, se cayó o quedó tapado)'))
+                    remaining.pop(index)
+                    self.zone = None
+                    continue
                 stage = 'cosecha'
-                before = len(results)
                 done += await self.pick_here(owner, grasp, lemon[:3], results)
-                if not seen:   # pedido del usuario: perdido de vista, se agarra igual con la posición guardada
-                    results[before:] = [(l, r + ' (sin verlo: posición guardada)') for l, r in results[before:]]
                 remaining.pop(index)
                 self.zone = None
             stage = 'regreso del brazo al reposo'
@@ -413,7 +431,7 @@ class CollectionMission:
         results.append((lemon, 'hecho'))
         return 1
 
-    async def reposition(self, owner, navigation, original, target, to_basket):
+    async def reposition(self, owner, navigation, original, target, to_basket, start=None):
         """Modo Recolector (23/11): (pasos, dónde va a quedar el limón) para dejarlo a STOP_RADIUS_MM (±20 mm) y entre
         REPOSITION_BEARINGS_DEG adelante de J1, con plan de agarre desde el reposo. La orientación final del Móvil es
         libre (J1 no está en el centro de giro: a veces alcanza con girar): de todas las combinaciones, la que menos
@@ -443,7 +461,7 @@ class CollectionMission:
                     extra = 0. if radius == STOP_RADIUS_MM else 25.
                     options.append((best[0] + extra, len(options), best[1], (stop[0], stop[1], target[2])))
         for _, _, steps, expected in sorted(options)[:REPOSITION_PLANS]:
-            plan, _ = await self.grasp_plan(owner, original, original.REPOSO, expected, to_basket)
+            plan, _ = await self.grasp_plan(owner, original, start or original.REPOSO, expected, to_basket)
             if plan is not None:
                 return steps, expected
         return None
@@ -593,11 +611,12 @@ class CollectionMission:
             await asyncio.sleep(.05)
         return work.result()
 
-    async def measure_frames(self, owner, seconds=MEASURE_SECONDS):
-        """Las imágenes de /limon/todos de `seconds` s: [[(x, y, z) mm, ...], ...], marco `camera`."""
-        return await self.collect_frames(seconds, lambda: self.cycle(owner))
+    async def measure_frames(self, owner, seconds=MEASURE_SECONDS, enough=None):
+        """Las imágenes de /limon/todos de `seconds` s: [[(x, y, z) mm, ...], ...], marco `camera`. enough(frames):
+        corta antes, apenas da True con las imágenes juntadas hasta ahí."""
+        return await self.collect_frames(seconds, lambda: self.cycle(owner), enough)
 
-    async def collect_frames(self, seconds, tick):
+    async def collect_frames(self, seconds, tick, enough=None):
         frames, previous = [], monotonic()
         until = previous + seconds
         while monotonic() < until:
@@ -608,6 +627,8 @@ class CollectionMission:
                     raise RuntimeError(f'/limon/todos viene en {frame_id}; la calibración es para camera')
                 frames.append([tuple(p[axis] * 1000 for axis in ('x_m', 'y_m', 'z_m')) for p in points])
                 previous = stamp
+                if enough is not None and enough(frames):
+                    break
             await asyncio.sleep(.05)
         return frames
 
@@ -645,14 +666,15 @@ class CollectionMission:
         limit = max(abs(h) for h in SEARCH_HEADINGS_DEG)
         raise RuntimeError(f'No encontré limones girando ±{limit:.0f}°: acercá el Móvil al limonero y calculá el cero de nuevo')
 
-    async def measure_lemons(self, owner, original, tf, near=None):
+    async def measure_lemons(self, owner, original, tf, near=None, enough=None):
         """Como punta.medir_limones: agrupa los limones de todas las imágenes y da sus puntos de agarre (mm, marco del
         brazo) con las correcciones de punta.limon_de_cara (z de la visión, adelante, izquierda, arriba y ajuste fino).
         near: dónde tiene que estar el limón (mm, marco del brazo). Entonces alcanza con punta.MIN_POSICIONES
         posiciones aunque haya lecturas repartidas, y van primero los que están a menos de EXPECTED_RADIUS_MM de ahí;
         si no hay ninguno, todos (21/11, pedido del usuario: la profundidad del cero puede errar 10-25 cm; al llegar se
         cosecha lo que se mide ahí si el brazo tiene plan)."""
-        groups = group_lemons(await self.measure_frames(owner), original.AGRUPAR_MM, original.MIN_POSICIONES,
+        frames = await (self.measure_frames(owner) if enough is None else self.measure_frames(owner, enough=enough))
+        groups = group_lemons(frames, original.AGRUPAR_MM, original.MIN_POSICIONES,
                               min_fraction=0. if near is not None else .3)
         lemons = [raised(original.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
                   if spread <= original.DISPERSION_MAX]
@@ -1044,16 +1066,21 @@ def refresh_positions(remaining, measured, odom):
     """Corrige en el lugar las posiciones guardadas (marco odom) con lo medido desde `odom` (mm, marco del brazo): a
     cada una, el limón medido más cercano a menos de EXPECTED_RADIUS_MM de donde se esperaba (el 4.º campo dice si se
     vio esta vez). Devuelve las posiciones en el marco del brazo."""
+    predicted = [world_to_arm(point, odom) for point in remaining]
+    # 25/11: cada medición, a un solo limón guardado (antes dos cercanos tomaban la misma y el 2.º iba a un lugar vacío)
+    match = {}
+    for d, i, j in sorted((math.dist(m[:2], p[:2]), i, j) for i, p in enumerate(predicted) for j, m in enumerate(measured)):
+        if d <= EXPECTED_RADIUS_MM and i not in match and j not in match.values():
+            match[i] = j
     here = []
     for i, point in enumerate(remaining):
-        predicted = world_to_arm(point, odom)
-        near = min(measured, key=lambda lemon: math.dist(lemon[:2], predicted[:2]), default=None)
-        if near is not None and math.dist(near[:2], predicted[:2]) <= EXPECTED_RADIUS_MM:
+        if i in match:
+            near = measured[match[i]]
             remaining[i] = arm_to_world(near, odom)
             here.append(tuple(near[:3]))
         else:
             remaining[i] = point[:3] + (False,)
-            here.append(predicted)
+            here.append(predicted[i])
     return here
 
 

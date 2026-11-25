@@ -179,22 +179,34 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         """Modo Recolector: views = lo que ve la visión en cada medición, en orden (el escaneo primero; la última se
         repite). scan_frames(owner, 0.) solo espera pares nuevos: no consume una vista."""
         events, planned = [], []
-        grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.), MIN_POSICIONES=2)
-        grasp.k.Q1_LIM = (0., 180.)
+        grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.), MIN_POSICIONES=2,
+                     DESPLEGAR=(100., 46.7, 80.))
+        grasp.k.Q1_LIM = (0., 118.)   # J1 > 118: en la canasta
         grasp.limon_de_cara.side_effect = lambda tf, face, n, spread: tuple(face)
         grasp.planear_agarre_tol.side_effect = lambda s, target, basket: (
             ([('servo', 'pz a')], []) if target[0] > -700 else (None, ['lejos']))
         views = list(views)
 
-        async def measure(owner, seconds=8.):
+        async def measure(owner, seconds=8., enough=None):
             if seconds == 0.:
                 return []
             events.append(('mide', paused[0]))
-            return views.pop(0) if len(views) > 1 else views[0]
+            frames = views.pop(0) if len(views) > 1 else views[0]
+            if enough is not None:   # corta apenas alcanza, como collect_frames
+                frames = next((frames[:k] for k in range(1, len(frames) + 1) if enough(frames[:k])), frames)
+                events.append(('imagenes', len(frames)))
+            return frames
+
+        arm = self.control.snapshot.return_value
 
         async def task(owner, original, steps):
+            if steps[0][0] == 'desplegar' and len(steps) == 1:   # 25/11: desplegar para andar, sin agarre
+                events.append(('despliega', paused[0]))
+                arm['arm_state'] = 'q=100,46.7,80;e=3,3,3;c=111'
+                return
             events.append(('agarra', paused[0]))
             planned.append(self.grasp_target)
+            arm['arm_state'] = 'q=130,46.7,80;e=3,3,3;c=111'   # suelta en la canasta
 
         paused = [False]
 
@@ -240,25 +252,25 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('salteado', self.mission.status['message'])
         self.assertIn('sin plan', self.mission.status['message'])
 
-    async def test_recolector_harvests_all_scanned_lemons_repositioning_and_even_one_lost_from_view(self):
+    async def test_recolector_repositions_from_desplegar_and_skips_a_lemon_lost_from_view(self):
         a, b, c = (-560., 200., 140.), (-480., 40., 130.), (-450., 300., 130.)   # a en la zona buena; b y c no
         self.navigation.planear.return_value = [('giro', 12.)]
 
-        async def turn(owner, kind, value):   # la odometría acompaña el giro (en el centro de giro: x, y no cambian)
-            self.odom['yaw_rad'] += math.radians(value)
-
-        drive = AsyncMock(side_effect=turn)
+        drive = AsyncMock()   # la odometría no cambia: lo guardado se mide en el mismo lugar
         views = [[[a, b, c]] * 3,   # escaneo
                  [[a]] * 3,         # al medir para a (b y c tapados)
-                 [[]] * 3]          # después de girar no se ven: con la posición guardada (y girada)
+                 [[]] * 3,          # para b: no se ve (se movió o cayó) -> se saltea
+                 [[c]] * 3]         # para c: sí -> se agarra
         events, planned = await self.recolector_run(views, count=1, extra=(
             patch.object(self.mission, 'drive_step', new=drive),))
-        self.assertEqual(len(planned), 3, self.mission.status['message'])   # los tres del escaneo
-        self.assertEqual(planned[0], (-560, 200))   # primero el de la zona buena, sin moverse
+        self.assertEqual(planned, [(-560, 200), (-450, 300)], self.mission.status['message'])   # a y c; b no
         self.assertEqual(drive.call_count, 2)       # se reubicó para b y para c
+        names = [e for e, _ in events]
+        self.assertEqual(names[names.index('agarra') + 1:].count('despliega'), 1)   # canasta -> DESPLEGAR (no reposo)
+        self.assertIn(('imagenes', 2), events)      # cortó con 2 de 3 imágenes (MIN_POSICIONES 2 en la prueba)
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
-        self.assertIn('3 de 3 limón(es) del escaneo en la canasta', self.mission.status['message'])
-        self.assertIn('sin verlo', self.mission.status['message'])
+        self.assertIn('salteado: no se vio', self.mission.status['message'])
+        self.assertNotIn('sin verlo', self.mission.status['message'])
 
     def test_lemon_positions_survive_moving_the_base(self):
         from collection_mission import arm_to_world, refresh_positions, world_to_arm
@@ -273,6 +285,17 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(remaining[0][3])
         self.assertEqual(len(refresh_positions(remaining, [], moved)), 1)   # no se ve: queda la guardada
         self.assertFalse(remaining[0][3])
+        # 25/11: dos guardados cerca de una sola medición: la toma el más cercano; el otro queda sin ver
+        two = [arm_to_world((-540., 180., 120.), start), arm_to_world((-480., 180., 120.), start)]
+        refresh_positions(two, [(-535., 180., 120.)], start)
+        self.assertEqual([p[3] for p in two], [True, False])
+
+    async def test_measurement_stops_as_soon_as_it_is_enough(self):
+        from time import monotonic
+        stamps = (monotonic() + k for k in range(1, 100))   # posteriores al arranque
+        self.stereo.target_frame.side_effect = lambda: (next(stamps), 'camera', [{'x_m': .1, 'y_m': 0., 'z_m': .8}])
+        frames = await self.mission.collect_frames(5., lambda: None, lambda f: len(f) >= 3)
+        self.assertEqual(len(frames), 3)
 
     async def test_recolector_without_lemons_skips_the_harvest(self):
         events, planned = await self.recolector_run([[[]] * 3])
