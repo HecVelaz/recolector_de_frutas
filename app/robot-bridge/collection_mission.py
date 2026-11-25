@@ -30,7 +30,9 @@ MAX_LEMONS = 5
 MEASURE_SECONDS = 8.     # 21/11: 5 -> 8 s (con el v4 y la disparidad a ~1-2 Hz llegan menos posiciones)
 MV_TIMEOUT = 90.         # TIMEOUT_MV de recolectar.py
 MV_RETRIES = 2           # punta.ejecutar: cortes por atraso con carga
-RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés')
+# 25/11: J1 se trabó dos veces ("sin cuentas", batería a 10,9 V) yendo frente al limón y cortó la misión: también se
+# repite desde donde quedó (la tercera vez llegaba)
+RETRY_ON = ('no quedan firmes', 'no sigue la trayectoria', 'se mueve al revés', 'sin cuentas')
 # 21/11: plegando para la canasta J3 quedó en 78,4 (pedido 80; cerca del punto muerto del cuatro barras está dura) y el
 # mv siguiente cortó por "sin cuentas" porque J3 no subía esos 1,6°. Si una articulación ya está a menos de esto de su
 # destino, se reintenta una vez dejándola donde está (con el encoder suelto de verdad la diferencia sería mayor)
@@ -425,8 +427,7 @@ class CollectionMission:
             await self.run_task(owner, grasp, before + plan)
         except ArmRejected as error:
             results.append((lemon, f'falló: {error}'))
-            if not await self.recover_to_basket(owner, grasp) and not await self.arm_to_rest(owner, grasp):
-                raise
+            await self.recover(owner, grasp)
             return 0
         results.append((lemon, 'hecho'))
         return 1
@@ -755,6 +756,26 @@ class CollectionMission:
             finally:
                 if loaded:
                     self.control.arm.send(original.VEL_NORMAL)
+
+    async def recover(self, owner, original):
+        """Modo Recolector (25/11, pedido del usuario: la demo no se corta por un limón): tras un agarre fallido, con
+        algo en la pinza a la canasta y si no al reposo; si un intento corta, espera y prueba el otro. Solo si ninguno
+        llega (el brazo necesita a alguien) sigue el error y se detiene."""
+        state = self.control.snapshot().get('arm_state') or ''
+        try:
+            holding = float(state.split('pz=', 1)[1].split(';')[0]) >= 1000   # abierta 500, agarre 1200
+        except (IndexError, ValueError):
+            holding = True
+        tries = ([self.recover_to_basket] if holding else []) + [self.arm_to_rest, self.arm_to_rest]
+        error = None
+        for attempt in tries:
+            try:
+                if await attempt(owner, original):
+                    return
+            except ArmRejected as rejected:
+                error = rejected
+            await self.settle(owner, 1.)
+        raise error or ArmRejected('El brazo no encontró un camino seguro al reposo')
 
     async def recover_to_basket(self, owner, original):
         """Como punta.recuperar_a_canasta: lo que tenga la pinza a la canasta, si el camino entra en el modelo."""

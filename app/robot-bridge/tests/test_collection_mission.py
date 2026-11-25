@@ -272,6 +272,24 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('salteado: no se vio', self.mission.status['message'])
         self.assertNotIn('sin verlo', self.mission.status['message'])
 
+    async def test_a_failed_pick_goes_on_with_the_next_lemon(self):
+        # 25/11: con la pinza vacía, al reposo (no a la canasta); si el primer intento corta, prueba de nuevo y sigue
+        from collection_mission import ArmRejected
+        grasp = Mock(REPOSO=(3., 17., 4.))
+        grasp.k.Q1_LIM = (0., 118.)
+        self.control.snapshot.return_value['arm_state'] = 'q=17,18,18;e=4,4,4;c=111;fc=000;pz=500;mn=-1'
+        rest = AsyncMock(side_effect=[ArmRejected('saldría de la franja'), True])
+        with (patch.object(self.mission, 'grasp_plan', new=AsyncMock(return_value=([('ir', [(20., 17., 4.)])], []))),
+              patch.object(self.mission, 'run_task', new=AsyncMock(side_effect=ArmRejected('sin cuentas'))),
+              patch.object(self.mission, 'recover_to_basket', new=AsyncMock()) as basket,
+              patch.object(self.mission, 'arm_to_rest', new=rest),
+              patch.object(self.mission, 'settle', new=AsyncMock())):
+            results = []
+            self.assertEqual(await self.mission.pick_here('o', grasp, (-560., 200., 140.), results), 0)
+        basket.assert_not_called()
+        self.assertEqual(rest.await_count, 2)
+        self.assertIn('falló', results[0][1])
+
     def test_lemon_positions_survive_moving_the_base(self):
         from collection_mission import arm_to_world, refresh_positions, world_to_arm
         start, moved = dict(self.odom), dict(self.odom, x_m=.1, yaw_rad=math.radians(20))
@@ -623,8 +641,11 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
         self.control.arm = FakeArm(['sin cuentas del encoder (¿suelto o trabada?)'])
         await self.mission.move('mision', (100., 46.7, 80.), passing=True)
         self.assertEqual(self.control.arm.sent, ['mvp 100.00 46.70 80.00', 'mvp 100.00 46.79 78.37'])
+        # 25/11: J1 trabada (batería baja) se repite desde donde quedó; a la tercera vez corta
         self.control.arm = FakeArm(['sin cuentas del encoder', 'sin cuentas del encoder'])
-        with self.assertRaises(ArmRejected):   # una sola vez
+        await self.mission.move('mision', (100., 46.7, 80.), passing=True)
+        self.control.arm = FakeArm(['sin cuentas del encoder'] * 3)
+        with self.assertRaises(ArmRejected):
             await self.mission.move('mision', (100., 46.7, 80.), passing=True)
 
     def test_arm_link_reads_pass_points_and_safety_rejections(self):
