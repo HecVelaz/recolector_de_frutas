@@ -4,6 +4,7 @@ import ipaddress
 import os
 from pathlib import Path
 import secrets
+import sys
 
 
 def main():
@@ -64,7 +65,38 @@ def main():
     # 21/11: con el keep-alive de 5 s de uvicorn, la tablet (adb reverse + túnel ssh) no se enteraba del cierre y el
     # primer pedido tras 5 s quietos (p. ej. «Iniciar recolección» después del cero) moría: había que tocar dos veces.
     # 600 s > los 5 min que OkHttp guarda una conexión ociosa: cierra siempre la tablet primero.
+    if not isinstance(target, str):
+        watch_stalls(target)
     uvicorn.run(target, host=args.host, port=args.port, access_log=False, proxy_headers=False, timeout_keep_alive=600)
+
+
+def watch_stalls(app, limit=.3):
+    """25/11: el lazo del puente se trabó ~0,6 s en medio de la cosecha y la S3 cortó por "sin comandos" (watchdog de
+    300 ms). Si el lazo no vuelve en `limit` s, faulthandler (hilo de C: anda aunque Python esté trabado) escribe en
+    bridge.log dónde estaba cada hilo. Para encontrar la causa; sacarlo cuando se sepa."""
+    import asyncio
+    import faulthandler
+
+    async def arm():
+        while True:
+            faulthandler.dump_traceback_later(limit, repeat=False, file=sys.stderr)
+            await asyncio.sleep(.05)
+
+    import contextlib
+    original = app.router.lifespan_context   # bridge.py usa lifespan: on_event no corre
+
+    @contextlib.asynccontextmanager
+    async def lifespan(target):
+        print(f'[vigilancia del lazo: traza de los hilos si se atrasa más de {limit} s]', flush=True)
+        task = asyncio.create_task(arm())
+        try:
+            async with original(target) as state:
+                yield state
+        finally:
+            task.cancel()
+            faulthandler.cancel_dump_traceback_later()
+
+    app.router.lifespan_context = lifespan
 
 
 if __name__ == '__main__':
