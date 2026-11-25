@@ -80,3 +80,14 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
   firmware, `arrancar_pi.sh` no la toca. La costumbre sigue siendo prender la Pi con los 12 V apagados.
 - **Mando manual como `teleop.html` (23/11, pedido del usuario):** brazo hasta 1 rad/s (60 % por defecto) y giro de
   la base hasta 1 rad/s (antes 0,15 y 0,15).
+
+## 2026-11-25
+- **Rodear árbol es una tarea aparte** (no una opción del Recolector), pedido del usuario: el Recolector queda para una
+  estación. Paradas antihorario (árbol del lado del brazo), 1–4 según el espacio, y siempre vuelve al primer escaneo
+  (con < 4, por donde vino y mirando hacia adelante: atrás no hay sensores).
+- **Un limón que no se ve al medir no se agarra** (antes se agarraba con la posición guardada): pedido del usuario.
+- **Prioridad del puente sobre la visión** (nice 0 / 5 / 10) en vez de apagar la visión durante la cosecha: apagarla
+  y prenderla cuesta ~21 s y carga la Pi.
+- **La batería se corrige en el puente** (× 0,959) y no en el firmware antes de la demo, para no reflashear la S3.
+- **J1 sale de la canasta con el joystick** en vez de subir el despegue o el tiempo "sin cuentas" del firmware 20 (sin
+  reflashear antes de la demo); no se bajan los plazos de supervisión del mando por el teléfono lento.
