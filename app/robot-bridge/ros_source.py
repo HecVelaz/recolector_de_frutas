@@ -5,6 +5,12 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from time import monotonic, sleep
 from telemetry import finite_vector, range_value
+
+# 25/11: la S3 informa la batería ~4 % alta (divisor 100 k / 30 k y ADC del ESP32): 12,31 V con 11,8 V en el tester. Se
+# corrige acá para que el corte de 10,5 V del puente (control_gate) sea real; el BATERIA_BAJA de la S3 sigue con su
+# lectura (salta a ~10,06 V reales). MEDIR: un segundo punto con la batería más baja; después pasarlo al firmware
+# (BATERIA_DIVISOR en firmware/base/include/base_config.h)
+BATTERY_SCALE = 11.8 / 12.31
 from vision import CAMERAS
 
 
@@ -39,7 +45,7 @@ class RosReader:
 
         subscribe(String, '/base/estado', lambda m: store.put('base', m.data[:4096], bool(m.data.strip()), 'Texto de estado vacío' if not m.data.strip() else None))
         subscribe(String, '/brazo/estado', lambda m: store.put('arm', m.data[:4096], bool(m.data.strip()), 'Texto de estado vacío' if not m.data.strip() else None))
-        subscribe(BatteryState, '/battery', lambda m: store.put('battery', float(m.voltage) if math.isfinite(m.voltage) else None,
+        subscribe(BatteryState, '/battery', lambda m: store.put('battery', float(m.voltage) * BATTERY_SCALE if math.isfinite(m.voltage) else None,
                   math.isfinite(m.voltage) and m.voltage >= 0, 'Tensión no válida' if not math.isfinite(m.voltage) or m.voltage < 0 else None))
         subscribe(UInt8, '/bumpers', lambda m: store.put('bumpers', int(m.data)))
 
