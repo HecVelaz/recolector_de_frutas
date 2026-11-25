@@ -8,12 +8,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import py.edu.fiuna.arturito.data.GeofenceStorage
 import py.edu.fiuna.arturito.data.BridgeConnection
 import py.edu.fiuna.arturito.data.DEFAULT_MANUAL_LIMIT_MPS
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -151,16 +153,20 @@ fun RobotApp(initialTab: String = "Control", dark: Boolean = false, onToggleThem
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         BoxWithConstraints(Modifier.safeDrawingPadding()) {
-            if (maxWidth < 760.dp || maxHeight < 460.dp) {
+            // 25/11: en un teléfono acostado (~840 × 380 dp) el panel de la tablet se dibuja escalado hasta entrar en
+            // 760 × 460 dp; en vertical quedaría ilegible (< 70 %): se pide girarlo
+            val scale = minOf(1f, maxWidth / 760.dp, maxHeight / 460.dp)
+            val density = LocalDensity.current
+            if (scale < .7f) {
                 Column(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Arturito R2D2", style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(16.dp))
-                    Text("Usá la tablet en horizontal y ampliá la ventana para ver el panel de control.")
+                    Text("Usá la tablet o el teléfono en horizontal y ampliá la ventana para ver el panel de control.")
                     Spacer(Modifier.height(16.dp))
                     Badge("SIMULACIÓN", warning = true)
                 }
-            } else {
+            } else CompositionLocalProvider(LocalDensity provides Density(density.density * scale, density.fontScale)) {
                 Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         ConsoleNavigation(tab, ::navigate, dark, onToggleTheme)
