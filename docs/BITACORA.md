@@ -1126,3 +1126,7 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   la canasta con el joystick el brazo quedó 17° fuera de la franja y el firmware rechazaba todo mv (y el joystick de la
   app). Recuperado a mano desde la Pi: `j 3 58` → `mv 98.24 46.70 50.00` (cortó J2 "al revés" a 45,4°) → `mv 3 17 4`.
 - Arreglo: `move` baja J3 a 55° con `j` si queda así; `arm_to_rest` ya no manda el mv (100, J2, J3) plegado.
+- **Verificación con reintento** (pedido del usuario): después de cada agarre "hecho" se mide de nuevo ese limón con
+  el brazo en la canasta (fuera de la vista). Si no hay un limón a menos de `VERIFICAR_MM` (60 mm, punta.py) de donde
+  estaba: "hecho (verificado)". Si sigue: otro intento (`PICK_TRIES` = 2 en total, compartido con el reintento por un
+  corte del brazo); a la 2.ª sin arrancarlo: "falló: sigue en el árbol" y no cuenta. Cuesta hasta ~8 s por limón.

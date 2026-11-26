@@ -175,9 +175,11 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             await self.mission.task
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
 
-    async def recolector_run(self, views, count=2, extra=(), around=False, stops=4):
+    async def recolector_run(self, views, count=2, extra=(), around=False, stops=4, misses=0):
         """Modo Recolector: views = lo que ve la visión en cada medición, en orden (el escaneo primero; la última se
-        repite). scan_frames(owner, 0.) solo espera pares nuevos: no consume una vista."""
+        repite). scan_frames(owner, 0.) solo espera pares nuevos: no consume una vista. Un limón agarrado deja de verse,
+        salvo los primeros `misses` agarres (la pinza no lo arrancó)."""
+        gone, miss = set(), [misses]
         events, planned = [], []
         grasp = Mock(AGRUPAR_MM=35., DISPERSION_MAX=10., VERIFICAR_MM=40., REPOSO=(3., 17., 4.), MIN_POSICIONES=2,
                      DESPLEGAR=(100., 46.7, 80.))
@@ -192,6 +194,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
                 return []
             events.append(('mide', paused[0]))
             frames = views.pop(0) if len(views) > 1 else views[0]
+            frames = [[f for f in frame if (round(f[0]), round(f[1])) not in gone] for frame in frames]
             if enough is not None:   # corta apenas alcanza, como collect_frames
                 frames = next((frames[:k] for k in range(1, len(frames) + 1) if enough(frames[:k])), frames)
                 events.append(('imagenes', len(frames)))
@@ -206,6 +209,10 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
                 return
             events.append(('agarra', paused[0]))
             planned.append(self.grasp_target)
+            if miss[0]:
+                miss[0] -= 1
+            else:
+                gone.add(self.grasp_target)
             arm['arm_state'] = 'q=130,46.7,80;e=3,3,3;c=111'   # suelta en la canasta
 
         paused = [False]
@@ -271,6 +278,21 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.mission.status['state'], 'FINALIZADO', self.mission.status['message'])
         self.assertIn('salteado: no se vio', self.mission.status['message'])
         self.assertNotIn('sin verlo', self.mission.status['message'])
+
+    async def test_after_each_pick_it_checks_the_lemon_left_the_tree_and_tries_once_more(self):
+        # 25/11, usuario: "hecho" no aseguraba el limón en la pinza; se mide otra vez y, si sigue ahí, otro intento
+        a = (-560., 200., 140.)
+        events, planned = await self.recolector_run([[[a]] * 3], count=1, misses=1)
+        self.assertEqual(planned, [(-560, 200)] * 2)
+        message = self.mission.status['message']
+        self.assertIn('1 de 1', message)
+        self.assertIn('hecho (verificado, al 2.º intento)', message)
+    async def test_a_lemon_still_on_the_tree_after_two_picks_fails_without_a_third(self):
+        a = (-560., 200., 140.)
+        events, planned = await self.recolector_run([[[a]] * 3], count=1, misses=2)
+        self.assertEqual(len(planned), 2)
+        self.assertIn('0 de 1', self.mission.status['message'])
+        self.assertIn('sigue en el árbol después de 2 intentos', self.mission.status['message'])
 
     async def test_a_failed_pick_goes_on_with_the_next_lemon(self):
         # 25/11: con la pinza vacía, al reposo (no a la canasta); si el primer intento corta, prueba de nuevo y sigue

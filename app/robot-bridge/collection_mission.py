@@ -28,6 +28,7 @@ from physical_control import OpenManual
 from vision_3d import with_displacement
 
 MAX_LEMONS = 5
+PICK_TRIES = 2          # 25/11: agarres por limón (un corte del brazo o el limón todavía en el árbol)
 MEASURE_SECONDS = 8.     # 21/11: 5 -> 8 s (con el v4 y la disparidad a ~1-2 Hz llegan menos posiciones)
 MV_TIMEOUT = 90.         # TIMEOUT_MV de recolectar.py
 MV_RETRIES = 2           # punta.ejecutar: cortes por atraso con carga
@@ -382,8 +383,11 @@ class CollectionMission:
         if start is None:
             raise RuntimeError('Falta odometría para recordar dónde están los limones')
         remaining = [arm_to_world(lemon, start) for lemon in targets]
-        retried = [False] * len(remaining)
-        self.run_until = monotonic() + 120. + 150. * len(targets)
+        tries = [0] * len(remaining)
+        # 25/11, usuario: "hecho" no aseguraba que el limón quedó en la pinza. Después de cada agarre se mide otra vez
+        # ese limón (el brazo en la canasta, fuera de la vista): si sigue en el árbol, otro intento (PICK_TRIES en total)
+        verify = None
+        self.run_until = monotonic() + 120. + 160. * len(targets)
         self.update('BUSCANDO', f'{name}lista guardada: {len(targets)} limón(es); se cosechan todos, de a uno.')
         done = 0
         while remaining:
@@ -393,9 +397,9 @@ class CollectionMission:
             here = [world_to_arm(point, odom) for point in remaining]
             # primero los que ya están en la zona buena (sin mover la base); si no, el más cercano
             ready = [i for i, lemon in enumerate(here) if in_zone(lemon)] or range(len(here))
-            index = min(ready, key=lambda i: math.hypot(here[i][0], here[i][1]))
+            index = verify if verify is not None else min(ready, key=lambda i: math.hypot(here[i][0], here[i][1]))
             number = len(targets) - len(remaining) + 1
-            if not in_zone(here[index]):
+            if verify is None and not in_zone(here[index]):
                 self.stage = 'planificación de la reubicación'
                 # 25/11: desde la canasta el Móvil anda con el brazo ahí (no al reposo: 16 s) y despliega recién
                 # al agarrar (pick_here). En DESPLEGAR tapaba la cámara izquierda al medir: 40 s sin pares, cortó
@@ -423,7 +427,8 @@ class CollectionMission:
             self.zone = source_value(self.control.snapshot(), 'odom')
             if self.zone is None:
                 raise RuntimeError('Falta odometría reciente al llegar')
-            self.update('BUSCANDO', f'{name}midiendo el limón {number} de {len(targets)} con estéreo.')
+            self.update('BUSCANDO', f'{name}' + (f'¿quedó el limón {number} en el árbol? Midiendo con estéreo.'
+                        if verify is not None else f'midiendo el limón {number} de {len(targets)} con estéreo.'))
             await self.scan_frames(owner, 0.)   # pares nuevos, desde acá
             expected = world_to_arm(remaining[index], self.zone)
 
@@ -438,25 +443,47 @@ class CollectionMission:
             measured = await self.measure_lemons(owner, grasp, tf, enough=steady)
             here = refresh_positions(remaining, measured, self.zone)
             lemon = here[index]
+            if verify is not None and math.dist(lemon, picked_at) >= grasp.VERIFICAR_MM:
+                remaining[index] = remaining[index][:3] + (False,)   # el que se ve es otro (como punta.cosechar)
             if not remaining[index][3]:   # 25/11, usuario: si no se ve (se movió o cayó), no se agarra
-                results.append((lemon, 'salteado: no se vio al medir (se movió, se cayó o quedó tapado)'))
+                if verify is not None:   # ya no está en el árbol: lo arrancó
+                    results[-1] = (results[-1][0], results[-1][1] + (' (verificado'
+                                   + (', al 2.º intento)' if tries[index] > 1 else ')')))
+                else:
+                    results.append((lemon, 'salteado: no se vio al medir (se movió, se cayó o quedó tapado)'))
                 remaining.pop(index)
-                retried.pop(index)
-                self.zone = None
+                tries.pop(index)
+                self.zone, verify = None, None
                 continue
+            if verify is not None:   # sigue en el árbol: no quedó en la pinza
+                verify = None
+                done -= 1
+                if tries[index] >= PICK_TRIES:
+                    results[-1] = (results[-1][0], f'falló: sigue en el árbol después de {tries[index]} intentos')
+                    remaining.pop(index)
+                    tries.pop(index)
+                    self.zone = None
+                    continue
+                results.pop()
+                self.update('BUSCANDO', f'{name}el limón {number} sigue en el árbol: otro intento.')
+                self.run_until += 150.
             self.stage = 'cosecha'
+            tries[index] += 1
+            picked_at = lemon[:3]
             picked = await self.pick_here(owner, grasp, lemon[:3], results)
             done += picked
             self.zone = None
+            if picked:
+                verify = index
+                continue
             # 25/11: J1 no despegó de la canasta (6 cortes "sin cuentas", batería a 10,8 V) y se perdió un limón
             # a 59 cm; el brazo se recuperó solo. Un corte del brazo es pasajero: ese limón, una vez más
-            if not picked and results[-1][1].startswith('falló') and not retried[index]:
-                retried[index] = True
+            if not picked and results[-1][1].startswith('falló') and tries[index] < PICK_TRIES:
                 results[-1] = (results[-1][0], results[-1][1] + ' (se reintentó)')
                 self.run_until += 150.
                 continue
             remaining.pop(index)
-            retried.pop(index)
+            tries.pop(index)
         return done
 
     async def go_to_stop(self, owner, navigation, trunk_world, heading, stop, label, ccw=True):
