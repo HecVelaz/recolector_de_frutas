@@ -693,6 +693,9 @@ class FakeArm:
                 self.feedback, self.home_detail = (now, 'parked'), None
                 if self.angles is not None:
                     self.angles[:] = [float(x) for x in command.split()[1:]]
+        elif self.angles is not None and command.startswith('j '):
+            joint, target = command.split()[1:]
+            self.angles[int(joint) - 1] = float(target)
         elif re.match(r'^(pz|mn) (?!w )', command):
             self.feedback = (now, 'servo_ready')
 
@@ -755,6 +758,19 @@ class GraspTest(unittest.IsolatedAsyncioTestCase):
         self.control.arm = FakeArm(['sin cuentas del encoder'] * 3)
         with self.assertRaises(ArmRejected):
             await self.mission.move('mision', (100., 46.7, 80.), passing=True)
+
+    async def test_folded_with_j2_above_the_zone_lowers_j3_before_going_to_rest(self):
+        # 25/11, en el robot: soltó con J2 en 53,9°; con J1 afuera de la canasta el firmware rechazaba todo mv
+        self.angles[:] = [130., 53.85, 79.98]
+        original = SimpleNamespace(REPOSO=(3., 17., 4.), SOLTAR_Q2_MIN_PY=42.)
+        self.assertTrue(await self.mission.arm_to_rest('mision', original))
+        sent = [c for c in self.control.arm.sent if not c.startswith('jv -')]
+        self.assertEqual(sent, ['jv 0 0 0', 'j 3 55.0', 'mvp 100.00 46.70 50.00', 'mv 3.00 17.00 4.00'])
+        # plegado dentro de la zona (lo normal): sin el j
+        self.angles[:] = [130., 46.7, 80.]
+        self.control.arm = FakeArm(angles=self.angles)
+        await self.mission.arm_to_rest('mision', original)
+        self.assertNotIn('j 3 55.0', self.control.arm.sent)
 
     async def test_leaving_the_basket_j1_goes_with_the_joystick_first(self):
         # 25/11: desde la canasta el mv cortaba "sin cuentas"; J1 sale con jv hasta el destino y el mv termina

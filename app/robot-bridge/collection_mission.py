@@ -42,6 +42,10 @@ STUCK_NEAR_DEG = 2.
 # destino 80 intentaba corregir 0,04° en la zona dura). Con J1 pasada J1_MAX_NORMAL el brazo tiene que estar plegado
 # (config.h SOLTAR_*): si J2 y J3 ya están dentro de esa zona, se quedan donde están y solo gira J1
 J1_MAX_NORMAL, FOLDED_Q2, FOLDED_Q3_MIN = 118., (42.3, 50.7), 78.3
+# 25/11, en el robot: después de soltar J2 quedó en 53,9° (fuera de la zona plegada); con J1 afuera de la canasta el
+# brazo quedó 17° fuera de la franja y el firmware rechazaba todo mv ("volver adentro con j"). J3 a UNFOLD_J3 primero:
+# adentro de la franja para J2 entre ~51° y ~75° (con J2 en 53,9°: J3 de 29,8° a 61,9°).
+UNFOLD_J3 = 55.
 # 25/11: desde la canasta (J1 130°) J1 no despega con "mv": corta "sin cuentas" a los 150 ms (firmware 20, CFG_J1) aun
 # con 45 % de despegue (9 cortes seguidos); con el joystick (sin ese corte) sale bien. Para salir de la canasta, J1 va
 # con "jv" (J1_JOG_AXIS, ~11 °/s) hasta su destino y el "mv" termina J2/J3; si no avanza en J1_JOG_STALL_S, sigue el mv
@@ -725,7 +729,8 @@ class CollectionMission:
         if max(abs(a - b) for a, b in zip(s, original.REPOSO)) <= 3.:
             return True
         if s[1] >= original.SOLTAR_Q2_MIN_PY and s[2] >= 78.:
-            path = ([(100., s[1], s[2])] if s[0] > 100.5 else []) + [(100., 46.7, 50.), tuple(original.REPOSO)]
+            # J1 sale de la canasta con el joystick (move); un mv a (100, J2, J3) plegado quedaba fuera de la franja
+            path = [(100., 46.7, 50.), tuple(original.REPOSO)]
         else:
             path, _ = await self.plan(owner, original, 'rest_plan', s)
             if path is None:
@@ -978,6 +983,20 @@ class CollectionMission:
             self.control.arm.send('jv 0 0 0')
         await self.settle(owner, .6)
 
+    async def unfold_j3(self, owner):
+        """Plegado con J2 por encima de la zona y J1 afuera de la canasta (fuera de la franja): J3 a UNFOLD_J3 con "j",
+        lo único que el firmware deja hacer ahí (volver adentro)."""
+        self.update('INTERVINIENDO', 'Bajando J3 a la franja')
+        self.control.arm.send(f'j 3 {UNFOLD_J3:.1f}')
+        until = monotonic() + 15.
+        while monotonic() < until:
+            self.cycle(owner)
+            if abs(arm_angles(self.control.snapshot().get('arm_state'))[2] - UNFOLD_J3) <= 1.5:
+                await self.settle(owner, .4)
+                return
+            await asyncio.sleep(.05)
+        raise ArmRejected(f'J3 no bajó a {UNFOLD_J3:.0f}° (fuera de la franja): bajala con el joystick y hacé el homing')
+
     async def move(self, owner, q, passing=False):
         """Como punta.ejecutar con un punto: mv (o mvp de paso) y, si corta por atraso con carga, repetir desde donde
         quedó hasta MV_RETRIES veces. Los cortes de seguridad (franja, caja, plegado) no se repiten. Saliendo de la
@@ -986,6 +1005,8 @@ class CollectionMission:
         if now[0] > J1_MAX_NORMAL and q[0] < now[0] - 2.:
             await self.jog_j1_out(owner, q[0])
             now = arm_angles(self.control.snapshot().get('arm_state'))
+        if now[0] <= J1_MAX_NORMAL and now[1] > FOLDED_Q2[1] and now[2] >= FOLDED_Q3_MIN:
+            await self.unfold_j3(owner)
         if q[0] > J1_MAX_NORMAL and FOLDED_Q2[0] <= now[1] <= FOLDED_Q2[1] and now[2] >= FOLDED_Q3_MIN:
             q = (q[0], now[1], now[2])
         nudged = False

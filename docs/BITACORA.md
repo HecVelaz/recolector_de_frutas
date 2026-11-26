@@ -1116,3 +1116,13 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
 - Pi: `ros_source.py` y `telemetry.py` nuevos en `~/arturito-bridge-0.9.0` (copias `*.antes_lidar`); solo se cortó y relanzó el puente y el agente del brazo (S3 y visión siguieron).
 - WROOM, 12 V apagados: respaldo completo `~/arturito-build/20261125_lidar/respaldo_wroom_20261125.bin` (4 MB; a 460800 el CH340 corrompe, se leyó a 115200, ~7 min) y `write-flash 0x10000 firmware.bin` (20-brazo-coordinado env ros, `67f5d7f`, sha256 0ae6269b…), hash verificado.
 - `/range/lidar_izq` llega con frame `lidar_izq_link`: 0,28–0,29 m con el robot quieto. Falta comparar con cinta y ver la fila en la app.
+
+### 2026-11-25 ~22:30–22:50 — Primera prueba de Rodear árbol con lidar (Claude)
+- 1.ª corrida: se cortaba al ~1 s ("Se interrumpió el control de la recolección"): `lidar_trim` esperaba con sleep sin
+  mandar consignas. Arreglado con `settle` (`4107e26`).
+- 2.ª corrida (2 paradas): parada 1 maceta a 29 cm → se corrió 13 cm afuera; parada 2 llegó a 54 cm → 12 cm hacia el
+  árbol. Un limón agarrado en cada parada. Tronco estimado por los limones: 63 cm de J1 y 34 adelante.
+- Al final, reposo del brazo: J2 había quedado en 53,9° tras soltar (fuera de la zona plegada 42–51°); al sacar J1 de
+  la canasta con el joystick el brazo quedó 17° fuera de la franja y el firmware rechazaba todo mv (y el joystick de la
+  app). Recuperado a mano desde la Pi: `j 3 58` → `mv 98.24 46.70 50.00` (cortó J2 "al revés" a 45,4°) → `mv 3 17 4`.
+- Arreglo: `move` baja J3 a 55° con `j` si queda así; `arm_to_rest` ya no manda el mv (100, J2, J3) plegado.
