@@ -1,0 +1,239 @@
+<title>Demo de Arturito</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Lista de pasos con casillas (como checklist_brazo) + tabla de recuperaciones; una columna, legible en la tablet */
+:root {
+  --fondo: #f6f5f1; --carta: #ffffff; --texto: #1d1d1b; --suave: #5f5e58; --borde: #dcdad2;
+  --acento: #2f6f4f; --peligro: #a8321e; --peligro-fondo: #fbeae6; --aviso: #8a5a00; --aviso-fondo: #fdf3dc;
+  --codigo: #efede6; --hecho: #9a988f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #171716; --carta: #222220; --texto: #ecebe6; --suave: #a7a59c; --borde: #3a3935;
+    --acento: #6fc39a; --peligro: #ff8a73; --peligro-fondo: #3a1f19; --aviso: #f0c060; --aviso-fondo: #352a12;
+    --codigo: #2e2d2a; --hecho: #6f6d66; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fondo: #171716; --carta: #222220; --texto: #ecebe6; --suave: #a7a59c; --borde: #3a3935;
+  --acento: #6fc39a; --peligro: #ff8a73; --peligro-fondo: #3a1f19; --aviso: #f0c060; --aviso-fondo: #352a12;
+  --codigo: #2e2d2a; --hecho: #6f6d66; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding-block: 24px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 1.6rem; margin: 0 0 4px; text-wrap: balance; }
+.sub { color: var(--suave); margin: 0 0 16px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10;
+  background: var(--fondo); }
+.barra { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--fondo); padding: 10px 0;
+  border-bottom: 1px solid var(--borde); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.progreso { flex: 1; min-width: 160px; height: 8px; background: var(--borde); border-radius: 4px; overflow: hidden; }
+.progreso div { height: 100%; width: 0; background: var(--acento); transition: width .2s; }
+#cuenta { font-variant-numeric: tabular-nums; color: var(--suave); }
+nav.saltos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+nav.saltos a { color: var(--acento); font-size: .92rem; text-decoration: none; border: 1px solid var(--borde);
+  border-radius: 999px; padding: 2px 10px; background: var(--carta); }
+button { font: inherit; background: var(--carta); color: var(--texto); border: 1px solid var(--borde); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+section { background: var(--carta); border: 1px solid var(--borde); border-radius: 10px; padding: 16px; margin-top: 18px; }
+section h2 { font-size: 1.15rem; margin: 0 0 4px; }
+section > p { margin: 4px 0 10px; color: var(--suave); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { border-top: 1px solid var(--borde); }
+li:first-child { border-top: 0; }
+label { display: flex; gap: 10px; padding: 9px 2px; cursor: pointer; align-items: flex-start; }
+input[type=checkbox] { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--acento); }
+label:has(input:checked) .t { color: var(--hecho); text-decoration: line-through; }
+.t { min-width: 0; }
+.t small { display: block; color: var(--suave); }
+label:has(input:checked) .t small { color: var(--hecho); }
+code { background: var(--codigo); padding: 0 4px; border-radius: 4px; font-size: .92em; overflow-wrap: anywhere; }
+.alerta { border-left: 4px solid var(--peligro); background: var(--peligro-fondo); padding: 10px 12px; border-radius: 6px; margin: 10px 0; }
+.nota { border-left: 4px solid var(--aviso); background: var(--aviso-fondo); padding: 10px 12px; border-radius: 6px; margin: 10px 0; }
+.cadena { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .88rem; background: var(--codigo);
+  padding: 10px 12px; border-radius: 6px; overflow-x: auto; white-space: pre; margin: 6px 0; }
+.tabla { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; margin: 6px 0 4px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+th { color: var(--suave); font-weight: 600; }
+td:first-child { width: 34%; }
+td b { color: var(--peligro); font-weight: 600; }
+ol { margin: 4px 0; padding-left: 20px; }
+ol li { border: 0; padding: 2px 0; }
+@media (max-width: 560px) { td:first-child { width: auto; } }
+@media (prefers-reduced-motion: reduce) { .progreso div { transition: none; } }
+</style>
+
+<main>
+  <h1>Demo de Arturito</h1>
+  <p class="sub">Viernes 4/12/2026, afuera. Pasos del día y qué hacer si algo falla. Las casillas se guardan solo en
+    este dispositivo.</p>
+
+  <div class="barra">
+    <div class="progreso" aria-hidden="true"><div id="barra"></div></div>
+    <span id="cuenta">0 / 0</span>
+    <button id="borrar" type="button">Borrar las marcas</button>
+  </div>
+  <nav class="saltos" aria-label="Secciones">
+    <a href="#antes">Antes</a><a href="#encendido">Encendido</a><a href="#mision">Misión</a>
+    <a href="#problemas">Si algo falla</a><a href="#apagado">Apagado</a>
+  </nav>
+
+  <section id="antes">
+    <h2>El día anterior</h2>
+    <ul>
+      <li><label><input type="checkbox" id="c1"><span class="t">LiPo 3S cargada con el balanceador
+        <small>Por debajo de ~11 V el brazo no tiene fuerza; el firmware avisa recién a 10,5 V. Llevar la de repuesto si hay.</small></span></label></li>
+      <li><label><input type="checkbox" id="c2"><span class="t">Power bank PB2020MI cargado (Pi y ESP32)</span></label></li>
+      <li><label><input type="checkbox" id="c3"><span class="t">Correa de J1 tensa y sin dientes gastados
+        <small>Salta si la pinza se engancha en una rama (26/11, dos veces).</small></span></label></li>
+      <li><label><input type="checkbox" id="c4"><span class="t">Cables USB de la S3 y de la WROOM sujetos
+        <small>Con la base en movimiento se cayeron antes (error -71).</small></span></label></li>
+      <li><label><input type="checkbox" id="c5"><span class="t">Teléfono con la app Arturito y Tailscale, conectado a la red de la Pi
+        <small>Fuera de la red de la Pi hay ~1 s de demora en el joystick.</small></span></label></li>
+      <li><label><input type="checkbox" id="c6"><span class="t">Notebook con acceso por ssh a la Pi (para las recuperaciones de abajo)
+        <small><code>ssh r2d2@100.116.96.71</code></small></span></label></li>
+    </ul>
+  </section>
+
+  <section id="encendido">
+    <h2>Encendido</h2>
+    <p>En este orden. La Pi arranca sola los agentes, la visión a pedido y el puente (<code>arturito.service</code>).</p>
+    <ul>
+      <li><label><input type="checkbox" id="c7"><span class="t">Seta apretada y selector WEG en OFF: sin 12 V</span></label></li>
+      <li><label><input type="checkbox" id="c8"><span class="t">Prender el power bank y esperar ~1 min a la Pi</span></label></li>
+      <li><label><input type="checkbox" id="c9"><span class="t">La app se conecta (pestaña Conexión, <code>http://100.116.96.71:18006</code>)</span></label></li>
+      <li><label><input type="checkbox" id="c10"><span class="t">Pestaña Estado: base y brazo con datos, LiDAR izquierdo con lectura
+        <small>Si la base no aparece, ver «La base no responde» abajo.</small></span></label></li>
+      <li><label><input type="checkbox" id="c11"><span class="t">Soltar la seta y selector WEG en ON (12 V)
+        <small>Batería en la app: más de 11,2 V para empezar.</small></span></label></li>
+      <li><label><input type="checkbox" id="c12"><span class="t">Homing: mantener presionado «Hacer homing» hasta que termine
+        <small>Con la Pi recién prendida la WROOM no tiene cero. J1 va última; si toca su final de carrera rápido, se aleja ~2° y lo vuelve a tomar despacio: es normal.</small></span></label></li>
+      <li><label><input type="checkbox" id="c13"><span class="t">Pestaña Visión: a los ~15 s se ven las cajas de los limones</span></label></li>
+    </ul>
+  </section>
+
+  <section id="mision">
+    <h2>Misión</h2>
+    <ul>
+      <li><label><input type="checkbox" id="c14"><span class="t">Robot con la maceta a su izquierda, a ~30–40 cm del lidar
+        <small>Recolector y Rodear árbol corrigen solos hasta 30–36 cm.</small></span></label></li>
+      <li><label><input type="checkbox" id="c15"><span class="t">Limones a la vista de las dos cámaras, sin hojas delante
+        <small>Una hoja delante del limón, dentro de su caja, hace medir la hoja (61 cm en vez de 94 el 26/11).</small></span></label></li>
+      <li><label><input type="checkbox" id="c16"><span class="t">Espacio libre detrás del robot
+        <small>El Recolector vuelve al origen en marcha atrás y no hay sensor atrás.</small></span></label></li>
+      <li><label><input type="checkbox" id="c17"><span class="t">Control → «Iniciar Modo Recolector» (o «Iniciar Rodear árbol» con las paradas)</span></label></li>
+      <li><label><input type="checkbox" id="c18"><span class="t">Durante la misión: una persona con la mano en la seta
+        <small>Que el primer intento de agarre falle es normal: mide de nuevo y prueba otra vez (2 intentos).</small></span></label></li>
+    </ul>
+  </section>
+
+  <section id="problemas">
+    <h2>Si algo falla</h2>
+    <p>Lo que ya pasó en las pruebas y cómo se resolvió. Los comandos van desde la notebook, por ssh en la Pi.</p>
+    <div class="alerta">Antes de tocar cables o una placa: <strong>12 V apagados</strong> (seta o selector WEG).
+      Nunca flashear la WROOM con <code>firmware/brazo</code>.</div>
+    <div class="tabla">
+      <table>
+        <thead><tr><th>Qué se ve</th><th>Qué hacer</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>«J1 aprieta su final de carrera… saltó la correa»</b>, o J1 empuja contra el tope</td>
+            <td><ol>
+              <li>12 V apagados. Volver a montar y tensar la correa de J1.</li>
+              <li>12 V prendidos. «Hacer homing» en la app (deja J1 quieta y la busca el firmware).</li>
+              <li>Si la app no puede (brazo plegado en la canasta), a mano, con el J1 que marca la app:</li>
+            </ol>
+            <div class="cadena">ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'mv &lt;J1&gt; 17 4'}"
+ros2 topic pub --once /brazo/comando std_msgs/msg/String "{data: 'h'}"</div>
+            Después probar un agarre suelto: si se movió el soporte, el agarre puede errar unos cm.</td>
+          </tr>
+          <tr>
+            <td><b>«El brazo no tiene referencia»</b> o «Hacé el homing»</td>
+            <td>La WROOM perdió el cero (se reinició la Pi o la placa). «Hacer homing» en la app.</td>
+          </tr>
+          <tr>
+            <td><b>Homing cortado</b> por «fuera de la franja» o «Bajarla antes»</td>
+            <td>La app reintenta sola hasta 3 veces. Si sigue: Control en modo brazo, bajar J3 y J2 con el joystick y repetir.</td>
+          </tr>
+          <tr>
+            <td><b>La base no responde</b>: «Estado del Móvil desconocido», BATTERY_TOO_OLD, sin odometría</td>
+            <td><ol>
+              <li>12 V apagados. Desenchufar y volver a enchufar el USB de la S3.</li>
+              <li>Relanzar los agentes (no reinicia nada que ande):</li>
+            </ol>
+            <div class="cadena">bash ~/arturito-bridge-0.9.0/arrancar_pi.sh</div>
+            Si sigue sin datos: reiniciar la Pi (apagar y prender el power bank) y hacer el homing.</td>
+          </tr>
+          <tr>
+            <td><b>La visión no muestra limones</b> o se quedó congelada</td>
+            <td>Salir de la pestaña Visión, esperar 40 s y volver a entrar. Si no, desde la notebook:
+            <div class="cadena">bash ~/vision_estereo/scripts/parar_vision.sh
+bash ~/scripts/vision.sh</div>
+            Nunca <code>pkill</code> sueltos: dejan procesos huérfanos.</td>
+          </tr>
+          <tr>
+            <td><b>Un limón con una distancia rara</b> (mucho más cerca que los otros)</td>
+            <td>Casi siempre una hoja o rama delante de ese limón. Correrla, o girar el arbolito.</td>
+          </tr>
+          <tr>
+            <td><b>«Se perdió el mando del Móvil»</b>, BASE_SAFETY_NOT_OK o RANGE_FRONT_TOO_OLD en una misión</td>
+            <td>Corte del enlace USB de la S3 o un dato viejo del ultrasonido. Mirar el cable, esperar que la base vuelva en
+              Estado y lanzar la misión de nuevo. Si se repite, como «La base no responde».</td>
+          </tr>
+          <tr>
+            <td><b>BUMPER</b> o <b>SETA</b> en la app</td>
+            <td>Algo apretó un bumper o la seta está apretada. Liberar y esperar a que Estado vuelva a «seguridad=ok».</td>
+          </tr>
+          <tr>
+            <td><b>El brazo no levanta</b> o se queda corto</td>
+            <td>Batería baja: mirar el voltaje en Estado. Por debajo de ~11 V, cambiar o cargar la LiPo.</td>
+          </tr>
+          <tr>
+            <td><b>La app no conecta</b></td>
+            <td>Revisar que el teléfono esté en la red de la Pi y con Tailscale. Si el puente se cayó:
+            <div class="cadena">bash ~/arturito-bridge-0.9.0/arrancar_pi.sh</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nota">Plan B si el robot no puede cosechar: mostrar el escaneo (Visión con las distancias), el homing y el
+      movimiento de la base, y contar la misión con el video de respaldo.</div>
+  </section>
+
+  <section id="apagado">
+    <h2>Apagado</h2>
+    <ul>
+      <li><label><input type="checkbox" id="c19"><span class="t">Brazo en reposo (la misión termina ahí; si no, «Hacer homing»)</span></label></li>
+      <li><label><input type="checkbox" id="c20"><span class="t">Seta apretada y selector WEG en OFF</span></label></li>
+      <li><label><input type="checkbox" id="c21"><span class="t">Apagar el power bank (Pi y ESP32)</span></label></li>
+      <li><label><input type="checkbox" id="c22"><span class="t">Desconectar la LiPo y guardarla (no dejarla conectada sin BMS)</span></label></li>
+    </ul>
+  </section>
+</main>
+
+<script>
+(function () {
+  var cajas = Array.prototype.slice.call(document.querySelectorAll('input[type=checkbox]'));
+  var CLAVE = 'checklist_demo_v1';
+  var guardado = [];
+  try { guardado = JSON.parse(localStorage.getItem(CLAVE) || '[]'); } catch (e) {}
+  cajas.forEach(function (c, i) { c.checked = !!guardado[i]; });
+  function actualizar() {
+    var n = cajas.filter(function (c) { return c.checked; }).length;
+    document.getElementById('cuenta').textContent = n + ' / ' + cajas.length;
+    document.getElementById('barra').style.width = (100 * n / cajas.length) + '%';
+    try { localStorage.setItem(CLAVE, JSON.stringify(cajas.map(function (c) { return c.checked; }))); } catch (e) {}
+  }
+  cajas.forEach(function (c) { c.addEventListener('change', actualizar); });
+  document.getElementById('borrar').addEventListener('click', function () {
+    cajas.forEach(function (c) { c.checked = false; });
+    actualizar();
+  });
+  actualizar();
+})();
+</script>
