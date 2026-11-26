@@ -1136,6 +1136,17 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   detección: el localizador no publica `/limon/todos` si ningún limón tiene profundidad válida (0,40–0,95 m, zona con
   disparidad). Arreglo: `scan_frames` devuelve None con profundidad y sin limones durante `NO_LEMON_S` (4 s): el
   limón se saltea ("no se vio") o la parada queda sin limones; sin profundidad sigue siendo error de cámaras.
+- **~23:15–23:25, Rodear árbol 4 paradas, franja 40–44 cm, con arco:** los 3 arcos anduvieron (P2 llegó a 54 cm → el
+  lidar corrigió 12 cm; P3 38; P4 en franja). Tronco estimado por los limones: 69 cm de J1 y **40 adelante** (lo normal
+  15). Verificación: en los 5 limones el 1.er intento "sigue en el árbol" y el 2.º verificado; el usuario: **"falla
+  todas, por unos centímetros"**. Cortó en la P4 con `BATTERY_TOO_OLD`: la S3 dejó de publicar (agente vivo, USB
+  presente). Recuperada con 12 V apagados: `esptool --before no-reset` no conectó (no estaba en descarga) →
+  `esptool --before usb-reset --after watchdog-reset chip-id` → agente a mano (`arrancar_pi.sh` no lo relanza si ya
+  corre el del brazo: `agente_base.sh` ve "algún agente") → sesión, 12,3 V.
+- **Cámara:** con la TF del 12/11 mira 13,8° hacia abajo (rumbo 90,6°, giro 2,4°; 38,3 cm arriba de J1). Ajuste fino
+  vigente: 5 puntos del 21/11; desde entonces cambiaron a mano AGARRAR_ADELANTE (40 → −27 mm) y GRASP_RAISE
+  (20 → 32,5 mm). Error esperado de la TF ~22 mm. Plan: ajuste fino de 9 puntos con `punta.py ajustar` (firmware por
+  serie), sin tocar constantes de a una.
 - **Demo: viernes 4/12** (el usuario, 25/11; antes 27/11). Corregido en CLAUDE.md, ESTADO, PENDIENTES y la memoria.
 - **Rodear árbol en arco** (pedido del usuario: girar en círculo y parar igual en las 4 paradas): ver ESTADO. El lidar
   no sirve durante el arco (19,6 cm delante del eje de las ruedas: el haz pasa delante de la maceta de 15 cm de radio).
@@ -1149,3 +1160,19 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   La recuperación del homing mandaba `mv 130.03 46.70 50.00` (fuera de rango y, con J1 > 118°, no plegado). Arreglo
   (`eb6d2d8`, en la Pi 23:55; copia `physical_control.py.antes_canasta`): con J1 > 118° primero `mv 100 J2 J3`
   plegado esperando a J1, después el intermedio y el reposo (`HOME_RECOVERIES` 3).
+
+## 2026-11-26 (madrugada) — Visión trabada, reinicio de la Pi, homing cortado por el frente
+- **Homing desde la canasta (nuevo):** J1 salió a 100° y J2/J3 al intermedio; yendo al reposo lo cortaron
+  `RANGE_FRONT_NOT_FRESH` (23:57:28) y `RANGE_FRONT_TOO_OLD` (23:57:44, brazo en 89,8 / 35,9 / 34,7): la S3 dejó de
+  mandar el frente más de 0,5 s (enlace USB). El homing (solo brazo) igual exige el frente (`control_gate.REQUIRED`).
+- **La app sin YOLO ni estéreo:** un `localizador_node` huérfano (padre 1, 83 % de CPU) de una visión anterior; la
+  pausa de la visión (`VISION_STOP` = `pkill -TERM -f start_limon.sh`) deja vivos detector y localizador. Reiniciada
+  la visión dos veces: la cámara derecha quedaba en "process started" (sin iniciar libcamera; las dos en I2C 10-001a y
+  11-001a). **Reinicio de la Pi** (usuario, ~00:06): las dos cámaras, ~2 FPS, 2 detecciones; agentes con sesión.
+  La WROOM perdió el cero (`c=000`): falta homing.
+- Error de Claude: `pkill -f start_limon.sh` sin anclar cortó su propia sesión ssh (trampa ya anotada en
+  `firmware/CLAUDE.md`). `ros2 topic echo` se cuelga seguido: usar `timeout -k`.
+- Commits del 25/11 noche (Claude): `f8e57e3` lidar en la app → `a8301df`/`99cb555`/`6b004f2` corrección por lidar
+  (38–42 → 40–44 → 20–30 cm) → `4107e26` settle → `76110e2` salida de la canasta → `899d5e4` verificación con reintento
+  → `2b7e061` "no se ve" → `cc7b4c1` arco → `f578857` HC-SR04 → `eb6d2d8` homing desde la canasta. Todo en la Pi.
+  pruebas-esp32: `67f5d7f` (TFmini-S en 20-brazo-coordinado, flasheado). Sin push.

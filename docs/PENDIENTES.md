@@ -2,20 +2,25 @@
 
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; era el 27/11). Estado: `ESTADO.md`.
 
-0000z. **Para la demo (25/11 noche), en orden** (detalle en la bitácora del 25/11):
-   1. **Probar en el robot:** salida de la canasta con el joystick (`jog_j1_out`) y el homing desde el brazo plegado.
-   2. **Corte por "sin comandos" (BASE_SAFETY_NOT_OK):** si vuelve, leer `Timeout (0:00:00` en `bridge.log` (traza
-      de faulthandler) y arreglar ahí; sacar `watch_stalls` de `run_pi.py` cuando se sepa.
-   3. Recolector en una estación: 3 limones seguidos con la batería cargada; después Rodear árbol con 2 paradas.
-   4. Teléfono: sin ahorro de batería y en la red de la Pi (o hotspot); medir `tailscale ping` < 50 ms. Si no, tablet.
-   5. `SENSOR_AHEAD_MM` (MEDIR) en `collection_mission.py`; segundo punto de la batería para `BATTERY_SCALE`.
-   5b. **Prioridad actual por pedido del usuario: TFmini-S + Estado de la app (25/11, ~21:31).** Cableado
-       confirmado (verde GPIO 13 WROOM, rojo 5 V, negro GND; blanco aislado). Firmware 20 y puente implementados;
-       APK 0.15.6 compilada, **sin instalar ni flashear ni copiar a la Pi**. Ver `docs/CONTINUAR_CLAUDE.md`.
-       Repetir suite completa del puente en `/tmp/arturito-lidar-venv` con NumPy/OpenCV ya instalados; no commitear
-       si falla. Después instalar en Poco X6 Pro, avisar antes de copiar a la Pi, confirmar 12 V apagados antes
-       del respaldo/flasheo de la WROOM. Medir tensión, validar distancias quieto, medir montaje antes de navegar.
-   6. Después de la demo: `sinCuentasMs` de J1 y `BATERIA_DIVISOR` en el firmware.
+0000z. **Para la demo (26/11 en adelante), en orden** (detalle en la bitácora del 25–26/11):
+   1. **Homing** (la WROOM perdió el cero con el reinicio de la Pi) y probar Rodear árbol 20–30 cm con 2 paradas.
+   2. **Ajuste fino de la pinza con 9 puntos** (usuario: "falla todas, por unos centímetros"): WROOM al firmware por
+      serie (12 V apagados, respaldar), `punta.py ajustar` en 9 limones repartidos, `ajuste fin`, volver al env `ros`
+      (`~/arturito-build/20261125_lidar/firmware.bin` en 0x10000) y comprobar `/range/lidar_izq`. Probar 3 limones sin
+      tocar constantes; recién después ajustar una sola. Si no alcanza: rehacer la TF cámara → brazo (12/11, ~22 mm).
+   3. **Visión a pedido:** `VISION_STOP` (`pkill -TERM -f start_limon.sh`) deja vivos `detector_node` y
+      `localizador_node` (huérfanos; el 25/11 uno al 83 % y la cámara derecha trabada → reinicio de la Pi). Cortar el
+      grupo entero o sacar la pausa (`VISION_ON_DEMAND`).
+   4. **Homing sin el frente:** `control_gate.REQUIRED` pide `range_front` también para mover solo el brazo; el
+      25/11 cortó dos veces el homing. Y `arrancar_pi.sh`: relanzar el agente de la S3 aunque corra el del brazo.
+   5. **Enlace USB de la S3:** se colgó en una misión (25/11 23:25, recuperada con `esptool --before usb-reset`) y
+      cortes de datos > 0,5 s; sujetar el cable y medir con `medir_enlace_base.py` cuando pase.
+   6. Rodear árbol: el tronco de adelante sale de los limones (27–40 cm en vez de 15): usar el nominal o el lidar.
+      Tras soltar, J2 a veces queda en ~54° (fuera de la zona plegada): ver por qué.
+   7. Teléfono en la red de la Pi (`tailscale ping` < 50 ms). Tensión del TFmini-S (5 V ±0,1). `SENSOR_AHEAD_MM`
+      (MEDIR); segundo punto de la batería para `BATTERY_SCALE`. `docs/CONTINUAR_CLAUDE.md` ya cumplido: borrable.
+   8. Después de la demo: `sinCuentasMs` de J1 y `BATERIA_DIVISOR` en el firmware; corte "sin comandos" (traza de
+      faulthandler) si vuelve.
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
       conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.
