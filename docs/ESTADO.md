@@ -29,7 +29,7 @@ del **viernes 4/12/2026** (era el 27/11; el usuario avisó el 25/11): `PENDIENTE
   26-sim (40–44). La parada del arco/saltos sale de la franja: `TRUNK_STOP_MM` = (−52,3; 15) cm. `TRUNK_CLEAR_MM` 450.
   **La pinza no pasa del tronco:** en Rodear árbol se saltean los limones más a la izquierda que el tronco (al elegir
   los de la parada y otra vez al medir). Riesgos a mirar: giros a ~3–8 cm de la maceta; limones a ~40 cm de J1 (punta
-  entra de frente desde ~50 cm): reubicaciones hacia atrás o "sin plan".
+  entra de frente desde ~50 cm): reubicaciones hacia atrás o "sin plan". En la Pi desde el 25/11 23:40 (`6b004f2`).
 - **Rodear árbol usa el lidar** (`lidar_trim`, `LIDAR_BAND_M`): al llegar a cada parada (también la 1.ª), antes del
   escaneo, mediana de 5 lecturas; fuera de 40–44 cm se corre de costado al centro (girar ±90° → recto → volver);
   sin lectura o fuera de 25–60 cm no se mueve y lo anota en el informe. Con la lectura se corrige la distancia de
