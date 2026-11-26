@@ -535,7 +535,7 @@ class CollectionMission:
             meters = front_distance(self.control.snapshot(), 'range_lidar_left')
             if meters is not None and math.isfinite(meters):
                 readings.append(meters)
-            await asyncio.sleep(.1)
+            await self.settle(owner, .1)   # quieto, pero mandando: sin consignas el control corta la recolección
         if len(readings) < 3:
             return f'{name}sin lectura del lidar, sin corregir la distancia'
         meters = statistics.median(readings)

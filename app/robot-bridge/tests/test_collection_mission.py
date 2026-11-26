@@ -344,6 +344,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_at_each_stop_the_lidar_leaves_the_pot_between_40_and_44_cm(self):
         # 25/11, usuario: franja 40-44 cm (medidas del usuario + 26-sim); corrige al medio con un paso al costado, nunca marcha atrás
+        self.mission.deadline = self.mission.run_until = float('inf')
         snapshot = self.control.snapshot.return_value
         lidar = {'key': 'range_lidar_left', 'status': 'fresh', 'age_ms': 10, 'value': None}
         snapshot['sources'].append(lidar)
@@ -357,6 +358,9 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             got = [(c.args[1], round(c.args[2], 6)) for c in drive.await_args_list]
             self.assertEqual(got, steps, (meters, note))
             self.assertEqual(note is None, meters == .42, note)
+            # 25/11, en el robot: leyendo sin mandar consignas, el control cortaba la recolección a los ~0,5 s
+            self.assertGreaterEqual(self.control.mission_velocity.call_count, 5)
+            self.control.mission_velocity.reset_mock()
 
     async def test_with_two_stops_it_comes_back_the_way_it_went_facing_forward(self):
         # 25/11, usuario: poco espacio, 2 paradas; vuelve por donde vino (horario), nunca en marcha atrás
