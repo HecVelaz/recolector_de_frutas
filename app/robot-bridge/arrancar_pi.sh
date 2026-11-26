@@ -28,7 +28,7 @@ agente_base_corre() { pgrep -f "[m]icro_ros_agent serial --dev /dev/serial/by-id
 
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 agente_base_corre || s3_bootloader
-bash ~/scripts/agente_base.sh   # no arranca si ya hay algún agente: por eso va antes que el del brazo
+bash ~/scripts/agente_base.sh   # no lo relanza si ya corre el de la S3 (desde el 26/11 ignora el del brazo)
 for _ in $(seq 1 15); do base_habla && break; sleep 1; done
 if ! base_habla && agente_base_corre; then   # segundo intento: quizás la mandó al bootloader el propio agente
   echo "base sin mensajes: reviso la S3 y relanzo su agente"

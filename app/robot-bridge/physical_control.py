@@ -240,7 +240,7 @@ class PhysicalControl:
         drive = mode in ('base', 'combined')
         decision = evaluate(evidence, feature_enabled=True, authenticated=True, app_foreground=True,
                             physical_ready=True, base_only=True, allow_standby=starting or not drive,
-                            allow_armed_standby=starting, allow_released_standby=starting)
+                            allow_armed_standby=starting, allow_released_standby=starting, require_front=drive)
         reasons = list(decision.reasons)
         # Solo brazo: una reconexión de la S3 (su suscripción a /cmd_vel desaparece un instante) no corta el brazo (23/11)
         if (drive and not self.base.exclusive()) or not self.arm.exclusive():

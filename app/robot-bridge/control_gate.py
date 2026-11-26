@@ -55,8 +55,9 @@ def watchdog_standby(state, *, armed=False, allow_released=False):
 def evaluate(snapshot, *, feature_enabled=False, authenticated=False,
              app_foreground=False, physical_ready=False,
              mode=ControlMode.MANUAL, allow_simulation=False, base_only=False,
-             allow_standby=False, allow_armed_standby=False, allow_released_standby=False):
-    """Evalúa solo evidencia; desconocido o contradictorio bloquea."""
+             allow_standby=False, allow_armed_standby=False, allow_released_standby=False, require_front=True):
+    """Evalúa solo evidencia; desconocido o contradictorio bloquea. require_front=False: sin el HC-SR04 del frente
+    (solo el brazo, con la base quieta: el 25/11 cortó dos homings por un dato viejo del frente)."""
     reasons = []
     if not feature_enabled:
         reasons.append('CONTROL_DISABLED')
@@ -76,7 +77,7 @@ def evaluate(snapshot, *, feature_enabled=False, authenticated=False,
 
     sources = {x.get('key'): x for x in snapshot.get('sources', [])}
     for key in REQUIRED:
-        if base_only and key == 'arm':
+        if (base_only and key == 'arm') or (not require_front and key == 'range_front'):
             continue
         value = sources.get(key)
         if not value or value.get('status') != 'fresh' or not isinstance(value.get('age_ms'), int):

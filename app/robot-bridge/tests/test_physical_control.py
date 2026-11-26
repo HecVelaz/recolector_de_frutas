@@ -316,6 +316,15 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput(motion='home'))
         self.arm.send.assert_called_with('h')
 
+    def test_the_front_sensor_only_matters_when_the_base_can_move(self):
+        # 25/11: dos homings cortados por RANGE_FRONT_TOO_OLD con la base quieta
+        front = next(source for source in self.evidence['sources'] if source['key'] == 'range_front')
+        front['age_ms'] = 5000
+        for mode in ('arm', 'homing'):
+            self.assertFalse(any('RANGE_FRONT' in r for r in self.control.blockers(mode)), mode)
+        for mode in ('base', 'combined'):
+            self.assertIn('RANGE_FRONT_TOO_OLD', self.control.blockers(mode), mode)
+
     async def test_j1_pressing_its_switch_far_from_zero_stops_the_recovery_but_not_the_firmware_homing(self):
         # 26/11, en el robot: la correa de J1 saltó 51°; el mv de la recuperación la empujaba contra su final de carrera
         self.evidence['arm_state'] = 'q=130.03,46.76,79.94;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
