@@ -6,6 +6,8 @@ from pathlib import Path
 from time import monotonic, sleep
 from telemetry import finite_vector, range_value
 
+ULTRASONIC_HOLD_S = .5   # HC-SR04: lecturas inválidas sueltas que no borran la última buena
+
 # 25/11: la S3 informa la batería ~4 % alta (divisor 100 k / 30 k y ADC del ESP32): 12,31 V con 11,8 V en el tester. Se
 # corrige acá para que el corte de 10,5 V del puente (control_gate) sea real; el BATERIA_BAJA de la S3 sigue con su
 # lectura (salta a ~10,06 V reales). MEDIR: un segundo punto con la batería más baja; después pasarlo al firmware
@@ -71,10 +73,19 @@ class RosReader:
                                   child_frame_id=m.child_frame_id) if valid else None, valid, None if valid else 'Odometría no finita')
 
         def distance(key):
+            last_ok = [None]
+
             def callback(m):
                 value, valid, reason = range_value(m.range, m.min_range, m.max_range)
                 if key == 'range_lidar_left' and not valid:
                     reason = 'LiDAR sin medición válida o lectura vencida'
+                if valid:
+                    last_ok[0] = monotonic()
+                elif key != 'range_lidar_left' and last_ok[0] is not None and monotonic() - last_ok[0] < ULTRASONIC_HOLD_S:
+                    # 25/11, en el robot: una sola lectura sin eco del HC-SR04 del frente cortaba Rodear árbol
+                    # (RANGE_FRONT_NOT_FRESH); se conserva la última buena y su edad sigue contando (la compuerta pide
+                    # <= 500 ms), así que más de ~0,5 s sin una buena corta igual
+                    return
                 store.put(key, value, valid, reason)
             return callback
 

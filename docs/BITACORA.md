@@ -1140,3 +1140,8 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
 - **Rodear árbol en arco** (pedido del usuario: girar en círculo y parar igual en las 4 paradas): ver ESTADO. El lidar
   no sirve durante el arco (19,6 cm delante del eje de las ruedas: el haz pasa delante de la maceta de 15 cm de radio).
   Simulación con la cinemática de la base: tronco al llegar a 4 mm (salida nominal) y 8–13 mm (saliendo corrido).
+- **~23:46, Rodear árbol 20–30 cm:** P1 maceta a 45 cm → 20 cm hacia el árbol; limón 1 verificado al primer intento;
+  limón 2 sin agarrar (sin detalle: cortó antes del informe). Yendo a la P2, en el arco: `RANGE_FRONT_NOT_FRESH` solo
+  (odometría, IMU y estado al día; la S3 se reconectó recién a las 23:48:33): una lectura sin eco del HC-SR04 del frente
+  cortaba la misión. Arreglo: `ULTRASONIC_HOLD_S` (0,5 s) en `ros_source`: lecturas inválidas sueltas no borran la
+  última buena (su edad sigue contando para la compuerta de 500 ms). El enlace de la S3 marca `pings_fallidos=60 cortes=2`.
