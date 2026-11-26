@@ -342,6 +342,22 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(caught.exception.point[0], .2 + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000)
         self.assertIn('esperando que se despeje', self.mission.events[0]['message'])
 
+    async def test_at_each_stop_the_lidar_leaves_the_pot_between_38_and_42_cm(self):
+        # 25/11, usuario: franja 38-42 cm; corrige al medio con un paso al costado, nunca marcha atrás
+        snapshot = self.control.snapshot.return_value
+        lidar = {'key': 'range_lidar_left', 'status': 'fresh', 'age_ms': 10, 'value': None}
+        snapshot['sources'].append(lidar)
+        for meters, steps in ((.47, [('giro', 90.), ('recto', 70.), ('giro', -90.)]),
+                              (.35, [('giro', -90.), ('recto', 50.), ('giro', 90.)]),
+                              (.40, []), (.80, []), (None, [])):
+            lidar['value'] = None if meters is None else {'kind': 'distance', 'meters': meters}
+            drive = AsyncMock()
+            with patch.object(self.mission, 'drive_step', new=drive):
+                note = await self.mission.lidar_trim('o', '')
+            got = [(c.args[1], round(c.args[2], 6)) for c in drive.await_args_list]
+            self.assertEqual(got, steps, (meters, note))
+            self.assertEqual(note is None, meters == .40, note)
+
     async def test_with_two_stops_it_comes_back_the_way_it_went_facing_forward(self):
         # 25/11, usuario: poco espacio, 2 paradas; vuelve por donde vino (horario), nunca en marcha atrás
         a = (-560., 200., 140.)

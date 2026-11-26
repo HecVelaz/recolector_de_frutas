@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import multiprocessing
 import signal
+import statistics
 import sys
 import types
 from time import monotonic
@@ -99,6 +100,11 @@ OBSTACLE_RADIUS_MM = 150.   # supuesto: el sensor ve la cara de adelante, no el 
 DETOUR_RIGHT_MM = (500., 800.)
 HOP_DEG = 45.               # saltos alrededor del árbol (la recta de un salto queda cerca del círculo)
 OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supuesto + 10 cm
+# Distancia a la maceta en cada parada (25/11, usuario): TFmini-S al costado izquierdo (/range/lidar_izq). Con 26-sim
+# (maceta redonda de 33 cm supuesta, lidar 12 cm a la izquierda de J1) da 99-100 % con 4 paradas entre 38,5 y 44 cm;
+# a 35 cm, ~50 %. Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
+LIDAR_BAND_M = (.38, .42)
+LIDAR_TRUST_M = (.25, .60)
 TRUNK_CLEAR_MM = 550.       # centro de giro al tronco (en la parada, 79,5 cm): ~20 cm de medio ancho + copa + margen
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
@@ -287,6 +293,13 @@ class CollectionMission:
                     except StopUnreachable as error:   # pedido del usuario: la tarea sigue con la siguiente
                         notes.append(f'parada {stop + 1} salteada: {error}')
                         continue
+                if around:
+                    self.stage = 'distancia a la maceta'
+                    note = await self.lidar_trim(owner, name)
+                    if note:
+                        notes.append(note)
+                    if not stop:   # el primer escaneo se hace (y se vuelve) desde acá
+                        first = dict(source_value(self.control.snapshot(), 'odom') or first)
                 self.stage = 'escaneo'
                 if around:
                     self.update('BUSCANDO', f'{name}escaneo de {seconds:.0f} s con el Móvil quieto.')
@@ -511,6 +524,37 @@ class CollectionMission:
                 exact = True
                 continue
             hop += 1
+
+    async def lidar_trim(self, owner, name):
+        """Rodear árbol (25/11): deja la maceta a LIDAR_BAND_M del TFmini-S (al medio) con un paso al costado: girar
+        90° -> recto -> volver a girar (nunca atrás; el árbol a la izquierda). Sin una lectura confiable no se mueve.
+        Devuelve una nota para el informe o None si ya estaba bien."""
+        readings = []
+        for _ in range(5):
+            meters = front_distance(self.control.snapshot(), 'range_lidar_left')
+            if meters is not None and math.isfinite(meters):
+                readings.append(meters)
+            await asyncio.sleep(.1)
+        if len(readings) < 3:
+            return f'{name}sin lectura del lidar, sin corregir la distancia'
+        meters = statistics.median(readings)
+        if not LIDAR_TRUST_M[0] <= meters <= LIDAR_TRUST_M[1]:
+            return f'{name}lidar a {meters * 100:.0f} cm (no parece la maceta), sin corregir'
+        if LIDAR_BAND_M[0] <= meters <= LIDAR_BAND_M[1]:
+            return None
+        shift = (meters - sum(LIDAR_BAND_M) / 2) * 1000   # mm; > 0: lejos, hacia el árbol (a la izquierda)
+        turn = math.copysign(90., shift)
+        self.update('NAVEGANDO', f'{name}maceta a {meters * 100:.0f} cm: me corro {abs(shift) / 10:.0f} cm '
+                    + ('hacia el árbol.' if shift > 0 else 'hacia afuera.'))
+        await self.drive_step(owner, 'giro', turn)
+        try:
+            await self.drive_step(owner, 'recto', abs(shift))
+        except Blocked as blocked:
+            self.obstacles.append(blocked.point)
+            await self.drive_step(owner, 'giro', -turn)
+            return f'{name}lidar a {meters * 100:.0f} cm, no pudo corregir: {blocked}'
+        await self.drive_step(owner, 'giro', -turn)
+        return f'{name}lidar a {meters * 100:.0f} cm, corrido {abs(shift) / 10:.0f} cm'
 
     @staticmethod
     def hop_plan(navigation, trunk_world, pose, heading, stop):
