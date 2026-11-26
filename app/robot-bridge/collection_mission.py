@@ -90,7 +90,7 @@ RETURN_SECONDS = 90.
 # el 100 % del arbolito (~31 % desde una). Antihorario visto de arriba: el árbol siempre a la izquierda (lado del
 # brazo). El tronco sale del primer escaneo; al terminar vuelve a donde hizo ese escaneo.
 TREE_STOPS = 4   # máximo; la app elige 1-4 (25/11, usuario: poco espacio) y siempre vuelve al inicio
-TRUNK_STOP_MM = (-700., 150.)   # parada de 26-sim: tronco 70 cm a la izquierda de J1 y 15 adelante (tolera ±5 cm)
+# TRUNK_STOP_MM (dónde queda el tronco en cada parada): más abajo, con la franja del lidar
 CANOPY_MM = 120.                # limones a 10-14 cm del tronco (arbolito medido el 13/11)
 # Obstáculos en Rodear árbol (25/11, pedido del usuario; el Recolector y la Recolección no cambian). Avanzando, con
 # algo a menos de OBSTACLE_M al frente el Móvil espera quieto (el firmware frena a 0,20 m y si se insiste la sesión
@@ -109,9 +109,13 @@ OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supues
 # usuario: maceta redonda de 29,5-30 cm; lidar 19,1 cm adelante de J1 y 13 cm a la izquierda: lee D - 27,3 cm (D: J1 ->
 # eje del árbol; la parada de 26-sim, D 70, da 42,7). 26-sim con 4 paradas: 41-44 cm -> 100 %, 40 -> 98 %, 38 -> 94 %.
 # Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
-LIDAR_BAND_M = (.40, .44)
-LIDAR_TRUST_M = (.25, .60)
+# 25/11 noche, usuario: franja 20-30 cm (probar en el robot más cerca que lo de 26-sim, 40-44)
+LIDAR_BAND_M = (.20, .30)
+LIDAR_TRUST_M = (.12, .60)   # el TFmini-S mide desde 10 cm
 LIDAR_TO_TRUNK_MM = 273.    # J1 -> eje del árbol = lectura del lidar + esto (con las medidas de arriba)
+# El tronco en cada parada: a la distancia del medio de la franja (52 cm de J1 con 20-30 cm) y 15 cm adelante de J1
+# (26-sim; antes 70 cm a la izquierda)
+TRUNK_STOP_MM = (-(sum(LIDAR_BAND_M) / 2 * 1000 + LIDAR_TO_TRUNK_MM), 150.)
 # Rodear árbol en arco (26/11, pedido del usuario): de una parada a la siguiente, girar en el lugar hasta tener el tronco
 # sobre el eje de las ruedas, arco con centro en el tronco y volver a girar; para igual en cada parada. Durante el arco
 # el lidar (19,6 cm delante del eje) no ve la maceta: el radio se corrige con la odometría; en la parada, con el lidar.
@@ -120,7 +124,7 @@ ARC_M_S = .08
 ARC_GAIN = 4.               # inclinación hacia el radio buscado: atan(4 · error en m) (10 cm -> 22°)
 ARC_TURN_GAIN = 1.5         # rad/s por rad de error de rumbo
 ARC_RADIUS_MM = (500., 1100.)   # centro de giro al tronco guardado; fuera de esto no es creíble: por saltos
-TRUNK_CLEAR_MM = 550.       # centro de giro al tronco (en la parada, 79,5 cm): ~20 cm de medio ancho + copa + margen
+TRUNK_CLEAR_MM = 450.       # centro de giro al tronco (en la parada, ~60 cm): ~20 cm de medio ancho + maceta 15 + 10
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
 # ~1,9 núcleos de la Pi), no las cámaras: un SIGSTOP a camera_ros puede dejar colgada la cámara de libcamera.
@@ -339,10 +343,16 @@ class CollectionMission:
                     trunk_start = estimate_trunk(targets)
                     if trunk_start is None:
                         trunk_start = TRUNK_STOP_MM
-                        notes.append('tronco supuesto en la parada (70 cm a la izquierda de J1)')
+                        notes.append(f'tronco supuesto en la parada ({-TRUNK_STOP_MM[0] / 10:.0f} cm a la izquierda de J1)')
                     trunk_world = self.trunk_from_lidar(arm_to_world((*trunk_start, 0.), first)[:2])
                     self.update('BUSCANDO', f'Tronco a {trunk_start[0] / -10:.0f} cm a la izquierda de J1 y '
                                 f'{trunk_start[1] / 10:.0f} cm adelante.')
+                if around and trunk_world is not None:   # 25/11, usuario: la pinza no pasa del tronco
+                    trunk_here = world_to_arm((*trunk_world, 0.), source_value(self.control.snapshot(), 'odom') or first)
+                    far = [lemon for lemon in targets if beyond_trunk(lemon, trunk_here)]
+                    if far:
+                        notes.append(f'{name}{len(far)} limón(es) del otro lado del tronco: salteados')
+                        targets = [lemon for lemon in targets if not beyond_trunk(lemon, trunk_here)]
                 if not targets:
                     if not around:
                         self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha '
@@ -351,7 +361,8 @@ class CollectionMission:
                     notes.append(f'parada {stop + 1}: sin limones')   # pedido del usuario: pasa a la siguiente
                     continue
                 before = len(results)
-                done += await self.harvest_stop(owner, navigation, grasp, tf, targets, results, name)
+                done += await self.harvest_stop(owner, navigation, grasp, tf, targets, results, name,
+                                                trunk_world if around else None)
                 total += len(targets)
                 if around:
                     results[before:] = [(l, f'P{stop + 1} {r}') for l, r in results[before:]]
@@ -396,7 +407,7 @@ class CollectionMission:
                     await self.stop_recording(recorder)
                 self.save_log()
 
-    async def harvest_stop(self, owner, navigation, grasp, tf, targets, results, name=''):
+    async def harvest_stop(self, owner, navigation, grasp, tf, targets, results, name='', trunk_world=None):
         """Modo Recolector en una parada: cosecha `targets` (mm, marco del brazo, desde la pose de ahora) de a
         uno, reubicando el Móvil si hace falta. Devuelve cuántos dejó en la canasta."""
         # 23/11, pedido del usuario: cosechar TODOS los del escaneo. Se guardan en el marco de la odometría (no
@@ -476,6 +487,13 @@ class CollectionMission:
                 remaining.pop(index)
                 tries.pop(index)
                 self.zone, verify = None, None
+                continue
+            if verify is None and trunk_world is not None and beyond_trunk(
+                    lemon, world_to_arm((*trunk_world, 0.), self.zone)):   # 25/11, usuario: la pinza no pasa del tronco
+                results.append((lemon, 'salteado: del otro lado del tronco'))
+                remaining.pop(index)
+                tries.pop(index)
+                self.zone = None
                 continue
             if verify is not None:   # sigue en el árbol: no quedó en la pinza
                 verify = None
@@ -1586,6 +1604,12 @@ def center_clearance(steps, point):
                                        point))
         cx, cy = cx - value * math.sin(heading), cy + value * math.cos(heading)
     return best
+
+
+def beyond_trunk(lemon, trunk):
+    """Rodear árbol: el limón (mm, marco del brazo) más a la izquierda que el tronco: del otro lado (la distancia de
+    costado es la que mide el lidar; la de adelante del tronco sale de los limones y puede errar)."""
+    return lemon[0] <= trunk[0]
 
 
 def estimate_trunk(lemons):

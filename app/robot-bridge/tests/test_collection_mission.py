@@ -290,6 +290,18 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('salteado: no se vio', self.mission.status['message'])
         self.assertNotIn('sin verlo', self.mission.status['message'])
 
+    async def test_going_around_the_tree_lemons_beyond_the_trunk_are_skipped(self):
+        # 25/11, usuario: en cada parada la pinza no pasa del tronco (tronco a 52 cm de J1 con la franja 20-30 cm)
+        from collection_mission import TRUNK_STOP_MM
+        near, beyond = (-560., 200., 140.), (-650., 250., 140.)
+        self.navigation.planear.return_value = [('giro', 0.)]   # la vuelta al primer escaneo
+        self.assertGreater(near[0], TRUNK_STOP_MM[0] - 100)
+        with patch('collection_mission.estimate_trunk', return_value=(-600., 150.)):
+            events, planned = await self.recolector_run([[[near, beyond]] * 3], count=1, around=True, stops=1,
+                                                        extra=(patch.object(self.mission, 'drive_step', new=AsyncMock()),))
+        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertIn('1 limón(es) del otro lado del tronco: salteados', self.mission.status['message'])
+
     async def test_after_each_pick_it_checks_the_lemon_left_the_tree_and_tries_once_more(self):
         # 25/11, usuario: "hecho" no aseguraba el limón en la pinza; se mide otra vez y, si sigue ahí, otro intento
         a = (-560., 200., 140.)
@@ -376,22 +388,22 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(caught.exception.point[0], .2 + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000)
         self.assertIn('esperando que se despeje', self.mission.events[0]['message'])
 
-    async def test_at_each_stop_the_lidar_leaves_the_pot_between_40_and_44_cm(self):
-        # 25/11, usuario: franja 40-44 cm (medidas del usuario + 26-sim); corrige al medio con un paso al costado, nunca marcha atrás
+    async def test_at_each_stop_the_lidar_leaves_the_pot_between_20_and_30_cm(self):
+        # 25/11, usuario: franja 20-30 cm (antes 40-44); corrige al medio con un paso al costado, nunca marcha atrás
         self.mission.deadline = self.mission.run_until = float('inf')
         snapshot = self.control.snapshot.return_value
         lidar = {'key': 'range_lidar_left', 'status': 'fresh', 'age_ms': 10, 'value': None}
         snapshot['sources'].append(lidar)
-        for meters, steps in ((.47, [('giro', 90.), ('recto', 50.), ('giro', -90.)]),
-                              (.35, [('giro', -90.), ('recto', 70.), ('giro', 90.)]),
-                              (.42, []), (.80, []), (None, [])):
+        for meters, steps in ((.33, [('giro', 90.), ('recto', 80.), ('giro', -90.)]),
+                              (.15, [('giro', -90.), ('recto', 100.), ('giro', 90.)]),
+                              (.25, []), (.80, []), (None, [])):
             lidar['value'] = None if meters is None else {'kind': 'distance', 'meters': meters}
             drive = AsyncMock()
             with patch.object(self.mission, 'drive_step', new=drive):
                 note = await self.mission.lidar_trim('o', '')
             got = [(c.args[1], round(c.args[2], 6)) for c in drive.await_args_list]
             self.assertEqual(got, steps, (meters, note))
-            self.assertEqual(note is None, meters == .42, note)
+            self.assertEqual(note is None, meters == .25, note)
             # 25/11, en el robot: leyendo sin mandar consignas, el control cortaba la recolección a los ~0,5 s
             self.assertGreaterEqual(self.control.mission_velocity.call_count, 5)
             self.control.mission_velocity.reset_mock()
