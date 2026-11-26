@@ -44,17 +44,21 @@ HOME_TIMEOUT = 120
 PARK_TIMEOUT = 30
 PARK_COMMAND = 'mv 3 17 4'
 FOLDED_Q3, UNFOLD_Q2, UNFOLD_Q3 = 70., 46.7, 50.   # punta.py: de la canasta pasa por (J2 46,7°, J3 50°) al reposo
+# 25/11, en el robot: homing con J1 en la canasta (130,03°): el intermedio con J1 ahí estaba fuera de rango (hasta 130°) y,
+# con J1 > 118°, el firmware solo deja poses plegadas. Primero J1 a UNFOLD_Q1 sin desplegar (punta.DESPLEGAR)
+BASKET_Q1, UNFOLD_Q1 = 118., 100.
 # Homing rechazado por el firmware con el cero ya conocido (20/11): el brazo frenado se asienta abajo (J2 2,2°, J3 2,9°),
 # fuera de la franja del cuatro barras (con J2 < 3,4° J3 puede llegar a ~1°), o J2 quedó más arriba de 25°. Como pide el
 # firmware, primero "j 2 <grados>" (también valida la franja) y otra vez "h". Un solo intento por homing
 HOME_RECOVERY_TIMEOUT = 20   # 23/11: 10 -> 20 (el reposo coordinado tarda más que un j 2)
 HOME_RECOVERY_TOLERANCE = .7
-HOME_RECOVERIES = 2   # 25/11: plegado -> intermedio de las misiones -> reposo coordinado (antes 1)
+HOME_RECOVERIES = 3   # 25/11: canasta -> J1 afuera -> intermedio de las misiones -> reposo coordinado
 ANGLES = re.compile(r'(?:^|;)q=(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:;|$)')
 
 
 def home_recovery(detail, state):
-    """(orden, destino de J2) para volver a intentar el homing tras el rechazo `detail` del firmware, o None."""
+    """(orden, destino) para volver a intentar el homing tras el rechazo `detail` del firmware, o None. El destino es el
+    de J2 (°) o (articulación 1-3, °)."""
     angles = ANGLES.search(state or '')
     if not isinstance(detail, str) or angles is None:
         return None
@@ -68,6 +72,8 @@ def home_recovery(detail, state):
     if 'Bajarla antes' in detail:
         # 25/11: plegado (J2 49,9°, J3 79,8°) la recta al reposo sale de la franja (pasa por J2 40°, J3 30°) y el
         # firmware la rechaza: primero al intermedio que usan las misiones para salir de la canasta (J2 46,7°, J3 50°)
+        if q3 >= FOLDED_Q3 and float(angles.group(1)) > BASKET_Q1:
+            return f'mv {UNFOLD_Q1:.2f} {float(angles.group(2)):.2f} {q3:.2f}', (1, UNFOLD_Q1)
         if q3 >= FOLDED_Q3:
             return f'mv {float(angles.group(1)):.2f} {UNFOLD_Q2:.2f} {UNFOLD_Q3:.2f}', UNFOLD_Q2
         # 23/11: con J3 en 24,7° J2 no podía bajar sola a 10° (la franja la deja >= ~J3): el reposo coordinado del
@@ -518,13 +524,14 @@ class PhysicalControl:
                         raise HTTPException(409, self.arm.home_detail or 'El brazo rechazó volver a la franja')
                     angles = ANGLES.search(self.snapshot().get('arm_state') or '')
                     joints = JOINT_STATES.search(self.snapshot().get('arm_state') or '')
-                    if (angles and joints and joints.group(2) in '234'
-                            and abs(float(angles.group(2)) - target) <= HOME_RECOVERY_TOLERANCE):
+                    joint, value = target if isinstance(target, tuple) else (2, target)
+                    if (angles and joints and joints.group(joint) in '234'
+                            and abs(float(angles.group(joint)) - value) <= HOME_RECOVERY_TOLERANCE):
                         self.home_recovery = None
                         self.home_started = self.clock()
                         self.arm.send('h')
                     elif self.clock() - started >= HOME_RECOVERY_TIMEOUT:
-                        raise HTTPException(409, f'J2 no llegó a {target:.1f}° para reintentar el homing')
+                        raise HTTPException(409, f'J{joint} no llegó a {value:.1f}° para reintentar el homing')
                 else:
                     received_at, reply = self.arm.home_feedback()
                     if self.park_started is not None:

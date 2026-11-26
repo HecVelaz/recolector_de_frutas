@@ -296,6 +296,26 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput(motion='home'))
         self.arm.send.assert_called_with('h')
 
+    async def test_homing_from_the_basket_first_takes_j1_out_folded_and_waits_for_j1(self):
+        # 25/11, en el robot: J1 en 130,03° (canasta); "mv 130.03 46.70 50.00" quedaba fuera de rango
+        self.evidence['arm_state'] = 'q=130.03,46.76,79.94;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
+        self.arm.home_error = self.arm.home_detail = ('Homing: J2 en +46.8°; más arriba de 25° el codo no llega a su '
+                                                      'final de carrera sin salir de la franja. Bajarla antes (j 2 10).')
+        await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.home_feedback.return_value = (self.now + .01, 'failed')
+        self.now += .05
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('mv 100.00 46.76 79.94')
+        self.now += .05
+        self.evidence['arm_state'] = 'q=115,46.76,79.94;e=5,4,4;c=111;fc=000;pz=500;mn=1500'   # J1 saliendo
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('mv 100.00 46.76 79.94')   # J2 ya estaba: espera a J1
+        self.now += .05
+        self.evidence['arm_state'] = 'q=100.1,46.76,79.94;e=3,4,4;c=111;fc=000;pz=500;mn=1500'   # llegó
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('h')
+
     async def test_homing_retry_stops_if_the_firmware_rejects_it_again(self):
         self.evidence['arm_state'] = 'q=1.13,2.23,2.91;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
         self.arm.home_error = self.arm.home_detail = 'Homing: J2 y J3 fuera de la franja (2.05° afuera)'
@@ -445,3 +465,6 @@ class HomeRecoveryFoldedTest(unittest.TestCase):
         detail = 'Homing: J2 en +49.9°; más arriba de 25° el codo no llega a su final de carrera. Bajarla antes (j 2 10).'
         self.assertEqual(home_recovery(detail, 'q=3.01,49.90,79.82;e=4,4,4'), ('mv 3.01 46.70 50.00', 46.7))
         self.assertEqual(home_recovery(detail, 'q=3.01,46.70,50.00;e=4,4,4'), (PARK_COMMAND, 17.))
+        # 25/11, en el robot: con J1 en la canasta (130,03°) primero sale J1, plegado; después el intermedio y el reposo
+        self.assertEqual(home_recovery(detail, 'q=130.03,46.76,79.94;e=4,4,4'), ('mv 100.00 46.76 79.94', (1, 100.)))
+        self.assertEqual(home_recovery(detail, 'q=100.02,46.76,79.94;e=4,4,4')[0], 'mv 100.02 46.70 50.00')
