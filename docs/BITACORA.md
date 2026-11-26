@@ -1136,3 +1136,7 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   detección: el localizador no publica `/limon/todos` si ningún limón tiene profundidad válida (0,40–0,95 m, zona con
   disparidad). Arreglo: `scan_frames` devuelve None con profundidad y sin limones durante `NO_LEMON_S` (4 s): el
   limón se saltea ("no se vio") o la parada queda sin limones; sin profundidad sigue siendo error de cámaras.
+- **Demo: viernes 4/12** (el usuario, 25/11; antes 27/11). Corregido en CLAUDE.md, ESTADO, PENDIENTES y la memoria.
+- **Rodear árbol en arco** (pedido del usuario: girar en círculo y parar igual en las 4 paradas): ver ESTADO. El lidar
+  no sirve durante el arco (19,6 cm delante del eje de las ruedas: el haz pasa delante de la maceta de 15 cm de radio).
+  Simulación con la cinemática de la base: tronco al llegar a 4 mm (salida nominal) y 8–13 mm (saliendo corrido).

@@ -340,6 +340,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('1 de 1', self.mission.status['message'])
         self.assertIn('se reintentó', self.mission.status['message'])
 
+    @patch('collection_mission.ARC_AROUND_TREE', False)   # los saltos (el respaldo del arco)
     async def test_recolector_goes_around_the_tree_and_back_to_the_first_scan(self):
         # 25/11, usuario: 4 paradas antihorario; una sin limones pasa a la siguiente; al final, al primer escaneo
         a = (-560., 200., 140.)   # en la zona buena: se cosecha sin reubicarse
@@ -395,6 +396,39 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
             self.assertGreaterEqual(self.control.mission_velocity.call_count, 5)
             self.control.mission_velocity.reset_mock()
 
+    async def test_between_stops_it_goes_in_an_arc_around_the_trunk_and_stops_at_the_next(self):
+        # 26/11, usuario: girar en círculo alrededor del árbol y parar igual en cada parada (90°)
+        from collection_mission import TRUNK_STOP_MM, arm_to_world, world_to_arm
+        pose = {'x_m': 0., 'y_m': 0., 'yaw_rad': 0.}
+        trunk = arm_to_world((*TRUNK_STOP_MM, 0.), pose)[:2]
+        dt = .05
+
+        def snapshot():
+            return {'sources': [{'key': 'odom', 'status': 'fresh', 'age_ms': 1, 'value': dict(pose)},
+                                {'key': 'imu', 'status': 'fresh', 'age_ms': 1, 'value': {'gyro_yaw_rad': pose['yaw_rad']}}]}
+
+        def velocity(owner, linear=0., angular=0.):   # la base: avanza y gira lo pedido (dt por consigna)
+            pose['yaw_rad'] += angular * dt
+            pose['x_m'] += linear * dt * math.cos(pose['yaw_rad'])
+            pose['y_m'] += linear * dt * math.sin(pose['yaw_rad'])
+
+        async def turn(owner, kind, value):
+            pose['yaw_rad'] += math.radians(value)
+
+        self.control.snapshot.side_effect = snapshot
+        self.control.mission_velocity.side_effect = velocity
+        self.mission.deadline = self.mission.run_until = float('inf')
+        with (patch.object(self.mission, 'drive_step', side_effect=turn), patch.object(self.mission, 'settle', new=AsyncMock()),
+              patch('collection_mission.asyncio.sleep', new=AsyncMock())):
+            await self.mission.go_to_stop('o', self.navigation, trunk, math.pi / 2, TRUNK_STOP_MM, 'Parada 2')
+        self.navigation.planear.assert_not_called()   # sin saltos
+        self.assertAlmostEqual(math.degrees(pose['yaw_rad']), 90., delta=1.)
+        here = world_to_arm((*trunk, 0.), pose)
+        self.assertLess(math.dist(here[:2], TRUNK_STOP_MM), 30., here)   # el tronco otra vez donde va en la parada
+        self.assertIn('arco de 90°', self.mission.status['message'])
+        self.assertTrue(all(c.args[1] == .08 for c in self.control.mission_velocity.call_args_list if c.args[1]))
+
+    @patch('collection_mission.ARC_AROUND_TREE', False)   # los saltos (el respaldo del arco)
     async def test_with_two_stops_it_comes_back_the_way_it_went_facing_forward(self):
         # 25/11, usuario: poco espacio, 2 paradas; vuelve por donde vino (horario), nunca en marcha atrás
         a = (-560., 200., 140.)

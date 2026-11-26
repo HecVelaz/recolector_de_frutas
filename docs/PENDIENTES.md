@@ -1,6 +1,6 @@
 # Próximos pasos
 
-Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado: `ESTADO.md`.
+Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; era el 27/11). Estado: `ESTADO.md`.
 
 0000z. **Para la demo (25/11 noche), en orden** (detalle en la bitácora del 25/11):
    1. **Probar en el robot:** salida de la canasta con el joystick (`jog_j1_out`) y el homing desde el brazo plegado.

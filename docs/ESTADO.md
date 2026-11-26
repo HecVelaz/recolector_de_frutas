@@ -1,7 +1,7 @@
 # Estado actual (al 2026-11-25, ~21:31; traspaso de Codex a Claude)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
-del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
+del **viernes 4/12/2026** (era el 27/11; el usuario avisó el 25/11): `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
 
 ## Avance
 - **Modo Recolector:** 3 de 3 (23/11); el 25/11 cortes por J1 trabada en la canasta y por el puente atrasado ("sin
@@ -27,7 +27,12 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   El usuario propuso 35–40, después 38–42; con las medidas reales quedó **40–44 cm** (objetivo 42). Confirmar en una parada donde ya agarró.
 - **Rodear árbol usa el lidar** (`lidar_trim`, `LIDAR_BAND_M`): al llegar a cada parada (también la 1.ª), antes del
   escaneo, mediana de 5 lecturas; fuera de 40–44 cm se corre de costado al centro (girar ±90° → recto → volver);
-  sin lectura o fuera de 25–60 cm no se mueve y lo anota en el informe. En la Pi desde el 25/11 22:21 (`99cb555`; copia `collection_mission.py.antes_lidar`). **Sin probar en el robot.**
+  sin lectura o fuera de 25–60 cm no se mueve y lo anota en el informe. Con la lectura se corrige la distancia de
+  costado del tronco guardado (`trunk_from_lidar`).
+- **Rodear árbol en arco** (`ARC_AROUND_TREE`, 25/11 noche, pedido del usuario): entre paradas, girar en el lugar hasta
+  tener el tronco sobre el eje de las ruedas → arco antihorario a 8 cm/s con centro en el tronco (radio y rumbo con la
+  odometría; termina por la posición angular alrededor del tronco) → al rumbo de la parada. Para igual en cada parada.
+  Bloqueado o con objetos guardados: los saltos de siempre. Simulado: 4–13 mm de error. **Sin probar en el robot.** En la Pi desde el 25/11 22:21 (`99cb555`; copia `collection_mission.py.antes_lidar`). **Sin probar en el robot.**
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.5** en el Poco X6 Pro (horizontal, panel escalado); 0.15.3 en la Xiaomi Pad 5. Control: **Modo manual |

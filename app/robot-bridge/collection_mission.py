@@ -111,6 +111,15 @@ OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supues
 # Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
 LIDAR_BAND_M = (.40, .44)
 LIDAR_TRUST_M = (.25, .60)
+LIDAR_TO_TRUNK_MM = 273.    # J1 -> eje del árbol = lectura del lidar + esto (con las medidas de arriba)
+# Rodear árbol en arco (26/11, pedido del usuario): de una parada a la siguiente, girar en el lugar hasta tener el tronco
+# sobre el eje de las ruedas, arco con centro en el tronco y volver a girar; para igual en cada parada. Durante el arco
+# el lidar (19,6 cm delante del eje) no ve la maceta: el radio se corrige con la odometría; en la parada, con el lidar.
+ARC_AROUND_TREE = True
+ARC_M_S = .08
+ARC_GAIN = 4.               # inclinación hacia el radio buscado: atan(4 · error en m) (10 cm -> 22°)
+ARC_TURN_GAIN = 1.5         # rad/s por rad de error de rumbo
+ARC_RADIUS_MM = (500., 1100.)   # centro de giro al tronco guardado; fuera de esto no es creíble: por saltos
 TRUNK_CLEAR_MM = 550.       # centro de giro al tronco (en la parada, 79,5 cm): ~20 cm de medio ancho + copa + margen
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
 # el brazo cosecha la lista guardada. Se pausa el procesamiento (rectificación, disparidad, YOLO y localizador:
@@ -153,6 +162,7 @@ class CollectionMission:
         self.zone = None
         self.deadline = 0.
         self.run_until = 0.
+        self.pot_m = None   # Rodear árbol: lidar a la maceta en esta parada (m), si se pudo leer
         self.avoid, self.obstacles = False, []   # Rodear árbol: esperar y esquivar objetos (marco odom, m)
         self.stop_requested = False
         self.events = []
@@ -316,6 +326,8 @@ class CollectionMission:
                         notes.append(note)
                     if not stop:   # el primer escaneo se hace (y se vuelve) desde acá
                         first = dict(source_value(self.control.snapshot(), 'odom') or first)
+                    elif trunk_world is not None:
+                        trunk_world = self.trunk_from_lidar(trunk_world)
                 self.stage = 'escaneo'
                 if around:
                     self.update('BUSCANDO', f'{name}escaneo de {seconds:.0f} s con el Móvil quieto.')
@@ -328,7 +340,7 @@ class CollectionMission:
                     if trunk_start is None:
                         trunk_start = TRUNK_STOP_MM
                         notes.append('tronco supuesto en la parada (70 cm a la izquierda de J1)')
-                    trunk_world = arm_to_world((*trunk_start, 0.), first)[:2]
+                    trunk_world = self.trunk_from_lidar(arm_to_world((*trunk_start, 0.), first)[:2])
                     self.update('BUSCANDO', f'Tronco a {trunk_start[0] / -10:.0f} cm a la izquierda de J1 y '
                                 f'{trunk_start[1] / 10:.0f} cm adelante.')
                 if not targets:
@@ -503,7 +515,14 @@ class CollectionMission:
         vino (horario; los saltos intermedios miran hacia donde va, con el árbol a la derecha). Un salto que pasa cerca
         de un objeto guardado o del tronco, o que queda bloqueado, se hace por un círculo DETOUR_RIGHT_MM más afuera
         (con un paso al costado hacia afuera si hace falta) si el ultrasonido de ese lado lo deja; el salto siguiente
-        vuelve al círculo. Nunca en marcha atrás (hop_plan). StopUnreachable si ninguno anda."""
+        vuelve al círculo. Nunca en marcha atrás (hop_plan). StopUnreachable si ninguno anda. ARC_AROUND_TREE: antihorario,
+        primero en arco (arc_to_stop); si queda bloqueado, por saltos desde donde quedó."""
+        if ARC_AROUND_TREE and ccw and not self.obstacles:   # ponytail: con objetos guardados, saltos (esquivan)
+            try:
+                if await self.arc_to_stop(owner, trunk_world, heading, stop, label):
+                    return
+            except Blocked as blocked:
+                self.obstacles.append(blocked.point)
         odom = source_value(self.control.snapshot(), 'odom')
         if odom is None:
             raise RuntimeError('Falta odometría para ir a la parada')
@@ -571,7 +590,7 @@ class CollectionMission:
         """Rodear árbol (25/11): deja la maceta a LIDAR_BAND_M del TFmini-S (al medio) con un paso al costado: girar
         90° -> recto -> volver a girar (nunca atrás; el árbol a la izquierda). Sin una lectura confiable no se mueve.
         Devuelve una nota para el informe o None si ya estaba bien."""
-        readings = []
+        self.pot_m, readings = None, []
         for _ in range(5):
             meters = front_distance(self.control.snapshot(), 'range_lidar_left')
             if meters is not None and math.isfinite(meters):
@@ -583,6 +602,7 @@ class CollectionMission:
         if not LIDAR_TRUST_M[0] <= meters <= LIDAR_TRUST_M[1]:
             return f'{name}lidar a {meters * 100:.0f} cm (no parece la maceta), sin corregir'
         if LIDAR_BAND_M[0] <= meters <= LIDAR_BAND_M[1]:
+            self.pot_m = meters
             return None
         shift = (meters - sum(LIDAR_BAND_M) / 2) * 1000   # mm; > 0: lejos, hacia el árbol (a la izquierda)
         turn = math.copysign(90., shift)
@@ -596,7 +616,90 @@ class CollectionMission:
             await self.drive_step(owner, 'giro', -turn)
             return f'{name}lidar a {meters * 100:.0f} cm, no pudo corregir: {blocked}'
         await self.drive_step(owner, 'giro', -turn)
+        self.pot_m = sum(LIDAR_BAND_M) / 2
         return f'{name}lidar a {meters * 100:.0f} cm, corrido {abs(shift) / 10:.0f} cm'
+
+    def trunk_from_lidar(self, trunk_world):
+        """El tronco guardado (x, y m, odom) a la distancia de costado que dio el lidar en esta parada; a lo largo del
+        Móvil queda donde estaba. Así el arco siguiente sale con el radio real."""
+        odom = source_value(self.control.snapshot(), 'odom')
+        if self.pot_m is None or odom is None:
+            return trunk_world
+        ahead = world_to_arm((*trunk_world, 0.), odom)[1]
+        return arm_to_world((-(self.pot_m * 1000 + LIDAR_TO_TRUNK_MM), ahead, 0.), odom)[:2]
+
+    async def arc_to_stop(self, owner, trunk_world, heading, stop, label):
+        """Girar hasta tener el tronco sobre el eje de las ruedas, arco antihorario con centro en el tronco hasta el lugar de
+        la parada (tronco en `stop`, mm, marco de J1, con rumbo `heading`) y girar a ese rumbo. False si el tronco
+        guardado no es creíble."""
+        odom = source_value(self.control.snapshot(), 'odom')
+        if odom is None:
+            raise RuntimeError('Falta odometría para ir a la parada')
+        tx, ty, _ = world_to_arm((*trunk_world, 0.), odom)
+        rx, ry = tx - ROTATION_CENTER_MM[0], ty - ROTATION_CENTER_MM[1]
+        if rx >= 0 or not ARC_RADIUS_MM[0] <= math.hypot(rx, ry) <= ARC_RADIUS_MM[1]:
+            return False
+        # dónde termina el centro de giro: el tronco en `stop` visto con rumbo `heading`
+        sx, sy = (stop[0] - ROTATION_CENTER_MM[0]) / 1000, (stop[1] - ROTATION_CENTER_MM[1]) / 1000
+        c, s = math.cos(heading), math.sin(heading)
+        goal = (trunk_world[0] - (c * sy + s * sx), trunk_world[1] - (s * sy - c * sx))
+        align = math.atan2(ry, -rx)   # > 0: el tronco adelante del eje: a la derecha lo deja sobre el eje
+        sweep = (math.atan2(goal[1] - trunk_world[1], goal[0] - trunk_world[0])
+                 - math.atan2(odom['y_m'] - trunk_world[1], odom['x_m'] - trunk_world[0])) % (2 * math.pi)
+        self.update('NAVEGANDO', f'{label}: girar {math.degrees(align):.0f}° a la derecha -> arco de '
+                    f'{math.degrees(sweep):.0f}° a {math.hypot(sx, sy) * 100:.0f} cm del tronco -> al rumbo de la parada')
+        await self.drive_step(owner, 'giro', -math.degrees(align))
+        await self.drive_arc(owner, trunk_world, sweep, math.hypot(sx, sy))
+        odom = source_value(self.control.snapshot(), 'odom')
+        if odom is None:
+            raise RuntimeError('Falta odometría para ir a la parada')
+        turn = math.atan2(math.sin(heading - odom['yaw_rad']), math.cos(heading - odom['yaw_rad']))
+        await self.drive_step(owner, 'giro', math.degrees(turn))
+        return True
+
+    async def drive_arc(self, owner, center, sweep, radius):
+        """Arco antihorario alrededor de `center` (x, y m, odom) a ARC_M_S hasta recorrer `sweep` rad alrededor de él,
+        pasando de a poco del radio de ahora a `radius` (m, centro de giro al tronco); radio y rumbo (tangente) se
+        corrigen con la odometría. Con algo adelante espera como drive_step y, si sigue, Blocked."""
+        snapshot = self.control.snapshot()
+        odom = source_value(snapshot, 'odom')
+        if not odom:
+            raise RuntimeError('Falta realimentación para el movimiento')
+        start = math.dist(center, (odom['x_m'], odom['y_m']))
+        last = math.atan2(odom['y_m'] - center[1], odom['x_m'] - center[0])
+        done, limit, waiting = 0., monotonic() + 20. + 2 * sweep * radius / ARC_M_S, None
+        while monotonic() < limit:
+            snapshot = self.control.snapshot()
+            odom = source_value(snapshot, 'odom')
+            if not odom:
+                raise RuntimeError('Se perdió la realimentación del Móvil')
+            if self.avoid and front_blocked(snapshot):
+                front = front_distance(snapshot)
+                self.cycle(owner)
+                if waiting is None:
+                    waiting = monotonic()
+                    self.update('NAVEGANDO', 'Obstáculo adelante en el arco: esperando que se despeje.')
+                elif monotonic() - waiting >= OBSTACLE_WAIT_S:
+                    raise Blocked('Objeto adelante en el arco', obstacle_point(odom, front))
+                limit += .05
+                await asyncio.sleep(.05)
+                continue
+            waiting = None
+            polar = math.atan2(odom['y_m'] - center[1], odom['x_m'] - center[0])
+            done += math.atan2(math.sin(polar - last), math.cos(polar - last))
+            last = polar
+            if done >= sweep:
+                break
+            want = start + (radius - start) * max(0., done) / sweep
+            error = math.dist(center, (odom['x_m'], odom['y_m'])) - want   # > 0: lejos, cerrar el arco
+            # rumbo: la tangente, inclinada hacia el radio buscado según el error (> 0: girar a la izquierda)
+            aim = polar + math.pi / 2 + math.atan(ARC_GAIN * error) - odom['yaw_rad']
+            aim = math.atan2(math.sin(aim), math.cos(aim))
+            self.cycle(owner, ARC_M_S, min(.5, max(0., ARC_M_S / want + ARC_TURN_GAIN * aim)))
+            await asyncio.sleep(.05)
+        else:
+            raise RuntimeError('El Móvil no completó el arco en el tiempo permitido')
+        await self.settle(owner, 1.)
 
     @staticmethod
     def hop_plan(navigation, trunk_world, pose, heading, stop):
