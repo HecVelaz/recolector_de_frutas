@@ -27,7 +27,7 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   El usuario propuso 35–40, después 38–42; con las medidas reales quedó **40–44 cm** (objetivo 42). Confirmar en una parada donde ya agarró.
 - **Rodear árbol usa el lidar** (`lidar_trim`, `LIDAR_BAND_M`): al llegar a cada parada (también la 1.ª), antes del
   escaneo, mediana de 5 lecturas; fuera de 40–44 cm se corre de costado al centro (girar ±90° → recto → volver);
-  sin lectura o fuera de 25–60 cm no se mueve y lo anota en el informe. **Sin probar en el robot; no está en la Pi.**
+  sin lectura o fuera de 25–60 cm no se mueve y lo anota en el informe. En la Pi desde el 25/11 22:21 (`99cb555`; copia `collection_mission.py.antes_lidar`). **Sin probar en el robot.**
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.5** en el Poco X6 Pro (horizontal, panel escalado); 0.15.3 en la Xiaomi Pad 5. Control: **Modo manual |
