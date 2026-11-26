@@ -11,16 +11,17 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   sola (25/11, `throttled=0x50000`); servo de la pinza (23/11). Potencia v0.6: falta portafusible, XT60 y divisor.
 - **Manual v1.2** (25/11) en `docs/manual/` (falta subir el PDF a Drive). Misión ROS: navegación solo en Gazebo.
 
-## TFmini-S: trabajo local pendiente de cargar (25/11, ~21:31)
-- Usuario confirmó cableado: verde TX → WROOM GPIO 13, rojo → bornera 5 V, negro → GND; blanco aislado.
-  Sensor de un punto, no escáner 2D. Montaje lateral izquierdo sobre bumper; posición/orientación **MEDIR**.
-- Implementado en `../pruebas-esp32/20-brazo-coordinado`: UART1 RX, parser y `/range/lidar_izq` (Range, 10 Hz).
-  5 pruebas nativas OK; compilaciones `brazo` y `ros` OK sin warnings. **No flasheado**; tensión no medida.
-- Puente y app 0.15.6 preparados; Android: 34 tests OK, lint sin errores (7 avisos). Poco X6 Pro todavía en
-  **0.15.5**, confirmado por ADB. **No se copió nada a la Pi ni se instaló la APK nueva**.
-- Suite puente: 124 ejecutadas, 6 fallos + 4 errores por falta de NumPy, 8 omitidas. NumPy/OpenCV ya instalados
-  en `/tmp/arturito-lidar-venv`, pero la repetición final fue interrumpida antes de arrancar. **No hay commits**.
-- Continuar con `docs/CONTINUAR_CLAUDE.md`: incluye cambios de ambos repos, comandos y tareas previas de la demo.
+## TFmini-S lateral izquierdo (25/11, ~22:00): cargado y midiendo
+- Cableado: verde TX → WROOM GPIO 13, rojo → bornera 5 V, negro → GND; blanco aislado. Sensor de un punto.
+- WROOM con `20-brazo-coordinado` env ros (`67f5d7f`, respaldo `~/arturito-build/20261125_lidar/`), puente con
+  `range_lidar_left`, app **0.15.6** en el Poco. `/range/lidar_izq` da ~0,28 m quieto. Solo informativo.
+- **Montaje (usuario, 25/11):** 14 cm del suelo; 13,4 cm detrás de la cara frontal (aprox.). Mira a la izquierda.
+  Falta: distancia lateral del lidar a J1 (se supone 12 cm, el costado izquierdo, deducido de 26-sim: **MEDIR**)
+  y la distancia de J1 a la cara frontal (para saber si el haz pega cerca del centro de la maceta).
+- **Distancia objetivo a la maceta** (parada de 26-sim: tronco a 70 cm a la izquierda de J1 y 15 adelante; maceta
+  de 33 cm de lado, cara a 16,5 cm del eje, alto 20 cm **MEDIR**): 70 − 12 − 16,5 ≈ **41 cm**; zona buena del
+  brazo (tronco a 63–72 cm de J1) ≈ **35–43 cm**. Es cálculo, no medido: confirmar parando el robot en una parada
+  donde ya agarró y leyendo el lidar. Rodear árbol todavía no lo usa.
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.5** en el Poco X6 Pro (horizontal, panel escalado); 0.15.3 en la Xiaomi Pad 5. Control: **Modo manual |
