@@ -78,7 +78,9 @@ def home_recovery(detail, state):
             return f'mv {float(angles.group(1)):.2f} {UNFOLD_Q2:.2f} {UNFOLD_Q3:.2f}', UNFOLD_Q2
         # 23/11: con J3 en 24,7° J2 no podía bajar sola a 10° (la franja la deja >= ~J3): el reposo coordinado del
         # firmware baja las dos sin salir de la franja (J2 17°, J3 4°)
-        return PARK_COMMAND, 17.
+        # 26/11, en el robot: J1 queda donde está. Con la correa saltada (51°) el 'mv 3 17 4' la llevaba contra su final
+        # de carrera (los mv no lo miran) y seguía empujando; el homing del firmware sí la frena en el flanco
+        return f'mv {float(angles.group(1)):.2f} 17 4', 17.
     return None
 JOINT_STATES = re.compile(r'(?:^|;)e=([0-6]),([0-6]),([0-6])(?:;|$)')
 ARM_HOLD_CORRECTION_S = 2.0   # quieto: cuánto puede durar el estado 1 (corrección del sostén)

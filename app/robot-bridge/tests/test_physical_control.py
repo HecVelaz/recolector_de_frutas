@@ -286,7 +286,7 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.arm.home_feedback.return_value = (self.now + .01, 'failed')
         self.now += .05
         self.assertEqual(self.control.input('owner', ManualInput(motion='home')), ('active', False))
-        self.arm.send.assert_called_with(PARK_COMMAND)   # las dos juntas, dentro de la franja
+        self.arm.send.assert_called_with('mv 3.04 17 4')   # las dos juntas, dentro de la franja; J1 donde está
         self.now += .05
         self.evidence['arm_state'] = 'q=3,22,15;e=5,5,5;c=111;fc=000;pz=882;mn=1500'   # yendo al reposo (mv)
         self.assertNotIn('Brazo ocupado o en estado inválido', self.control.blockers('homing'))
@@ -464,7 +464,9 @@ class HomeRecoveryFoldedTest(unittest.TestCase):
         from physical_control import PARK_COMMAND, home_recovery
         detail = 'Homing: J2 en +49.9°; más arriba de 25° el codo no llega a su final de carrera. Bajarla antes (j 2 10).'
         self.assertEqual(home_recovery(detail, 'q=3.01,49.90,79.82;e=4,4,4'), ('mv 3.01 46.70 50.00', 46.7))
-        self.assertEqual(home_recovery(detail, 'q=3.01,46.70,50.00;e=4,4,4'), (PARK_COMMAND, 17.))
+        self.assertEqual(home_recovery(detail, 'q=3.01,46.70,50.00;e=4,4,4'), ('mv 3.01 17 4', 17.))
+        # J1 no se mueve: con la correa saltada el encoder no sabe dónde está el final de carrera
+        self.assertEqual(home_recovery(detail, 'q=98.65,46.62,49.97;e=4,4,4'), ('mv 98.65 17 4', 17.))
         # 25/11, en el robot: con J1 en la canasta (130,03°) primero sale J1, plegado; después el intermedio y el reposo
         self.assertEqual(home_recovery(detail, 'q=130.03,46.76,79.94;e=4,4,4'), ('mv 100.00 46.76 79.94', (1, 100.)))
         self.assertEqual(home_recovery(detail, 'q=100.02,46.76,79.94;e=4,4,4')[0], 'mv 100.02 46.70 50.00')
