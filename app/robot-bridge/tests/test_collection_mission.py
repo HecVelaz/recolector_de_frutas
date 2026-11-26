@@ -302,6 +302,21 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
         self.assertIn('1 limón(es) del otro lado del tronco: salteados', self.mission.status['message'])
 
+    async def test_recolector_first_puts_the_pot_in_the_lidar_band_without_stops(self):
+        # 26/11, usuario: el Recolector mueve la base, sin paradas, y se ubica con el lidar respecto a la maceta
+        snapshot = self.control.snapshot.return_value
+        snapshot['sources'].append({'key': 'range_lidar_left', 'status': 'fresh', 'age_ms': 10,
+                                    'value': {'kind': 'distance', 'meters': .40}})
+        a = (-560., 200., 140.)
+        drive = AsyncMock()
+        events, planned = await self.recolector_run([[[a]] * 3], count=1, extra=(
+            patch.object(self.mission, 'drive_step', new=drive),))
+        got = [(c.args[1], round(c.args[2], 6)) for c in drive.await_args_list]
+        self.assertEqual(got[:3], [('giro', 90.), ('recto', 70.), ('giro', -90.)], self.mission.status['message'])
+        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertIn('lidar a 40 cm, corrido 7 cm', self.mission.status['message'])
+        self.assertNotIn('parada', self.mission.status['message'].lower())
+
     async def test_going_around_the_tree_lemons_too_far_from_j1_are_skipped(self):
         # 26/11, usuario: en Rodear árbol solo lo que se alcanza de enfrente (uno a 95 cm de la cámara iba a buscarse)
         near, far = (-560., 200., 140.), (-560., 400., 140.)   # 59 y 69 cm de J1, los dos de este lado del tronco

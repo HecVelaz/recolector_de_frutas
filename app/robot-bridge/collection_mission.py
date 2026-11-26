@@ -325,11 +325,12 @@ class CollectionMission:
                     except StopUnreachable as error:   # pedido del usuario: la tarea sigue con la siguiente
                         notes.append(f'parada {stop + 1} salteada: {error}')
                         continue
+                # 26/11, usuario: el Recolector también se ubica con el lidar respecto a la maceta (sin paradas)
+                self.stage = 'distancia a la maceta'
+                note = await self.lidar_trim(owner, name)
+                if note:
+                    notes.append(note)
                 if around:
-                    self.stage = 'distancia a la maceta'
-                    note = await self.lidar_trim(owner, name)
-                    if note:
-                        notes.append(note)
                     if not stop:   # el primer escaneo se hace (y se vuelve) desde acá
                         first = dict(source_value(self.control.snapshot(), 'odom') or first)
                     elif trunk_world is not None:
