@@ -257,11 +257,11 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
     @patch('collection_mission.VISION_ON_DEMAND', True)
     async def test_recolector_tries_every_scanned_lemon_without_moving_when_it_cannot_reposition(self):
-        near, far_ok, unreachable = (-500., 150., 128.), (-560., 200., 140.), (-750., 300., 130.)
+        near, far_ok, unreachable = (-500., 150., 128.), (-520., 195., 140.), (-750., 300., 130.)
         beside = (-480., 40., 130.)   # a ~5° de J1: el firmware pediría J1 < 3°
         self.navigation.planear.return_value = [('giro', 20.), ('recto', -500.)]   # reubicarse: marcha atrás de más
         events, planned = await self.recolector_run([[[near, far_ok, unreachable, beside]] * 3], count=1)
-        self.assertEqual(planned, [(-560, 200), (-500, 150)])   # primero el de la zona buena; sin reubicación, desde acá
+        self.assertEqual(planned, [(-520, 195), (-500, 150)])   # primero el de la zona buena; sin reubicación, desde acá
         self.assertFalse(any(e == 'pausa' for e, _ in events))   # 23/11: la visión queda prendida
         for call in self.control.mission_velocity.call_args_list:   # la base no se mueve
             self.assertEqual(call.args[1:], (0., 0.))
@@ -271,7 +271,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('sin plan', self.mission.status['message'])
 
     async def test_recolector_repositions_with_the_arm_in_the_basket_and_skips_a_lemon_lost_from_view(self):
-        a, b, c = (-560., 200., 140.), (-480., 40., 130.), (-450., 300., 130.)   # a en la zona buena; b y c no
+        a, b, c = (-520., 195., 140.), (-480., 40., 130.), (-600., 330., 130.)   # a en la zona buena; b y c no
         self.navigation.planear.return_value = [('giro', 12.)]
 
         drive = AsyncMock()   # la odometría no cambia: lo guardado se mide en el mismo lugar
@@ -281,7 +281,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
                  [[c]] * 3]         # para c: sí -> se agarra
         events, planned = await self.recolector_run(views, count=1, extra=(
             patch.object(self.mission, 'drive_step', new=drive),))
-        self.assertEqual(planned, [(-560, 200), (-450, 300)], self.mission.status['message'])   # a y c; b no
+        self.assertEqual(planned, [(-520, 195), (-600, 330)], self.mission.status['message'])   # a y c; b no
         self.assertEqual(drive.call_count, 2)       # se reubicó para b y para c
         names = [e for e, _ in events]
         self.assertNotIn('despliega', names)   # 25/11: anda con el brazo en la canasta (en DESPLEGAR tapaba la cámara)
@@ -293,22 +293,47 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
     async def test_going_around_the_tree_lemons_beyond_the_trunk_are_skipped(self):
         # 25/11, usuario: en cada parada la pinza no pasa del tronco (tronco a 52 cm de J1 con la franja 20-30 cm)
         from collection_mission import TRUNK_STOP_MM
-        near, beyond = (-560., 200., 140.), (-650., 250., 140.)
+        near, beyond = (-520., 195., 140.), (-650., 250., 140.)
         self.navigation.planear.return_value = [('giro', 0.)]   # la vuelta al primer escaneo
         self.assertGreater(near[0], TRUNK_STOP_MM[0] - 100)
         with patch('collection_mission.estimate_trunk', return_value=(-600., 150.)):
             events, planned = await self.recolector_run([[[near, beyond]] * 3], count=1, around=True, stops=1,
                                                         extra=(patch.object(self.mission, 'drive_step', new=AsyncMock()),))
-        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])
         self.assertIn('1 limón(es) del otro lado del tronco: salteados', self.mission.status['message'])
+
+    async def test_recolector_goes_back_to_where_it_started(self):
+        # 26/11, usuario: al terminar, el Recolector vuelve al origen (la base, como la vuelta al cero de Recolección)
+        a = (-520., 195., 140.)
+
+        async def drive(owner, kind, value):
+            if kind == 'recto':
+                self.odom['x_m'] += math.cos(self.odom['yaw_rad']) * value / 1000
+                self.odom['y_m'] += math.sin(self.odom['yaw_rad']) * value / 1000
+            else:
+                self.odom['yaw_rad'] += math.radians(value)
+
+        moved = {'x_m': .30, 'y_m': .10, 'yaw_rad': math.radians(20.)}
+        original_pick = self.mission.pick_here
+
+        async def pick_and_drift(*args, **kwargs):   # el Móvil quedó en otro lado después de cosechar
+            done = await original_pick(*args, **kwargs)
+            self.odom.update(moved)
+            return done
+        events, planned = await self.recolector_run([[[a]] * 3], count=1, extra=(
+            patch.object(self.mission, 'drive_step', new=drive),
+            patch.object(self.mission, 'pick_here', new=pick_and_drift)))
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])
+        self.assertLess(math.hypot(self.odom['x_m'], self.odom['y_m']), .005, self.odom)
+        self.assertLess(abs(math.degrees(self.odom['yaw_rad'])) % 360, 1.6, self.odom)
 
     async def test_recolector_scan_keeps_only_lemons_with_steady_depth(self):
         # 26/11, usuario: los limones que aparecen y desaparecen (el estéreo les da profundidad a veces) no se cosechan
-        a, b = (-560., 200., 140.), (-500., 100., 140.)
+        a, b = (-520., 195., 140.), (-500., 100., 140.)
         scan = [[a, b], [a, b], [a], [a], [a]]   # b en 2 de 5 (40 %): pasaba con el 30 % de antes
         events, planned = await self.recolector_run([scan, [[a]] * 3], count=1, extra=(
             patch.object(self.mission, 'drive_step', new=AsyncMock()),))
-        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])
         self.assertIn('1 de 1', self.mission.status['message'])
 
     async def test_recolector_first_puts_the_pot_in_the_lidar_band_without_stops(self):
@@ -316,36 +341,36 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         snapshot = self.control.snapshot.return_value
         snapshot['sources'].append({'key': 'range_lidar_left', 'status': 'fresh', 'age_ms': 10,
                                     'value': {'kind': 'distance', 'meters': .40}})
-        a = (-560., 200., 140.)
+        a = (-520., 195., 140.)
         drive = AsyncMock()
         events, planned = await self.recolector_run([[[a]] * 3], count=1, extra=(
             patch.object(self.mission, 'drive_step', new=drive),))
         got = [(c.args[1], round(c.args[2], 6)) for c in drive.await_args_list]
         self.assertEqual(got[:3], [('giro', 90.), ('recto', 70.), ('giro', -90.)], self.mission.status['message'])
-        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])
         self.assertIn('lidar a 40 cm, corrido 7 cm', self.mission.status['message'])
         self.assertNotIn('parada', self.mission.status['message'].lower())
 
     async def test_going_around_the_tree_lemons_too_far_from_j1_are_skipped(self):
         # 26/11, usuario: en Rodear árbol solo lo que se alcanza de enfrente (uno a 95 cm de la cámara iba a buscarse)
-        near, far = (-560., 200., 140.), (-560., 400., 140.)   # 59 y 69 cm de J1, los dos de este lado del tronco
+        near, far = (-520., 195., 140.), (-560., 400., 140.)   # 55 y 69 cm de J1, los dos de este lado del tronco
         self.navigation.planear.return_value = [('giro', 0.)]
         with patch('collection_mission.estimate_trunk', return_value=(-900., 150.)):
             events, planned = await self.recolector_run([[[near, far]] * 3], count=1, around=True, stops=1,
                                                         extra=(patch.object(self.mission, 'drive_step', new=AsyncMock()),))
-        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])
         self.assertIn('1 limón(es) a más de 63 cm de J1: salteados', self.mission.status['message'])
 
     async def test_after_each_pick_it_checks_the_lemon_left_the_tree_and_tries_once_more(self):
         # 25/11, usuario: "hecho" no aseguraba el limón en la pinza; se mide otra vez y, si sigue ahí, otro intento
-        a = (-560., 200., 140.)
+        a = (-520., 195., 140.)
         events, planned = await self.recolector_run([[[a]] * 3], count=1, misses=1)
-        self.assertEqual(planned, [(-560, 200)] * 2)
+        self.assertEqual(planned, [(-520, 195)] * 2)
         message = self.mission.status['message']
         self.assertIn('1 de 1', message)
         self.assertIn('hecho (verificado, al 2.º intento)', message)
     async def test_a_lemon_still_on_the_tree_after_two_picks_fails_without_a_third(self):
-        a = (-560., 200., 140.)
+        a = (-520., 195., 140.)
         events, planned = await self.recolector_run([[[a]] * 3], count=1, misses=2)
         self.assertEqual(len(planned), 2)
         self.assertIn('0 de 1', self.mission.status['message'])
@@ -364,13 +389,13 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
               patch.object(self.mission, 'arm_to_rest', new=rest),
               patch.object(self.mission, 'settle', new=AsyncMock())):
             results = []
-            self.assertEqual(await self.mission.pick_here('o', grasp, (-560., 200., 140.), results), 0)
+            self.assertEqual(await self.mission.pick_here('o', grasp, (-520., 195., 140.), results), 0)
         basket.assert_not_called()
         self.assertEqual(rest.await_count, 2)
         self.assertIn('falló', results[0][1])
 
     async def test_recolector_tries_a_lemon_once_more_after_an_arm_cut(self):
-        a = (-560., 200., 140.)
+        a = (-520., 195., 140.)
         cuts = ['sin cuentas']
         original = self.mission.pick_here
 
@@ -382,21 +407,21 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
         events, planned = await self.recolector_run([[[a]] * 3], count=1, extra=(
             patch.object(self.mission, 'pick_here', side_effect=pick),))
-        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])   # el segundo intento lo agarra
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])   # el segundo intento lo agarra
         self.assertIn('1 de 1', self.mission.status['message'])
         self.assertIn('se reintentó', self.mission.status['message'])
 
     @patch('collection_mission.ARC_AROUND_TREE', False)   # los saltos (el respaldo del arco)
     async def test_recolector_goes_around_the_tree_and_back_to_the_first_scan(self):
         # 25/11, usuario: 4 paradas antihorario; una sin limones pasa a la siguiente; al final, al primer escaneo
-        a = (-560., 200., 140.)   # en la zona buena: se cosecha sin reubicarse
+        a = (-520., 195., 140.)   # en la zona buena: se cosecha sin reubicarse
         self.navigation.SEP_TRONCO = 450.
         self.navigation.distancia_minima.return_value = 480.
         self.navigation.planear.return_value = [('giro', 45.)]
         drive = AsyncMock()
         events, planned = await self.recolector_run([[[a]] * 3, [[a]] * 3, [[]] * 3], count=1, around=True, extra=(
             patch.object(self.mission, 'drive_step', new=drive),))
-        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertEqual(planned, [(-520, 195)], self.mission.status['message'])
         # en saltos de 45° alrededor del árbol, antihorario (la odometría simulada no cambia: cada salto se mide desde
         # el inicio); con las 4 completa la vuelta
         turns = [round(c.args[1]) for c in self.navigation.planear.call_args_list]
@@ -478,7 +503,7 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
     @patch('collection_mission.ARC_AROUND_TREE', False)   # los saltos (el respaldo del arco)
     async def test_with_two_stops_it_comes_back_the_way_it_went_facing_forward(self):
         # 25/11, usuario: poco espacio, 2 paradas; vuelve por donde vino (horario), nunca en marcha atrás
-        a = (-560., 200., 140.)
+        a = (-520., 195., 140.)
         self.navigation.planear.return_value = [('giro', 45.)]
 
         async def turn(owner, kind, value):   # cada salto simulado gira 45° (la odometría acompaña)

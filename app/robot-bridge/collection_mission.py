@@ -65,14 +65,15 @@ SCAN_STABLE_FRACTION = .6
 SEARCH_HEADINGS_DEG = (15., 25., -15., -25.)
 # Dónde queda el limón respecto de J1 al llegar (mm; x a la derecha, y adelante). Con punta.planear_agarre_tol desde el
 # reposo hay agarre a la canasta con el limón 6 cm más arriba o más abajo, y queda a ~89 cm de la cámara (21/11)
-LEMON_STOP_MM = (-575., 170.)   # parada fija de respaldo, a 60 cm (23/11; 21/11: -500, 150; a 57 cm sin el ajuste fino
+LEMON_STOP_MM = (-527., 156.)   # 26/11: a 55 cm (antes -575, 170: 60 cm). Parada fija de respaldo (23/11; 21/11: -500, 150; a 57 cm sin el ajuste fino
                                 # la pinza quedó 3 cm corta)
 # Pedido del usuario (23/11; antes 50-55 cm): cosechar con el limón a ~60 cm de J1, para que la pinza baje a su altura
 # lejos de las ramas y entre horizontal ~15 cm (la punta no se recoge a menos de ~44 cm: entrada = r - 44 cm). Si ya
 # está en REACH_MM y tiene plan, la base no se mueve; si no, se acerca en su dirección hasta dejarlo a STOP_RADIUS_MM.
 # Más cerca que REACH_MM (nunca retrocede): se cosecha sin moverse si hay plan, con entrada corta (lo de antes)
-STOP_RADIUS_MM, REACH_MM = 600., (580., 630.)
-AROUND_MAX_MM = REACH_MM[1]   # 26/11, usuario: Rodear árbol saltea los limones más lejos que esto de J1 (no los va a buscar)
+# 26/11, usuario: a 55 cm (antes 60): el ajuste fino de 10 puntos se hizo a 52-57 cm; a 60-63 los 1.os intentos fallaban
+STOP_RADIUS_MM, REACH_MM = 550., (530., 580.)
+AROUND_MAX_MM = 630.   # 26/11, usuario: Rodear árbol saltea los limones más lejos que esto de J1 (no los va a buscar)
 CLOSE_MM = 500.   # 21/11: punta.py necesita r > ~500 para entrar de frente
 MIN_BEARING_DEG = 8.   # J1 no baja de 3°: con el limón a 3° o más adelante de J1 hay agarre a 13-21 cm de z (21/11)
 ZONE_M, ZONE_DEG = .04, 5.
@@ -394,6 +395,16 @@ class CollectionMission:
                         self.obstacles = []
             self.stage = 'regreso del brazo al reposo'
             await self.arm_to_rest(owner, grasp)
+            if not around:   # 26/11, usuario: el Recolector termina donde arrancó (antes del paso del lidar), como Recolección
+                self.stage = 'regreso al origen'
+                odom = source_value(self.control.snapshot(), 'odom')
+                if odom is None:
+                    raise RuntimeError('Falta odometría reciente para volver al origen')
+                steps = home_steps({'odom_origin': first}, odom)
+                self.update('NAVEGANDO', 'Volviendo al origen: ' + (navigation.texto(steps) or 'ya está en el origen'))
+                for kind, value in steps:
+                    await self.drive_step(owner, kind, value)
+                await self.settle(owner, 1.)
             # Pedido del usuario (21/11): sin volver a prender la visión para verificar; se informa lo ejecutado
             detail = '; '.join([f'{math.hypot(l[0], l[1]) / 10:.0f} cm: {r}' for l, r in results] + notes)
             where = f' en {stops} parada(s) alrededor del árbol' if around else ' del escaneo'
