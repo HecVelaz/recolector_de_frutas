@@ -1176,3 +1176,33 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   (38–42 → 40–44 → 20–30 cm) → `4107e26` settle → `76110e2` salida de la canasta → `899d5e4` verificación con reintento
   → `2b7e061` "no se ve" → `cc7b4c1` arco → `f578857` HC-SR04 → `eb6d2d8` homing desde la canasta. Todo en la Pi.
   pruebas-esp32: `67f5d7f` (TFmini-S en 20-brazo-coordinado, flasheado). Sin push.
+
+## 2026-11-26 — Ajuste fino de 10 puntos, Recolector con lidar y vuelta al origen, correa de J1
+- **Ajuste fino de la pinza (10 puntos):** WROOM al env `brazo` por serie (12 V apagados; respaldo
+  `~/arturito-build/20261126_ajuste/respaldo_wroom_20261126.bin`, leído a 115200: a 460800 el CH340 corrompe), el
+  usuario centró la pinza en 10 limones (52–57 cm de J1) con `punta.py ajustar`, `ajuste fin` → `ajuste_agarre.json`
+  (n=10, constantes: adelante +31,9 mm, izquierda +38,6, arriba +11,9; viejos en `resultados/ajuste_viejo/`). Volvió
+  al env `ros` (`~/arturito-build/20261125_lidar/firmware.bin`). `GRASP_RAISE_MM` 32,5 → 0 (se sumaba al ajuste).
+  Trampas del ajuste: franja +0,51° (`j 3 42`); J1 "sin cuentas" con pasos < 10 mm (`i+ 20` con espacio); limón bajo y
+  cerca no llega horizontal (alejar el robot a ~58 cm); una medición a 23 cm era otro objeto.
+- **Rodear árbol:** saltea limones a más de 63 cm de J1 (`AROUND_MAX_MM`; uno a 95 cm de la cámara se iba a agarrar);
+  franja del lidar 20–30 → **30–36 cm** (`ebc574c`).
+- **Recolector:** se ubica con el lidar respecto a la maceta antes de escanear, sin paradas (`0feecdb`); agarra con el
+  limón a **55 cm** de J1 (zona 53–58, antes 60) y al terminar **vuelve al origen** con `home_steps` (`0d954dd`).
+- **Visión inestable:** con `espiar_vision.py` (scratchpad) YOLO vio 5/5 limones en el 100 % de las imágenes, pero la
+  profundidad: 2 al 100 % (74, 82 cm), 1 al 32 %, 1 al 8 %, 1 nunca → el escaneo pide profundidad en el 60 % de las
+  imágenes (`SCAN_STABLE_FRACTION`, antes 30 %; `7fb8368`).
+- **Misión `recolector-e72c8f11`:** 2 de 4 limones, los dos al 2.º intento; 2 no se vieron al medir; lidar 39 cm →
+  corrió 6 cm. Agarres a 60–63 cm fallaban al 1.º con la misma medición (< 5 mm): fuera del rango ajustado → 55 cm.
+- **Correa de J1 saltada (16:14 y de nuevo ~16:40):** la pinza enganchada en una rama al ir a la canasta. El homing de
+  la app no paraba: con J2 > 25° la recuperación mandaba `mv 3 17 4` y **los mv no miran el final de carrera** → J1
+  empujaba contra el tope con el encoder en ~52°. Los tres finales de carrera leen bien (probados a mano, `fc=`).
+  Recuperado por ROS: `mv 98.65 17 4` (J1 quieta) y `h` directo → "J1: flanco **+50,914°** del cero anterior".
+  Arreglos: la recuperación deja J1 donde está (`39ee285`); el puente corta el brazo si J1 aprieta su final de carrera
+  con el encoder > 6° (`J1_SWITCH_MAX_Q`, salvo homing del firmware y joystick del brazo; `ffb407f`); `punta.py`
+  pliega el brazo sin girar J1 (punta de ~45 a ~25 cm de J1) antes de girar a la canasta (pruebas-esp32 `af172b0`,
+  sin probar en el robot).
+- El homing del firmware con cero conocido: si toca el final de carrera en el tramo rápido, se aleja ~2° y lo toma
+  despacio (se ve como "no para"); apretarlo a mano en ese momento lo hace alejarse mientras siga apretado.
+- Commits: `ebc574c` `0feecdb` `7fb8368` `0d954dd` `39ee285` `ffb407f`; pruebas-esp32 `af172b0`. Suite del puente
+  138 OK en la Pi. Todo cargado en la Pi (copias `.antes_*26`). Sin push.

@@ -1,66 +1,67 @@
-# Estado actual (al 2026-11-26, ~00:10)
+# Estado actual (al 2026-11-26, ~17:00)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
 del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
 
 ## Avance
-- **Modo Recolector y Rodear árbol** andan de punta a punta con arco y lidar, pero **la pinza falla por unos cm**
-  (usuario, 25/11): casi todos los limones salen al 2.º intento (verificación con reintento). Plan: ajuste fino.
-- **Riesgos:** enlace USB de la S3 (se colgó una vez y cortó dos veces por datos viejos el 25/11); pinza; batería
-  (< 11 V el brazo sin fuerza); J1 en la canasta; visión a pedido deja nodos huérfanos.
-- **Al cierre:** Pi recién reiniciada (00:06), visión ~2 FPS, agentes con sesión. **WROOM sin cero** (`c=000`):
-  hacer homing (el brazo quedó cerca de J1 90°, J2 36°, J3 35°). 12 V los maneja el usuario.
+- **Modo Recolector y Rodear árbol** andan de punta a punta. Ajuste fino de la pinza rehecho (10 puntos, 26/11);
+  última misión: 2 de 4 limones, los dos al 2.º intento (agarre a 60 cm, ahora 55).
+- **Riesgos:** **correa de J1** (saltó 2 veces el 26/11 con la pinza enganchada en una rama; 51°); enlace USB de la S3;
+  batería (< 11 V el brazo sin fuerza); visión a pedido deja nodos huérfanos; profundidad estéreo inestable > 80 cm.
+- **Al cierre:** WROOM con cero (homing del firmware 16:4x), brazo en reposo de homing con un limón en la pinza.
+  Falta tensar la correa de J1 y probar un agarre suelto. 12 V los maneja el usuario.
 
-## Rodear árbol (`app/robot-bridge/collection_mission.py`, en la Pi desde `eb6d2d8`)
-- Paradas antihorario cada 90° (1–4 desde la app); tronco del primer escaneo (lateral corregido con el lidar en cada
-  parada, `trunk_from_lidar`; el de adelante sale de los limones y erra: 27–40 cm en vez de 15).
-- **Entre paradas en arco** (`ARC_AROUND_TREE`): girar hasta tener el tronco sobre el eje de las ruedas → arco a
-  8 cm/s (radio y rumbo por odometría) → rumbo de la parada. Bloqueado o con objetos guardados: saltos de 45°.
-  Probado en el robot (25/11): 3 arcos bien; llega a ±12 cm y el lidar corrige.
-- **Lidar en cada parada** (`lidar_trim`): mediana de 5; **franja 20–30 cm** (usuario, 25/11 noche; corrige a 25;
-  confía en 12–60 cm). 26-sim recomendaba 40–44 cm (100 %); con 20–30 los limones quedan a ~40 cm de J1.
-- **La pinza no pasa del tronco:** se saltean los limones más a la izquierda que el tronco (`beyond_trunk`).
-- **Verificación con reintento:** tras cada agarre mide de nuevo (brazo en la canasta); si hay un limón a < 60 mm
-  (`VERIFICAR_MM`) otro intento (`PICK_TRIES` 2). Sin profundidad útil 4 s = "no se ve" (no corta la misión).
-- HC-SR04: lecturas sin eco sueltas toleradas 0,5 s (`ULTRASONIC_HOLD_S`, `ros_source.py`).
+## Recolector y Rodear árbol (`app/robot-bridge/collection_mission.py`, en la Pi)
+- **Recolector:** lidar a la maceta (franja 30–36 cm) sin paradas → escaneo → por limón reubica la base para dejarlo a
+  **55 cm de J1** (zona 53–58, `LEMON_STOP_MM`, `STOP_RADIUS_MM`, `REACH_MM`) → al final brazo al reposo y **vuelta
+  al origen** (marcha atrás sin sensor atrás).
+- **Rodear árbol:** paradas antihorario cada 90° en arco (`ARC_AROUND_TREE`), lidar en cada parada (franja 30–36 cm),
+  saltea limones más allá del tronco (`beyond_trunk`) y a más de **63 cm de J1** (`AROUND_MAX_MM`).
+- **Escaneo:** solo limones con profundidad en el 60 % de las imágenes (`SCAN_STABLE_FRACTION`).
+- **Verificación con reintento:** mide de nuevo tras cada agarre; si sigue ahí (< 60 mm), otro intento (`PICK_TRIES` 2).
+- **Camino a la canasta** (`punta.py`, pruebas-esp32 `af172b0`, **sin probar**): con el limón, tirón, muñeca,
+  arrastre 5° con J1, salida horizontal; después **pliega sin girar J1** (punta a ~25 cm) y recién gira a 130°.
+
+## Agarre
+- `ajuste_agarre.json` (Pi `~/scripts/20-brazo-coordinado/resultados/`): 10 puntos del 26/11, limones a 52–57 cm de J1;
+  constantes +31,9 / +38,6 / +11,9 mm (adelante, izquierda, arriba). `GRASP_RAISE_MM` 0. **No tocar de a una.**
+- Cámara (TF del 12/11, 9 puntos, error esperado ~22 mm): 13,8° hacia abajo, mira a la izquierda (90,6°).
 
 ## TFmini-S (lidar lateral izquierdo)
-- Verde TX → WROOM GPIO 13, rojo 5 V, negro GND, blanco aislado. `/range/lidar_izq` (Range, 10 Hz, NaN si inválido).
-- Montaje (usuario): 14 cm del suelo, 13,4 cm detrás del frente, **19,1 cm adelante y 13 cm a la izquierda de J1**.
-  Maceta redonda de 29,5–30 cm × 22 cm. Lectura ≈ D − 27,3 cm (D = J1 → eje del árbol). Tensión sin medir.
-- App 0.15.6 en el Poco: fila «LiDAR izquierdo» en Estado.
+- Verde TX → WROOM GPIO 13, rojo 5 V, negro GND. `/range/lidar_izq` (Range, 10 Hz, NaN si inválido).
+- 14 cm del suelo, **19,1 cm adelante y 13 cm a la izquierda de J1**. Lectura ≈ D − 27,3 cm (D = J1 → eje del árbol).
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.6** en el Poco X6 Pro; 0.15.3 en la Xiaomi Pad 5. Modos: manual | Recolector | Recolección | Rodear árbol.
 - Conexión por Tailscale `http://100.116.96.71:18006`; clave en `~/arturito-bridge-0.4.0/data/.connection-token`.
-  Teléfono con ~1 s de demora fuera de la red de la Pi.
 - **Puente** en la Pi `~/arturito-bridge-0.9.0` (Python `~/arturito-bridge-0.4.1/.venv`, datos `~/arturito-bridge-0.4.0/data`),
   arranca con `arturito.service`. **Cargar un cambio:** copiar el archivo (guardar el viejo `.antes_*`), cortar
   `pkill -f "^/home/r2d2/arturito-bridge-0.4.1/.venv/bin/python run_pi.py"` y correr `arrancar_pi.sh`.
-  `bridge.log` se acumula (rechazos y cortes con el estado del brazo). Informes: `data/missions/*.json`.
-- **`arrancar_pi.sh` no relanza el agente de la S3** si ya corre el del brazo (`agente_base.sh` ve "algún agente").
-- **Homing** (`physical_control.home_recovery`, hasta 3): en la canasta primero J1 a 100° plegado; plegado → intermedio
-  (J2 46,7 / J3 50); J2 > 25° → `mv 3 17 4`; fuera de la franja sube J2. **Exige el frente fresco** (`control_gate`).
-- Suite del puente: 133 pruebas OK (`/tmp/arturito-lidar-venv/bin/python -m unittest discover -s tests`; `.venv` local es de Windows).
+  `bridge.log` (rechazos y cortes con el estado del brazo; los mensajes del homing no quedan). Informes: `data/missions/*.json`.
+- **Homing de la app** (`physical_control.home_recovery`, hasta 3): canasta → J1 a 100° plegado; plegado → intermedio
+  (J2 46,7 / J3 50); J2 > 25° → `mv <J1 actual> 17 4` (J1 no se mueve); fuera de la franja sube J2. Exige el frente fresco.
+- **Correa saltada:** el puente corta el brazo si J1 aprieta su final de carrera con el encoder > 6° (`J1_SWITCH_MAX_Q`),
+  salvo en el homing del firmware y con el joystick del brazo. Recuperación a mano: J2/J3 al reposo con J1 quieta
+  (`mv <J1> 17 4` por `/brazo/comando`) y `h`.
+- Suite del puente: 138 pruebas OK **en la Pi** (rsync a `/tmp/puente_pruebas`, `~/arturito-bridge-0.4.1/.venv/bin/python
+  -m unittest discover -s tests`); la local falla 13 por el entorno.
 
 ## Brazo (WROOM)
-- **`pruebas-esp32/20-brazo-coordinado` env `ros` con TFmini-S (`67f5d7f`)**, flasheado el 25/11 (app en 0x10000).
-  Respaldo previo: `~/arturito-build/20261125_lidar/respaldo_wroom_20261125.bin`. **No flashear `firmware/brazo`.**
-- Canasta: J1 sale con el joystick (`jog_j1_out`); si queda plegado con J2 > 50,7° baja J3 a 55° con `j` (`unfold_j3`).
-  Tras soltar, J2 a veces queda en ~54° (fuera de la zona plegada 42–51°): causa sin ver.
-- Agarre: `GRASP_RAISE_MM` 32,5 (puente), `AGARRAR_ADELANTE` −27, `AGARRAR_IZQUIERDA` −7,5 (punta.py); ajuste fino
-  de 5 puntos del 21/11 (`~/scripts/20-brazo-coordinado/resultados/ajuste_agarre.json`). **No tocar de a una.**
-- Cámara (TF del 12/11, 9 puntos, error esperado ~22 mm): 13,8° hacia abajo, mira a la izquierda (90,6°).
+- **`pruebas-esp32/20-brazo-coordinado` env `ros` con TFmini-S** (`~/arturito-build/20261125_lidar/firmware.bin`, app en
+  0x10000). Serie (para `punta.py ajustar`): `~/arturito-build/20261126_ajuste/brazo20_serie_67f5d7f.bin`.
+  **No flashear `firmware/brazo`.** Respaldo: `~/arturito-build/20261126_ajuste/respaldo_wroom_20261126.bin`.
+- Finales de carrera: el firmware los usa **solo en el homing** (los `mv` y el joystick no frenan con ellos). En el
+  homing con cero, si lo toca rápido se aleja ~2° y lo toma despacio.
+- J1 "sin cuentas" con pasos muy chicos (< ~1°). Tras soltar, J2 a veces queda en ~54° (fuera de la zona plegada).
 
 ## Base (S3, `firmware/base`)
 - En la S3 `~/firmware/base_ros_20261121_sin_r` (env `ros`). Si deja de publicar con el USB presente: 12 V apagados,
-  `esptool --before usb-reset --after watchdog-reset chip-id` y agente a mano. Al prender puede quedar en bootloader
-  (`arrancar_pi.sh` lo detecta). Enlace: `pings_fallidos` y `cortes` en `/base/estado`.
+  desenchufar el USB o reiniciar la Pi (`esptool --before usb-reset` dio Errno 71 el 26/11; sin sudo sin clave).
+  `arrancar_pi.sh` no relanza el agente de la S3 si ya corre el del brazo.
 
 ## Visión (repo `HecVelaz/vision_estereo`)
-- `bash ~/scripts/vision.sh`: detector v4, ~2 img/s, profundidad 0,40–0,95 m (el localizador no publica si no ubica
-  ningún limón). **Pausa a pedido (`VISION_STOP`) deja vivos detector y localizador** → huérfanos; el 25/11 la cámara
-  derecha quedó trabada y hizo falta reiniciar la Pi.
+- `bash ~/scripts/vision.sh`: detector v4, ~2 img/s, profundidad 0,40–0,95 m. YOLO estable; la profundidad estéreo
+  falla en limones a > ~80 cm. **Pausa a pedido (`VISION_STOP`) deja vivos detector y localizador** → huérfanos.
 - En la Pi `ros2 topic echo` se cuelga seguido: usar `timeout -k 2 8`. `pkill -f` siempre con patrón anclado.
 
 ## Pi 5
