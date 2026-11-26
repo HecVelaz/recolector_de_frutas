@@ -56,6 +56,10 @@ ORIGIN_SECONDS = 3.8      # medición del limón para el cero (21/11: 3 s juntab
 # de punta (MIN_POSICIONES, DISPERSION_MAX) y a menos de EXPECTED_RADIUS_MM. Por eso acá alcanza con menos (un limón a
 # ~95 cm de la cámara daba 2 lecturas en 3 s y no se podía fijar el cero sin acercar el robot a mano).
 ORIGIN_MIN_VIEWS, ORIGIN_SPREAD_MM = 2, 30.
+# 26/11, usuario: en el escaneo solo los limones con profundidad estable. Medido con 5 limones a la vista: YOLO los ve
+# a todos en el 100 % de las imágenes, pero el estéreo da profundidad a 2 en el 100 %, a uno en el 32 % (saltando
+# 83-91 cm) y a otro en el 8 %; con el 30 % de antes pasaba el de 32 %
+SCAN_STABLE_FRACTION = .6
 # 21/11: cero sin limón a la vista -> la recolección lo busca girando sobre el lugar a estos rumbos (° respecto del
 # cero, + a la izquierda), quieta y midiendo en cada uno como el cero; si no ve ninguno vuelve al rumbo del cero
 SEARCH_HEADINGS_DEG = (15., 25., -15., -25.)
@@ -339,7 +343,7 @@ class CollectionMission:
                 if around:
                     self.update('BUSCANDO', f'{name}escaneo de {seconds:.0f} s con el Móvil quieto.')
                 frames = await self.scan_frames(owner, seconds) or []
-                groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
+                groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS, min_fraction=SCAN_STABLE_FRACTION)
                 targets = sorted((raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
                                   if spread <= grasp.DISPERSION_MAX), key=lambda l: math.hypot(l[0], l[1]))
                 if around and trunk_world is None:   # pedido del usuario: el tronco, del primer escaneo

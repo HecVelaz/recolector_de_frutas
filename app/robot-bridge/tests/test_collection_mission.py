@@ -302,6 +302,15 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
         self.assertIn('1 limón(es) del otro lado del tronco: salteados', self.mission.status['message'])
 
+    async def test_recolector_scan_keeps_only_lemons_with_steady_depth(self):
+        # 26/11, usuario: los limones que aparecen y desaparecen (el estéreo les da profundidad a veces) no se cosechan
+        a, b = (-560., 200., 140.), (-500., 100., 140.)
+        scan = [[a, b], [a, b], [a], [a], [a]]   # b en 2 de 5 (40 %): pasaba con el 30 % de antes
+        events, planned = await self.recolector_run([scan, [[a]] * 3], count=1, extra=(
+            patch.object(self.mission, 'drive_step', new=AsyncMock()),))
+        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertIn('1 de 1', self.mission.status['message'])
+
     async def test_recolector_first_puts_the_pot_in_the_lidar_band_without_stops(self):
         # 26/11, usuario: el Recolector mueve la base, sin paradas, y se ubica con el lidar respecto a la maceta
         snapshot = self.control.snapshot.return_value
