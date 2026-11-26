@@ -24,7 +24,7 @@ flowchart LR
   PI -- USB · micro-ROS --> S3[ESP32-S3<br/>base]
   PI -- USB · micro-ROS --> WR[ESP32-WROOM<br/>brazo]
   PI -- UART GPIO 14 · 15 --> GPS[GPS UP501]
-  PI -. USB .-> LID[LiDAR]
+  LID[TFmini-S lateral izquierdo] -- UART TX a GPIO 13 --> WR
   S3 --> TR[2 × IBT-2 + DC 895 planetario 53 rpm]
   S3 --> SEN[IMU · 3 × HC-SR04 · 3 bumpers]
   S3 --> SEG[Seta · batería]
@@ -88,7 +88,7 @@ selector en OFF se apagan los encoders y la lógica de los IBT-2.
 ## ESP32-WROOM-32D · brazo (v0.5)
 
 DevKit con CH340, `/dev/ttyUSB0`, en un **shield de borneras de 30 pines** (`fotos/esp32 wroom 32D/`). Tres IBT-2 con un
-solo EN; queda libre el GPIO 13. v0.5 (12/10): encoder de J2 a 36/39 y finales de carrera de J1/J2 a 32/33. Así la
+solo EN; GPIO 13 conectado al TX del TFmini-S (25/11). v0.5 (12/10): encoder de J2 a 36/39 y finales de carrera de J1/J2 a 32/33. Así la
 única resistencia de la placa es el pull-down del 23: los encoders traen su pull-up y los finales de carrera usan el interno.
 
 | GPIO | Conecta a | Nota |
@@ -103,7 +103,7 @@ solo EN; queda libre el GPIO 13. v0.5 (12/10): encoder de J2 a 36/39 y finales d
 | 4 | Servo de apertura de la pinza | 50 Hz |
 | 14 | Servo de giro J4 | pulsa durante el arranque |
 | 32 · 33 · 27 | Finales de carrera (cero) J1 · J2 · J3 | NA a GND, pull-up interno; sin 100 nF (el homing pide 3 lecturas seguidas) |
-| 13 | libre | reserva |
+| 13 | TFmini-S: cable verde TX → RX UART1 | 115200 8N1, lógica 3,3 V; firmware 20 actualizado pendiente de carga |
 
 Motores 36GP-555 (J1, J2, J3), encoder SCX-555 de 16 PPR (64 cuentas por vuelta del motor), salida de colector abierto
 (pull-ups de 5,1 kΩ en la placa), 3,3-5 V, alimentado aparte del motor: blanco = motor +,
@@ -130,7 +130,6 @@ pines ni protección. Usar punteras en los cables y ver que no choque con el dis
 | CSI0 · CSI1 | Cámaras NoIR izquierda · derecha | cable de 15 a 22 pines |
 | USB | ESP32-S3 (base) | micro-ROS |
 | USB | ESP32-WROOM (brazo) | micro-ROS |
-| USB | LiDAR | fuera del mínimo |
 | GPIO 14 · 15 (pines 8 · 10) | GPS UP501: RX del GPS · TX del GPS | UART0, `/dev/ttyAMA0`, 9600; GPS a 3,3 V. Pines del módulo (hoja rev. 1.2; pin 1 a la derecha visto del blindaje): 1 RXD, 2 TXD, 3 GND, 4 VDD, 5 VDD_B (obligatorio: unido al 4) y 6 PPS libre |
 | USB-C | Power bank Xiaomi PB2020MI (5 V 3 A) | sin `usb_max_current_enable`: USB limitados a 600 mA (alcanza) |
 
@@ -285,7 +284,7 @@ margen (calor, ESP32, picos).
 - [x] **LED RGB de la S3:** está en el GPIO 48 (probado el 19/10 con `pruebas-esp32/11-led-rgb-s3`): el 38 (EN de
       la tracción) no lo toca.
 - [ ] **Servo de giro (WROOM 14):** el GPIO 14 saca pulsos al arrancar; conectar los 6 V de los servos después de
-      que la WROOM arrancó, o pasar la señal al GPIO 13 (libre).
+      que la WROOM arrancó, el GPIO 13 ahora está dedicado al TFmini-S (25/11).
 - [ ] **LEDs de la Freenove:** además de bumpers y seta, medir si cargan el GPIO 1 (divisor de 7,7 kΩ: un LED
       cambia mucho la lectura de batería), los encoders (15-18) y el I²C (8/9). Si cargan, sacar ese LED.
 - [ ] **Divisor de batería después del selector:** con el selector en ON y la S3 apagada, la LiPo empuja ~2,7 V
@@ -299,8 +298,8 @@ margen (calor, ESP32, picos).
       trabados con la LiPo**; cables a las borneras con **cobre pelado y retorcido, sin estañar** (el estaño cede
       bajo el tornillo).
 - [ ] Cables de cámara de 15 a 22 pines para la Pi 5.
-- [ ] GPIO de reserva: S3 40 (sin ADC) y WROOM 13.
-- [ ] LiDAR por USB en la Pi: los pines 14 y 21 que la prueba de la S3 reservaba para su UART ahora son bumpers.
+- [ ] GPIO de reserva: S3 40 (sin ADC); WROOM 13 ocupado por TFmini-S.
+- [ ] TFmini-S por UART1 RX GPIO 13 en la WROOM: cableado confirmado, falta cargar y probar el firmware 20.
 
 ## Decisiones de esta propuesta
 
@@ -356,3 +355,13 @@ margen (calor, ESP32, picos).
 - Brazo RRR montado **atrás a la izquierda, sobre el eje de tracción**, a ~6 cm del costado (y = 0,11 m; preliminar). **Tipo uArm / Dobot Magician**: cuatro barras (medidas de la E4) y un paralelogramo que mantiene la
   herramienta **siempre horizontal**, apuntando en la dirección de J1 (E1). Pinza con 2 servos DSSERVO RDS3218
   20 kg·cm (apertura y giro J4 sobre el eje de la herramienta; foto en `docs/fotos/pinza/`). Pines y alimentación: `docs/CONEXIONES.md`.
+
+## TFmini-S lateral izquierdo (25/11/2026)
+
+Cableado confirmado por el usuario: verde (TX) a GPIO 13 de la WROOM, rojo a la bornera de 5 V y negro a GND.
+Blanco (RX) aislado. Alimentación especificada 5 V ±0,1 V, pico 200 mA; tensión real pendiente de medir.
+Nunca conectar al riel de servos de 6 V. Sensor de un punto, al costado de la caja sobre el bumper izquierdo;
+posición y orientación exactas **MEDIR**. Distancia a la superficie de la maceta, no al centro del árbol.
+Firmware correcto: `pruebas-esp32/20-brazo-coordinado`, UART1 de recepción; no tocar UART0 ni GPIO 16/17.
+Preparada publicación `/range/lidar_izq`, `sensor_msgs/Range` en metros, marco `lidar_izq_link` (TF sin medir),
+y visualización en Estado de la app 0.15.6. Carga y validación física pendientes; no gobierna Rodear árbol todavía.

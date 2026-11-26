@@ -34,3 +34,8 @@ Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpres
 > (`docs/fotos/bateria 3/`); térmica CHINT NXB-63 C10 (`docs/fotos/llaves/llave.jpeg`; 10/10: sale, la reemplaza el selector WEG con 2 bloques NA BC10).
 > **Agregado (10/10/2026):** selector WEG con 2 bloques BC10 NA 3-4 (`docs/fotos/llaves/selector.jpeg`) y seta AdvanCon con
 > 2 bloques NC SIB2-BE102 (`docs/fotos/llaves/hongo.jpeg`); fusible de auto de 20 A.
+
+> **Agregado (25/11/2026):** Benewake TFmini-S UART, sensor de distancia de un punto, fotos en
+> `docs/fotos/TFmini-S lidar/`. Cableado confirmado: TX verde → WROOM GPIO 13, rojo → 5 V, negro → GND;
+> RX blanco aislado. Montaje lateral izquierdo sobre el bumper; posición exacta MEDIR. Firmware y app preparados,
+> carga y medición real pendientes.

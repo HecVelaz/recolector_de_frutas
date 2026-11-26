@@ -9,6 +9,12 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **27/11/2026** (demo). Estado
    3. Recolector en una estación: 3 limones seguidos con la batería cargada; después Rodear árbol con 2 paradas.
    4. Teléfono: sin ahorro de batería y en la red de la Pi (o hotspot); medir `tailscale ping` < 50 ms. Si no, tablet.
    5. `SENSOR_AHEAD_MM` (MEDIR) en `collection_mission.py`; segundo punto de la batería para `BATTERY_SCALE`.
+   5b. **Prioridad actual por pedido del usuario: TFmini-S + Estado de la app (25/11, ~21:31).** Cableado
+       confirmado (verde GPIO 13 WROOM, rojo 5 V, negro GND; blanco aislado). Firmware 20 y puente implementados;
+       APK 0.15.6 compilada, **sin instalar ni flashear ni copiar a la Pi**. Ver `docs/CONTINUAR_CLAUDE.md`.
+       Repetir suite completa del puente en `/tmp/arturito-lidar-venv` con NumPy/OpenCV ya instalados; no commitear
+       si falla. Después instalar en Poco X6 Pro, avisar antes de copiar a la Pi, confirmar 12 V apagados antes
+       del respaldo/flasheo de la WROOM. Medir tensión, validar distancias quieto, medir montaje antes de navegar.
    6. Después de la demo: `sinCuentasMs` de J1 y `BATERIA_DIVISOR` en el firmware.
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),

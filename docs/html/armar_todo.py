@@ -21,6 +21,7 @@ PAGINAS = [  # (id, archivo, pestaña)
 # Texto de una caja (regex, sin distinguir mayúsculas) -> [página, destino]. Gana la primera que coincide.
 # Destino: un id ("h-...") o el comienzo del texto de un h2/h3 de esa página.
 REGLAS = [
+    [r"tfmini|lidar", "wroom", "h-lidar"],
     [r"bloque a", "seta", "Bloque A"],
     [r"bloque b", "seta", "Bloque B"],
     [r"seta", "seta", "h-idea"],

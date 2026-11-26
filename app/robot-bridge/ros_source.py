@@ -73,6 +73,8 @@ class RosReader:
         def distance(key):
             def callback(m):
                 value, valid, reason = range_value(m.range, m.min_range, m.max_range)
+                if key == 'range_lidar_left' and not valid:
+                    reason = 'LiDAR sin medición válida o lectura vencida'
                 store.put(key, value, valid, reason)
             return callback
 
@@ -80,7 +82,8 @@ class RosReader:
         self._imu_stamp = None
         subscribe(Imu, '/imu/data_raw', imu)
         subscribe(Odometry, '/odom', odom)
-        for key, suffix in [('range_front','frente'),('range_left','izq'),('range_right','der')]:
+        for key, suffix in [('range_front','frente'),('range_left','izq'),('range_right','der'),
+                            ('range_lidar_left','lidar_izq')]:
             subscribe(Range, '/range/'+suffix, distance(key))
         if camera_frames is not None:
             try:

@@ -1,0 +1,258 @@
+Processing brazo (platform: espressif32; board: esp32dev; framework: arduino)
+--------------------------------------------------------------------------------
+Removing unused dependencies...
+Library Manager: Installing throwtheswitch/Unity @ ^2.6.1
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Library Manager: Unity@2.6.1 has been installed!
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32dev.html
+PLATFORM: Espressif 32 (7.1.3) > Espressif ESP32 Dev Module
+HARDWARE: ESP32 240MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 4.20017.260907+sha.dcc1105b 
+ - tool-esptoolpy @ 2.41100.260830 (4.11.0) 
+ - toolchain-xtensa-esp32 @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 39 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- BTS7960 @ 0.1.0
+|-- EncoderPCNT @ 0.1.0
+|-- ServoPWM @ 0.1.0
+|-- TFminiS @ 1.0.0
+|-- Articulacion @ 0.1.0
+Building in release mode
+Compiling .pio/build/brazo/src/capa_ros.cpp.o
+Compiling .pio/build/brazo/src/lidar.cpp.o
+Compiling .pio/build/brazo/src/main.cpp.o
+Compiling .pio/build/brazo/src/servos.cpp.o
+Building .pio/build/brazo/bootloader.bin
+esptool.py v4.11.0
+Creating esp32 image...
+Merged 1 ELF section
+Successfully created esp32 image.
+Generating partitions .pio/build/brazo/partitions.bin
+Compiling .pio/build/brazo/lib5c2/BTS7960/BTS7960.cpp.o
+Archiving .pio/build/brazo/lib5c2/libBTS7960.a
+Compiling .pio/build/brazo/lib345/EncoderPCNT/EncoderPCNT.cpp.o
+Compiling .pio/build/brazo/libba4/ServoPWM/ServoPWM.cpp.o
+Indexing .pio/build/brazo/lib5c2/libBTS7960.a
+Compiling .pio/build/brazo/lib38f/Articulacion/Articulacion.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/Esp.cpp.o
+Archiving .pio/build/brazo/lib38f/libArticulacion.a
+Archiving .pio/build/brazo/lib345/libEncoderPCNT.a
+Indexing .pio/build/brazo/lib38f/libArticulacion.a
+Archiving .pio/build/brazo/libba4/libServoPWM.a
+Indexing .pio/build/brazo/lib345/libEncoderPCNT.a
+Indexing .pio/build/brazo/libba4/libServoPWM.a
+Compiling .pio/build/brazo/FrameworkArduino/FirmwareMSC.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/FunctionalInterrupt.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/HWCDC.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/HardwareSerial.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/IPAddress.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/IPv6Address.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/MD5Builder.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/Print.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/Stream.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/StreamString.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/Tone.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/USB.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/USBCDC.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/USBMSC.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/WMath.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/WString.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/base64.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/cbuf.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-adc.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-bt.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-cpu.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-dac.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-gpio.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-i2c-slave.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-i2c.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-ledc.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-matrix.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-misc.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-psram.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-rgb-led.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-rmt.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-sigmadelta.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-spi.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-time.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-timer.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-tinyusb.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-touch.c.o
+Compiling .pio/build/brazo/FrameworkArduino/esp32-hal-uart.c.o
+Compiling .pio/build/brazo/FrameworkArduino/firmware_msc_fat.c.o
+Compiling .pio/build/brazo/FrameworkArduino/libb64/cdecode.c.o
+Compiling .pio/build/brazo/FrameworkArduino/libb64/cencode.c.o
+Compiling .pio/build/brazo/FrameworkArduino/main.cpp.o
+Compiling .pio/build/brazo/FrameworkArduino/stdlib_noniso.c.o
+Compiling .pio/build/brazo/FrameworkArduino/wiring_pulse.c.o
+Compiling .pio/build/brazo/FrameworkArduino/wiring_shift.c.o
+Archiving .pio/build/brazo/libFrameworkArduino.a
+Indexing .pio/build/brazo/libFrameworkArduino.a
+Linking .pio/build/brazo/firmware.elf
+Retrieving maximum program size .pio/build/brazo/firmware.elf
+Checking size .pio/build/brazo/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   7.2% (used 23700 bytes from 327680 bytes)
+Flash: [===       ]  26.5% (used 347589 bytes from 1310720 bytes)
+Building .pio/build/brazo/firmware.bin
+esptool.py v4.11.0
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+========================= [SUCCESS] Took 92.23 seconds =========================
+
+Processing ros (platform: espressif32; board: esp32dev; framework: arduino)
+--------------------------------------------------------------------------------
+Removing unused dependencies...
+Library Manager: Installing throwtheswitch/Unity @ ^2.6.1
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Library Manager: Unity@2.6.1 has been installed!
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32dev.html
+PLATFORM: Espressif 32 (7.1.3) > Espressif ESP32 Dev Module
+HARDWARE: ESP32 240MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 4.20017.260907+sha.dcc1105b 
+ - tool-esptoolpy @ 2.41100.260830 (4.11.0) 
+ - toolchain-xtensa-esp32 @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Installing importlib-resources with pip at PlatformIO environment
+/home/hecvelaz/.platformio/penv/bin/python -m pip install importlib-resources
+Requirement already satisfied: importlib-resources in /home/hecvelaz/.platformio/penv/lib/python3.12/site-packages (7.1.0)
+
+[notice] A new release of pip is available: 26.2.1 -> 26.3
+[notice] To update, run: /home/hecvelaz/.platformio/penv/bin/python -m pip install --upgrade pip
+Installing pyyaml with pip at PlatformIO environment
+/home/hecvelaz/.platformio/penv/bin/python -m pip install pyyaml
+Requirement already satisfied: pyyaml in /home/hecvelaz/.platformio/penv/lib/python3.12/site-packages (6.0.3)
+
+[notice] A new release of pip is available: 26.2.1 -> 26.3
+[notice] To update, run: /home/hecvelaz/.platformio/penv/bin/python -m pip install --upgrade pip
+Installing markupsafe==2.0.1 with pip at PlatformIO environment
+/home/hecvelaz/.platformio/penv/bin/python -m pip install markupsafe==2.0.1
+Requirement already satisfied: markupsafe==2.0.1 in /home/hecvelaz/.platformio/penv/lib/python3.12/site-packages (2.0.1)
+
+[notice] A new release of pip is available: 26.2.1 -> 26.3
+[notice] To update, run: /home/hecvelaz/.platformio/penv/bin/python -m pip install --upgrade pip
+Installing empy==3.3.4 with pip at PlatformIO environment
+/home/hecvelaz/.platformio/penv/bin/python -m pip install empy==3.3.4
+Requirement already satisfied: empy==3.3.4 in /home/hecvelaz/.platformio/penv/lib/python3.12/site-packages (3.3.4)
+
+[notice] A new release of pip is available: 26.2.1 -> 26.3
+[notice] To update, run: /home/hecvelaz/.platformio/penv/bin/python -m pip install --upgrade pip
+Configuring esp32dev with transport serial
+micro-ROS already built
+Found 41 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- micro_ros_platformio @ 0.0.1+sha.cfee17f
+|-- BTS7960 @ 0.1.0
+|-- EncoderPCNT @ 0.1.0
+|-- ServoPWM @ 0.1.0
+|-- EnlaceMicroRos @ 0.1.0
+|-- TFminiS @ 1.0.0
+|-- Articulacion @ 0.1.0
+Building in release mode
+Compiling .pio/build/ros/src/capa_ros.cpp.o
+Compiling .pio/build/ros/src/lidar.cpp.o
+Compiling .pio/build/ros/src/main.cpp.o
+Compiling .pio/build/ros/src/servos.cpp.o
+Building .pio/build/ros/bootloader.bin
+Generating partitions .pio/build/ros/partitions.bin
+Compiling .pio/build/ros/lib24e/micro_ros_platformio/platform_code/arduino/clock_gettime.cpp.o
+Compiling .pio/build/ros/lib24e/micro_ros_platformio/platform_code/arduino/serial/micro_ros_transport.cpp.o
+Compiling .pio/build/ros/lib5c2/BTS7960/BTS7960.cpp.o
+Compiling .pio/build/ros/lib345/EncoderPCNT/EncoderPCNT.cpp.o
+Archiving .pio/build/ros/lib5c2/libBTS7960.a
+Archiving .pio/build/ros/lib345/libEncoderPCNT.a
+Indexing .pio/build/ros/lib5c2/libBTS7960.a
+Indexing .pio/build/ros/lib345/libEncoderPCNT.a
+esptool.py v4.11.0
+Creating esp32 image...
+Merged 1 ELF section
+Successfully created esp32 image.
+Compiling .pio/build/ros/libba4/ServoPWM/ServoPWM.cpp.o
+Compiling .pio/build/ros/libc65/EnlaceMicroRos/EnlaceMicroRos.cpp.o
+Compiling .pio/build/ros/lib38f/Articulacion/Articulacion.cpp.o
+Archiving .pio/build/ros/libba4/libServoPWM.a
+Indexing .pio/build/ros/libba4/libServoPWM.a
+Compiling .pio/build/ros/FrameworkArduino/Esp.cpp.o
+Archiving .pio/build/ros/lib38f/libArticulacion.a
+Indexing .pio/build/ros/lib38f/libArticulacion.a
+Compiling .pio/build/ros/FrameworkArduino/FirmwareMSC.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/FunctionalInterrupt.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/HWCDC.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/HardwareSerial.cpp.o
+Archiving .pio/build/ros/lib24e/libmicro_ros_platformio.a
+Compiling .pio/build/ros/FrameworkArduino/IPAddress.cpp.o
+Indexing .pio/build/ros/lib24e/libmicro_ros_platformio.a
+Compiling .pio/build/ros/FrameworkArduino/IPv6Address.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/MD5Builder.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/Print.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/Stream.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/StreamString.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/Tone.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/USB.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/USBCDC.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/USBMSC.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/WMath.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/WString.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/base64.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/cbuf.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-adc.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-bt.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-cpu.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-dac.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-gpio.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-i2c-slave.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-i2c.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-ledc.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-matrix.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-misc.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-psram.c.o
+Archiving .pio/build/ros/libc65/libEnlaceMicroRos.a
+Indexing .pio/build/ros/libc65/libEnlaceMicroRos.a
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-rgb-led.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-rmt.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-sigmadelta.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-spi.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-time.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-timer.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-tinyusb.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-touch.c.o
+Compiling .pio/build/ros/FrameworkArduino/esp32-hal-uart.c.o
+Compiling .pio/build/ros/FrameworkArduino/firmware_msc_fat.c.o
+Compiling .pio/build/ros/FrameworkArduino/libb64/cdecode.c.o
+Compiling .pio/build/ros/FrameworkArduino/libb64/cencode.c.o
+Compiling .pio/build/ros/FrameworkArduino/main.cpp.o
+Compiling .pio/build/ros/FrameworkArduino/stdlib_noniso.c.o
+Compiling .pio/build/ros/FrameworkArduino/wiring_pulse.c.o
+Compiling .pio/build/ros/FrameworkArduino/wiring_shift.c.o
+Archiving .pio/build/ros/libFrameworkArduino.a
+Indexing .pio/build/ros/libFrameworkArduino.a
+Linking .pio/build/ros/firmware.elf
+Retrieving maximum program size .pio/build/ros/firmware.elf
+Checking size .pio/build/ros/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  15.7% (used 51524 bytes from 327680 bytes)
+Flash: [===       ]  32.8% (used 429393 bytes from 1310720 bytes)
+Building .pio/build/ros/firmware.bin
+esptool.py v4.11.0
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+======================== [SUCCESS] Took 136.67 seconds ========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+brazo          SUCCESS   00:01:32.228
+ros            SUCCESS   00:02:16.671
+========================= 2 succeeded in 00:03:48.898 =========================

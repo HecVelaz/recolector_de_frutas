@@ -1066,3 +1066,46 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
 - **Manual v1.2** (`a744dcd`): demo desde la app, tiempos, estado, diagnóstico, CPU.
 - La Pi se reinició sola una vez (~14:47, `throttled=0x50000`).
 
+
+### 2026-11-25 — TFmini-S: documentación del cableado previsto
+- A pedido del usuario, agregado a `docs/html/placa_wroom.html` (cableado interactivo, plano y tabla) y
+  `conexiones.html`; regenerado `todo.html` con enlace desde el sensor al detalle de la WROOM.
+- Fotos identifican TFmini-S UART de 5 V, sensor de un punto. Verde TX → GPIO 13 (RX previsto), negro → GND,
+  rojo → bornera de 5 V disponible (confirmada por el usuario), blanco RX aislado. Nunca al buck de servos de 6 V.
+- Montaje previsto al costado de la caja, arriba del bumper izquierdo, mirando a la maceta. Posición y orientación
+  MEDIR; fuente disponible no implica tensión medida. Cableado físico, lectura e integración a Rodear árbol pendientes.
+- Sin cambios de firmware, flasheos ni copias a la Pi. Las páginas publicadas en Claude quedan pendientes de
+  republicar en sus mismos enlaces; esta sesión no dispone de una herramienta para editar esos artifacts.
+
+### 2026-11-25 (~21:31) — Traspaso a Claude: TFmini-S en brazo coordinado y app
+- Usuario confirmó sensor alimentado y conectado: verde GPIO 13 WROOM, rojo bornera 5 V, negro GND. Usará
+  Poco X6 Pro. No informó medida de tensión; posición/orientación exactas siguen MEDIR.
+- En `../pruebas-esp32/20-brazo-coordinado`: driver puro `lib/TFminiS/TFminiS.h`, integración `src/lidar.cpp`,
+  `include/lidar.h`, pin en `pins.h`; `main.cpp` inicia y atiende UART1 RX. Parser de tramas binarias de fábrica,
+  checksum, intensidad >=100 sin saturación, 0,1–12 m, caducidad 300 ms; descarta buffer atrasado/lleno.
+  `capa_ros.cpp/.h` publica `/range/lidar_izq`, `sensor_msgs/Range`, 10 Hz, metros, `lidar_izq_link`, NaN si
+  inválido/vencido, hora sincronizada con el agente. No se inventó TF ni se modificó el control de motores.
+- `pio test -e native`: 5/5 OK. `pio run -e brazo -e ros`: ambos OK sin warnings (log conservado en
+  `docs/diagnosticos/20261125_lidar/compilacion_firmware.txt`). Fuentes del brazo previos al cambio coinciden
+  con `750ba4c` en src/include/lib/platformio.ini. No se flasheó; NO usar `firmware/brazo`.
+- Puente: suscripción en `ros_source.py`, fuente `range_lidar_left` en `telemetry.py`; pruebas de expiración
+  y de la suscripción (`test_telemetry.py`, nuevo `test_ros_source.py`); contrato en `API_V1.md`.
+- Android: `RobotDashboard.kt` agrega «LiDAR izquierdo» a Sensores de distancia; versión 0.15.6 (41).
+  Gradle assembleDebug/testDebugUnitTest/lintDebug: BUILD SUCCESSFUL, 34 pruebas sin fallos/errores; lint 7
+  warnings (GradleDependency x2, NewerVersionAvailable x1, UseKtx x4), cero errores.
+- Puente: `.venv` del repo es de Windows; se creó `/tmp/arturito-lidar-venv` con requirements.txt. La suite se
+  trabó dentro del sandbox en TestClient; afuera ejecutó 124 pruebas: 6 fallos + 4 errores (falta NumPy),
+  8 omitidas (NumPy/OpenCV). Se instalaron NumPy 2.5.5 y opencv-python-headless 5.1.0.95 y se iba a repetir,
+  pero el usuario interrumpió para pasar a Claude ANTES de que arrancara el comando. No existe log final.
+  Resultado fallido conservado en `docs/diagnosticos/20261125_lidar/pruebas_puente_sin_numpy.txt`.
+- ADB primero informó no permissions. `sudo -n setfacl` falló por pedir contraseña; no cambió permisos.
+  La ACL ya daba acceso al usuario: reiniciar ADB resolvió. Poco serial `MRZ58HIN8TPNLFDY`, modelo 2311DRK48G.
+  Consulta al cerrar confirma **app instalada 0.15.5 / code 40**: la instalación de 0.15.6 NO llegó a ejecutarse.
+- Pi consultada solo en lectura: servicio arturito activo; WROOM ttyUSB0 y S3 ttyACM1 a las 21:21.
+  Existe `~/arturito-build/20261120/firmware.bin` (419824 bytes); dos rutas históricas de respaldo de flash no
+  existían, verificar respaldo antes de flashear. No se copiaron archivos, reiniciaron servicios ni mandaron movimientos.
+- Al comienzo se encontró `Timeout (0:00:00.300000)` tras 19:07:44 en bridge.log: hilo ROS en create_subscription
+  → ros_source._update_subscriptions. No se completó la traza del hilo principal ni se probó causalidad.
+  Buscar con `grep -a`: el log contiene bytes binarios. `watch_stalls` sigue instalado, sin cambios.
+- HTML y docs actualizados, `todo.html` regenerado; artifacts publicados siguen pendientes de republicar.
+  **Sin commits ni push en ninguno de los dos repos**, por suite pendiente. Prompt completo: `docs/CONTINUAR_CLAUDE.md`.

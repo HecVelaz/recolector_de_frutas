@@ -165,12 +165,13 @@
           <path class="w data" d="M330 68 H450"></path>
           <g class="lbl data"><text class="t-pin" x="390" y="61" text-anchor="middle">CSI0 · CSI1</text></g>
 
-          <!-- LiDAR (fuera del mínimo) -->
-          <rect class="box later" x="860" y="20" width="230" height="44" rx="4"></rect>
-          <text class="t-title" x="876" y="40">LiDAR</text>
-          <text class="t-sub" x="876" y="56">fuera del mínimo</text>
-          <path class="w data later" d="M750 42 H860"></path>
-          <g class="lbl data"><text class="t-pin" x="805" y="35" text-anchor="middle">USB</text></g>
+          <!-- TFmini-S: incorporación pendiente, UART a la WROOM -->
+          <rect class="box later" x="860" y="20" width="310" height="70" rx="4"></rect>
+          <text class="t-title" x="876" y="40">TFmini-S · pendiente</text>
+          <text class="t-sub" x="876" y="59">izquierda · bornera 5 V disponible</text>
+          <text class="t-sub" x="876" y="77">TX verde → GPIO 13 · GND común</text>
+          <path class="w data later" d="M860 70 H830 V190 H800 V196"></path>
+          <g class="lbl data"><text class="t-pin" x="835" y="114">UART 3,3 V</text></g>
 
           <!-- GPS (UART de la Pi) -->
           <rect class="box" x="860" y="136" width="230" height="46" rx="4"></rect>
@@ -257,7 +258,7 @@
           <rect class="board" x="670" y="196" width="150" height="376" rx="6"></rect>
           <text class="t-big" x="745" y="224" text-anchor="middle">ESP32-WROOM</text>
           <text class="t-sub" x="745" y="243" text-anchor="middle">brazo · 32D</text>
-          <text class="t-sub" x="745" y="544" text-anchor="middle">14 de 15 GPIO · libre: 13</text>
+          <text class="t-sub" x="745" y="544" text-anchor="middle">13: TFmini-S previsto</text>
           <text class="t-sub" x="745" y="560" text-anchor="middle">+ 4 de solo entrada</text>
 
           <g>
@@ -304,7 +305,7 @@
           <text class="t-sub" x="670" y="692">La potencia de 12 V de los drivers está en el esquema de alimentación</text>
         </svg>
       </div>
-      <figcaption>La Pi no toca ningún motor: manda consignas por USB y cada ESP32 cierra sus lazos y reacciona solo ante un bumper, la seta o la pérdida de comandos. La S3 tiene libre solo el GPIO 40 y la WROOM el 13; la reserva está en la Pi (el GPS pasó ahí para liberar dos TRIG).</figcaption>
+      <figcaption>La Pi no toca ningún motor: manda consignas por USB y cada ESP32 cierra sus lazos y reacciona solo ante un bumper, la seta o la pérdida de comandos. La S3 tiene libre solo el GPIO 40; el 13 de la WROOM queda previsto para el TFmini-S; la reserva está en la Pi (el GPS pasó ahí para liberar dos TRIG).</figcaption>
     </figure>
   </section>
 
@@ -496,7 +497,7 @@
             <tr><td class="gpio"><span class="tag gpio"></span>4</td><td>Servo apertura de la pinza</td><td>50 Hz</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>14</td><td>Servo giro J4</td><td>pulsa al arrancar</td></tr>
             <tr><td class="gpio"><span class="tag gpio"></span>32 · 33 · 27</td><td>Finales de carrera (cero) J1 · J2 · J3</td><td>pull-up interno</td></tr>
-            <tr><td class="gpio">13</td><td>libre</td><td>reserva</td></tr>
+            <tr><td class="gpio">13</td><td>TX verde del TFmini-S → RX UART</td><td>incorporación pendiente; lógica 3,3 V</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -510,7 +511,6 @@
             <tr><td class="gpio"><span class="tag data"></span>CSI0 · CSI1</td><td>Cámaras NoIR izq. · der.</td><td>cable 15 → 22 pines</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>ESP32-S3 (base)</td><td>micro-ROS</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>USB</td><td>ESP32-WROOM (brazo)</td><td>micro-ROS</td></tr>
-            <tr><td class="gpio"><span class="tag data"></span>USB</td><td>LiDAR</td><td>fuera del mínimo</td></tr>
             <tr><td class="gpio"><span class="tag data"></span>GPIO 14 · 15</td><td>GPS UP501 (RX · TX del GPS)</td><td>UART0 <span class="mono">/dev/ttyAMA0</span> 9600</td></tr>
             <tr><td class="gpio"><span class="tag supply"></span>USB-C</td><td>Power bank Xiaomi (5 V 3 A)</td><td>USB + ventilador a 600 mA (probar); sin <span class="mono">usb_max_current_enable</span></td></tr>
           </tbody>
@@ -574,9 +574,25 @@
       <li><span><b>Servos con su propio buck</b> (buck 3, CC en 5 A) y GND común con la WROOM: el pico al moverse resetea un ESP32 alimentado por USB.</span></li>
       <li><span><b>Cables de cámara</b> de 15 a 22 pines: la Pi 5 usa el conector chico en CSI0 y CSI1.</span></li>
       <li><span><b>GPS a 3,3 V</b> en el UART de la Pi (<span class="mono">dtparam=uart0=on</span>): TX del GPS al GPIO 15, RX al 14.</span></li>
-      <li><span><b>Pocos GPIO de reserva:</b> el 40 de la S3 (sin ADC) y el 13 de la WROOM.</span></li>
-      <li><span><b>LiDAR por USB en la Pi.</b> Los pines que la prueba de la S3 reservaba para su UART (14 y 21) ahora son bumpers.</span></li>
+      <li><span><b>Pocos GPIO de reserva:</b> el 40 de la S3 (sin ADC); el 13 de la WROOM queda previsto para el TFmini-S.</span></li>
+      <li><span><b>TFmini-S por UART a la WROOM, pendiente.</b> Verde → GPIO 13, negro → GND, rojo → bornera de 5 V disponible, blanco aislado. No usar los 6 V de servos.</span></li>
     </ul>
+  </section>
+
+  <section aria-labelledby="h-lidar">
+    <h2 id="h-lidar">TFmini-S lateral izquierdo · cableado confirmado; carga y prueba pendientes (25/11/2026)</h2>
+    <p>Sensor de distancia de un punto (no escáner 2D), al costado de la caja y arriba del bumper izquierdo, mirando hacia la maceta. Posición y orientación exactas: <b>MEDIR</b>. La distancia X se definirá respecto de la superficie de la maceta; todavía no se usa para controlar Rodear árbol.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Cable</th><th>Función</th><th>Conexión prevista</th></tr></thead>
+      <tbody>
+        <tr><td>Rojo</td><td>Alimentación</td><td>Bornera de 5 V disponible (confirmada por el usuario); verificar 5 V ±0,1 V en el sensor y margen para picos de 200 mA. Nunca al riel de 6 V de servos.</td></tr>
+        <tr><td>Negro</td><td>GND</td><td>GND común con la WROOM y la fuente de 5 V.</td></tr>
+        <tr><td>Verde</td><td>TX del sensor (3,3 V)</td><td>Bornera D13 / GPIO 13 de la WROOM, previsto como RX de una UART adicional.</td></tr>
+        <tr><td>Blanco</td><td>RX del sensor</td><td>Sin conectar y aislado para lectura continua con la configuración de fábrica.</td></tr>
+      </tbody>
+    </table></div>
+    <p>UART de fábrica: 115200 baudios, 8N1. Consumo promedio ≤140 mA, pico 200 mA. GPIO 16/17 siguen dedicados a J3; RX0/TX0 siguen dedicados al USB. Cableado confirmado por el usuario: verde a D13, rojo a 5 V y negro a GND. Lectura implementada en <code>pruebas-esp32/20-brazo-coordinado</code>; falta cargarla y probarla. La app 0.15.6 agrega «LiDAR izquierdo» en Estado. Todavía no gobierna la misión. No flashear <code>firmware/brazo</code>.</p>
+    <p>Datos eléctricos y colores: <a href="https://ai.benewake.com/en/resources/technical-documents/tfmini-s-user-manual/">manual del TFmini-S (Benewake)</a>. Sensor identificado en las fotos de <code>docs/fotos/TFmini-S lidar/</code>.</p>
   </section>
 
   <footer>Fuente de verdad: <span class="mono">firmware/base/include/pins.h</span> y <span class="mono">firmware/brazo/include/pins.h</span>. La Pi es una propuesta. Probados en placa: J1, y J2/J3 con los motores viejos (en <span class="mono">pruebas-esp32/10</span>); lo demás todavía no. Tablas en <span class="mono">docs/CONEXIONES.md</span>.</footer>

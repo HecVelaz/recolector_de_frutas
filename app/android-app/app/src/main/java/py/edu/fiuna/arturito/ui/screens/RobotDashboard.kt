@@ -140,7 +140,8 @@ fun RobotDashboard(bridge: BridgeConnection, alertSound: Boolean = true, onAlert
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionCard("Sensores de distancia", Modifier.weight(1f)) {
-                val ranges = listOf("Frente" to "range_front", "Izquierda" to "range_left", "Derecha" to "range_right")
+                val ranges = listOf("Frente" to "range_front", "Izquierda" to "range_left", "Derecha" to "range_right",
+                    "LiDAR izquierdo" to "range_lidar_left")
                 val readings = data?.sources.orEmpty().associateBy { it.key }
                 for ((label, id) in ranges) {
                     val reading = readings[id]

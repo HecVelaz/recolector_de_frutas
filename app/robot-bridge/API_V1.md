@@ -1,5 +1,14 @@
 # API v1 — observación
 
+## LiDAR lateral izquierdo
+
+`/range/lidar_izq` (`sensor_msgs/Range`, metros) alimenta la fuente `range_lidar_left`.
+La app 0.15.6 la muestra en Estado → Sensores de distancia como «LiDAR izquierdo».
+El TFmini-S está en GPIO 13 de la WROOM, con `20-brazo-coordinado` actualizado.
+Sin mensajes: `waiting`; NaN desde el firmware: `invalid`; sin recibir durante 3 s: `stale`.
+En los tres casos `value` es null. El firmware invalida la lectura tras 300 ms sin trama válida.
+Esta fuente es informativa: todavía no interviene en las consignas de movimiento.
+
 ## Cámaras
 
 `GET /api/v1/vision/{camera}/frame` requiere el mismo token que la telemetría. Las vistas son `left`

@@ -57,6 +57,23 @@ class TelemetryTest(unittest.TestCase):
         self.assertIsNotNone(data['base_state'])
         self.assertEqual(data['boards']['arm']['status'],'stale')
 
+    def test_lidar_missing_invalid_and_disconnected_never_show_old_distance(self):
+        def lidar():
+            return next(s for s in self.store.snapshot()['sources'] if s['key'] == 'range_lidar_left')
+        self.assertEqual(lidar()['status'], 'waiting')
+        self.assertEqual(lidar()['topic'], '/range/lidar_izq')
+        self.store.put('range_lidar_left', *range_value(.73, .1, 12))
+        self.assertEqual(lidar()['value'], {'kind': 'distance', 'meters': .73})
+        self.store.put('range_lidar_left', *range_value(math.nan, .1, 12))
+        self.assertEqual(lidar()['status'], 'invalid')
+        self.assertIsNone(lidar()['value'])
+        self.store.put('range_lidar_left', *range_value(.60, .1, 12))
+        self.now += 4
+        self.store.put('range_left', *range_value(.30, .02, 4))
+        self.assertEqual(lidar()['status'], 'stale')
+        self.assertIsNone(lidar()['value'])
+        json.dumps(self.store.snapshot(), allow_nan=False)
+
     def test_range_nonfinite_values_are_explicit_and_json_safe(self):
         value,valid,reason=range_value(math.inf,.02,4)
         self.assertTrue(valid)

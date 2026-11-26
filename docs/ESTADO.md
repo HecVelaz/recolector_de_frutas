@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-25, ~19:30)
+# Estado actual (al 2026-11-25, ~21:31; traspaso de Codex a Claude)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
 del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
@@ -10,6 +10,17 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - **Riesgos:** J1 en la canasta; trabas del puente; batería (con < 11 V el brazo no tiene fuerza); la Pi se reinició
   sola (25/11, `throttled=0x50000`); servo de la pinza (23/11). Potencia v0.6: falta portafusible, XT60 y divisor.
 - **Manual v1.2** (25/11) en `docs/manual/` (falta subir el PDF a Drive). Misión ROS: navegación solo en Gazebo.
+
+## TFmini-S: trabajo local pendiente de cargar (25/11, ~21:31)
+- Usuario confirmó cableado: verde TX → WROOM GPIO 13, rojo → bornera 5 V, negro → GND; blanco aislado.
+  Sensor de un punto, no escáner 2D. Montaje lateral izquierdo sobre bumper; posición/orientación **MEDIR**.
+- Implementado en `../pruebas-esp32/20-brazo-coordinado`: UART1 RX, parser y `/range/lidar_izq` (Range, 10 Hz).
+  5 pruebas nativas OK; compilaciones `brazo` y `ros` OK sin warnings. **No flasheado**; tensión no medida.
+- Puente y app 0.15.6 preparados; Android: 34 tests OK, lint sin errores (7 avisos). Poco X6 Pro todavía en
+  **0.15.5**, confirmado por ADB. **No se copió nada a la Pi ni se instaló la APK nueva**.
+- Suite puente: 124 ejecutadas, 6 fallos + 4 errores por falta de NumPy, 8 omitidas. NumPy/OpenCV ya instalados
+  en `/tmp/arturito-lidar-venv`, pero la repetición final fue interrumpida antes de arrancar. **No hay commits**.
+- Continuar con `docs/CONTINUAR_CLAUDE.md`: incluye cambios de ambos repos, comandos y tareas previas de la demo.
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.5** en el Poco X6 Pro (horizontal, panel escalado); 0.15.3 en la Xiaomi Pad 5. Control: **Modo manual |

@@ -12,6 +12,7 @@ TOPICS = {
     'range_front': ('/range/frente', 'Distancia frontal'),
     'range_left': ('/range/izq', 'Distancia izquierda'),
     'range_right': ('/range/der', 'Distancia derecha'),
+    'range_lidar_left': ('/range/lidar_izq', 'LiDAR izquierdo (TFmini-S)'),
 }
 
 
