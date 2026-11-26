@@ -361,7 +361,7 @@ margen (calor, ESP32, picos).
 Cableado confirmado por el usuario: verde (TX) a GPIO 13 de la WROOM, rojo a la bornera de 5 V y negro a GND.
 Blanco (RX) aislado. Alimentación especificada 5 V ±0,1 V, pico 200 mA; tensión real pendiente de medir.
 Nunca conectar al riel de servos de 6 V. Sensor de un punto, al costado de la caja sobre el bumper izquierdo;
-a 14 cm del suelo y ~13,4 cm detrás de la cara frontal (usuario, 25/11); posición lateral respecto de J1 **MEDIR**. Distancia a la superficie de la maceta, no al centro del árbol.
+a 14 cm del suelo, ~13,4 cm detrás de la cara frontal y 19,1 cm adelante del eje de J1 (usuario, 25/11); distancia lateral a J1 **MEDIR** (se supone 12 cm). Distancia a la superficie de la maceta, no al centro del árbol.
 Firmware correcto: `pruebas-esp32/20-brazo-coordinado`, UART1 de recepción; no tocar UART0 ni GPIO 16/17.
 Preparada publicación `/range/lidar_izq`, `sensor_msgs/Range` en metros, marco `lidar_izq_link` (TF sin medir),
 y visualización en Estado de la app 0.15.6. Cargado el 25/11 (mide ~0,28 m quieto); no gobierna Rodear árbol todavía.

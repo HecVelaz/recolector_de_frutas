@@ -101,7 +101,7 @@ DETOUR_RIGHT_MM = (500., 800.)
 HOP_DEG = 45.               # saltos alrededor del árbol (la recta de un salto queda cerca del círculo)
 OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supuesto + 10 cm
 # Distancia a la maceta en cada parada (25/11, usuario): TFmini-S al costado izquierdo (/range/lidar_izq). Con 26-sim
-# (maceta redonda de 33 cm supuesta, lidar 12 cm a la izquierda de J1) da 99-100 % con 4 paradas entre 38,5 y 44 cm;
+# (maceta redonda de 33 cm supuesta; lidar 19,1 cm adelante de J1, medido, y 12 cm a la izquierda, supuesto) da 99-100 % con 4 paradas entre 38,5 y 44 cm;
 # a 35 cm, ~50 %. Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
 LIDAR_BAND_M = (.38, .42)
 LIDAR_TRUST_M = (.25, .60)

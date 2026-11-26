@@ -17,9 +17,10 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   `range_lidar_left`, app **0.15.6** en el Poco. `/range/lidar_izq` da ~0,28 m quieto. Solo informativo.
 - **Montaje (usuario, 25/11):** 14 cm del suelo; 13,4 cm detrás de la cara frontal (aprox.); mira a la izquierda;
   **queda fijo ahí**. Con la geometría de 26-sim (J1 a 9 cm del borde de atrás; frente a 31 cm de J1; costado
-  izquierdo de la parte ancha a 12 cm de J1): el lidar está ~17,6 cm adelante de J1, el haz pega ~2,6 cm detrás del
-  eje del árbol (casi de frente a la maceta). Maceta **redonda, 22 cm de alto** (usuario); diámetro supuesto 33 cm
-  (**MEDIR**). Lectura ≈ D − 28,3 cm (D = J1 → eje del árbol).
+  izquierdo de la parte ancha a 12 cm de J1, **MEDIR**). **Centro del lidar 19,1 cm adelante del eje de J1** (usuario,
+  25/11, visto desde el costado izquierdo): el haz pega ~4,1 cm delante del eje del árbol (casi de frente a la maceta;
+  ±5 cm en Y cambian la lectura ≤1,4 cm). Maceta **redonda, 22 cm de alto** (usuario); diámetro supuesto 33 cm
+  (**MEDIR**). Lectura ≈ D − 28,0 cm (D = J1 → eje del árbol): 38–42 cm = D 66–70 cm.
 - **Rango a la maceta en cada parada** (26-sim, 4 paradas, Y 10–20 cm, cálculo, no medido):
   35 cm → 42–52 %; 36 → 83–94 %; 37,5 → ~96 %; **38,5–44 cm → 99–100 %**; 46,7 → 86–94 %.
   El usuario propuso 35–40; quedó **38–42 cm** (objetivo 40). Confirmar con una parada donde ya agarró.
