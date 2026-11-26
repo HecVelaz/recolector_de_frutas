@@ -141,7 +141,10 @@ SCAN_SECONDS = 3.
 # se congela: se apaga. Arrancar tarda ~15 s: margen de VISION_DEMAND_S sin pedido antes de apagarla.
 VISION_DEMAND_S = 30.
 VISION_ON_DEMAND = True    # interruptor general de la visión a pedido
-VISION_STOP = ['pkill', '-TERM', '-f', 'start_limon.sh']
+# 26/11: TERM a todo el grupo de procesos de la visión y KILL a los 5 s (el TERM solo a start_limon.sh dejaba el detector
+# y el localizador huérfanos, uno colgado: hubo que reiniciar la Pi). Sin esperarlo (hasta ~6 s): VISION_ALIVE
+# frena el arranque hasta que termine
+VISION_STOP = ['bash', str(Path.home() / 'vision_estereo/scripts/parar_vision.sh')]
 VISION_START = ['bash', str(Path.home() / 'scripts/vision.sh')]
 VISION_ALIVE = 'camera_ros/lib/camera_ros/camera_node'   # mientras quede alguno, no se puede volver a arrancar
 NO_LEMON_S = 4.        # con profundidad y ningún limón ubicado durante esto: no hay limones a la vista
@@ -771,11 +774,11 @@ class CollectionMission:
             self.vision_paused = paused
 
     def set_vision_paused(self, paused):
-        """Apaga (TERM al grupo de start_limon.sh) o prende (scripts/vision.sh) la visión entera, sin esperar. False si
+        """Apaga (parar_vision.sh, sin esperar) o prende (scripts/vision.sh) la visión entera, sin esperar. False si
         todavía no se puede prender (quedan procesos del apagado anterior): sync_vision lo reintenta."""
         import subprocess
         if paused:
-            subprocess.run(VISION_STOP, capture_output=True, timeout=5)
+            subprocess.Popen(VISION_STOP, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
             return True
         if subprocess.run(['pgrep', '-f', VISION_ALIVE], capture_output=True).returncode == 0 and self.vision_paused:
             return False   # se está apagando: esperar a que termine antes de lanzarla de nuevo
