@@ -3,25 +3,26 @@
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; era el 27/11). Estado: `ESTADO.md`.
 
 0000z. **Para la demo (27/11 en adelante), en orden** (detalle en la bitácora del 26/11):
-   1. **Correa de J1:** tensarla (saltó 2 veces el 26/11, 51°) y probar un agarre suelto; si se movió el soporte del
-      final de carrera, rehacer el ajuste fino.
-   2. **Probar el Recolector** con 2–3 limones: agarre a 55 cm al 1.er intento, **plegado antes de girar a la canasta**
-      (`punta.py` `af172b0`, sin probar) y vuelta al origen (marcha atrás: espacio libre atrás). Si la rama se engancha
-      en el arrastre de 5° con J1 (`TIRON_J1`), achicarlo o sacarlo.
-   3. Probar Rodear árbol con los cambios del 26/11 (lidar 30–36 cm, límite 63 cm, filtro de profundidad 60 %).
-   4. **Visión a pedido:** `VISION_STOP` (`pkill -TERM -f start_limon.sh`) deja vivos `detector_node` y
-      `localizador_node` (huérfanos; el 25/11 la cámara derecha trabada → reinicio de la Pi). Cortar el grupo entero
-      o sacar la pausa (`VISION_ON_DEMAND`).
+   1. **Brazo reimpreso:** montar, tensar la correa de J1, homing y probar un agarre suelto; si se movió el soporte de
+      la cámara o del final de carrera, rehacer el ajuste fino (10 puntos).
+   2. **Prueba de la visión al sol** (robot quieto afuera, 2-3 limones a 60-100 cm, sol y sombra): detección del v4 con
+      las NoIR, cobertura de profundidad, brillo de las dos cámaras (si difiere, fijar exposición y ganancia) y probar
+      elegir el grupo de profundidad **por color** (hoja delante del limón).
+   3. **Probar el Recolector** con 2-3 limones: agarre a 55 cm al 1.er intento, plegado antes de girar a la canasta
+      (`punta.py` `af172b0`, sin probar), vuelta al origen (marcha atrás: espacio libre atrás) y limones lejanos (la
+      visión ahora ve hasta 1,15 m). Si la rama se engancha en el arrastre de 5° con J1 (`TIRON_J1`), achicarlo.
+   4. Probar Rodear árbol con los cambios del 26/11 (lidar 30-36 cm, límite 63 cm, filtro de profundidad 60 %).
    5. **Homing sin el frente:** `control_gate.REQUIRED` pide `range_front` también para mover solo el brazo. Y
       `arrancar_pi.sh`: relanzar el agente de la S3 aunque corra el del brazo.
    6. **Enlace USB de la S3:** se colgó el 25/11 y cortes de datos > 0,5 s; sujetar el cable y medir con
       `medir_enlace_base.py` cuando pase.
-   7. Rodear árbol: el tronco de adelante sale de los limones (27–40 cm en vez de 15): usar el nominal o el lidar.
+   7. Rodear árbol: el tronco de adelante sale de los limones (27-40 cm en vez de 15): usar el nominal o el lidar.
       Tras soltar, J2 a veces queda en ~54° (fuera de la zona plegada): ver por qué.
    8. Teléfono en la red de la Pi (`tailscale ping` < 50 ms). Tensión del TFmini-S (5 V ±0,1). `SENSOR_AHEAD_MM`
       (MEDIR); segundo punto de la batería para `BATTERY_SCALE`.
-   9. Después de la demo: `sinCuentasMs` de J1 y `BATERIA_DIVISOR` en el firmware; que el firmware frene J1 con su
-      final de carrera fuera del homing; corte "sin comandos" (traza de faulthandler) si vuelve.
+   9. Después de la demo: YOLO exportado a 480 (~1,7 veces más rápido; solo si la CPU vuelve a cortar la base);
+      disparidad solo en las cajas; `sinCuentasMs` de J1 y `BATERIA_DIVISOR`; que el firmware frene J1 con su final de
+      carrera fuera del homing.
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
       conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.

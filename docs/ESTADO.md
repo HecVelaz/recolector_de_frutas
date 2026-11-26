@@ -1,15 +1,15 @@
-# Estado actual (al 2026-11-26, ~17:00)
+# Estado actual (al 2026-11-26, ~19:45)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
 del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
 
 ## Avance
-- **Modo Recolector y Rodear árbol** andan de punta a punta. Ajuste fino de la pinza rehecho (10 puntos, 26/11);
-  última misión: 2 de 4 limones, los dos al 2.º intento (agarre a 60 cm, ahora 55).
+- **El brazo se rompió (26/11 tarde): se está reimprimiendo.** Hasta entonces, Recolector y Rodear árbol andaban de
+  punta a punta (última misión: 2 de 4 limones al 2.º intento, con agarre a 60 cm; ahora 55). Al volver: tensar la
+  correa de J1, homing, ajuste fino si se movió algo y un Recolector completo con la visión nueva.
 - **Riesgos:** **correa de J1** (saltó 2 veces el 26/11 con la pinza enganchada en una rama; 51°); enlace USB de la S3;
-  batería (< 11 V el brazo sin fuerza); visión a pedido deja nodos huérfanos; profundidad estéreo inestable > 80 cm.
-- **Al cierre:** WROOM con cero (homing del firmware 16:4x), brazo en reposo de homing con un limón en la pinza.
-  Falta tensar la correa de J1 y probar un agarre suelto. 12 V los maneja el usuario.
+  batería (< 11 V el brazo sin fuerza); **visión al sol sin probar** (NoIR, detector v4); hoja delante del limón.
+- **Al cierre:** visión pausada (la prende la pestaña «Visión» de la app); arbolito en el lab con 3 limones a 74-79 cm.
 
 ## Recolector y Rodear árbol (`app/robot-bridge/collection_mission.py`, en la Pi)
 - **Recolector:** lidar a la maceta (franja 30–36 cm) sin paradas → escaneo → por limón reubica la base para dejarlo a
@@ -59,9 +59,15 @@ del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, n
   desenchufar el USB o reiniciar la Pi (`esptool --before usb-reset` dio Errno 71 el 26/11; sin sudo sin clave).
   `arrancar_pi.sh` no relanza el agente de la S3 si ya corre el del brazo.
 
-## Visión (repo `HecVelaz/vision_estereo`)
-- `bash ~/scripts/vision.sh`: detector v4, ~2 img/s, profundidad 0,40–0,95 m. YOLO estable; la profundidad estéreo
-  falla en limones a > ~80 cm. **Pausa a pedido (`VISION_STOP`) deja vivos detector y localizador** → huérfanos.
+## Visión (repo `HecVelaz/vision_estereo`, `671ac3b`, igual en la Pi y en GitHub)
+- `bash ~/scripts/vision.sh` (la lanza el puente a pedido); apagar con `~/vision_estereo/scripts/parar_vision.sh`
+  (TERM al grupo de procesos, KILL a los 5 s: sin huérfanos). Nunca `pkill` sueltos.
+- Cámaras **sincronizadas** (`SyncMode` de libcamera, 0,03 ms entre izq. y der.), 640×480 a 10 FPS. Detector v4,
+  ~3 img/s; SGBM con los valores por defecto de `stereo_image_proc` (ventana 15) a ~1,7-2,5 pares/s.
+- Profundidad **0,40-1,15 m** (antes 0,95). Error contra cinta: −0,8 a −2,6 cm a 74-79 cm; ~±1,5 cm a ~1 m.
+- Localizador: el **grupo de profundidad más cercano** de la caja (el más grande o el más centrado elegían el fondo:
+  el limón liso solo tiene disparidad en el borde). **Una hoja delante, dentro de la caja, gana** (61 cm en vez de 94).
+  Chequeo por tamaño (`diametro`) programado y apagado: las cajas no sirven para estimar el diámetro (5,5-8,5 cm).
 - En la Pi `ros2 topic echo` se cuelga seguido: usar `timeout -k 2 8`. `pkill -f` siempre con patrón anclado.
 
 ## Pi 5

@@ -1206,3 +1206,30 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   despacio (se ve como "no para"); apretarlo a mano en ese momento lo hace alejarse mientras siga apretado.
 - Commits: `ebc574c` `0feecdb` `7fb8368` `0d954dd` `39ee285` `ffb407f`; pruebas-esp32 `af172b0`. Suite del puente
   138 OK en la Pi. Todo cargado en la Pi (copias `.antes_*26`). Sin push.
+
+## 2026-11-26 (tarde) — Brazo roto; visión: cámaras sincronizadas, rango 1,15 m y apagado sin huérfanos
+- **El brazo se rompió** (usuario): se reimprime. Se trabajó solo la visión, con el robot quieto en el lab.
+- **Sincronización de cámaras:** el libcamera de `~/camera_ws` (fork de Raspberry Pi, 08/2026) trae `SyncMode`
+  (`rpi.sync`) y `camera_ros` lo expone como parámetro → `launch/camaras_comun.py`: izquierda servidor (1), derecha
+  cliente (2). Desfase izq.-der. (stamps de `camera_info`, 10 FPS): **41,1 ms fijo → 0,03 ms** ("Sync achieved").
+- **Rango 0,95 → 1,15 m** (`start_limon.sh`): la ventana del SGBM sigue en 112 px (58-169, f·b = 67,43), sin costo.
+  3 limones a 85-100 cm: con 0,95 el del medio salía a 42 cm (39 %) y 94 solo el 6 %; con 1,15 y sincronía, los tres
+  en todos los pares (el del medio 85 % bien). Contra cinta a ~1 m: derecha 97 vs 96, izquierda 92 vs 93-94, medio 93
+  vs 101 (algo a ~61 cm dentro de su caja: hoja delante).
+- **Selección del grupo de profundidad:** "el más grande" arreglaba la hoja delante (61 cm) pero en el arbolito movido
+  elegía el fondo (88 en vez de 76 cm; el limón liso solo da disparidad en el borde, ~120 px como lo de atrás); "el más
+  centrado" también. Se volvió al **más cercano** (`671ac3b`). Arreglo de fondo pensado: elegir el grupo por color
+  (amarillo), a probar al sol. Con el arbolito movido, contra cinta: 76,2/76,4/72,5 vs 77/79/74 (−0,8 a −2,6 cm).
+- **Chequeo por tamaño** (`diametro`, banda 0,70-1,30) programado y **apagado**: con 5,26 cm descartaba limones bien
+  medidos; el diámetro que sale de las cajas varía 5,5-8,5 cm.
+- **SGBM:** ventana 15/9/7 y `disp12_max_diff` 0/1 cambiados en vivo con `ros2 param set`: diferencias < 0,5 cm y
+  1,6-1,8 pares/s (sin confirmar que el nodo aplique los cambios en vivo). Quedan los valores por defecto.
+- **Huérfanos de la visión:** la pausa de la app (`pkill -TERM -f start_limon.sh`) y reinicios cruzados dejaron
+  detector y localizador duplicados y un localizador colgado sin publicar → reinicio de la Pi. Arreglo:
+  `scripts/parar_vision.sh` (TERM a cada grupo de procesos con nodos de la visión, KILL a los 5 s; probado con 9
+  huérfanos simulados: 7,4 s) y el puente lo lanza sin esperar (`f0a81de`). Probado 3 veces desde la app.
+  `start_limon.sh` arranca el localizador 3 s antes que el detector. Al matar con KILL aparece `apport` (se va solo).
+- Herramientas en el scratchpad de la sesión (copiar a `/tmp` de la Pi): `desfase.py` (stamps izq./der.),
+  `espiar_vision.py` + `resumen.py` (cobertura por limón), `grupos_caja.py` (grupos de profundidad de una caja).
+- Commits: recolector `f0a81de`; vision_estereo `6a477b6` `253a77c` `741ffc6` `671ac3b` (push hecho); la Pi
+  alineada con GitHub en `671ac3b`. Pruebas del puente 138 OK.
