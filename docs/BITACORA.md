@@ -1145,3 +1145,7 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   (odometría, IMU y estado al día; la S3 se reconectó recién a las 23:48:33): una lectura sin eco del HC-SR04 del frente
   cortaba la misión. Arreglo: `ULTRASONIC_HOLD_S` (0,5 s) en `ros_source`: lecturas inválidas sueltas no borran la
   última buena (su edad sigue contando para la compuerta de 500 ms). El enlace de la S3 marca `pings_fallidos=60 cortes=2`.
+- **~23:52, sin control del brazo ni homing:** quedó plegado en la canasta con J1 130,03° (límite de destino 130,0°).
+  La recuperación del homing mandaba `mv 130.03 46.70 50.00` (fuera de rango y, con J1 > 118°, no plegado). Arreglo
+  (`eb6d2d8`, en la Pi 23:55; copia `physical_control.py.antes_canasta`): con J1 > 118° primero `mv 100 J2 J3`
+  plegado esperando a J1, después el intermedio y el reposo (`HOME_RECOVERIES` 3).
