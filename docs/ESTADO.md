@@ -32,7 +32,7 @@ del **viernes 4/12/2026** (era el 27/11; el usuario avisó el 25/11): `PENDIENTE
 - **Rodear árbol en arco** (`ARC_AROUND_TREE`, 25/11 noche, pedido del usuario): entre paradas, girar en el lugar hasta
   tener el tronco sobre el eje de las ruedas → arco antihorario a 8 cm/s con centro en el tronco (radio y rumbo con la
   odometría; termina por la posición angular alrededor del tronco) → al rumbo de la parada. Para igual en cada parada.
-  Bloqueado o con objetos guardados: los saltos de siempre. Simulado: 4–13 mm de error. **Sin probar en el robot.** En la Pi desde el 25/11 22:21 (`99cb555`; copia `collection_mission.py.antes_lidar`). **Sin probar en el robot.**
+  Bloqueado o con objetos guardados: los saltos de siempre. Simulado: 4–13 mm de error. En la Pi desde el 25/11 23:13 (`cc7b4c1`, con la verificación con reintento y el arreglo de "no entrega pares"). **Sin probar en el robot.** En la Pi desde el 25/11 22:21 (`99cb555`; copia `collection_mission.py.antes_lidar`). **Sin probar en el robot.**
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.5** en el Poco X6 Pro (horizontal, panel escalado); 0.15.3 en la Xiaomi Pad 5. Control: **Modo manual |
