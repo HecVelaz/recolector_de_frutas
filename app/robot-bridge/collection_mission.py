@@ -68,6 +68,7 @@ LEMON_STOP_MM = (-575., 170.)   # parada fija de respaldo, a 60 cm (23/11; 21/11
 # está en REACH_MM y tiene plan, la base no se mueve; si no, se acerca en su dirección hasta dejarlo a STOP_RADIUS_MM.
 # Más cerca que REACH_MM (nunca retrocede): se cosecha sin moverse si hay plan, con entrada corta (lo de antes)
 STOP_RADIUS_MM, REACH_MM = 600., (580., 630.)
+AROUND_MAX_MM = REACH_MM[1]   # 26/11, usuario: Rodear árbol saltea los limones más lejos que esto de J1 (no los va a buscar)
 CLOSE_MM = 500.   # 21/11: punta.py necesita r > ~500 para entrar de frente
 MIN_BEARING_DEG = 8.   # J1 no baja de 3°: con el limón a 3° o más adelante de J1 hay agarre a 13-21 cm de z (21/11)
 ZONE_M, ZONE_DEG = .04, 5.
@@ -84,7 +85,7 @@ MAX_REVERSE_MM = 200.
 REPOSITION_PLANS = 4   # paradas a probar con el planificador del brazo (cada plan puede tardar ~6-30 s)
 # Pedido del usuario (21/11): la pinza cerró justo debajo del limón; el punto de agarre sube GRASP_RAISE_MM reales (en el
 # modelo de punta, 1 mm de z son ~1,43 mm reales). 23/11: ajustado en el robot (ver GRASP_RAISE_MM)
-GRASP_RAISE_MM = 32.5   # 23/11, usuario: 20 -> 7,5 -> -2,5 (cerraba alto) -> 12,5 (con -2,5, 1,5 cm bajo) -> 32,5 (+2 cm)
+GRASP_RAISE_MM = 0.   # 26/11: 0, la altura la corrige el ajuste fino de 10 puntos (+1,2 cm; antes 32,5 a mano: se sumaban)
 RETURN_SECONDS = 90.
 # Rodear el árbol (25/11, pedido del usuario): 26-sim-alcance-arbolito da 4 paradas cada 90° alrededor del tronco para
 # el 100 % del arbolito (~31 % desde una). Antihorario visto de arriba: el árbol siempre a la izquierda (lado del
@@ -109,11 +110,12 @@ OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supues
 # usuario: maceta redonda de 29,5-30 cm; lidar 19,1 cm adelante de J1 y 13 cm a la izquierda: lee D - 27,3 cm (D: J1 ->
 # eje del árbol; la parada de 26-sim, D 70, da 42,7). 26-sim con 4 paradas: 41-44 cm -> 100 %, 40 -> 98 %, 38 -> 94 %.
 # Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
-# 25/11 noche, usuario: franja 20-30 cm (probar en el robot más cerca que lo de 26-sim, 40-44)
-LIDAR_BAND_M = (.20, .30)
+# 25/11 noche, usuario: franja 20-30 cm (probar en el robot más cerca que lo de 26-sim, 40-44). 26/11: 30-36 cm (el
+# ajuste fino se hizo con 33 cm; con 20-30 los limones quedaban a ~40 cm de J1 y la pinza no entraba de frente)
+LIDAR_BAND_M = (.30, .36)
 LIDAR_TRUST_M = (.12, .60)   # el TFmini-S mide desde 10 cm
 LIDAR_TO_TRUNK_MM = 273.    # J1 -> eje del árbol = lectura del lidar + esto (con las medidas de arriba)
-# El tronco en cada parada: a la distancia del medio de la franja (52 cm de J1 con 20-30 cm) y 15 cm adelante de J1
+# El tronco en cada parada: a la distancia del medio de la franja (60 cm de J1 con 30-36 cm) y 15 cm adelante de J1
 # (26-sim; antes 70 cm a la izquierda)
 TRUNK_STOP_MM = (-(sum(LIDAR_BAND_M) / 2 * 1000 + LIDAR_TO_TRUNK_MM), 150.)
 # Rodear árbol en arco (26/11, pedido del usuario): de una parada a la siguiente, girar en el lugar hasta tener el tronco
@@ -353,6 +355,11 @@ class CollectionMission:
                     if far:
                         notes.append(f'{name}{len(far)} limón(es) del otro lado del tronco: salteados')
                         targets = [lemon for lemon in targets if not beyond_trunk(lemon, trunk_here)]
+                if around:   # 26/11, usuario: lo que se alcanza de enfrente, sin estirar el brazo ni ir a buscarlo
+                    far = [lemon for lemon in targets if math.hypot(lemon[0], lemon[1]) > AROUND_MAX_MM]
+                    if far:
+                        notes.append(f'{name}{len(far)} limón(es) a más de {AROUND_MAX_MM / 10:.0f} cm de J1: salteados')
+                        targets = [lemon for lemon in targets if math.hypot(lemon[0], lemon[1]) <= AROUND_MAX_MM]
                 if not targets:
                     if not around:
                         self.update('FINALIZADO', f'Escaneo de {seconds:.0f} s sin limones estables: no se cosecha '

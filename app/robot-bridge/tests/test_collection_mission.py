@@ -302,6 +302,16 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
         self.assertIn('1 limón(es) del otro lado del tronco: salteados', self.mission.status['message'])
 
+    async def test_going_around_the_tree_lemons_too_far_from_j1_are_skipped(self):
+        # 26/11, usuario: en Rodear árbol solo lo que se alcanza de enfrente (uno a 95 cm de la cámara iba a buscarse)
+        near, far = (-560., 200., 140.), (-560., 400., 140.)   # 59 y 69 cm de J1, los dos de este lado del tronco
+        self.navigation.planear.return_value = [('giro', 0.)]
+        with patch('collection_mission.estimate_trunk', return_value=(-900., 150.)):
+            events, planned = await self.recolector_run([[[near, far]] * 3], count=1, around=True, stops=1,
+                                                        extra=(patch.object(self.mission, 'drive_step', new=AsyncMock()),))
+        self.assertEqual(planned, [(-560, 200)], self.mission.status['message'])
+        self.assertIn('1 limón(es) a más de 63 cm de J1: salteados', self.mission.status['message'])
+
     async def test_after_each_pick_it_checks_the_lemon_left_the_tree_and_tries_once_more(self):
         # 25/11, usuario: "hecho" no aseguraba el limón en la pinza; se mide otra vez y, si sigue ahí, otro intento
         a = (-560., 200., 140.)
@@ -388,22 +398,23 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(caught.exception.point[0], .2 + (SENSOR_AHEAD_MM + OBSTACLE_RADIUS_MM) / 1000)
         self.assertIn('esperando que se despeje', self.mission.events[0]['message'])
 
-    async def test_at_each_stop_the_lidar_leaves_the_pot_between_20_and_30_cm(self):
-        # 25/11, usuario: franja 20-30 cm (antes 40-44); corrige al medio con un paso al costado, nunca marcha atrás
+    async def test_at_each_stop_the_lidar_leaves_the_pot_between_30_and_36_cm(self):
+        # 25/11, usuario: franja 20-30 cm (antes 40-44); 26/11: 30-36 (el ajuste fino, con 33). Corrige al medio con un
+        # paso al costado, nunca marcha atrás
         self.mission.deadline = self.mission.run_until = float('inf')
         snapshot = self.control.snapshot.return_value
         lidar = {'key': 'range_lidar_left', 'status': 'fresh', 'age_ms': 10, 'value': None}
         snapshot['sources'].append(lidar)
-        for meters, steps in ((.33, [('giro', 90.), ('recto', 80.), ('giro', -90.)]),
-                              (.15, [('giro', -90.), ('recto', 100.), ('giro', 90.)]),
-                              (.25, []), (.80, []), (None, [])):
+        for meters, steps in ((.40, [('giro', 90.), ('recto', 70.), ('giro', -90.)]),
+                              (.20, [('giro', -90.), ('recto', 130.), ('giro', 90.)]),
+                              (.33, []), (.80, []), (None, [])):
             lidar['value'] = None if meters is None else {'kind': 'distance', 'meters': meters}
             drive = AsyncMock()
             with patch.object(self.mission, 'drive_step', new=drive):
                 note = await self.mission.lidar_trim('o', '')
             got = [(c.args[1], round(c.args[2], 6)) for c in drive.await_args_list]
             self.assertEqual(got, steps, (meters, note))
-            self.assertEqual(note is None, meters == .25, note)
+            self.assertEqual(note is None, meters == .33, note)
             # 25/11, en el robot: leyendo sin mandar consignas, el control cortaba la recolección a los ~0,5 s
             self.assertGreaterEqual(self.control.mission_velocity.call_count, 5)
             self.control.mission_velocity.reset_mock()
@@ -694,8 +705,8 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
 
     def test_grasp_point_is_raised_grasp_raise_real_millimetres(self):
         from collection_mission import raised
-        self.assertEqual(GRASP_RAISE_MM, 32.5)   # 23/11, ajustado en el robot
-        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + 32.5 / 1.43)
+        self.assertEqual(GRASP_RAISE_MM, 0.)   # 26/11: la altura la corrige el ajuste fino de punta.py
+        self.assertAlmostEqual(raised((-550., 150., 100.))[2], 100. + GRASP_RAISE_MM / 1.43)
 
     def test_arm_zone_requires_a_stationary_base_near_its_arrival(self):
         arrival = dict(self.odom, x_m=.2)
