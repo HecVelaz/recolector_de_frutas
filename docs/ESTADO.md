@@ -1,4 +1,4 @@
-# Estado actual (al 2026-11-26, ~19:45)
+# Estado actual (al 2026-11-26, ~20:30)
 
 Foto del estado (se reescribe en cada `/cerrar`). Historia: `BITACORA.md`; lo que falta y el plan hasta la demo
 del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.**
@@ -9,6 +9,7 @@ del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, n
   correa de J1, homing, ajuste fino si se movió algo y un Recolector completo con la visión nueva.
 - **Riesgos:** **correa de J1** (saltó 2 veces el 26/11 con la pinza enganchada en una rama; 51°); enlace USB de la S3;
   batería (< 11 V el brazo sin fuerza); **visión al sol sin probar** (NoIR, detector v4); hoja delante del limón.
+- **Guía del día de la demo:** `docs/html/checklist_demo.html` (publicada, ID en `CONEXIONES.md`).
 - **Al cierre:** visión pausada (la prende la pestaña «Visión» de la app); arbolito en el lab con 3 limones a 74-79 cm.
 
 ## Recolector y Rodear árbol (`app/robot-bridge/collection_mission.py`, en la Pi)
@@ -39,7 +40,8 @@ del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, n
   `pkill -f "^/home/r2d2/arturito-bridge-0.4.1/.venv/bin/python run_pi.py"` y correr `arrancar_pi.sh`.
   `bridge.log` (rechazos y cortes con el estado del brazo; los mensajes del homing no quedan). Informes: `data/missions/*.json`.
 - **Homing de la app** (`physical_control.home_recovery`, hasta 3): canasta → J1 a 100° plegado; plegado → intermedio
-  (J2 46,7 / J3 50); J2 > 25° → `mv <J1 actual> 17 4` (J1 no se mueve); fuera de la franja sube J2. Exige el frente fresco.
+  (J2 46,7 / J3 50); J2 > 25° → `mv <J1 actual> 17 4` (J1 no se mueve); fuera de la franja sube J2. Solo brazo y homing ya no exigen el
+  HC-SR04 del frente (base y misiones sí).
 - **Correa saltada:** el puente corta el brazo si J1 aprieta su final de carrera con el encoder > 6° (`J1_SWITCH_MAX_Q`),
   salvo en el homing del firmware y con el joystick del brazo. Recuperación a mano: J2/J3 al reposo con J1 quieta
   (`mv <J1> 17 4` por `/brazo/comando`) y `h`.
@@ -57,7 +59,7 @@ del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, n
 ## Base (S3, `firmware/base`)
 - En la S3 `~/firmware/base_ros_20261121_sin_r` (env `ros`). Si deja de publicar con el USB presente: 12 V apagados,
   desenchufar el USB o reiniciar la Pi (`esptool --before usb-reset` dio Errno 71 el 26/11; sin sudo sin clave).
-  `arrancar_pi.sh` no relanza el agente de la S3 si ya corre el del brazo.
+  `arrancar_pi.sh` relanza el agente de la S3 aunque corra el del brazo (`agente_base.sh` mira solo el de la S3).
 
 ## Visión (repo `HecVelaz/vision_estereo`, `671ac3b`, igual en la Pi y en GitHub)
 - `bash ~/scripts/vision.sh` (la lanza el puente a pedido); apagar con `~/vision_estereo/scripts/parar_vision.sh`

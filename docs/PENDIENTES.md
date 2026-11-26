@@ -3,6 +3,7 @@
 Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; era el 27/11). Estado: `ESTADO.md`.
 
 0000z. **Para la demo (27/11 en adelante), en orden** (detalle en la bitácora del 26/11):
+   0. Revisar la guía de la demo (`docs/html/checklist_demo.html`): cómo se apaga la Pi y si hay video de respaldo.
    1. **Brazo reimpreso:** montar, tensar la correa de J1, homing y probar un agarre suelto; si se movió el soporte de
       la cámara o del final de carrera, rehacer el ajuste fino (10 puntos).
    2. **Prueba de la visión al sol** (robot quieto afuera, 2-3 limones a 60-100 cm, sol y sombra): detección del v4 con
@@ -12,15 +13,13 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
       (`punta.py` `af172b0`, sin probar), vuelta al origen (marcha atrás: espacio libre atrás) y limones lejanos (la
       visión ahora ve hasta 1,15 m). Si la rama se engancha en el arrastre de 5° con J1 (`TIRON_J1`), achicarlo.
    4. Probar Rodear árbol con los cambios del 26/11 (lidar 30-36 cm, límite 63 cm, filtro de profundidad 60 %).
-   5. **Homing sin el frente:** `control_gate.REQUIRED` pide `range_front` también para mover solo el brazo. Y
-      `arrancar_pi.sh`: relanzar el agente de la S3 aunque corra el del brazo.
-   6. **Enlace USB de la S3:** se colgó el 25/11 y cortes de datos > 0,5 s; sujetar el cable y medir con
+   5. **Enlace USB de la S3:** se colgó el 25/11 y cortes de datos > 0,5 s; sujetar el cable y medir con
       `medir_enlace_base.py` cuando pase.
-   7. Rodear árbol: el tronco de adelante sale de los limones (27-40 cm en vez de 15): usar el nominal o el lidar.
+   6. Rodear árbol: el tronco de adelante sale de los limones (27-40 cm en vez de 15): usar el nominal o el lidar.
       Tras soltar, J2 a veces queda en ~54° (fuera de la zona plegada): ver por qué.
-   8. Teléfono en la red de la Pi (`tailscale ping` < 50 ms). Tensión del TFmini-S (5 V ±0,1). `SENSOR_AHEAD_MM`
+   7. Teléfono en la red de la Pi (`tailscale ping` < 50 ms). Tensión del TFmini-S (5 V ±0,1). `SENSOR_AHEAD_MM`
       (MEDIR); segundo punto de la batería para `BATTERY_SCALE`.
-   9. Después de la demo: YOLO exportado a 480 (~1,7 veces más rápido; solo si la CPU vuelve a cortar la base);
+   8. Después de la demo: YOLO exportado a 480 (~1,7 veces más rápido; solo si la CPU vuelve a cortar la base);
       disparidad solo en las cajas; `sinCuentasMs` de J1 y `BATERIA_DIVISOR`; que el firmware frene J1 con su final de
       carrera fuera del homing.
 000a. **Para la demo (23/11 noche), en orden:**

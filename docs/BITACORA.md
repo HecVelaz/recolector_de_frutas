@@ -1233,3 +1233,11 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   `espiar_vision.py` + `resumen.py` (cobertura por limón), `grupos_caja.py` (grupos de profundidad de una caja).
 - Commits: recolector `f0a81de`; vision_estereo `6a477b6` `253a77c` `741ffc6` `671ac3b` (push hecho); la Pi
   alineada con GitHub en `671ac3b`. Pruebas del puente 138 OK.
+- **~20:00, pendientes sin medir:** solo brazo y homing ya no exigen el HC-SR04 del frente (`control_gate.evaluate`
+  `require_front`, falso salvo en base y combinado; prueba nueva que falla con el código viejo; 139 OK) y
+  `agente_base.sh` (pruebas-esp32 `25-teleop-pi/tools`, copia en `~/scripts`) mira solo el agente de la S3: probado
+  cortando ese agente con el del brazo vivo → relanzado, sesión y `/base/estado` (`ff64a41`, pruebas-esp32 `133ea03`).
+- **Guía del día de la demo:** `docs/html/checklist_demo.html`, publicada (https://claude.ai/artifact/HQYiXmmj5r1JX3eQuAwKRk):
+  día anterior, encendido, homing, misión, apagado y tabla de recuperaciones (correa de J1, sin cero, base sin datos,
+  visión, hoja delante, batería) (`d46db59`). Falta confirmar con el usuario cómo se apaga la Pi y el video de respaldo.
+- Push de los tres repos; `/pi-sync` (repo en `d46db59`) y `/verificar-robot` todo OK.
