@@ -86,6 +86,10 @@ JOINT_STATES = re.compile(r'(?:^|;)e=([0-6]),([0-6]),([0-6])(?:;|$)')
 ARM_HOLD_CORRECTION_S = 2.0   # quieto: cuánto puede durar el estado 1 (corrección del sostén)
 ARM_SETTLE_S = 1.0   # margen tras 'jv 0 0 0' para que las articulaciones queden quietas
 REFERENCED = re.compile(r'(?:^|;)c=111(?:;|$)')
+SWITCH_J1 = re.compile(r'(?:^|;)fc=1')
+# 26/11, en el robot: la pinza enganchada en una rama hizo saltar la correa de J1 (51°). El flanco está en 0° y J1 queda
+# en 3°: apretado con más de esto, el encoder ya no sabe dónde está J1 y los mv la empujan contra el final de carrera
+J1_SWITCH_MAX_Q = 6.
 
 
 class OpenManual(BaseModel):
@@ -278,6 +282,15 @@ class PhysicalControl:
                 allowed += '1'
             if not states or any(state not in allowed for state in states.groups()):
                 reasons.append('Brazo ocupado o en estado inválido')
+            # Menos en el homing del firmware (lo toca rápido, se aleja y lo toma despacio) y con el joystick del brazo
+            # (para alejarla a mano)
+            firmware_homing = (mode == 'homing' and self.home_started is not None and self.home_recovery is None
+                               and self.park_started is None)
+            angles = ANGLES.search(text)
+            if (mode != 'arm' and not firmware_homing and SWITCH_J1.search(text) and angles
+                    and float(angles.group(1)) > J1_SWITCH_MAX_Q):
+                reasons.append(f'J1 aprieta su final de carrera con el encoder en {float(angles.group(1)):.0f}°: '
+                               'saltó la correa. Bajá J2 y J3 con el joystick y hacé el homing')
         return reasons
 
     def base_feedback(self, starting=False, *, safe=None):

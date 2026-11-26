@@ -316,6 +316,29 @@ class PhysicalControlTest(unittest.IsolatedAsyncioTestCase):
         self.control.input('owner', ManualInput(motion='home'))
         self.arm.send.assert_called_with('h')
 
+    async def test_j1_pressing_its_switch_far_from_zero_stops_the_recovery_but_not_the_firmware_homing(self):
+        # 26/11, en el robot: la correa de J1 saltó 51°; el mv de la recuperación la empujaba contra su final de carrera
+        self.evidence['arm_state'] = 'q=130.03,46.76,79.94;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
+        self.arm.home_error = self.arm.home_detail = ('Homing: J2 en +46.8°; más arriba de 25° el codo no llega a su '
+                                                      'final de carrera sin salir de la franja. Bajarla antes (j 2 10).')
+        await self.control.open('owner', OpenManual(mode='homing', operator_present=True))
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.home_feedback.return_value = (self.now + .01, 'failed')
+        self.now += .05
+        self.control.input('owner', ManualInput(motion='home'))
+        self.arm.send.assert_called_with('mv 100.00 46.76 79.94')
+        self.evidence['arm_state'] = 'q=110,46.76,79.94;e=5,4,4;c=111;fc=100;pz=500;mn=1500'   # J1 en el tope
+        self.assertTrue(any('saltó la correa' in r for r in self.control.blockers('homing')))
+        self.control.tick()
+        self.arm.send.assert_called_with('s')
+        self.assertIsNone(self.control.mode)
+        # El homing del firmware sí lo toca lejos del cero viejo (se aleja y lo toma despacio): no se corta
+        self.control.home_started, self.control.mode = self.now, 'homing'
+        self.evidence['arm_state'] = 'q=52,5.72,3.15;e=6,4,4;c=111;fc=100;pz=500;mn=1500'
+        self.assertFalse(any('saltó la correa' in r for r in self.control.blockers('homing')))
+        self.assertFalse(any('saltó la correa' in r for r in self.control.blockers('arm')))
+        self.assertTrue(any('saltó la correa' in r for r in self.control.blockers('combined')))
+
     async def test_homing_retry_stops_if_the_firmware_rejects_it_again(self):
         self.evidence['arm_state'] = 'q=1.13,2.23,2.91;e=4,4,4;c=111;fc=000;pz=500;mn=1500'
         self.arm.home_error = self.arm.home_detail = 'Homing: J2 y J3 fuera de la franja (2.05° afuera)'
