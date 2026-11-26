@@ -18,7 +18,7 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
    6. Rodear árbol: el tronco de adelante sale de los limones (27–40 cm en vez de 15): usar el nominal o el lidar.
       Tras soltar, J2 a veces queda en ~54° (fuera de la zona plegada): ver por qué.
    7. Teléfono en la red de la Pi (`tailscale ping` < 50 ms). Tensión del TFmini-S (5 V ±0,1). `SENSOR_AHEAD_MM`
-      (MEDIR); segundo punto de la batería para `BATTERY_SCALE`. `docs/CONTINUAR_CLAUDE.md` ya cumplido: borrable.
+      (MEDIR); segundo punto de la batería para `BATTERY_SCALE`.
    8. Después de la demo: `sinCuentasMs` de J1 y `BATERIA_DIVISOR` en el firmware; corte "sin comandos" (traza de
       faulthandler) si vuelve.
 000a. **Para la demo (23/11 noche), en orden:**
