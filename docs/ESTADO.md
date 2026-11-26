@@ -24,9 +24,9 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
   Recalculado con 26-sim (4 paradas, Y 10–20 cm): 38 → 94–100 %; 39 → 95–100 %; 40 → 98–100 %; **41–44 → 100 %**; 46 → 96–99 %.
 - **Rango a la maceta en cada parada** (26-sim, 4 paradas, Y 10–20 cm, cálculo, no medido):
   35 cm → 42–52 %; 36 → 83–94 %; 37,5 → ~96 %; **38,5–44 cm → 99–100 %**; 46,7 → 86–94 %.
-  El usuario propuso 35–40; quedó **38–42 cm** (objetivo 40). Confirmar con una parada donde ya agarró.
+  El usuario propuso 35–40, después 38–42; con las medidas reales quedó **40–44 cm** (objetivo 42). Confirmar en una parada donde ya agarró.
 - **Rodear árbol usa el lidar** (`lidar_trim`, `LIDAR_BAND_M`): al llegar a cada parada (también la 1.ª), antes del
-  escaneo, mediana de 5 lecturas; fuera de 38–42 cm se corre de costado al centro (girar ±90° → recto → volver);
+  escaneo, mediana de 5 lecturas; fuera de 40–44 cm se corre de costado al centro (girar ±90° → recto → volver);
   sin lectura o fuera de 25–60 cm no se mueve y lo anota en el informe. **Sin probar en el robot; no está en la Pi.**
 
 ## App Arturito y puente (`app/`)

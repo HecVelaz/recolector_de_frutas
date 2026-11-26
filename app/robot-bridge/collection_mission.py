@@ -100,10 +100,11 @@ OBSTACLE_RADIUS_MM = 150.   # supuesto: el sensor ve la cara de adelante, no el 
 DETOUR_RIGHT_MM = (500., 800.)
 HOP_DEG = 45.               # saltos alrededor del árbol (la recta de un salto queda cerca del círculo)
 OBSTACLE_CLEAR_MM = 450.    # ~20 cm de medio ancho del Móvil + el radio supuesto + 10 cm
-# Distancia a la maceta en cada parada (25/11, usuario): TFmini-S al costado izquierdo (/range/lidar_izq). Con 26-sim
-# (medido por el usuario: maceta redonda de 29,5-30 cm; lidar 19,1 cm adelante de J1 y 13 cm a la izquierda) da 99-100 % con 4 paradas entre 38,5 y 44 cm;
-# a 35 cm, ~50 %. Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
-LIDAR_BAND_M = (.38, .42)
+# Distancia a la maceta en cada parada (25/11, usuario): TFmini-S al costado izquierdo (/range/lidar_izq). Medido por el
+# usuario: maceta redonda de 29,5-30 cm; lidar 19,1 cm adelante de J1 y 13 cm a la izquierda: lee D - 27,3 cm (D: J1 ->
+# eje del árbol; la parada de 26-sim, D 70, da 42,7). 26-sim con 4 paradas: 41-44 cm -> 100 %, 40 -> 98 %, 38 -> 94 %.
+# Fuera de LIDAR_BAND_M se corre de costado hasta el centro; fuera de LIDAR_TRUST_M no pega en la maceta.
+LIDAR_BAND_M = (.40, .44)
 LIDAR_TRUST_M = (.25, .60)
 TRUNK_CLEAR_MM = 550.       # centro de giro al tronco (en la parada, 79,5 cm): ~20 cm de medio ancho + copa + margen
 # Modo Recolector (21/11): base quieta, escaneo de SCAN_SECONDS desde el primer par estéreo, visión pausada mientras
