@@ -1109,3 +1109,10 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   Buscar con `grep -a`: el log contiene bytes binarios. `watch_stalls` sigue instalado, sin cambios.
 - HTML y docs actualizados, `todo.html` regenerado; artifacts publicados siguen pendientes de republicar.
   **Sin commits ni push en ninguno de los dos repos**, por suite pendiente. Prompt completo: `docs/CONTINUAR_CLAUDE.md`.
+
+### 2026-11-25 ~21:56 — TFmini-S cargado en el robot (Claude)
+- Suite del puente con NumPy/OpenCV: 124 OK (una prueba de collection_mission falló una vez por tiempo con la suite entera; sola y en HEAD anterior pasa siempre). Parser TFmini 5/5.
+- App 0.15.6 (versionCode 41) instalada en el Poco (hizo falta `adb kill-server`).
+- Pi: `ros_source.py` y `telemetry.py` nuevos en `~/arturito-bridge-0.9.0` (copias `*.antes_lidar`); solo se cortó y relanzó el puente y el agente del brazo (S3 y visión siguieron).
+- WROOM, 12 V apagados: respaldo completo `~/arturito-build/20261125_lidar/respaldo_wroom_20261125.bin` (4 MB; a 460800 el CH340 corrompe, se leyó a 115200, ~7 min) y `write-flash 0x10000 firmware.bin` (20-brazo-coordinado env ros, `67f5d7f`, sha256 0ae6269b…), hash verificado.
+- `/range/lidar_izq` llega con frame `lidar_izq_link`: 0,28–0,29 m con el robot quieto. Falta comparar con cinta y ver la fila en la app.
