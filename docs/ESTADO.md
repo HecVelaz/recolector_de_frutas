@@ -15,13 +15,15 @@ del **27/11/2026**: `PENDIENTES.md`. **El estado va acá, nunca en `CLAUDE.md`.*
 - Cableado: verde TX → WROOM GPIO 13, rojo → bornera 5 V, negro → GND; blanco aislado. Sensor de un punto.
 - WROOM con `20-brazo-coordinado` env ros (`67f5d7f`, respaldo `~/arturito-build/20261125_lidar/`), puente con
   `range_lidar_left`, app **0.15.6** en el Poco. `/range/lidar_izq` da ~0,28 m quieto. Solo informativo.
-- **Montaje (usuario, 25/11):** 14 cm del suelo; 13,4 cm detrás de la cara frontal (aprox.). Mira a la izquierda.
-  Falta: distancia lateral del lidar a J1 (se supone 12 cm, el costado izquierdo, deducido de 26-sim: **MEDIR**)
-  y la distancia de J1 a la cara frontal (para saber si el haz pega cerca del centro de la maceta).
-- **Distancia objetivo a la maceta** (parada de 26-sim: tronco a 70 cm a la izquierda de J1 y 15 adelante; maceta
-  de 33 cm de lado, cara a 16,5 cm del eje, alto 20 cm **MEDIR**): 70 − 12 − 16,5 ≈ **41 cm**; zona buena del
-  brazo (tronco a 63–72 cm de J1) ≈ **35–43 cm**. Es cálculo, no medido: confirmar parando el robot en una parada
-  donde ya agarró y leyendo el lidar. Rodear árbol todavía no lo usa.
+- **Montaje (usuario, 25/11):** 14 cm del suelo; 13,4 cm detrás de la cara frontal (aprox.); mira a la izquierda;
+  **queda fijo ahí**. Con la geometría de 26-sim (J1 a 9 cm del borde de atrás; frente a 31 cm de J1; costado
+  izquierdo de la parte ancha a 12 cm de J1): el lidar está ~17,6 cm adelante de J1, el haz pega ~2,6 cm detrás del
+  eje del árbol (casi de frente a la maceta). Maceta **redonda, 22 cm de alto** (usuario); diámetro supuesto 33 cm
+  (**MEDIR**). Lectura ≈ D − 28,3 cm (D = J1 → eje del árbol).
+- **Rango a la maceta en cada parada** (26-sim, 4 paradas, Y 10–20 cm, cálculo, no medido):
+  35 cm → 42–52 %; 36 → 83–94 %; 37,5 → ~96 %; **38,5–44 cm → 99–100 %**; 46,7 → 86–94 %.
+  El usuario propuso 35–40; recomendado **38–42 cm** (objetivo 40). Confirmar con una parada donde ya agarró.
+  Rodear árbol todavía no usa el lidar.
 
 ## App Arturito y puente (`app/`)
 - **App 0.15.5** en el Poco X6 Pro (horizontal, panel escalado); 0.15.3 en la Xiaomi Pad 5. Control: **Modo manual |
