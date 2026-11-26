@@ -1130,3 +1130,9 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   el brazo en la canasta (fuera de la vista). Si no hay un limón a menos de `VERIFICAR_MM` (60 mm, punta.py) de donde
   estaba: "hecho (verificado)". Si sigue: otro intento (`PICK_TRIES` = 2 en total, compartido con el reintento por un
   corte del brazo); a la 2.ª sin arrancarlo: "falló: sigue en el árbol" y no cuenta. Cuesta hasta ~8 s por limón.
+- **Rodear árbol 4 paradas (~22:53):** P1 maceta 31 cm → 11 cm afuera, 2 limones; P2 y P3 en franja, escaneo sin
+  limones estables; P4 29 cm → 13 cm afuera, 3 limones; reubicándose para el 1.º (obstáculo adelante a 29–35 cm,
+  esperó y siguió) y al medir cortó: "La visión estéreo no entrega pares nuevos". El detector siguió a ~2 FPS con 1
+  detección: el localizador no publica `/limon/todos` si ningún limón tiene profundidad válida (0,40–0,95 m, zona con
+  disparidad). Arreglo: `scan_frames` devuelve None con profundidad y sin limones durante `NO_LEMON_S` (4 s): el
+  limón se saltea ("no se vio") o la parada queda sin limones; sin profundidad sigue siendo error de cámaras.

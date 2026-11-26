@@ -75,6 +75,17 @@ class CollectionMissionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(seen, 2)
         self.assertEqual([round(v) for v in lemon], [-500, 200, round(100 + GRASP_RAISE_MM / 1.43)])   # 2 cm más arriba
 
+    async def test_with_depth_but_no_lemon_located_the_scan_is_empty_not_a_camera_failure(self):
+        # 25/11, en el robot: el localizador no publica /limon/todos sin limones; a los 40 s cortaba toda la misión
+        self.mission.deadline = self.mission.run_until = float('inf')
+        self.stereo.target_frame.return_value = (None, None, [])
+        self.stereo.snapshot.return_value = {'status': 'searching'}
+        with patch('collection_mission.NO_LEMON_S', .1), patch('collection_mission.VISION_READY_S', 5.):
+            self.assertIsNone(await self.mission.scan_frames('o', 0.))
+        self.stereo.snapshot.return_value = {'status': 'waiting'}   # sin profundidad: sí son las cámaras
+        with patch('collection_mission.VISION_READY_S', .2), self.assertRaisesRegex(RuntimeError, 'cámaras'):
+            await self.mission.scan_frames('o', 0.)
+
     async def test_measure_origin_accepts_two_rough_views(self):
         # 21/11: un limón lejos (~95 cm) da 2 lecturas con ~20 mm de diferencia: alcanza para el cero
         grasp = Mock(AGRUPAR_MM=35., MIN_POSICIONES=3, DISPERSION_MAX=10.)

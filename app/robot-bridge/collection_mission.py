@@ -124,6 +124,7 @@ VISION_ON_DEMAND = True    # interruptor general de la visión a pedido
 VISION_STOP = ['pkill', '-TERM', '-f', 'start_limon.sh']
 VISION_START = ['bash', str(Path.home() / 'scripts/vision.sh')]
 VISION_ALIVE = 'camera_ros/lib/camera_ros/camera_node'   # mientras quede alguno, no se puede volver a arrancar
+NO_LEMON_S = 4.        # con profundidad y ningún limón ubicado durante esto: no hay limones a la vista
 VISION_READY_S = 40.   # espera de un par estéreo nuevo (la visión recién prendida tarda ~15 s)   # brazo al reposo y regreso al cero, aunque se haya agotado el tiempo de la recolección
 HEIGHT_CM = (33, 64)   # alcance en altura (21/11: 33 cm medido con cosechar; ~64 cm con plan de punta.py sin los +2 cm): solo para explicar un acercamiento sin plan
 
@@ -256,9 +257,10 @@ class CollectionMission:
 
     async def scan_frames(self, owner, seconds):
         """Las imágenes de /limon/todos durante `seconds` s contados desde la primera nueva (el primer par estéreo
-        procesado después de empezar; hasta VISION_READY_S de espera: la visión puede estar arrancando)."""
+        procesado después de empezar; hasta VISION_READY_S de espera: la visión puede estar arrancando). None si llega
+        profundidad pero ningún limón ubicado en NO_LEMON_S: el localizador solo publica /limon/todos con alguno."""
         self.demand_vision()
-        first, waited = None, monotonic() + VISION_READY_S
+        first, waited, searching = None, monotonic() + VISION_READY_S, None
         start_stamp = self.stereo.target_frame()[0]
         while first is None:
             if monotonic() >= waited:
@@ -267,6 +269,14 @@ class CollectionMission:
             stamp = self.stereo.target_frame()[0]
             if stamp is not None and (start_stamp is None or stamp > start_stamp):
                 first = stamp
+            elif self.stereo.snapshot()['status'] == 'searching':
+                # 25/11, en el robot: con el limón fuera de la zona con profundidad (o ya arrancado) no llegaba nada y
+                # a los 40 s cortaba toda la misión como si fueran las cámaras
+                searching = searching or monotonic()
+                if monotonic() - searching >= NO_LEMON_S:
+                    return None
+            else:
+                searching = None
             await asyncio.sleep(.05)
         return await self.measure_frames(owner, seconds)
 
@@ -309,7 +319,7 @@ class CollectionMission:
                 self.stage = 'escaneo'
                 if around:
                     self.update('BUSCANDO', f'{name}escaneo de {seconds:.0f} s con el Móvil quieto.')
-                frames = await self.scan_frames(owner, seconds)
+                frames = await self.scan_frames(owner, seconds) or []
                 groups = group_lemons(frames, grasp.AGRUPAR_MM, ORIGIN_MIN_VIEWS)
                 targets = sorted((raised(grasp.limon_de_cara(tf, face, n, spread)) for face, n, spread in groups
                                   if spread <= grasp.DISPERSION_MAX), key=lambda l: math.hypot(l[0], l[1]))
@@ -429,7 +439,7 @@ class CollectionMission:
                 raise RuntimeError('Falta odometría reciente al llegar')
             self.update('BUSCANDO', f'{name}' + (f'¿quedó el limón {number} en el árbol? Midiendo con estéreo.'
                         if verify is not None else f'midiendo el limón {number} de {len(targets)} con estéreo.'))
-            await self.scan_frames(owner, 0.)   # pares nuevos, desde acá
+            visible = await self.scan_frames(owner, 0.) is not None   # pares nuevos, desde acá
             expected = world_to_arm(remaining[index], self.zone)
 
             def steady(frames):
@@ -440,7 +450,7 @@ class CollectionMission:
                     raised(grasp.limon_de_cara(tf, face, n, spread))[:2], expected[:2]) <= EXPECTED_RADIUS_MM
                     for face, n, spread in group_lemons(frames, grasp.AGRUPAR_MM, grasp.MIN_POSICIONES))
 
-            measured = await self.measure_lemons(owner, grasp, tf, enough=steady)
+            measured = await self.measure_lemons(owner, grasp, tf, enough=steady) if visible else []
             here = refresh_positions(remaining, measured, self.zone)
             lemon = here[index]
             if verify is not None and math.dist(lemon, picked_at) >= grasp.VERIFICAR_MM:
