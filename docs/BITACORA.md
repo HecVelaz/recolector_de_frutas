@@ -1241,3 +1241,14 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   día anterior, encendido, homing, misión, apagado y tabla de recuperaciones (correa de J1, sin cero, base sin datos,
   visión, hoja delante, batería) (`d46db59`). Falta confirmar con el usuario cómo se apaga la Pi y el video de respaldo.
 - Push de los tres repos; `/pi-sync` (repo en `d46db59`) y `/verificar-robot` todo OK.
+
+## 2026-11-27 — Engranajes doble helicoidales para J1 (diseño, sin montar)
+- El usuario pasó el diseño de un par doble helicoidal **15 → 80 (5,333:1)** para reemplazar la correa GT2 de J1:
+  57 mm entre centros (los de la correa) con ranura de ±0,3 mm, mn 1,0876 / mt 1,2, 20°, hélice ±25°, 17,5 mm de
+  ancho, backlash 0,15 mm adelgazando los dientes. Revisados los números: cierran. Datos en `docs/ENGRANAJES_J1.md`.
+- Consecuencias anotadas (sin aplicar): 41,48 → 47,41 cuentas/°, **el sentido de J1 se invierte** (signos en
+  `pruebas-esp32/20`, que es lo que corre la WROOM, y en `firmware/brazo`), cubo del engranaje grande sin modelar,
+  medir de nuevo zona muerta y feedforward. Pedido del usuario: nada hasta que avise que están montados; ahí, los
+  pasos en orden desde el primero.
+- Commits: `dd3a810`, `9bcbdbe`.
+
