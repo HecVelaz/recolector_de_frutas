@@ -95,3 +95,5 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 ## 2026-11-27
 - **J1 pasa de la correa GT2 18 → 84 a engranajes doble helicoidales 15 → 80 (5,333:1)**, misma distancia entre
   centros (57 mm) y ancho (17,5 mm); doble helicoidal como J2/J3 para no tener empuje axial. Datos en `ENGRANAJES_J1.md`.
+- **Revertido el mismo 27/11: J1 vuelve a la correa GT2 18 → 84** por problemas de montaje de los engranajes. El firmware
+  no cambia. Lo demás del robot sigue como estaba planeado (J2/J3 con helicoidales 15 → 75).

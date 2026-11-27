@@ -9,8 +9,8 @@ del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, n
   correa de J1, homing, ajuste fino si se movió algo y un Recolector completo con la visión nueva.
 - **Riesgos:** **correa de J1** (saltó 2 veces el 26/11 con la pinza enganchada en una rama; 51°); enlace USB de la S3;
   batería (< 11 V el brazo sin fuerza); **visión al sol sin probar** (NoIR, detector v4); hoja delante del limón.
-- **J1 con engranajes 15 → 80 (diseño del 27/11, sin montar):** reemplazan la correa; al montarlos, los pasos de
-  `ENGRANAJES_J1.md` (relación y **signos invertidos** de J1). Hasta entonces el firmware sigue con la correa 84/18.
+- **J1 sigue con la correa GT2 18 → 84 (27/11):** los engranajes 15 → 80 se descartaron por problemas de montaje.
+  El firmware no cambia (84/18, signos de siempre); `ENGRANAJES_J1.md` queda solo como registro.
 - **Guía del día de la demo:** `docs/html/checklist_demo.html` (publicada, ID en `CONEXIONES.md`).
 - **Al cierre:** visión pausada (la prende la pestaña «Visión» de la app); arbolito en el lab con 3 limones a 74-79 cm.
 

@@ -108,7 +108,7 @@ solo EN; GPIO 13 conectado al TX del TFmini-S (25/11). v0.5 (12/10): encoder de 
 Motores 36GP-555 (J1, J2, J3), encoder SCX-555 de 16 PPR (64 cuentas por vuelta del motor), salida de colector abierto
 (pull-ups de 5,1 kΩ en la placa), 3,3-5 V, alimentado aparte del motor: blanco = motor +,
 amarillo = motor −, verde = encoder + (**3V3**), azul = GND, negro = A, rojo = B. J1 160 rpm (50:1) con correa
-18 → 90; J2 y J3 58 rpm (139:1; 22 kgf·cm nominal, 75 trabado) con engranajes helicoidales 15 → 75 (5:1; 17/10: la correa GT2 quedó solo para J1). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
+18 → 84; J2 y J3 58 rpm (139:1; 22 kgf·cm nominal, 75 trabado) con engranajes helicoidales 15 → 75 (5:1; 17/10: la correa GT2 quedó solo para J1). A 12 V: 0,5 A en vacío, 1,3 A nominal, 10 A
 trabado. **No se autobloquean** (planetarios): sin corriente el brazo cae.
 
 ## Raspberry Pi 5 (propuesta)

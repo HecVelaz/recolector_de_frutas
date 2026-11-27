@@ -1251,4 +1251,5 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   medir de nuevo zona muerta y feedforward. Pedido del usuario: nada hasta que avise que están montados; ahí, los
   pasos en orden desde el primero.
 - Commits: `dd3a810`, `9bcbdbe`.
-
+- **J1 vuelve a la correa GT2 18 → 84** (usuario, 27/11): los engranajes 15 → 80 se descartan por problemas de montaje.
+  Firmware sin cambios. Planilla `Componentes para R1 y R2.xlsx` corregida.

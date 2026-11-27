@@ -1,6 +1,7 @@
 # Engranajes doble helicoidales de J1 (base del brazo)
 
-Especificación del usuario (27/11/2026). **Todavía no están montados**: hasta montarlos, el firmware sigue con la correa.
+Especificación del usuario (27/11/2026). **Descartados el mismo 27/11 por problemas de montaje: J1 sigue con la correa
+GT2 18 → 84 y el firmware no cambia.** Este archivo queda solo como registro; no aplicar los pasos de abajo.
 
 Reemplaza la correa GT2 de 17,5 mm de ancho (poleas de 56,79 y 12,31 mm, relación 4,61:1; el firmware usa 84/18 = 4,667).
 Par doble helicoidal (herringbone) de involuta, ejes paralelos, con la V central definida. Eje vertical (la cara del

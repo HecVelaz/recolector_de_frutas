@@ -19,7 +19,7 @@ terceros quedan fuera de git (`.gitignore`).
 - `ARQUITECTURA.md` — Arquitectura del objetivo mínimo (moverse + YOLO + estéreo + agarrar): reparto de los ESP32, nodos ROS 2, control en cascada, máquina de estados, plan de 5 etapas y preguntas para la cátedra.
 - `ESTADO.md` / `PENDIENTES.md` / `DECISIONES.md` — Estado actual, próximos pasos y decisiones (salieron de `CLAUDE.md` el 22/10). `FLUJO_DE_TRABAJO.md`: plugins, Codex, graphify, hooks y reglas de trabajo en detalle.
 - `BITACORA.md` — Bitácora por fecha: lo hecho, commits, revisiones de Codex y comandos usados.
-- `ENGRANAJES_J1.md` — Doble helicoidales 15 → 80 (5,333:1) que reemplazan la correa de J1 (27/11, sin montar): datos de diseño y qué cambiar en el firmware al montarlos.
+- `ENGRANAJES_J1.md` — Doble helicoidales 15 → 80 (5,333:1) para J1: **descartados el 27/11** por problemas de montaje (J1 sigue con la correa); queda como registro.
 - `CONEXIONES.md` — Conexionado v0.6 (08/10): pines de la S3, la WROOM (3 IBT-2, propuesta) y la Pi, prueba integrada mínima, circuito de potencia solo con lo que hay (LiPo 3S directa para motores, power bank para la Pi y los ESP32; la 10S guardada), cables de cada motor, consumo y autonomía, y lista de verificación antes de conectar. `html/conexiones.html`: lo mismo como diagrama.
 - `COMPRAS.md` — Lista de compras con casillas, del conexionado v0.4.
 - `html/placa_s3.html` / `html/placa_wroom.html` — Placas de las ESP32 (05/10): cableado de cada periférico a su pin, montaje (S3 sobre la Freenove + dos perforadas solo con resistencias, sin capacitores desde el 13/10; WROOM HW-394 en shield de borneras + perforada de distribución, pines v0.5 del 12/10), tabla pin por pin y orden de armado y prueba.
