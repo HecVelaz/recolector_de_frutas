@@ -1,6 +1,7 @@
-# Inventario de componentes (convertido de "Componentes para R1 y R2.xlsx")
+# Inventario de componentes (resumen de "Componentes para R1 y R2.xlsx")
 
-Fuente: planilla de compras del grupo (misma en R1/ y R2/). Enlaces de AliExpress omitidos.
+Fuente: planilla del grupo (misma en `TPF R1/` y `TPF R2/`). **27/11/2026: la planilla se reescribió con todos los
+componentes del proyecto** (columnas Uso y Estado; 49 filas). La tabla de abajo es la lista de compras original.
 
 | Tipo | Artículo | Descripción | Precio | Cant. |
 |---|---|---|---|---|
