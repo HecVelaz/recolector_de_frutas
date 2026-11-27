@@ -32,6 +32,8 @@ el medio paso cierran. El piñón de 15 dientes no se socava (equivalente ≈ 20
 
 ## Qué hay que cambiar al montarlos
 
+Pedido del usuario (27/11): no tocar nada hasta que avise que están montados; ahí, todos los pasos en orden, desde el 1.
+
 Firmware que corre hoy en la WROOM: `pruebas-esp32/20-brazo-coordinado/include/config.h` (`CFG_J1`).
 `firmware/brazo/include/brazo_config.h` también, para que no quede atrás.
 

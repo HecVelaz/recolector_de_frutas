@@ -25,7 +25,8 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
 000y. **J1 con engranajes doble helicoidales 15 → 80 (27/11, sin montar):** al montarlos, relación 80/15 (47,41
    cuentas/°) y **signos de J1 invertidos** (el engranaje gira al revés que la correa) en `pruebas-esp32/20` y
    `firmware/brazo`; cubo del engranaje grande sin modelar; medir de nuevo zona muerta y feedforward. Lista completa en
-   `ENGRANAJES_J1.md`.
+   `ENGRANAJES_J1.md`. **Esperar a que el usuario avise que están montados**; ahí se hacen todos los pasos en orden,
+   desde el primero (pedido del usuario, 27/11).
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
       conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.
