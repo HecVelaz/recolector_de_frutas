@@ -91,3 +91,7 @@ Movido de `CLAUDE.md` §6 el 22/10. Las de hardware y conexionado también en `C
 - **La batería se corrige en el puente** (× 0,959) y no en el firmware antes de la demo, para no reflashear la S3.
 - **J1 sale de la canasta con el joystick** en vez de subir el despegue o el tiempo "sin cuentas" del firmware 20 (sin
   reflashear antes de la demo); no se bajan los plazos de supervisión del mando por el teléfono lento.
+
+## 2026-11-27
+- **J1 pasa de la correa GT2 18 → 84 a engranajes doble helicoidales 15 → 80 (5,333:1)**, misma distancia entre
+  centros (57 mm) y ancho (17,5 mm); doble helicoidal como J2/J3 para no tener empuje axial. Datos en `ENGRANAJES_J1.md`.

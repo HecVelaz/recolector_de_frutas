@@ -22,6 +22,10 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
    8. Después de la demo: YOLO exportado a 480 (~1,7 veces más rápido; solo si la CPU vuelve a cortar la base);
       disparidad solo en las cajas; `sinCuentasMs` de J1 y `BATERIA_DIVISOR`; que el firmware frene J1 con su final de
       carrera fuera del homing.
+000y. **J1 con engranajes doble helicoidales 15 → 80 (27/11, sin montar):** al montarlos, relación 80/15 (47,41
+   cuentas/°) y **signos de J1 invertidos** (el engranaje gira al revés que la correa) en `pruebas-esp32/20` y
+   `firmware/brazo`; cubo del engranaje grande sin modelar; medir de nuevo zona muerta y feedforward. Lista completa en
+   `ENGRANAJES_J1.md`.
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
       conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.
