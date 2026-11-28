@@ -26,6 +26,7 @@ setup(
             'nodo_mision = mision.nodo_mision:main',
             'marcar_gps = mision.marcar_gps:main',
             'nodo_banderin = mision.nodo_banderin:main',
+            'nodo_buzzer = mision.nodo_buzzer:main',
         ],
     },
 )

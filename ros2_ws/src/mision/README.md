@@ -114,3 +114,23 @@ más la TF `stereo_camera_link → camera` de `limon.launch.py`; ver Resultados.
 | 2026-10-21 | Hilera por GPS: 4 pruebas nuevas (35 en total) y en la notebook con `/gps/fix` falso: `SIN_FIX` → `LEJOS d_inicio=18.9 m … avance=18.9/30.0 m` → `SIN_FIX` al cortar el fix | OK |
 | | Hilera por GPS con el UP501 real afuera | — |
 | | Con el brazo real y la TF medida | — |
+
+## Buzzer (`nodo_buzzer`, H8 de la guía R2)
+
+Buzzer pasivo MH-FMD (el del Keepon): VCC a **3,3 V** (no 5 V), GND, I/O al **GPIO 27** de la Pi (pin 13). Se activa
+por nivel bajo: agregar `gpio=27=op,dh` en `/boot/firmware/config.txt` para que arranque callado. Necesita
+`sudo apt install python3-lgpio`; sin eso corre igual pero solo escribe los avisos en el log.
+
+    ros2 run mision nodo_buzzer          # parámetros: gpio (27), activo_bajo (true)
+
+Suena solo en los cambios (nunca con el primer mensaje: encender con la seta apretada no pita):
+
+| Sonido | Cuándo |
+|---|---|
+| `listo` | arranca el nodo o vuelve el enlace de la base o del brazo |
+| `armada` | la base pasa a ARMADA |
+| `homing` | el brazo toma el cero (`c=111`) |
+| `emergencia` | seta, vuelco o un bumper |
+| `bateria` | aparece `BATERIA_BAJA` |
+| `enlace` | 3 s sin `/base/estado` o `/brazo/estado` |
+| `mision`, `fin` | a pedido, por `/buzzer/aviso` (String con el nombre) |
