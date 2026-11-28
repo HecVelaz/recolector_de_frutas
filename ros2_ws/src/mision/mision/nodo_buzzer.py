@@ -98,8 +98,9 @@ class Buzzer:
         if hz > 0:
             self.lg.tx_pwm(self.h, self.gpio, hz, 50)   # cuadrada al 50 %: invertirla no cambia nada
         else:
-            self.lg.tx_pwm(self.h, self.gpio, 0, 0)
-            self.lg.gpio_write(self.h, self.gpio, self.callado)
+            # Callado = PWM fijo al 100 % (activo en bajo) o al 0 %. Cortar el PWM y escribir el pin no sirve: el hilo
+            # de lgpio deja el último nivel en bajo (probado en la Pi el 27/11); frecuencia 0 da 'bad PWM micros'.
+            self.lg.tx_pwm(self.h, self.gpio, 1000, 100 * self.callado)
 
     def cerrar(self):
         if self.h is not None:
