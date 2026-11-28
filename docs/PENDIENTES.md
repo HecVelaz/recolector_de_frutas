@@ -4,8 +4,12 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
 
 0000z. **Para la demo (27/11 en adelante), en orden** (detalle en la bitácora del 26/11):
    0. Revisar la guía de la demo (`docs/html/checklist_demo.html`): cómo se apaga la Pi y si hay video de respaldo.
-   1. **Brazo reimpreso:** montar, tensar la correa de J1, homing y probar un agarre suelto; si se movió el soporte de
-      la cámara o del final de carrera, rehacer el ajuste fino (10 puntos).
+   1. **Brazo reimpreso:** montar, tensar la correa de J1, cada articulación con el joystick (nunca a mano), servos,
+      3 homing y un agarre suelto; si se movió el soporte de la cámara o del final de carrera, rehacer el ajuste fino
+      (10 puntos). Orden completo en la bitácora del 27/11.
+   1b. **H8 (guía R2):** buzzer MH-FMD del Keepon al GPIO 27 de la Pi (VCC 3,3 V, `gpio=27=op,dh`) y nodo de avisos
+      (armar brazo, misión, emergencia); LED al GPIO 17 si hay; habilitación física del brazo con estado visible.
+      Sumarlos a la planilla de componentes.
    2. **Prueba de la visión al sol** (robot quieto afuera, 2-3 limones a 60-100 cm, sol y sombra): detección del v4 con
       las NoIR, cobertura de profundidad, brillo de las dos cámaras (si difiere, fijar exposición y ganancia) y probar
       elegir el grupo de profundidad **por color** (hoja delante del limón).
@@ -22,11 +26,6 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
    8. Después de la demo: YOLO exportado a 480 (~1,7 veces más rápido; solo si la CPU vuelve a cortar la base);
       disparidad solo en las cajas; `sinCuentasMs` de J1 y `BATERIA_DIVISOR`; que el firmware frene J1 con su final de
       carrera fuera del homing.
-000y. ~~**J1 con engranajes doble helicoidales 15 → 80 (27/11, sin montar):**~~ **Descartado el 27/11: J1 sigue con la correa 18 → 84 (problemas de montaje); no hay nada que cambiar.** al montarlos, relación 80/15 (47,41
-   cuentas/°) y **signos de J1 invertidos** (el engranaje gira al revés que la correa) en `pruebas-esp32/20` y
-   `firmware/brazo`; cubo del engranaje grande sin modelar; medir de nuevo zona muerta y feedforward. Lista completa en
-   `ENGRANAJES_J1.md`. **Esperar a que el usuario avise que están montados**; ahí se hacen todos los pasos en orden,
-   desde el primero (pedido del usuario, 27/11).
 000a. **Para la demo (23/11 noche), en orden:**
    1. **Servo de la pinza:** no se mueve aunque el firmware le manda el pulso. ¿La muñeca se mueve? Buck 3 (6 V),
       conector de señal en la WROOM, servo caliente o dañado. Si fue por forzar: cerrar a menos de 1200 µs.

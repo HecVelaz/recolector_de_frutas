@@ -1253,3 +1253,16 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
 - Commits: `dd3a810`, `9bcbdbe`.
 - **J1 vuelve a la correa GT2 18 → 84** (usuario, 27/11): los engranajes 15 → 80 se descartan por problemas de montaje.
   Firmware sin cambios. Planilla `Componentes para R1 y R2.xlsx` corregida.
+- **Planilla `Componentes para R1 y R2.xlsx`** (misma en `TPF R1/` y `TPF R2/`, para subir al Drive): reescrita con
+  los 49 componentes del proyecto, columnas Uso (R1 brazo / R2 base / Compartido) y Estado (En uso, Descartado,
+  Guardado, No se usa); cantidades numéricas y Resumen con SUMIF. Por confirmar: ruedas locas (2), perforadas (3) y
+  resistencias de 10 kΩ. Corregido `CONEXIONES.md`: la correa de J1 es 18 → 84 (decía 18 → 90). Commits `d4c46fe`, `c62bb56`.
+- **Pruebas del brazo reimpreso antes de volver a la app** (orden pasado al usuario): sin 12 V solo mirar (correa,
+  tornillos, finales de carrera con el dedo, cables, soporte de la cámara); con 12 V cada articulación con el joystick
+  en pasos cortos (sentido, signo del encoder, ruido, paralelogramo, parar antes de los topes), servos, 3 homing,
+  agarre suelto a 55 cm (si erra > 2 cm, ajuste fino de 10 puntos), canasta con `punta.py` `af172b0`, visión quieta y
+  recién después Recolector y Rodear árbol. **J1-J3 no se mueven a mano**: reductoras duras, rompe lo impreso (usuario).
+- **H8 de la guía R2** (la de R1 no lo pide): ON/OFF y seta hay; faltan señal luminosa, aviso acústico y habilitación
+  física del brazo con estado visible. Buzzer: el **MH-FMD pasivo del Keepon** (PNP, activo en bajo; `Keepon pro /pruebas_buzzer/README.md`):
+  VCC a 3,3 V (no 5 V), I/O al GPIO 27 de la Pi (pin 13), `gpio=27=op,dh` en `/boot/firmware/config.txt` para que
+  arranque callado; probar antes con I/O a GND (solo "clic"). Compartido con el Keepon. Sin montar ni nodo todavía.
