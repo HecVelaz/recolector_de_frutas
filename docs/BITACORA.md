@@ -1266,3 +1266,14 @@ Resumen; detalle y cifras en `pruebas-esp32/notas/BITACORA.md` (18/11 y 19/11) y
   física del brazo con estado visible. Buzzer: el **MH-FMD pasivo del Keepon** (PNP, activo en bajo; `Keepon pro /pruebas_buzzer/README.md`):
   VCC a 3,3 V (no 5 V), I/O al GPIO 27 de la Pi (pin 13), `gpio=27=op,dh` en `/boot/firmware/config.txt` para que
   arranque callado; probar antes con I/O a GND (solo "clic"). Compartido con el Keepon. Sin montar ni nodo todavía.
+- **Nodo del buzzer** (`ros2_ws/src/mision/mision/nodo_buzzer.py`, `e76d103`): escucha `/base/estado`, `/bumpers`,
+  `/brazo/estado` y `/buzzer/aviso`; suena solo en los cambios (nunca con el primer mensaje: encender con la seta
+  apretada no pita): listo, armada, homing (`c=111`), emergencia (SETA, VUELCO, bumper), bateria, enlace (3 s sin
+  estado), mision/fin a pedido. Sin `lgpio` corre igual y deja el aviso en el log. 4 pruebas nuevas (85 en total).
+- En la Pi: el usuario instaló `python3-lgpio` y agregó `gpio=27=op,dh` en `[all]` de `/boot/firmware/config.txt` (desde
+  una terminal suya: el `!` de Claude Code no da TTY para la contraseña de sudo). El RP1 es **gpiochip4** (kernel
+  6.8.0-1064-raspi). `tx_pwm(..., 0, 0)` da `bad PWM micros`; cortar el PWM y escribir el pin, o reclamarlo en alto,
+  lo deja en **bajo** (bobina con corriente); esperar `tx_busy` no termina nunca. Arreglo: callado = PWM al 100 %
+  (194 658 lecturas en 0,5 s, ninguna en bajo; con tono, 50 %) (`d30846e`). Nodo probado en la Pi: arranca y cierra limpio.
+- `/verificar-robot` corregido: `ssh $PI 'cat ~/.../.commit'` con comillas (`fcce68b`). `/pi-sync` hecho sin
+  `Entrega 7` (sin commitear); Pi en `d30846e`.

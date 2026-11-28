@@ -11,8 +11,8 @@ del **viernes 4/12/2026** (antes 27/11): `PENDIENTES.md`. **El estado va acá, n
   batería (< 11 V el brazo sin fuerza); **visión al sol sin probar** (NoIR, detector v4); hoja delante del limón.
 - **J1 sigue con la correa GT2 18 → 84** (engranajes 15 → 80 descartados el 27/11; firmware sin cambios).
   **J1-J3 no se mueven a mano** (reductoras duras, rompe lo impreso): probar con el joystick, en pasos cortos.
-- **H8 (guía R2):** faltan luz, buzzer y habilitación del brazo. Buzzer: MH-FMD pasivo del Keepon, VCC 3,3 V, I/O al
-  GPIO 27 de la Pi, activo en bajo (`gpio=27=op,dh`); sin montar ni nodo. Planilla de componentes al día (27/11).
+- **Buzzer (H8):** `ros2 run mision nodo_buzzer`, probado en la Pi sin el buzzer (GPIO 27); falta reiniciar, conectarlo
+  y oírlo (`PENDIENTES` 1b). Faltan luz y habilitación del brazo. Planilla de componentes al día (27/11).
 - **Guía del día de la demo:** `docs/html/checklist_demo.html` (publicada, ID en `CONEXIONES.md`).
 - **Al cierre:** visión pausada (la prende la pestaña «Visión» de la app); arbolito en el lab con 3 limones a 74-79 cm.
 

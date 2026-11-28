@@ -7,9 +7,10 @@ Movido de `CLAUDE.md` §7 el 22/10. Fecha límite: **viernes 4/12/2026** (demo; 
    1. **Brazo reimpreso:** montar, tensar la correa de J1, cada articulación con el joystick (nunca a mano), servos,
       3 homing y un agarre suelto; si se movió el soporte de la cámara o del final de carrera, rehacer el ajuste fino
       (10 puntos). Orden completo en la bitácora del 27/11.
-   1b. **H8 (guía R2):** buzzer MH-FMD del Keepon al GPIO 27 de la Pi (VCC 3,3 V, `gpio=27=op,dh`) y nodo de avisos
-      (armar brazo, misión, emergencia); LED al GPIO 17 si hay; habilitación física del brazo con estado visible.
-      Sumarlos a la planilla de componentes.
+   1b. **H8 (guía R2), buzzer:** nodo hecho y `python3-lgpio` instalado en la Pi. Falta: reiniciar la Pi, conectar el
+      MH-FMD (VCC 3,3 V pin 1, GND pin 9, I/O GPIO 27 pin 13) y oír el "listo" con `ros2 run mision nodo_buzzer`; después,
+      que el puente publique `mision`/`fin` en `/buzzer/aviso` y que el nodo arranque con `arrancar_pi.sh`.
+      Luego: LED al GPIO 17 si hay y habilitación física del brazo con estado visible.
    2. **Prueba de la visión al sol** (robot quieto afuera, 2-3 limones a 60-100 cm, sol y sombra): detección del v4 con
       las NoIR, cobertura de profundidad, brillo de las dos cámaras (si difiere, fijar exposición y ganancia) y probar
       elegir el grupo de profundidad **por color** (hoja delante del limón).
